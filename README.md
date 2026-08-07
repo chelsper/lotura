@@ -2,6 +2,11 @@
 
 Lotura is a Next.js App Router application backed by Neon Postgres and Drizzle ORM.
 
+## Product and domain documentation
+
+- [Product vision and continuous improvement](docs/product-vision.md)
+- [Domain model and future capabilities](docs/domain-model.md)
+
 ## Requirements
 
 - Node.js 24.x (the same major used by the Vercel project)
@@ -23,7 +28,15 @@ Run `nvm use` before installing dependencies if you use nvm.
 ## Database workflow
 
 - `npm run db:generate` generates SQL migrations from `db/schema.ts`.
-- `npm run db:migrate` applies committed migrations through the direct Neon endpoint.
+- `npm run db:migrate` applies committed migrations through Drizzle ORM's Neon HTTP migrator using `DATABASE_URL_UNPOOLED`, then verifies every local migration is present in the database journal.
+
+Run the approved migration command from the repository root:
+
+```bash
+npm run db:migrate
+```
+
+Do not use `npx drizzle-kit migrate` for this repository. During isolated-branch testing with `drizzle-kit` 0.31.10, that command exited successfully after creating the migration journal but did not execute or record the committed migrations. The repository script uses the Neon HTTP migrator that successfully applied the complete chain and fails if the journal does not match the local migration files.
 
 Generate and review migrations in a branch, then apply them as an explicit release step. Do not add migrations to the Vercel build command: preview and production builds can overlap, and a failed migration should not be coupled to application compilation.
 

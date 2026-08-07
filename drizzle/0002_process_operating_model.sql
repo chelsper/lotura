@@ -64,6 +64,7 @@ ALTER TABLE "processes" ALTER COLUMN "organization_id" SET NOT NULL;--> statemen
 ALTER TABLE "processes" ADD COLUMN "owner_role_id" integer;--> statement-breakpoint
 ALTER TABLE "processes" ADD COLUMN "status" "process_status" DEFAULT 'draft' NOT NULL;--> statement-breakpoint
 ALTER TABLE "processes" ADD COLUMN "updated_at" timestamp with time zone DEFAULT now() NOT NULL;--> statement-breakpoint
+ALTER TABLE "processes" ADD CONSTRAINT "processes_id_organization_id_unique" UNIQUE("id","organization_id");--> statement-breakpoint
 ALTER TABLE "exceptions" ADD CONSTRAINT "exceptions_process_organization_fk" FOREIGN KEY ("process_id","organization_id") REFERENCES "public"."processes"("id","organization_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "exceptions" ADD CONSTRAINT "exceptions_process_step_process_organization_fk" FOREIGN KEY ("process_step_id","process_id","organization_id") REFERENCES "public"."process_steps"("id","process_id","organization_id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "exceptions" ADD CONSTRAINT "exceptions_owner_role_organization_fk" FOREIGN KEY ("owner_role_id","organization_id") REFERENCES "public"."roles"("id","organization_id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
@@ -82,5 +83,4 @@ ALTER TABLE "processes" ADD CONSTRAINT "processes_owner_role_organization_fk" FO
 ALTER TABLE "processes" ADD CONSTRAINT "processes_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "processes_owner_role_id_idx" ON "processes" USING btree ("owner_role_id");--> statement-breakpoint
 CREATE INDEX "processes_organization_id_status_idx" ON "processes" USING btree ("organization_id","status");--> statement-breakpoint
-ALTER TABLE "processes" ADD CONSTRAINT "processes_id_organization_id_unique" UNIQUE("id","organization_id");--> statement-breakpoint
 ALTER TABLE "processes" ADD CONSTRAINT "processes_owner_required_unless_draft_check" CHECK ("processes"."status" = 'draft' or "processes"."owner_role_id" is not null);
