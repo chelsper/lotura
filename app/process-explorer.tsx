@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 
+import type { FlowAnalysisResult } from "@/lib/flow-analysis.mjs";
 import type {
   AssignmentType,
   DependencyType,
@@ -10,6 +11,8 @@ import type {
   ProcessExplorerData,
   SystemType,
 } from "@/lib/process-explorer-data";
+
+import { FlowAnalysis } from "./flow-analysis";
 
 type IconProps = { className?: string };
 
@@ -385,7 +388,14 @@ function DependencyList({ direction, dependencies, onOpenProcess }: { direction:
   );
 }
 
-export function ProcessExplorer({ data }: { data: ProcessExplorerData }) {
+export function ProcessExplorer({
+  data,
+  analysis,
+}: {
+  data: ProcessExplorerData;
+  analysis: FlowAnalysisResult;
+}) {
+  const [mode, setMode] = useState<"explorer" | "analysis">("explorer");
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [systemFilter, setSystemFilter] = useState("");
@@ -428,6 +438,36 @@ export function ProcessExplorer({ data }: { data: ProcessExplorerData }) {
     }
   }
 
+  function openProcessFromAnalysis(processId: string) {
+    clearFilters();
+    setSelectedProcessId(processId);
+    setMode("explorer");
+    requestAnimationFrame(() => {
+      document
+        .getElementById("process-detail")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  const headerStats =
+    mode === "explorer"
+      ? [
+          { label: "Processes", value: data.processes.length },
+          { label: "Roles", value: data.roles.length },
+          { label: "Systems", value: data.systems.length },
+        ]
+      : [
+          { label: "Current findings", value: analysis.currentGaps.length },
+          { label: "Processes", value: data.processes.length },
+          {
+            label: "Scenarios",
+            value:
+              analysis.scenarios.roles.length * 2 +
+              analysis.scenarios.systems.length +
+              analysis.scenarios.processes.length,
+          },
+        ];
+
   return (
     <div className="min-h-screen bg-[#f4f6f2] text-[#18362f]">
       <header className="border-b border-[#dce2da] bg-[#f8faf7]/95 backdrop-blur">
@@ -452,16 +492,12 @@ export function ProcessExplorer({ data }: { data: ProcessExplorerData }) {
           <div className="pointer-events-none absolute -right-8 -top-12 size-52 rounded-full border border-white/10" />
           <div className="relative flex flex-col justify-between gap-7 lg:flex-row lg:items-end">
             <div className="max-w-3xl">
-              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#afd3c6]"><LayersIcon className="size-4" />Operating model</div>
-              <h1 className="mt-3 text-3xl font-semibold tracking-[-0.045em] sm:text-[44px]">Process Explorer</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-[#c3dcd3] sm:text-[15px]">See how work moves across roles, systems, exceptions, and process boundaries—not just what the procedure says.</p>
+              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#afd3c6]"><LayersIcon className="size-4" />{mode === "explorer" ? "Operating model" : "Deterministic interpretation"}</div>
+              <h1 className="mt-3 text-3xl font-semibold tracking-[-0.045em] sm:text-[44px]">{mode === "explorer" ? "Process Explorer" : "FLOW Analysis"}</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-[#c3dcd3] sm:text-[15px]">{mode === "explorer" ? "See how work moves across roles, systems, exceptions, and process boundaries—not just what the procedure says." : "Interpret ownership, coverage, concentration, and change impact using explainable facts from the current operating model."}</p>
             </div>
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
-              {[
-                { label: "Processes", value: data.processes.length },
-                { label: "Roles", value: data.roles.length },
-                { label: "Systems", value: data.systems.length },
-              ].map((stat) => (
+              {headerStats.map((stat) => (
                 <div key={stat.label} className="min-w-[82px] rounded-2xl border border-white/10 bg-white/[0.07] px-3 py-3 backdrop-blur sm:min-w-[102px] sm:px-4">
                   <p className="text-xl font-semibold tracking-[-0.03em] sm:text-2xl">{stat.value}</p>
                   <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-[#acd0c3]">{stat.label}</p>
@@ -471,6 +507,25 @@ export function ProcessExplorer({ data }: { data: ProcessExplorerData }) {
           </div>
         </section>
 
+        <nav aria-label="Product view" className="mt-4 inline-flex rounded-[14px] border border-[#d9e1da] bg-white p-1 shadow-[0_6px_20px_rgba(49,65,58,0.04)]">
+          {[
+            { id: "explorer" as const, label: "Explorer" },
+            { id: "analysis" as const, label: "FLOW Analysis" },
+          ].map((item) => (
+            <button
+              aria-current={mode === item.id ? "page" : undefined}
+              className={`rounded-[10px] px-4 py-2 text-sm font-semibold transition ${mode === item.id ? "bg-[#18483e] text-white shadow-sm" : "text-[#597068] hover:bg-[#f2f5f1]"}`}
+              key={item.id}
+              onClick={() => setMode(item.id)}
+              type="button"
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        {mode === "explorer" ? (
+          <>
         <section aria-label="Process filters" className="mt-5 rounded-[22px] border border-[#dfe4dc] bg-white p-3 shadow-[0_10px_30px_rgba(49,65,58,0.05)]">
           <div className="grid gap-2 md:grid-cols-[minmax(240px,1fr)_minmax(180px,280px)_minmax(180px,280px)_auto]">
             <label className="relative block">
@@ -517,6 +572,10 @@ export function ProcessExplorer({ data }: { data: ProcessExplorerData }) {
             </div>
           )}
         </div>
+          </>
+        ) : (
+          <FlowAnalysis analysis={analysis} onOpenProcess={openProcessFromAnalysis} />
+        )}
       </main>
     </div>
   );
