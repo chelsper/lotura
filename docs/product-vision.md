@@ -10,6 +10,14 @@ An operating model is incomplete if it records only the current definition of wo
 
 This principle means that publishing revised instructions is evidence of implementation, not evidence of success. A completed improvement must connect the operational change to an expected benefit, an observed result, and a sustainment assessment over an appropriate period.
 
+## Improvement records and historical traceability
+
+Continuous Improvement is a first-class future capability. A future improvement record should preserve the improvement idea, originating process, contributor, rationale and supporting evidence, expected benefit, implementation status, approval decision, implementation date, and resulting operating-model changes.
+
+Every process improvement must remain historically traceable. Lotura should be able to follow an improvement from its originating observation and process, through contribution, proposal, and approval, to implementation and the operating-model versions or relationships that resulted. Later changes must not erase the original idea, rationale, decision, prior operating model, or measured outcome.
+
+This future capability does not modify the Version 0.1 schema. Its domain lifecycle, relationships, constraints, and migration design remain deferred until explicitly approved.
+
 ## Process history and improvement history are different
 
 Process version history and improvement initiatives answer different questions and must remain separate concepts.
@@ -36,6 +44,15 @@ FLOW should help an organization:
 7. Compare expected and measured results.
 8. Recheck the result over time and determine whether it was sustained.
 9. Feed what was learned back into the operating model and future improvement work.
+
+FLOW Analysis should eventually distinguish four related but different perspectives:
+
+- **Current operating model** — the approved definition effective at the selected as-of time.
+- **Proposed improvements** — improvement ideas and pending or approved changes that are not yet completed operational changes.
+- **Completed improvements** — implemented initiatives with resulting operating-model changes, measured results, and sustainment status.
+- **Historical operating models** — prior approved operating-model definitions preserved after supersession.
+
+A proposed improvement must not appear as current organizational truth. A completed implementation must not imply that its expected benefit was achieved. A historical operating model must remain inspectable rather than being overwritten by the current definition.
 
 The future `Improvement` capability supplies FLOW with the durable initiative record. `ImprovementProcess` anchors the initiative to the operating model. `ImprovementMeasure` supplies the evidence needed to evaluate outcomes and sustainment. Process version history records any approved operational definitions produced along the way, but remains a separate audit trail.
 

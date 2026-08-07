@@ -23,20 +23,26 @@ These records may reference one another, but neither owns or replaces the other.
 
 It will likely belong to one organization and record:
 
-- the friction, problem, or opportunity identified;
+- the improvement idea and the friction, problem, or opportunity it addresses;
+- the originating process from which the idea or observation arose;
+- the contributor who supplied the idea, represented through an organization-scoped identity or membership;
 - supporting qualitative or quantitative evidence;
-- the proposed change or improvement hypothesis;
+- the rationale and proposed change or improvement hypothesis;
 - intended ownership and current coordination responsibility;
 - affected processes and systems;
-- the approval decision and rationale;
-- implementation status, timing, and implementation notes;
 - the expected benefit;
+- implementation status and implementation notes;
+- the approval decision, rationale, and timing;
+- the implementation date;
+- the resulting operating-model changes, including relevant process versions and changed relationships;
 - the measured result; and
 - whether the result was sustained, including when and on what evidence that conclusion was reached.
 
 Its lifecycle must distinguish at least identification, proposal, approval, implementation, measurement, and sustainment. Exact statuses and transition rules are deferred. A state equivalent to “implemented” must not be treated as completion.
 
 An improvement may relate to many processes, and a process may be affected by many improvements. It may also affect systems directly. The system relationship must eventually be represented explicitly rather than inferred only from the systems currently used by a process; the exact junction-table design is deferred.
+
+Every process improvement must remain historically traceable. The future model must preserve the path from originating process and contributor through rationale, approval, implementation, resulting operating-model changes, measurement, and sustainment. An improvement record must not be overwritten when a process changes, and a current process definition must not erase the historical operating model that preceded it.
 
 ### ImprovementProcess
 
@@ -74,6 +80,15 @@ FLOW is the product experience and domain lifecycle that turns operational frict
 - Future process versions record the approved operational definitions before and after a change, without becoming the improvement record itself.
 
 FLOW should be able to show an unbroken evidence chain from observed friction, through decision and implementation, to outcome and sustainment. It is a bounded continuous-improvement capability, not authorization to add generic workflow execution, tasks, comments, notifications, AI, or approval infrastructure to Version 0.1.
+
+FLOW Analysis should eventually distinguish:
+
+- **Current operating model**, representing the approved definition effective at the selected as-of time;
+- **Proposed improvements**, representing ideas and pending or approved changes that have not become completed operational changes;
+- **Completed improvements**, representing implemented initiatives together with resulting operating-model changes, measurement, and sustainment; and
+- **Historical operating models**, representing prior approved definitions preserved after supersession.
+
+These perspectives require explicit temporal and lifecycle relationships. They must not be inferred by overwriting a process record or by treating approval, implementation, measurement, and sustainment as the same event.
 
 > An improvement is not complete when the new process is documented. It is complete when the result is measured and sustained.
 
