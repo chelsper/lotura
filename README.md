@@ -40,6 +40,16 @@ Do not use `npx drizzle-kit migrate` for this repository. During isolated-branch
 
 Generate and review migrations in a branch, then apply them as an explicit release step. Do not add migrations to the Vercel build command: preview and production builds can overlap, and a failed migration should not be coupled to application compilation.
 
+### Fictional Process Explorer seed
+
+The Process Explorer renders the repository fixture in `db/seeds/process-explorer.json`, so the read-only experience works without writing to a database. To populate a new, isolated development database with the same fictional organization after applying migrations, run:
+
+```bash
+npm run db:seed:explorer
+```
+
+The seed command uses `DATABASE_URL_UNPOOLED`, runs in a transaction, and refuses to continue unless the application tables are empty. It must not be run against a shared or production database.
+
 ## Verification
 
 Run these checks before opening a pull request:

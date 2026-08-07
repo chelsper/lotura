@@ -1,0 +1,586 @@
+{
+  "organization": {
+    "name": "Northstar Service Collective"
+  },
+  "users": [
+    {
+      "key": "amara-patel",
+      "email": "amara.patel@example.test",
+      "displayName": "Amara Patel"
+    },
+    {
+      "key": "miles-nguyen",
+      "email": "miles.nguyen@example.test",
+      "displayName": "Miles Nguyen"
+    },
+    {
+      "key": "sofia-reyes",
+      "email": "sofia.reyes@example.test",
+      "displayName": "Sofia Reyes"
+    },
+    {
+      "key": "julian-brooks",
+      "email": "julian.brooks@example.test",
+      "displayName": "Julian Brooks"
+    },
+    {
+      "key": "naomi-ellis",
+      "email": "naomi.ellis@example.test",
+      "displayName": "Naomi Ellis"
+    },
+    {
+      "key": "rowan-kim",
+      "email": "rowan.kim@example.test",
+      "displayName": "Rowan Kim"
+    },
+    {
+      "key": "camille-foster",
+      "email": "camille.foster@example.test",
+      "displayName": "Camille Foster"
+    }
+  ],
+  "memberships": [
+    {
+      "key": "amara-membership",
+      "userKey": "amara-patel",
+      "accessLevel": "admin",
+      "status": "active"
+    },
+    {
+      "key": "miles-membership",
+      "userKey": "miles-nguyen",
+      "accessLevel": "member",
+      "status": "active"
+    },
+    {
+      "key": "sofia-membership",
+      "userKey": "sofia-reyes",
+      "accessLevel": "member",
+      "status": "active"
+    },
+    {
+      "key": "julian-membership",
+      "userKey": "julian-brooks",
+      "accessLevel": "member",
+      "status": "active"
+    },
+    {
+      "key": "naomi-membership",
+      "userKey": "naomi-ellis",
+      "accessLevel": "member",
+      "status": "active"
+    },
+    {
+      "key": "rowan-membership",
+      "userKey": "rowan-kim",
+      "accessLevel": "member",
+      "status": "active"
+    },
+    {
+      "key": "camille-membership",
+      "userKey": "camille-foster",
+      "accessLevel": "owner",
+      "status": "active"
+    }
+  ],
+  "roles": [
+    {
+      "key": "client-services-lead",
+      "name": "Client Services Lead",
+      "description": "Owns the quality and completeness of incoming client requests.",
+      "status": "active"
+    },
+    {
+      "key": "operations-coordinator",
+      "name": "Operations Coordinator",
+      "description": "Coordinates handoffs, schedules, and operational records.",
+      "status": "active"
+    },
+    {
+      "key": "program-manager",
+      "name": "Program Manager",
+      "description": "Confirms service fit and the intended client outcome.",
+      "status": "active"
+    },
+    {
+      "key": "delivery-lead",
+      "name": "Delivery Lead",
+      "description": "Owns the consistent delivery of the client experience.",
+      "status": "active"
+    },
+    {
+      "key": "finance-operations-lead",
+      "name": "Finance Operations Lead",
+      "description": "Owns billing accuracy and payment exception resolution.",
+      "status": "active"
+    },
+    {
+      "key": "service-recovery-lead",
+      "name": "Service Recovery Lead",
+      "description": "Owns recovery when an experience falls outside expectations.",
+      "status": "active"
+    },
+    {
+      "key": "systems-steward",
+      "name": "Systems Steward",
+      "description": "Maintains the systems and records that support daily operations.",
+      "status": "active"
+    }
+  ],
+  "roleAssignments": [
+    {
+      "roleKey": "client-services-lead",
+      "membershipKey": "amara-membership",
+      "assignmentType": "permanent",
+      "status": "active",
+      "effectiveFrom": "2026-01-05T14:00:00.000Z"
+    },
+    {
+      "roleKey": "operations-coordinator",
+      "membershipKey": "miles-membership",
+      "assignmentType": "permanent",
+      "status": "active",
+      "effectiveFrom": "2026-01-05T14:00:00.000Z"
+    },
+    {
+      "roleKey": "program-manager",
+      "membershipKey": "sofia-membership",
+      "assignmentType": "permanent",
+      "status": "active",
+      "effectiveFrom": "2026-01-05T14:00:00.000Z"
+    },
+    {
+      "roleKey": "delivery-lead",
+      "membershipKey": "julian-membership",
+      "assignmentType": "acting",
+      "status": "active",
+      "effectiveFrom": "2026-07-01T13:00:00.000Z",
+      "reason": "Acting during the delivery leadership search."
+    },
+    {
+      "roleKey": "finance-operations-lead",
+      "membershipKey": "naomi-membership",
+      "assignmentType": "permanent",
+      "status": "active",
+      "effectiveFrom": "2026-01-05T14:00:00.000Z"
+    },
+    {
+      "roleKey": "finance-operations-lead",
+      "membershipKey": "miles-membership",
+      "assignmentType": "backup",
+      "status": "active",
+      "effectiveFrom": "2026-05-04T13:00:00.000Z",
+      "reason": "Provides billing continuity during planned absences."
+    },
+    {
+      "roleKey": "service-recovery-lead",
+      "membershipKey": "rowan-membership",
+      "assignmentType": "permanent",
+      "status": "active",
+      "effectiveFrom": "2026-02-02T14:00:00.000Z"
+    },
+    {
+      "roleKey": "systems-steward",
+      "membershipKey": "camille-membership",
+      "assignmentType": "permanent",
+      "status": "active",
+      "effectiveFrom": "2026-01-05T14:00:00.000Z"
+    }
+  ],
+  "systems": [
+    {
+      "key": "relay-crm",
+      "name": "Relay CRM",
+      "description": "Client relationship record and communication history.",
+      "systemType": "software",
+      "url": "https://relay.example.test",
+      "ownerRoleKey": "systems-steward",
+      "status": "active"
+    },
+    {
+      "key": "intake-vault",
+      "name": "Intake Vault",
+      "description": "Restricted record for submitted forms and supporting documents.",
+      "systemType": "manual_record",
+      "ownerRoleKey": "client-services-lead",
+      "status": "active"
+    },
+    {
+      "key": "workboard",
+      "name": "Workboard",
+      "description": "Service planning and delivery workspace.",
+      "systemType": "software",
+      "url": "https://workboard.example.test",
+      "ownerRoleKey": "systems-steward",
+      "status": "active"
+    },
+    {
+      "key": "calendar-dock",
+      "name": "CalendarDock",
+      "description": "External scheduling and availability service.",
+      "systemType": "external_service",
+      "url": "https://calendar.example.test",
+      "ownerRoleKey": "operations-coordinator",
+      "status": "active"
+    },
+    {
+      "key": "ledgerline",
+      "name": "Ledgerline",
+      "description": "Invoice, payment, and reconciliation system.",
+      "systemType": "software",
+      "url": "https://ledgerline.example.test",
+      "ownerRoleKey": "finance-operations-lead",
+      "status": "active"
+    },
+    {
+      "key": "service-desk",
+      "name": "Service Desk",
+      "description": "External service for incident and recovery case tracking.",
+      "systemType": "external_service",
+      "url": "https://support.example.test",
+      "ownerRoleKey": "service-recovery-lead",
+      "status": "active"
+    }
+  ],
+  "processes": [
+    {
+      "key": "receive-service-request",
+      "name": "Receive a service request",
+      "purpose": "Turn an incoming inquiry into a complete, traceable request that is ready for an eligibility decision.",
+      "ownerRoleKey": "client-services-lead",
+      "status": "active"
+    },
+    {
+      "key": "assess-service-eligibility",
+      "name": "Assess service eligibility",
+      "purpose": "Confirm that the client need, timing, and service criteria align before a commitment is made.",
+      "ownerRoleKey": "program-manager",
+      "status": "active"
+    },
+    {
+      "key": "schedule-kickoff",
+      "name": "Schedule the client kickoff",
+      "purpose": "Secure the right participants, time, and preparation so delivery can begin without avoidable delay.",
+      "ownerRoleKey": "operations-coordinator",
+      "status": "active"
+    },
+    {
+      "key": "deliver-kickoff",
+      "name": "Deliver the client kickoff",
+      "purpose": "Create shared clarity on the desired outcome, working approach, responsibilities, and immediate next actions.",
+      "ownerRoleKey": "delivery-lead",
+      "status": "active"
+    },
+    {
+      "key": "issue-first-invoice",
+      "name": "Issue the first invoice",
+      "purpose": "Produce an accurate, timely invoice that reflects the agreed service and payment terms.",
+      "ownerRoleKey": "finance-operations-lead",
+      "status": "active"
+    },
+    {
+      "key": "resolve-service-breakdown",
+      "name": "Resolve a service breakdown",
+      "purpose": "Restore trust after a missed expectation while preserving what the organization learns from the breakdown.",
+      "ownerRoleKey": "service-recovery-lead",
+      "status": "active"
+    }
+  ],
+  "processSteps": [
+    {
+      "key": "request-capture",
+      "processKey": "receive-service-request",
+      "position": 1,
+      "title": "Capture the request",
+      "instructions": "Create the client record, record the source of the inquiry, and summarize the requested outcome in the client's own language.",
+      "responsibleRoleKey": "client-services-lead"
+    },
+    {
+      "key": "request-documents",
+      "processKey": "receive-service-request",
+      "position": 2,
+      "title": "Collect required information",
+      "instructions": "Confirm contact details, timing, consent, and any documents required to evaluate the request.",
+      "responsibleRoleKey": "client-services-lead"
+    },
+    {
+      "key": "request-handoff",
+      "processKey": "receive-service-request",
+      "position": 3,
+      "title": "Prepare the eligibility handoff",
+      "instructions": "Check the request for completeness and assign it to the Program Manager with a clear decision date.",
+      "responsibleRoleKey": "operations-coordinator"
+    },
+    {
+      "key": "eligibility-review",
+      "processKey": "assess-service-eligibility",
+      "position": 1,
+      "title": "Review the client need",
+      "instructions": "Compare the stated outcome, constraints, and available evidence with the service criteria.",
+      "responsibleRoleKey": "program-manager"
+    },
+    {
+      "key": "eligibility-decision",
+      "processKey": "assess-service-eligibility",
+      "position": 2,
+      "title": "Record the eligibility decision",
+      "instructions": "Document the decision and rationale, then identify the service path or an appropriate referral.",
+      "responsibleRoleKey": "program-manager"
+    },
+    {
+      "key": "schedule-options",
+      "processKey": "schedule-kickoff",
+      "position": 1,
+      "title": "Prepare scheduling options",
+      "instructions": "Confirm required attendees and offer times that meet the promised start window.",
+      "responsibleRoleKey": "operations-coordinator"
+    },
+    {
+      "key": "schedule-confirm",
+      "processKey": "schedule-kickoff",
+      "position": 2,
+      "title": "Confirm the kickoff",
+      "instructions": "Send the calendar invitation, preparation note, access details, and a clear rescheduling path.",
+      "responsibleRoleKey": "operations-coordinator"
+    },
+    {
+      "key": "kickoff-prepare",
+      "processKey": "deliver-kickoff",
+      "position": 1,
+      "title": "Review the operating context",
+      "instructions": "Review the request, eligibility rationale, stakeholders, constraints, and unresolved questions before the meeting.",
+      "responsibleRoleKey": "delivery-lead"
+    },
+    {
+      "key": "kickoff-facilitate",
+      "processKey": "deliver-kickoff",
+      "position": 2,
+      "title": "Facilitate the kickoff",
+      "instructions": "Confirm the desired outcome, roles, working norms, decision rights, milestones, and immediate actions.",
+      "responsibleRoleKey": "delivery-lead"
+    },
+    {
+      "key": "kickoff-record",
+      "processKey": "deliver-kickoff",
+      "position": 3,
+      "title": "Record agreements and actions",
+      "instructions": "Publish the agreed outcome, owners, due dates, risks, and next checkpoint in the delivery workspace.",
+      "responsibleRoleKey": "delivery-lead"
+    },
+    {
+      "key": "invoice-verify",
+      "processKey": "issue-first-invoice",
+      "position": 1,
+      "title": "Verify billing terms",
+      "instructions": "Confirm the legal entity, billing contact, agreed amount, tax treatment, purchase order, and payment terms.",
+      "responsibleRoleKey": "finance-operations-lead"
+    },
+    {
+      "key": "invoice-issue",
+      "processKey": "issue-first-invoice",
+      "position": 2,
+      "title": "Create and issue the invoice",
+      "instructions": "Generate the invoice in Ledgerline, complete a second-person accuracy check, and send it to the billing contact.",
+      "responsibleRoleKey": "finance-operations-lead"
+    },
+    {
+      "key": "breakdown-triage",
+      "processKey": "resolve-service-breakdown",
+      "position": 1,
+      "title": "Triage the breakdown",
+      "instructions": "Record what happened, the immediate client impact, urgency, and the roles and systems involved.",
+      "responsibleRoleKey": "service-recovery-lead"
+    },
+    {
+      "key": "breakdown-stabilize",
+      "processKey": "resolve-service-breakdown",
+      "position": 2,
+      "title": "Stabilize the client experience",
+      "instructions": "Acknowledge the issue, agree on the immediate recovery action, and set the next update time.",
+      "responsibleRoleKey": "service-recovery-lead"
+    },
+    {
+      "key": "breakdown-learn",
+      "processKey": "resolve-service-breakdown",
+      "position": 3,
+      "title": "Capture the operational learning",
+      "instructions": "Record the contributing process, exception, dependency, or system condition and route it for follow-up.",
+      "responsibleRoleKey": "service-recovery-lead"
+    }
+  ],
+  "exceptions": [
+    {
+      "key": "missing-request-information",
+      "processKey": "receive-service-request",
+      "processStepKey": "request-documents",
+      "name": "Required information is missing",
+      "condition": "The client cannot provide a required document or decision-critical detail during intake.",
+      "response": "Record what is missing, explain why it is needed, agree on a follow-up date, and keep the request in intake rather than handing it off.",
+      "status": "active",
+      "ownerRoleKey": "client-services-lead"
+    },
+    {
+      "key": "urgent-safeguarding-concern",
+      "processKey": "assess-service-eligibility",
+      "name": "Urgent safeguarding concern",
+      "condition": "Information suggests an immediate safety or safeguarding risk outside the normal service assessment.",
+      "response": "Stop the standard assessment, follow the approved emergency referral guidance, and record only the minimum necessary information.",
+      "status": "active",
+      "ownerRoleKey": "program-manager"
+    },
+    {
+      "key": "no-mutual-availability",
+      "processKey": "schedule-kickoff",
+      "processStepKey": "schedule-options",
+      "name": "No mutual availability in the promised window",
+      "condition": "Required participants cannot meet within the committed start window.",
+      "response": "Escalate the constraint to the Program Manager, offer the earliest viable time, and obtain explicit client agreement to the revised date.",
+      "status": "active",
+      "ownerRoleKey": "operations-coordinator"
+    },
+    {
+      "key": "delivery-platform-outage",
+      "processKey": "deliver-kickoff",
+      "processStepKey": "kickoff-facilitate",
+      "name": "Delivery platform is unavailable",
+      "condition": "The delivery workspace or meeting platform is unavailable at kickoff time.",
+      "response": "Use the agreed continuity channel, capture decisions in a temporary controlled record, and reconcile them into Workboard when service returns.",
+      "status": "active",
+      "ownerRoleKey": "systems-steward"
+    },
+    {
+      "key": "tax-treatment-unclear",
+      "processKey": "issue-first-invoice",
+      "processStepKey": "invoice-verify",
+      "name": "Tax treatment is unclear",
+      "condition": "The client claims an exemption or the agreed service has an uncertain tax treatment.",
+      "response": "Pause invoice issuance, obtain the supporting documentation, and route the case to the Finance Operations Lead for a documented decision.",
+      "status": "active",
+      "ownerRoleKey": "finance-operations-lead"
+    },
+    {
+      "key": "purchase-order-late",
+      "processKey": "issue-first-invoice",
+      "name": "Purchase order arrives after service begins",
+      "condition": "The client requires a purchase order but cannot provide it before the first billable milestone.",
+      "response": "Record the client commitment date, notify the Delivery Lead of the billing risk, and hold issuance until the required reference is received.",
+      "status": "inactive",
+      "ownerRoleKey": "finance-operations-lead"
+    },
+    {
+      "key": "client-prefers-written-recovery",
+      "processKey": "resolve-service-breakdown",
+      "processStepKey": "breakdown-stabilize",
+      "name": "Client requests written-only communication",
+      "condition": "The client does not want a live recovery conversation.",
+      "response": "Acknowledge the preference, send a concise written recovery plan, and confirm a written checkpoint for acceptance or revision.",
+      "status": "active",
+      "ownerRoleKey": "service-recovery-lead"
+    }
+  ],
+  "processSystems": [
+    {
+      "processKey": "receive-service-request",
+      "systemKey": "relay-crm",
+      "usage": "Creates the client and inquiry record and preserves communication history."
+    },
+    {
+      "processKey": "receive-service-request",
+      "systemKey": "intake-vault",
+      "usage": "Stores submitted intake forms and restricted supporting documents."
+    },
+    {
+      "processKey": "assess-service-eligibility",
+      "systemKey": "relay-crm",
+      "usage": "Records the eligibility decision, rationale, and client communication."
+    },
+    {
+      "processKey": "assess-service-eligibility",
+      "systemKey": "intake-vault",
+      "usage": "Provides the supporting information used in the assessment."
+    },
+    {
+      "processKey": "schedule-kickoff",
+      "systemKey": "calendar-dock",
+      "usage": "Checks availability and issues the confirmed calendar invitation."
+    },
+    {
+      "processKey": "schedule-kickoff",
+      "systemKey": "relay-crm",
+      "usage": "Records the promised start window and confirmed date."
+    },
+    {
+      "processKey": "deliver-kickoff",
+      "systemKey": "workboard",
+      "usage": "Holds the delivery plan, agreed outcomes, actions, risks, and checkpoints."
+    },
+    {
+      "processKey": "deliver-kickoff",
+      "systemKey": "calendar-dock",
+      "usage": "Provides the meeting access details and participant record."
+    },
+    {
+      "processKey": "issue-first-invoice",
+      "systemKey": "ledgerline",
+      "usage": "Creates, checks, sends, and tracks the invoice."
+    },
+    {
+      "processKey": "issue-first-invoice",
+      "systemKey": "relay-crm",
+      "usage": "Provides the billing contact and commercial agreement context."
+    },
+    {
+      "processKey": "resolve-service-breakdown",
+      "systemKey": "service-desk",
+      "usage": "Tracks the incident, recovery commitment, updates, and closure evidence."
+    },
+    {
+      "processKey": "resolve-service-breakdown",
+      "systemKey": "relay-crm",
+      "usage": "Preserves the client communication history and relationship context."
+    },
+    {
+      "processKey": "resolve-service-breakdown",
+      "systemKey": "workboard",
+      "usage": "Connects the breakdown to delivery actions and operational follow-up."
+    }
+  ],
+  "processDependencies": [
+    {
+      "sourceProcessKey": "receive-service-request",
+      "targetProcessKey": "assess-service-eligibility",
+      "dependencyType": "triggers",
+      "description": "A complete intake triggers the eligibility decision."
+    },
+    {
+      "sourceProcessKey": "assess-service-eligibility",
+      "targetProcessKey": "schedule-kickoff",
+      "dependencyType": "provides_to",
+      "description": "The approved service path and timing constraints shape scheduling."
+    },
+    {
+      "sourceProcessKey": "schedule-kickoff",
+      "targetProcessKey": "deliver-kickoff",
+      "dependencyType": "triggers",
+      "description": "A confirmed meeting starts kickoff preparation and delivery."
+    },
+    {
+      "sourceProcessKey": "deliver-kickoff",
+      "targetProcessKey": "issue-first-invoice",
+      "dependencyType": "provides_to",
+      "description": "The confirmed start and service terms provide the billing basis."
+    },
+    {
+      "sourceProcessKey": "receive-service-request",
+      "targetProcessKey": "resolve-service-breakdown",
+      "dependencyType": "provides_to",
+      "description": "The original promise and communication history provide recovery context."
+    },
+    {
+      "sourceProcessKey": "deliver-kickoff",
+      "targetProcessKey": "resolve-service-breakdown",
+      "dependencyType": "triggers",
+      "description": "A material missed expectation during delivery can trigger service recovery."
+    }
+  ]
+}
