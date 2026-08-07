@@ -8,6 +8,23 @@ import type {
   FlowFinding,
 } from "@/lib/flow-analysis.mjs";
 
+import { ArrowIcon, FlowIcon, InfoIcon } from "./ui/icons";
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  FieldLabel,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableHeadCell,
+  TableHeader,
+  TableRow,
+  cn,
+} from "./ui/primitives";
+
 type ConcentrationKey = keyof FlowAnalysisResult["concentrations"];
 type ScenarioKey =
   | "role-vacancy"
@@ -38,23 +55,16 @@ function formatAsOf(value: string) {
 }
 
 function EvidenceBadge({ evidence }: { evidence: FlowEvidence }) {
-  const classes: Record<FlowEvidence, string> = {
-    "Direct impact": "border-[#efd9c4] bg-[#fff6eb] text-[#8a5727]",
-    "Potential indirect impact":
-      "border-[#dbe2ec] bg-[#f3f6fa] text-[#4f637b]",
-    "Review recommended": "border-[#d6e6df] bg-[#edf7f3] text-[#356b5e]",
-  };
+  const tones = {
+    "Direct impact": "warning",
+    "Potential indirect impact": "info",
+    "Review recommended": "accent",
+  } as const;
 
-  return (
-    <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] ${classes[evidence]}`}
-    >
-      {evidence}
-    </span>
-  );
+  return <Badge tone={tones[evidence]}>{evidence}</Badge>;
 }
 
-function FindingCard({
+function Finding({
   finding,
   onOpenProcess,
 }: {
@@ -62,53 +72,55 @@ function FindingCard({
   onOpenProcess: (processId: string) => void;
 }) {
   return (
-    <article className="rounded-[20px] border border-[#dfe5de] bg-white p-4 shadow-[0_8px_24px_rgba(50,69,61,0.04)] sm:p-5">
+    <article className="px-4 py-5 sm:px-5">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-        <div className="min-w-0">
+        <div className="min-w-0 max-w-3xl">
           <EvidenceBadge evidence={finding.evidence} />
-          <h4 className="mt-3 text-base font-semibold tracking-[-0.015em] text-[#173a32]">
+          <h3 className="mt-2.5 text-[15px] font-semibold leading-6 tracking-[-0.01em] text-[var(--text)]">
             {finding.title}
-          </h4>
-          <p className="mt-1.5 text-sm leading-6 text-[#60746d]">
+          </h3>
+          <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
             {finding.summary}
           </p>
         </div>
         {finding.processIds.length > 0 ? (
-          <button
-            className="shrink-0 rounded-xl border border-[#d7e0da] bg-[#f8faf7] px-3 py-2 text-xs font-semibold text-[#315f53] transition hover:border-[#a9c4ba] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#215c50]"
+          <Button
+            className="self-start"
             onClick={() => onOpenProcess(finding.processIds[0])}
-            type="button"
+            size="sm"
+            variant="ghost"
           >
             Open in Explorer
-          </button>
+            <ArrowIcon className="size-3.5" />
+          </Button>
         ) : null}
       </div>
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+      <dl className="mt-4 grid gap-x-5 gap-y-3 rounded-[10px] bg-[var(--surface-subtle)] px-3.5 py-3 sm:grid-cols-2 xl:grid-cols-3">
         {finding.facts.map((item) => (
-          <div
-            className="rounded-xl bg-[#f6f8f5] px-3 py-2.5"
-            key={`${finding.id}-${item.label}`}
-          >
-            <p className="text-[10px] font-semibold uppercase tracking-[0.11em] text-[#7c8e87]">
+          <div key={`${finding.id}-${item.label}`}>
+            <dt className="text-[11px] font-medium text-[var(--text-tertiary)]">
               {item.label}
-            </p>
-            <p className="mt-1 break-words text-xs leading-5 text-[#35544c]">
+            </dt>
+            <dd className="mt-0.5 break-words text-xs leading-5 text-[var(--text-secondary)]">
               {item.value}
-            </p>
+            </dd>
           </div>
         ))}
-      </div>
+      </dl>
 
-      <details className="mt-4 border-t border-[#ebefea] pt-3">
-        <summary className="cursor-pointer text-xs font-semibold text-[#41675d] marker:text-[#82958e]">
+      <details className="group mt-4 border-t border-[var(--border)] pt-3">
+        <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-medium text-[var(--text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]">
+          <span className="grid size-5 place-items-center rounded-md bg-[var(--surface-subtle)] text-[var(--text-tertiary)]">
+            <InfoIcon className="size-3" />
+          </span>
           How this was determined
         </summary>
-        <p className="mt-2 text-xs leading-5 text-[#667a73]">
+        <p className="mt-2 max-w-4xl pl-7 text-xs leading-5 text-[var(--text-secondary)]">
           {finding.howDetermined}
         </p>
         {finding.limitation ? (
-          <p className="mt-2 rounded-xl bg-[#faf6ef] px-3 py-2 text-xs leading-5 text-[#80684d]">
+          <p className="mt-2 ml-7 rounded-lg border border-[var(--warning-border)] bg-[var(--warning-subtle)] px-3 py-2 text-xs leading-5 text-[var(--warning)]">
             Interpretation limit: {finding.limitation}
           </p>
         ) : null}
@@ -117,24 +129,48 @@ function FindingCard({
   );
 }
 
+function FindingList({
+  emptyMessage,
+  findings,
+  onOpenProcess,
+}: {
+  emptyMessage: string;
+  findings: FlowFinding[];
+  onOpenProcess: (processId: string) => void;
+}) {
+  if (findings.length === 0) {
+    return <EmptyState title={emptyMessage} />;
+  }
+
+  return (
+    <Card className="divide-y divide-[var(--border)] overflow-hidden">
+      {findings.map((finding) => (
+        <Finding
+          finding={finding}
+          key={finding.id}
+          onOpenProcess={onOpenProcess}
+        />
+      ))}
+    </Card>
+  );
+}
+
 function SectionIntro({
+  description,
   eyebrow,
   title,
-  description,
 }: {
+  description: string;
   eyebrow: string;
   title: string;
-  description: string;
 }) {
   return (
-    <div>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#668078]">
-        {eyebrow}
-      </p>
-      <h2 className="mt-1 text-2xl font-semibold tracking-[-0.035em] text-[#153b32]">
+    <div className="max-w-3xl">
+      <p className="text-xs font-medium text-[var(--text-tertiary)]">{eyebrow}</p>
+      <h2 className="mt-1 text-xl font-semibold tracking-[-0.025em] text-[var(--text)] sm:text-[22px]">
         {title}
       </h2>
-      <p className="mt-2 max-w-3xl text-sm leading-6 text-[#667a73]">
+      <p className="mt-1.5 text-sm leading-6 text-[var(--text-secondary)]">
         {description}
       </p>
     </div>
@@ -142,66 +178,98 @@ function SectionIntro({
 }
 
 function ResponsibilitySummary({ analysis }: { analysis: FlowAnalysisResult }) {
-  const labels = {
-    explicit: "Explicit",
-    inherited: "Inherited",
-    unclear: "Unclear",
-    unstaffed: "Unstaffed",
-    retired: "Retired",
-  } as const;
+  const rows = [
+    {
+      basis: "Explicit",
+      count: analysis.responsibilityCounts.explicit,
+      meaning: "A responsible Role is recorded on the Step.",
+    },
+    {
+      basis: "Inherited",
+      count: analysis.responsibilityCounts.inherited,
+      meaning: "The Step inherits responsibility from the Process owner.",
+    },
+    {
+      basis: "Unclear",
+      count: analysis.responsibilityCounts.unclear,
+      meaning: "Neither the Step nor its Process establishes responsibility.",
+    },
+    {
+      basis: "Unstaffed",
+      count: analysis.responsibilityCounts.unstaffed,
+      meaning: "The responsible Role has no current primary assignment.",
+    },
+    {
+      basis: "Retired",
+      count: analysis.responsibilityCounts.retired,
+      meaning: "The responsible Role is inactive.",
+    },
+  ];
 
   return (
-    <article className="rounded-[22px] border border-[#dfe5de] bg-[#f9fbf8] p-4 sm:p-5">
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+    <Card className="overflow-hidden">
+      <div className="flex flex-col justify-between gap-3 border-b border-[var(--border)] px-4 py-4 sm:flex-row sm:items-start sm:px-5">
         <div>
           <EvidenceBadge evidence="Review recommended" />
-          <h3 className="mt-3 text-base font-semibold text-[#183b33]">
+          <h3 className="mt-2 text-sm font-semibold text-[var(--text)]">
             Step responsibility basis
           </h3>
-          <p className="mt-1 text-sm leading-6 text-[#64776f]">
-            Missing step-level roles inherit the process owner before FLOW checks
+          <p className="mt-1 max-w-2xl text-xs leading-5 text-[var(--text-secondary)]">
+            Missing step-level Roles inherit the Process owner before FLOW checks
             clarity and staffing.
           </p>
         </div>
-        <div className="grid grid-cols-5 gap-1.5">
-          {Object.entries(labels).map(([key, label]) => (
-            <div
-              className="min-w-[58px] rounded-xl bg-white px-2 py-2 text-center"
-              key={key}
-            >
-              <p className="text-lg font-semibold text-[#204a40]">
-                {
-                  analysis.responsibilityCounts[
-                    key as keyof typeof analysis.responsibilityCounts
-                  ]
-                }
-              </p>
-              <p className="text-[9px] font-semibold uppercase tracking-wide text-[#82928c]">
-                {label}
-              </p>
-            </div>
-          ))}
-        </div>
+        <p className="text-xs text-[var(--text-tertiary)]">
+          {rows.reduce((sum, row) => sum + row.count, 0)} Steps reviewed
+        </p>
       </div>
-      <details className="mt-4 border-t border-[#e3e9e3] pt-3">
-        <summary className="cursor-pointer text-xs font-semibold text-[#41675d] marker:text-[#82958e]">
+      <Table>
+        <TableHeader>
+          <tr>
+            <TableHeadCell>Responsibility</TableHeadCell>
+            <TableHeadCell className="w-20 text-right">Steps</TableHeadCell>
+            <TableHeadCell className="hidden sm:table-cell">Meaning</TableHeadCell>
+          </tr>
+        </TableHeader>
+        <TableBody>
+          {rows.map((row) => (
+            <TableRow key={row.basis}>
+              <TableCell className="font-medium text-[var(--text)]">
+                {row.basis}
+              </TableCell>
+              <TableCell className="text-right font-mono text-[var(--text)]">
+                {row.count}
+              </TableCell>
+              <TableCell className="hidden sm:table-cell">{row.meaning}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <details className="border-t border-[var(--border)] px-4 py-3 sm:px-5">
+        <summary className="cursor-pointer text-xs font-medium text-[var(--text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]">
           How this was determined
         </summary>
-        <p className="mt-2 text-xs leading-5 text-[#667a73]">
+        <p className="mt-2 max-w-4xl text-xs leading-5 text-[var(--text-secondary)]">
           FLOW uses ProcessStep.responsibleRoleId when present. When it is absent,
-          FLOW inherits Process.ownerRoleId, then evaluates the selected role&apos;s
+          FLOW inherits Process.ownerRoleId, then evaluates the selected Role’s
           status and current assignment at the visible as-of time.
         </p>
       </details>
-    </article>
+    </Card>
   );
 }
 
-function EmptyFinding({ children }: { children: React.ReactNode }) {
+function AnalysisSection({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="rounded-[20px] border border-dashed border-[#cfdad3] bg-white/60 px-5 py-8 text-center text-sm text-[#6d8079]">
+    <section className={cn("border-b border-[var(--border)] pb-8 last:border-b-0", className)}>
       {children}
-    </div>
+    </section>
   );
 }
 
@@ -247,6 +315,7 @@ export function FlowAnalysis({
       const role = analysis.scenarios.roles.find(
         (item) => item.roleId === effectiveEntityId,
       );
+
       return scenario === "role-vacancy"
         ? role?.vacancy ?? null
         : role?.restructuring ?? null;
@@ -258,6 +327,7 @@ export function FlowAnalysis({
         ) ?? null
       );
     }
+
     return (
       analysis.scenarios.processes.find(
         (item) => item.processIds[0] === effectiveEntityId,
@@ -268,19 +338,19 @@ export function FlowAnalysis({
   const concentrationFindings = analysis.concentrations[concentration];
 
   return (
-    <div className="mt-5 space-y-5">
-      <section className="rounded-[26px] border border-[#dfe5de] bg-white p-5 shadow-[0_10px_30px_rgba(49,65,58,0.05)] sm:p-6">
+    <div className="space-y-8 pt-6 sm:pt-8">
+      <AnalysisSection>
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <SectionIntro
-            description="Current ownership, role coverage, and responsibility findings based on the operating model as documented."
+            description="Current ownership, Role coverage, and responsibility findings based on the operating model as documented."
             eyebrow="Coverage and clarity"
             title="Current gaps"
           />
-          <div className="rounded-xl border border-[#dfe5de] bg-[#f8faf7] px-3 py-2 text-right">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#7d8f88]">
+          <div className="shrink-0 text-left lg:text-right">
+            <p className="text-[11px] text-[var(--text-tertiary)]">
               Reproducible as of
             </p>
-            <p className="mt-0.5 text-xs font-semibold text-[#385b52]">
+            <p className="mt-0.5 font-mono text-[11px] text-[var(--text-secondary)]">
               {formatAsOf(analysis.asOf)} UTC
             </p>
           </div>
@@ -288,118 +358,106 @@ export function FlowAnalysis({
 
         <div className="mt-5 space-y-3">
           <ResponsibilitySummary analysis={analysis} />
-          {analysis.currentGaps.length > 0 ? (
-            analysis.currentGaps.map((item) => (
-              <FindingCard
-                finding={item}
-                key={item.id}
-                onOpenProcess={onOpenProcess}
-              />
-            ))
-          ) : (
-            <EmptyFinding>
-              No current ownership, coverage, or responsibility gaps were found at
-              this as-of time.
-            </EmptyFinding>
-          )}
+          <FindingList
+            emptyMessage="No current ownership, coverage, or responsibility gaps were found."
+            findings={analysis.currentGaps}
+            onOpenProcess={onOpenProcess}
+          />
         </div>
-      </section>
+      </AnalysisSection>
 
-      <section className="rounded-[26px] border border-[#dfe5de] bg-white p-5 shadow-[0_10px_30px_rgba(49,65,58,0.05)] sm:p-6">
+      <AnalysisSection>
         <SectionIntro
-          description="Raw operating-model reach and concentration, shown as evidence rather than a composite risk score."
+          description="Documented operating-model reach, presented as inspectable evidence rather than a composite risk score."
           eyebrow="Documented footprint"
           title="Concentrations"
         />
-        <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Concentration analysis">
+        <div
+          aria-label="Concentration analysis"
+          className="mt-4 flex flex-wrap gap-1.5"
+          role="tablist"
+        >
           {(Object.keys(concentrationLabels) as ConcentrationKey[]).map((key) => (
-            <button
+            <Button
               aria-selected={concentration === key}
-              className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
-                concentration === key
-                  ? "bg-[#18483e] text-white"
-                  : "border border-[#dfe5de] bg-[#f8faf7] text-[#506b63] hover:bg-white"
-              }`}
               key={key}
               onClick={() => setConcentration(key)}
               role="tab"
-              type="button"
+              size="sm"
+              variant={concentration === key ? "primary" : "secondary"}
             >
               {concentrationLabels[key]}
-            </button>
+            </Button>
           ))}
         </div>
-        <div className="mt-4 grid gap-3 xl:grid-cols-2">
-          {concentrationFindings.length > 0 ? (
-            concentrationFindings.map((item) => (
-              <FindingCard
-                finding={item}
-                key={item.id}
-                onOpenProcess={onOpenProcess}
-              />
-            ))
-          ) : (
-            <EmptyFinding>No concentration evidence is available.</EmptyFinding>
-          )}
+        <div className="mt-3">
+          <FindingList
+            emptyMessage="No concentration evidence is available."
+            findings={concentrationFindings}
+            onOpenProcess={onOpenProcess}
+          />
         </div>
-      </section>
+      </AnalysisSection>
 
-      <section className="rounded-[26px] border border-[#dfe5de] bg-white p-5 shadow-[0_10px_30px_rgba(49,65,58,0.05)] sm:p-6">
+      <AnalysisSection>
         <SectionIntro
-          description="Explore a deterministic change scenario. Direct impact, potential indirect impact, and review recommended are kept distinct."
+          description="Explore a deterministic change scenario. Direct impact, potential indirect impact, and review recommended remain distinct."
           eyebrow="Scenario review"
           title="What changes?"
         />
 
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
-          <label>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#71857d]">
-              Scenario
-            </span>
-            <select
-              className="mt-1.5 h-11 w-full rounded-xl border border-[#d9e1db] bg-[#fafbf9] px-3 text-sm text-[#36564d] outline-none focus:border-[#5f857b] focus:ring-3 focus:ring-[#dbeae4]"
-              onChange={(event) => {
-                setScenario(event.target.value as ScenarioKey);
-                setSelectedEntityId("");
-              }}
-              value={scenario}
-            >
-              {(Object.keys(scenarioLabels) as ScenarioKey[]).map((key) => (
-                <option key={key} value={key}>
-                  {scenarioLabels[key]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#71857d]">
-              Operating-model record
-            </span>
-            <select
-              className="mt-1.5 h-11 w-full rounded-xl border border-[#d9e1db] bg-[#fafbf9] px-3 text-sm text-[#36564d] outline-none focus:border-[#5f857b] focus:ring-3 focus:ring-[#dbeae4]"
-              onChange={(event) => setSelectedEntityId(event.target.value)}
-              value={effectiveEntityId}
-            >
-              {scenarioOptions.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+        <Card className="mt-5 p-4 sm:p-5">
+          <div className="grid gap-3 md:grid-cols-2">
+            <label>
+              <FieldLabel>Scenario</FieldLabel>
+              <Select
+                onChange={(event) => {
+                  setScenario(event.target.value as ScenarioKey);
+                  setSelectedEntityId("");
+                }}
+                value={scenario}
+              >
+                {(Object.keys(scenarioLabels) as ScenarioKey[]).map((key) => (
+                  <option key={key} value={key}>
+                    {scenarioLabels[key]}
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <label>
+              <FieldLabel>Operating-model record</FieldLabel>
+              <Select
+                onChange={(event) => setSelectedEntityId(event.target.value)}
+                value={effectiveEntityId}
+              >
+                {scenarioOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </Select>
+            </label>
+          </div>
+          <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-[var(--text-tertiary)]">
+            <FlowIcon className="mt-0.5 size-3.5 shrink-0" />
+            Connectivity identifies a review set. It does not prove operational
+            failure or require a particular change.
+          </p>
+        </Card>
 
-        <div className="mt-4">
+        <div className="mt-3">
           {selectedFinding ? (
-            <FindingCard
-              finding={selectedFinding}
-              onOpenProcess={onOpenProcess}
-            />
+            <Card className="overflow-hidden">
+              <Finding
+                finding={selectedFinding}
+                onOpenProcess={onOpenProcess}
+              />
+            </Card>
           ) : (
-            <EmptyFinding>No scenario evidence is available.</EmptyFinding>
+            <EmptyState title="No scenario evidence is available." />
           )}
         </div>
-      </section>
+      </AnalysisSection>
     </div>
   );
 }

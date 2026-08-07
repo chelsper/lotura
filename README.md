@@ -6,6 +6,7 @@ Lotura is a Next.js App Router application backed by Neon Postgres and Drizzle O
 
 - [Product vision](PRODUCT_VISION.md)
 - [Product principles](PRODUCT_PRINCIPLES.md)
+- [Design system](DESIGN_SYSTEM.md)
 - [Product roadmap](PRODUCT_ROADMAP.md)
 - [Architecture decisions](ARCHITECTURE_DECISIONS.md)
 - [Process Acquisition](PROCESS_ACQUISITION.md)

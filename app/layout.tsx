@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Process Explorer | Lotura",
+  title: "Lotura | Operating Model",
   description:
     "Explore how processes connect to roles, people, systems, exceptions, and other processes.",
 };
