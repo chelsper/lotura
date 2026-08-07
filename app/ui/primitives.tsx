@@ -136,7 +136,10 @@ type BadgeTone =
   | "success"
   | "warning"
   | "error"
-  | "info";
+  | "info"
+  | "evidence-direct"
+  | "evidence-indirect"
+  | "evidence-review";
 
 export function Badge({
   children,
@@ -161,6 +164,12 @@ export function Badge({
     error:
       "border-[var(--error-border)] bg-[var(--error-subtle)] text-[var(--error)]",
     info: "border-[var(--info-border)] bg-[var(--info-subtle)] text-[var(--info)]",
+    "evidence-direct":
+      "border-[var(--evidence-direct-border)] bg-[var(--evidence-direct-subtle)] text-[var(--evidence-direct)]",
+    "evidence-indirect":
+      "border-[var(--evidence-indirect-border)] bg-[var(--evidence-indirect-subtle)] text-[var(--evidence-indirect)]",
+    "evidence-review":
+      "border-[var(--evidence-review-border)] bg-[var(--evidence-review-subtle)] text-[var(--evidence-review)]",
   };
 
   return (
@@ -203,7 +212,7 @@ export function Alert({
 }: {
   children: ReactNode;
   className?: string;
-  tone?: Exclude<BadgeTone, "neutral" | "accent">;
+  tone?: "success" | "warning" | "error" | "info";
 }) {
   const tones = {
     success:

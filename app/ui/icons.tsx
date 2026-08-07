@@ -90,6 +90,19 @@ export function FlowIcon({ className = "size-5" }: IconProps) {
   );
 }
 
+export function HomeIcon({ className = "size-5" }: IconProps) {
+  return (
+    <svg {...shared} className={className}>
+      <path
+        d="m4 10 8-6.25L20 10v9.25h-5.25V14h-5.5v5.25H4V10Z"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.6"
+      />
+    </svg>
+  );
+}
+
 export function LayersIcon({ className = "size-5" }: IconProps) {
   return (
     <svg {...shared} className={className}>

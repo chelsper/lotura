@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Lotura | Operating Model",
+  title: "Lotura | Understand how work connects",
   description:
-    "Explore how processes connect to roles, people, systems, exceptions, and other processes.",
+    "Understand how work connects across processes, roles, people, systems, exceptions, and dependencies.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

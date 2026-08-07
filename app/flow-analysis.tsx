@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 
 import type {
   FlowAnalysisResult,
@@ -56,43 +57,114 @@ function formatAsOf(value: string) {
 
 function EvidenceBadge({ evidence }: { evidence: FlowEvidence }) {
   const tones = {
-    "Direct impact": "warning",
-    "Potential indirect impact": "info",
-    "Review recommended": "accent",
+    "Direct impact": "evidence-direct",
+    "Potential indirect impact": "evidence-indirect",
+    "Review recommended": "evidence-review",
   } as const;
 
   return <Badge tone={tones[evidence]}>{evidence}</Badge>;
 }
 
+function countPhrase(count: number, singular: string, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function roleReachSummary(finding: FlowFinding) {
+  const facts = new Map(finding.facts.map((item) => [item.label, item.value]));
+  const processes = Number(facts.get("Processes owned") ?? 0);
+  const steps = Number(facts.get("Responsible steps") ?? 0);
+  const exceptions = Number(facts.get("Exceptions owned") ?? 0);
+  const systems = Number(facts.get("Systems owned") ?? 0);
+
+  return `${finding.title} owns ${countPhrase(processes, "process", "processes")} and is responsible for ${countPhrase(steps, "step")}. It also owns ${countPhrase(exceptions, "exception")} and ${countPhrase(systems, "system")}.`;
+}
+
+export function EvidenceLegend() {
+  const items: Array<{ evidence: FlowEvidence; definition: string }> = [
+    {
+      evidence: "Direct impact",
+      definition:
+        "The selected change explicitly touches a recorded operating-model relationship.",
+    },
+    {
+      evidence: "Potential indirect impact",
+      definition:
+        "A connected part of the operating model may also be affected.",
+    },
+    {
+      evidence: "Review recommended",
+      definition:
+        "The model identifies a question that needs human judgment or more evidence.",
+    },
+  ];
+
+  return (
+    <aside className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-3">
+      <p className="text-xs font-medium text-[var(--text-secondary)]">
+        Evidence language
+      </p>
+      <dl className="mt-3 space-y-3 border-t border-[var(--border)] pt-3">
+        {items.map((item) => (
+          <div key={item.evidence}>
+            <dt>
+              <EvidenceBadge evidence={item.evidence} />
+            </dt>
+            <dd className="mt-1 text-[11px] leading-4 text-[var(--text-secondary)]">
+              {item.definition}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </aside>
+  );
+}
+
 function Finding({
+  defaultExplanationOpen = false,
   finding,
-  onOpenProcess,
+  presentation = "finding",
 }: {
+  defaultExplanationOpen?: boolean;
   finding: FlowFinding;
-  onOpenProcess: (processId: string) => void;
+  presentation?: "finding" | "reach";
 }) {
+  const summary =
+    presentation === "reach" && finding.id.startsWith("reach-")
+      ? roleReachSummary(finding)
+      : finding.summary;
+
   return (
     <article className="px-4 py-5 sm:px-5">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
         <div className="min-w-0 max-w-3xl">
-          <EvidenceBadge evidence={finding.evidence} />
+          {presentation === "reach" ? (
+            <Badge tone="neutral">Documented reach</Badge>
+          ) : (
+            <EvidenceBadge evidence={finding.evidence} />
+          )}
           <h3 className="mt-2.5 text-[15px] font-semibold leading-6 tracking-[-0.01em] text-[var(--text)]">
             {finding.title}
           </h3>
           <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
-            {finding.summary}
+            {summary}
           </p>
+          {finding.id.startsWith("temporary-") ? (
+            <p className="mt-2 text-xs leading-5 text-[var(--text-tertiary)]">
+              Interim or acting coverage may be intentional. Review whether it
+              remains current and appropriately time-bounded.
+            </p>
+          ) : null}
         </div>
         {finding.processIds.length > 0 ? (
-          <Button
+          <Link
             className="self-start"
-            onClick={() => onOpenProcess(finding.processIds[0])}
-            size="sm"
-            variant="ghost"
+            href={`/explorer?process=${encodeURIComponent(finding.processIds[0])}`}
           >
-            Open in Explorer
+            <span className="inline-flex h-8 items-center justify-center gap-2 rounded-lg border border-transparent px-3 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]">
+            View affected process
             <ArrowIcon className="size-3.5" />
-          </Button>
+            </span>
+          </Link>
         ) : null}
       </div>
 
@@ -109,7 +181,10 @@ function Finding({
         ))}
       </dl>
 
-      <details className="group mt-4 border-t border-[var(--border)] pt-3">
+      <details
+        className="group mt-4 border-t border-[var(--border)] pt-3"
+        open={defaultExplanationOpen}
+      >
         <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-medium text-[var(--text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]">
           <span className="grid size-5 place-items-center rounded-md bg-[var(--surface-subtle)] text-[var(--text-tertiary)]">
             <InfoIcon className="size-3" />
@@ -132,11 +207,13 @@ function Finding({
 function FindingList({
   emptyMessage,
   findings,
-  onOpenProcess,
+  openFirstExplanation = false,
+  presentation = "finding",
 }: {
   emptyMessage: string;
   findings: FlowFinding[];
-  onOpenProcess: (processId: string) => void;
+  openFirstExplanation?: boolean;
+  presentation?: "finding" | "reach";
 }) {
   if (findings.length === 0) {
     return <EmptyState title={emptyMessage} />;
@@ -144,11 +221,12 @@ function FindingList({
 
   return (
     <Card className="divide-y divide-[var(--border)] overflow-hidden">
-      {findings.map((finding) => (
+      {findings.map((finding, index) => (
         <Finding
+          defaultExplanationOpen={openFirstExplanation && index === 0}
           finding={finding}
           key={finding.id}
-          onOpenProcess={onOpenProcess}
+          presentation={presentation}
         />
       ))}
     </Card>
@@ -207,55 +285,53 @@ function ResponsibilitySummary({ analysis }: { analysis: FlowAnalysisResult }) {
   ];
 
   return (
-    <Card className="overflow-hidden">
-      <div className="flex flex-col justify-between gap-3 border-b border-[var(--border)] px-4 py-4 sm:flex-row sm:items-start sm:px-5">
-        <div>
-          <EvidenceBadge evidence="Review recommended" />
-          <h3 className="mt-2 text-sm font-semibold text-[var(--text)]">
-            Step responsibility basis
-          </h3>
-          <p className="mt-1 max-w-2xl text-xs leading-5 text-[var(--text-secondary)]">
-            Missing step-level Roles inherit the Process owner before FLOW checks
-            clarity and staffing.
-          </p>
-        </div>
-        <p className="text-xs text-[var(--text-tertiary)]">
-          {rows.reduce((sum, row) => sum + row.count, 0)} Steps reviewed
+    <details className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)]">
+      <summary className="flex cursor-pointer list-none flex-col justify-between gap-3 px-4 py-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)] sm:flex-row sm:items-start sm:px-5">
+        <span>
+          <span className="block text-sm font-semibold text-[var(--text)]">
+            How FLOW evaluates step responsibility
+          </span>
+          <span className="mt-1 block max-w-2xl text-xs leading-5 text-[var(--text-secondary)]">
+            FLOW uses the responsible Role recorded on a Step. If none is
+            recorded, it checks the Process owner before evaluating Role status
+            and current coverage.
+          </span>
+        </span>
+        <span className="shrink-0 text-xs text-[var(--text-tertiary)]">
+          {rows.reduce((sum, row) => sum + row.count, 0)} steps reviewed
+        </span>
+      </summary>
+      <div className="border-t border-[var(--border)]">
+        <Table>
+          <TableHeader>
+            <tr>
+              <TableHeadCell>Responsibility</TableHeadCell>
+              <TableHeadCell className="w-20 text-right">Steps</TableHeadCell>
+              <TableHeadCell>Meaning</TableHeadCell>
+            </tr>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row) => (
+              <TableRow key={row.basis}>
+                <TableCell className="font-medium text-[var(--text)]">
+                  {row.basis}
+                </TableCell>
+                <TableCell className="text-right font-mono text-[var(--text)]">
+                  {row.count}
+                </TableCell>
+                <TableCell className="min-w-56">{row.meaning}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <p className="border-t border-[var(--border)] px-4 py-3 text-xs leading-5 text-[var(--text-secondary)] sm:px-5">
+          How this was determined: FLOW uses
+          ProcessStep.responsibleRoleId when present. When it is absent, FLOW
+          inherits Process.ownerRoleId, then evaluates the selected Role’s status
+          and current assignment at the visible as-of time.
         </p>
       </div>
-      <Table>
-        <TableHeader>
-          <tr>
-            <TableHeadCell>Responsibility</TableHeadCell>
-            <TableHeadCell className="w-20 text-right">Steps</TableHeadCell>
-            <TableHeadCell className="hidden sm:table-cell">Meaning</TableHeadCell>
-          </tr>
-        </TableHeader>
-        <TableBody>
-          {rows.map((row) => (
-            <TableRow key={row.basis}>
-              <TableCell className="font-medium text-[var(--text)]">
-                {row.basis}
-              </TableCell>
-              <TableCell className="text-right font-mono text-[var(--text)]">
-                {row.count}
-              </TableCell>
-              <TableCell className="hidden sm:table-cell">{row.meaning}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      <details className="border-t border-[var(--border)] px-4 py-3 sm:px-5">
-        <summary className="cursor-pointer text-xs font-medium text-[var(--text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]">
-          How this was determined
-        </summary>
-        <p className="mt-2 max-w-4xl text-xs leading-5 text-[var(--text-secondary)]">
-          FLOW uses ProcessStep.responsibleRoleId when present. When it is absent,
-          FLOW inherits Process.ownerRoleId, then evaluates the selected Role’s
-          status and current assignment at the visible as-of time.
-        </p>
-      </details>
-    </Card>
+    </details>
   );
 }
 
@@ -273,13 +349,7 @@ function AnalysisSection({
   );
 }
 
-export function FlowAnalysis({
-  analysis,
-  onOpenProcess,
-}: {
-  analysis: FlowAnalysisResult;
-  onOpenProcess: (processId: string) => void;
-}) {
+export function FlowAnalysis({ analysis }: { analysis: FlowAnalysisResult }) {
   const [concentration, setConcentration] =
     useState<ConcentrationKey>("roles");
   const [scenario, setScenario] = useState<ScenarioKey>("role-vacancy");
@@ -342,13 +412,13 @@ export function FlowAnalysis({
       <AnalysisSection>
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <SectionIntro
-            description="Current ownership, Role coverage, and responsibility findings based on the operating model as documented."
+            description="Ownership, Role coverage, and responsibility questions based on the operating model as documented."
             eyebrow="Coverage and clarity"
-            title="Current gaps"
+            title="Items to review"
           />
           <div className="shrink-0 text-left lg:text-right">
             <p className="text-[11px] text-[var(--text-tertiary)]">
-              Reproducible as of
+              Data current as of
             </p>
             <p className="mt-0.5 font-mono text-[11px] text-[var(--text-secondary)]">
               {formatAsOf(analysis.asOf)} UTC
@@ -357,18 +427,18 @@ export function FlowAnalysis({
         </div>
 
         <div className="mt-5 space-y-3">
-          <ResponsibilitySummary analysis={analysis} />
           <FindingList
             emptyMessage="No current ownership, coverage, or responsibility gaps were found."
             findings={analysis.currentGaps}
-            onOpenProcess={onOpenProcess}
+            openFirstExplanation
           />
+          <ResponsibilitySummary analysis={analysis} />
         </div>
       </AnalysisSection>
 
       <AnalysisSection>
         <SectionIntro
-          description="Documented operating-model reach, presented as inspectable evidence rather than a composite risk score."
+          description="Shows documented operational reach. It does not measure workload, performance, importance, or risk."
           eyebrow="Documented footprint"
           title="Concentrations"
         />
@@ -394,16 +464,16 @@ export function FlowAnalysis({
           <FindingList
             emptyMessage="No concentration evidence is available."
             findings={concentrationFindings}
-            onOpenProcess={onOpenProcess}
+            presentation="reach"
           />
         </div>
       </AnalysisSection>
 
       <AnalysisSection>
         <SectionIntro
-          description="Explore a deterministic change scenario. Direct impact, potential indirect impact, and review recommended remain distinct."
-          eyebrow="Scenario review"
-          title="What changes?"
+          description="See what might need review if a Role, System, or Process changes. Exploring a scenario does not change or approve anything."
+          eyebrow="What-if review"
+          title="Explore a what-if"
         />
 
         <Card className="mt-5 p-4 sm:p-5">
@@ -425,7 +495,13 @@ export function FlowAnalysis({
               </Select>
             </label>
             <label>
-              <FieldLabel>Operating-model record</FieldLabel>
+              <FieldLabel>
+                {scenario === "system-unavailable"
+                  ? "System to review"
+                  : scenario === "process-change"
+                    ? "Process to review"
+                    : "Role to review"}
+              </FieldLabel>
               <Select
                 onChange={(event) => setSelectedEntityId(event.target.value)}
                 value={effectiveEntityId}
@@ -440,8 +516,9 @@ export function FlowAnalysis({
           </div>
           <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-[var(--text-tertiary)]">
             <FlowIcon className="mt-0.5 size-3.5 shrink-0" />
-            Connectivity identifies a review set. It does not prove operational
-            failure or require a particular change.
+            What might need review if this changes? Connectivity identifies a
+            review set. It does not prove operational failure or require a
+            particular change.
           </p>
         </Card>
 
@@ -450,7 +527,6 @@ export function FlowAnalysis({
             <Card className="overflow-hidden">
               <Finding
                 finding={selectedFinding}
-                onOpenProcess={onOpenProcess}
               />
             </Card>
           ) : (

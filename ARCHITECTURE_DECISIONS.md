@@ -68,6 +68,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-025 | AI assists discovery and interpretation; humans approve truth and change | Accepted — product direction |
 | LAD-026 | Future concepts do not enter the schema before their lifecycles are designed | Accepted — product direction |
 | LAD-027 | Use a calm, neutral, typography-led product design system | Accepted — product direction |
+| LAD-028 | Organization appearance is constrained configuration layered over Lotura | Accepted — implemented |
 
 ## Decision records
 
@@ -370,6 +371,20 @@ Explorer and FLOW reuse the same buttons, inputs, selects, badges, chips, alerts
 **Alternatives considered:** Feature-specific styling; a colorful dashboard-first identity; dense enterprise chrome; decorative gradients and shadows; or adopting a third-party component library before Lotura’s interaction language is defined. These were rejected because they fragment meaning, add unnecessary visual weight, or outsource foundational product decisions.
 
 **Consequences and deferrals:** New interface work should compose the shared primitives and tokens rather than introduce local visual dialects. Future Home and Process Capture patterns are documented but not authorized by this decision. Dark mode, data visualization, theming, and a separately packaged component library remain deferred until real product needs justify them.
+
+### LAD-028 — Organization appearance is constrained configuration layered over Lotura
+
+**Decision:** Home, Explorer, and FLOW consume one server-resolved `WorkspaceConfiguration`. For the Version 0.2 Orientation & Comprehension Pass, the resolver is strictly non-persistent: the display name comes from `Organization.name`, the logo is a derived monogram with a Lotura-mark fallback, and the accent is Lotura evergreen.
+
+Workspace-brand CSS tokens are separate from Lotura-controlled semantic status and evidence tokens. Organization identity may not override error, warning, success, information, direct-impact, potential-indirect-impact, or review-recommended treatment. Accessibility contrast and Lotura’s layout, interaction patterns, language, and product behavior remain protected.
+
+> Configurable, not bespoke.
+
+**Why:** Organization identity helps people understand whose operating model they are viewing, but unrestricted theming would weaken accessibility, evidence consistency, and product coherence. A shared resolver gives every surface the same identity without inventing persistence before its lifecycle and authorization are approved.
+
+**Alternatives considered:** Environment-driven branding, customer-specific conditionals, route-local presentation values, unrestricted theming, and immediate database persistence with a broad Settings product. These were rejected because they create hidden configuration, divergent product logic, inconsistent surfaces, or unapproved writes and schema.
+
+**Consequences and deferrals:** A future separately approved Organization migration may add `displayName`, `logoUrl`, and `accentColor` as the smallest persistence change. An appearance Settings surface, authorization, upload/storage policy, contrast enforcement on writes, audit history, and wider Organization settings remain deferred. The Version 0.2 implementation introduces no schema, migration, environment value, database write, or customer-specific source.
 
 ## Intentionally deferred ideas register
 

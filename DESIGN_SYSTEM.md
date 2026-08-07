@@ -15,6 +15,7 @@ The visual metaphor is an organization’s blueprint: structured, connected, ins
 5. **Empty states should still feel complete.** A sparse workspace should appear intentional, useful, and ready—not unfinished.
 6. **Evidence is more important than spectacle.** FLOW findings favor concise language, ranked lists, tables, and expandable support over dashboard theatrics.
 7. **Reusable components preserve product meaning.** A badge, alert, panel, or input should behave and communicate consistently wherever it appears.
+8. **Configurable, not bespoke.** Organization identity may customize presentation, but Lotura retains control of interaction design, semantic colors, accessibility, evidence language, and product behavior.
 
 ## Visual character
 
@@ -72,6 +73,17 @@ Semantic colors are limited to:
 - informational: neutral explanatory state.
 
 Semantic colors should use muted foregrounds and pale surfaces. Bright saturation is reserved for rare, high-importance signals.
+
+#### Workspace identity and protected tokens
+
+Organization customization is configuration layered on top of the Lotura Design System, not unrestricted theming.
+
+- `workspace-accent`, `workspace-accent-hover`, `workspace-accent-subtle`, `workspace-accent-border`, `workspace-accent-foreground`, and `workspace-focus-ring` control workspace identity and active presentation.
+- success, warning, error, and informational tokens remain Lotura-controlled semantic colors.
+- `evidence-direct`, `evidence-indirect`, and `evidence-review` remain Lotura-controlled evidence tokens. Organization branding must never redefine them.
+- contrast utilities must validate any future persisted accent before it enters the resolved appearance.
+
+The Version 0.2 resolver is intentionally non-persistent. It accepts only `Organization.name`, derives a monogram or Lotura-mark fallback, and supplies the Lotura evergreen accent. It has no environment-driven branding, hidden settings source, or customer-specific conditional.
 
 ### Typography
 
@@ -182,18 +194,16 @@ Do not use speedometers, gauges, giant KPI tiles, visual risk theater, or arbitr
 
 **Direct impact**, **potential indirect impact**, and **review recommended** remain visually and semantically distinct. Color should support the wording, never replace it.
 
-## Future Home
+## Home
 
-The future Home experience should feel like opening a well-organized workspace rather than an analytics dashboard. It may include:
+Home should feel like opening a well-organized workspace rather than an analytics dashboard. Its initial orientation experience includes:
 
-- a restrained welcome;
-- global search;
-- recent Processes;
-- current gaps;
-- continue documenting; and
-- start a new Process.
+- a plain-language explanation of Lotura;
+- visible Organization, data-source, and operating-model-snapshot context;
+- direct paths to Explorer, FLOW Analysis, and the core vocabulary; and
+- an explicit explore-only trust statement.
 
-This design system does not create that route or functionality in v1.
+Search, recent Processes, current gaps, continued documentation, and Process capture remain future Home capabilities rather than dashboard requirements.
 
 ## Future Process Capture
 
@@ -233,3 +243,9 @@ Responsive behavior must preserve content and functionality rather than removing
 Design System v1 establishes tokens, reusable component primitives, the application shell, and a restyling of the existing read-only Explorer and FLOW Analysis.
 
 It does not add or change routes, database access, operating-model data, schema, migrations, analysis rules, authentication, editing, process capture, AI, deployment, or infrastructure.
+
+## Version 0.2 orientation amendment
+
+The Orientation & Comprehension Pass adds Home, Explorer, and FLOW routes; shared Organization appearance; canonical product language; explicit source and snapshot context; and comprehension-focused presentation copy. It remains read-only and reuses the Version 0.1 operating-model projection and FLOW calculations unchanged.
+
+The smallest planned persistence change for Organization appearance is a future, separately approved migration adding nullable `displayName`, `logoUrl`, and `accentColor` fields to Organization. That migration, an appearance Settings surface, writes, logo storage, and broader Organization settings are intentionally deferred. Future settings may include terminology preferences, Process naming conventions, default statuses, governance rules, workflow and approval settings, knowledge-state behavior, notification preferences, AI permissions, data-retention settings, integrations, and role and access configuration; none are implemented here.

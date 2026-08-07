@@ -25,7 +25,7 @@ export default function ErrorPage({
           <FlowIcon className="size-5" />
         </div>
         <p className="mt-5 text-xs font-medium text-[var(--text-tertiary)]">
-          Read-only workspace
+          Explore only — nothing you do here changes data.
         </p>
         <h1 className="mt-2 text-2xl font-semibold tracking-[-0.035em] text-[var(--text)]">
           The operating model is unavailable
