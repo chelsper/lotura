@@ -19,11 +19,38 @@ Run `nvm use` before installing dependencies if you use nvm.
 
 1. Install dependencies with `npm ci`.
 2. Copy `.env.example` to `.env.local`.
-3. Set `DATABASE_URL` to Neon's pooled connection string.
-4. Set `DATABASE_URL_UNPOOLED` to Neon's direct connection string.
-5. Start the application with `npm run dev`.
+3. Leave `LOTURA_EXPLORER_MODE=demo` to use the repository's fictional fixture without a database, or configure the live mode described below.
+4. Start the application with `npm run dev`.
 
-`DATABASE_URL` is used only by the server-side database client in `db/index.ts`. Never prefix either database variable with `NEXT_PUBLIC_`.
+Never prefix any database or Lotura source variable with `NEXT_PUBLIC_`.
+
+## Operating-model data sources
+
+The Process Explorer and FLOW Analysis receive the same normalized, read-only operating-model snapshot. Both the Neon adapter and the fixture produce the existing `ProcessExplorerSeed` input shape, so FLOW calculations remain pure and independent of the data source.
+
+Set `LOTURA_EXPLORER_MODE` to one of:
+
+- `demo`: load `db/seeds/process-explorer.json` without connecting to Neon.
+- `neon`: load one configured organization from Neon and fail closed if the read is unavailable.
+- `neon-with-demo-fallback`: load Neon normally, but show a clearly labelled fictional demo workspace after a recognized transient connection failure.
+
+Local Development defaults to `demo`. Vercel Preview and Production default to `neon`. A self-hosted deployment can declare `LOTURA_RUNTIME_ENV=development`, `preview`, or `production`; otherwise `NODE_ENV=production` is treated as Production.
+
+Production rejects `neon-with-demo-fallback` unless the separate server-only value `LOTURA_ALLOW_DEMO_FALLBACK=true` is present. Preview and Development may use the fallback mode without that opt-in. Missing configuration, an unknown organization, or invalid operating-model data never triggers fallback.
+
+### Organization scope
+
+`LOTURA_ORGANIZATION_ID` is required in either Neon mode. It is resolved only from server configuration and is applied to every organization-owned query. Users are selected only through Memberships in that organization. Version 0.1 intentionally has no client-controlled organization selector; until authentication exists, one deployment exposes one configured organization.
+
+The adapter sends the organization, roles, assignments, memberships and users, processes and steps, exceptions, systems and process-system links, and dependencies as one Neon HTTP batch. The batch uses a read-only, repeatable-read transaction. PostgreSQL's transaction timestamp becomes the shared visible UTC `as-of` time for both the Explorer and FLOW results. No shared result cache is used.
+
+### Runtime credential boundary
+
+`DATABASE_URL` is the pooled server-only runtime connection used by `db/index.ts`. Production and deployed environments are intended to use a dedicated Neon role limited to `CONNECT`, schema `USAGE`, and `SELECT` on Lotura tables. Application code contains only reads, but the database role is the enforcement boundary.
+
+`DATABASE_URL_UNPOOLED` is the direct owner/migration connection used only by explicit migration and seed commands. Runtime code does not read it and never substitutes it when `DATABASE_URL` is missing. Local Development may temporarily use its existing development connection as `DATABASE_URL` while a dedicated read-only role is being established; that exception must not be carried into deployed runtime configuration.
+
+If Neon is unavailable in `neon` mode, the route renders a sanitized unavailable state and offers a read retry. Raw SQL, connection details, and database errors are not sent to the interface. In explicitly permitted fallback mode, the interface displays an unambiguous demo-fallback warning.
 
 ## Database workflow
 
@@ -42,13 +69,15 @@ Generate and review migrations in a branch, then apply them as an explicit relea
 
 ### Fictional Process Explorer seed
 
-The Process Explorer renders the repository fixture in `db/seeds/process-explorer.json`, so the read-only experience works without writing to a database. To populate a new, isolated development database with the same fictional organization after applying migrations, run:
+Demo mode and automated tests retain the repository fixture in `db/seeds/process-explorer.json`, so the read-only experience works without writing to a database. To populate a new, isolated development database with the same fictional organization after applying migrations, run:
 
 ```bash
 npm run db:seed:explorer
 ```
 
-The seed command uses `DATABASE_URL_UNPOOLED`, runs in a transaction, and refuses to continue unless the application tables are empty. It must not be run against a shared or production database.
+The seed command uses `DATABASE_URL_UNPOOLED`, runs in a transaction, and refuses to continue unless the application tables are empty. It must not be run against a shared, preview, production, or retained migration-evidence branch. Seeding is a separate, manually approved provisioning action; it is never invoked by the application, build, or deployment.
+
+The minimum safe demo setup is a new isolated development branch with migrations `0000` through `0003`, one execution of the existing seed command, and a separate read-only runtime credential for subsequent Explorer requests. Do not place the owner/migration credential in the runtime `DATABASE_URL` for a deployed environment.
 
 ## Verification
 

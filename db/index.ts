@@ -11,6 +11,9 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL is not configured.");
 }
 
-const client = neon(databaseUrl);
+const client = neon(databaseUrl, {
+  isolationLevel: "RepeatableRead",
+  readOnly: true,
+});
 
 export const db = drizzle({ client, schema });

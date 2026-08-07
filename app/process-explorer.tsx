@@ -11,6 +11,7 @@ import type {
   ProcessExplorerData,
   SystemType,
 } from "@/lib/process-explorer-data";
+import type { OperatingModelSource } from "@/lib/process-explorer-source-policy.mjs";
 
 import { FlowAnalysis } from "./flow-analysis";
 
@@ -119,6 +120,14 @@ function getInitials(name: string) {
 
 function pluralize(count: number, singular: string, plural = `${singular}s`) {
   return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function formatAsOf(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "medium",
+    timeZone: "UTC",
+  }).format(new Date(value));
 }
 
 function ProcessListCard({ process, selected, onOpen }: { process: ExplorerProcess; selected: boolean; onOpen: () => void }) {
@@ -391,9 +400,11 @@ function DependencyList({ direction, dependencies, onOpenProcess }: { direction:
 export function ProcessExplorer({
   data,
   analysis,
+  source,
 }: {
   data: ProcessExplorerData;
   analysis: FlowAnalysisResult;
+  source: OperatingModelSource;
 }) {
   const [mode, setMode] = useState<"explorer" | "analysis">("explorer");
   const [query, setQuery] = useState("");
@@ -480,13 +491,26 @@ export function ProcessExplorer({
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="hidden items-center gap-2 rounded-full border border-[#d9e1da] bg-white px-3 py-1.5 text-xs font-medium text-[#61746e] sm:inline-flex"><span className="size-1.5 rounded-full bg-[#4d9a7e]" />Fictional workspace</span>
+            <div className="text-right">
+              <p className="flex items-center justify-end gap-2 text-xs font-semibold text-[#4f6860]">
+                <span className={`size-1.5 rounded-full ${source.kind === "neon" ? "bg-[#3f9375]" : source.kind === "demo-fallback" ? "bg-[#d78336]" : "bg-[#7187a3]"}`} />
+                {source.label}
+              </p>
+              <p className="mt-1 text-[10px] font-medium text-[#7a8c85]">
+                As of {formatAsOf(analysis.asOf)} UTC
+              </p>
+            </div>
             <span className="rounded-full bg-[#e9eeea] px-3 py-1.5 text-xs font-semibold text-[#536860]">Read only</span>
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-[1680px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        {source.notice ? (
+          <div className="mb-4 rounded-2xl border border-[#e9c99f] bg-[#fff8ed] px-4 py-3 text-sm font-medium text-[#7a4b1f]" role="alert">
+            {source.notice}
+          </div>
+        ) : null}
         <section className="relative overflow-hidden rounded-[28px] bg-[#133f36] px-5 py-7 text-white sm:px-8 sm:py-9">
           <div className="pointer-events-none absolute -right-20 -top-32 size-80 rounded-full border border-white/10" />
           <div className="pointer-events-none absolute -right-8 -top-12 size-52 rounded-full border border-white/10" />
