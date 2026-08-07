@@ -8,6 +8,27 @@
       "when": 1786061186062,
       "tag": "0000_initial_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786064039290,
+      "tag": "0001_identity_roles_and_assignments",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786064108122,
+      "tag": "0002_process_operating_model",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786064155857,
+      "tag": "0003_operational_relationships",
+      "breakpoints": true
     }
   ]
 }
