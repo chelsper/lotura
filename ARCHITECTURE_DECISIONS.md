@@ -67,6 +67,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-024 | Restructuring Intelligence produces review sets, not autonomous decisions | Accepted — product direction |
 | LAD-025 | AI assists discovery and interpretation; humans approve truth and change | Accepted — product direction |
 | LAD-026 | Future concepts do not enter the schema before their lifecycles are designed | Accepted — product direction |
+| LAD-027 | Use a calm, neutral, typography-led product design system | Accepted — product direction |
 
 ## Decision records
 
@@ -357,6 +358,18 @@ It should surface direct impact, potential indirect impact, review recommended, 
 **Alternatives considered:** Add nullable placeholders to Version 0.1; create generic JSON records for all future features; or let each feature add isolated tables as needed. These were rejected because they defer domain decisions into ambiguous storage.
 
 **Consequences and deferrals:** Authentication, observations, sources, acquisition, reconciliation, approvals, versions, improvements, measures, scenarios, organizational hierarchy, workload, and AI provenance remain intentionally postponed—not forgotten. Each requires a new or superseding decision before schema or infrastructure work begins.
+
+### LAD-027 — Use a calm, neutral, typography-led product design system
+
+**Decision:** Lotura uses one reusable visual language defined in [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md). The interface is neutral, spacious, typography-led, and restrained, with one evergreen accent and semantic color used only to communicate state. Desktop uses a simple left sidebar; existing mobile and tablet experiences remain usable through compact navigation and responsive stacking.
+
+Explorer and FLOW reuse the same buttons, inputs, selects, badges, chips, alerts, cards, panels, disclosures, tables, and search patterns. FLOW presents concise findings and evidence rather than BI-dashboard imagery or arbitrary scores.
+
+**Why:** Lotura is professional software that may remain open all day. A quiet and consistent system reduces cognitive load, protects evidence hierarchy, and lets an operating model feel like an organizational blueprint rather than CRM or marketing software.
+
+**Alternatives considered:** Feature-specific styling; a colorful dashboard-first identity; dense enterprise chrome; decorative gradients and shadows; or adopting a third-party component library before Lotura’s interaction language is defined. These were rejected because they fragment meaning, add unnecessary visual weight, or outsource foundational product decisions.
+
+**Consequences and deferrals:** New interface work should compose the shared primitives and tokens rather than introduce local visual dialects. Future Home and Process Capture patterns are documented but not authorized by this decision. Dark mode, data visualization, theming, and a separately packaged component library remain deferred until real product needs justify them.
 
 ## Intentionally deferred ideas register
 
