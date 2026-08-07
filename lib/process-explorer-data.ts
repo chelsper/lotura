@@ -1,3 +1,5 @@
+import { getRoleCoverage } from "@/lib/flow-analysis.mjs";
+
 export type ActiveInactiveStatus = "active" | "inactive";
 export type ProcessStatus = "draft" | "active" | "archived";
 export type AssignmentType = "permanent" | "interim" | "acting" | "backup";
@@ -187,6 +189,7 @@ function requiredFromMap<T>(map: Map<string, T>, key: string, label: string) {
 
 export function buildProcessExplorerData(
   seed: ProcessExplorerSeed,
+  asOf = new Date().toISOString(),
 ): ProcessExplorerData {
   const usersByKey = new Map(seed.users.map((item) => [item.key, item]));
   const membershipsByKey = new Map(
@@ -307,26 +310,18 @@ export function buildProcessExplorerData(
     );
   }
 
+  const coverageByRole = new Map(
+    getRoleCoverage(seed, asOf).map((item) => [item.roleId, item]),
+  );
+
   const roles = seed.roles.map<ExplorerRole>((role) => {
-    const currentAssignment = seed.roleAssignments.find(
-      (assignment) =>
-        assignment.roleKey === role.key &&
-        assignment.status === "active" &&
-        assignment.assignmentType !== "backup",
-    );
+    const currentAssignment = coverageByRole.get(role.key)?.primary ?? null;
 
     let currentAssignee: ExplorerRole["currentAssignee"] = null;
 
     if (currentAssignment) {
-      const membership = requiredFromMap(
-        membershipsByKey,
-        currentAssignment.membershipKey,
-        "membership",
-      );
-      const person = requiredFromMap(usersByKey, membership.userKey, "user");
-
       currentAssignee = {
-        name: person.displayName,
+        name: currentAssignment.personName,
         assignmentType: currentAssignment.assignmentType,
       };
     }
