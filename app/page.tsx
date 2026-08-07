@@ -1,17 +1,27 @@
 import { connection } from "next/server";
 
-import { buildFlowAnalysis } from "@/lib/flow-analysis.mjs";
-import { buildProcessExplorerData } from "@/lib/process-explorer-data";
-import { loadOperatingModel } from "@/lib/process-explorer-source";
+import { loadWorkspaceExperience } from "@/lib/workspace-experience";
 
-import { ProcessExplorer } from "./process-explorer";
+import { HomeOrientation } from "./home-orientation";
+import { WorkspaceShell } from "./workspace-shell";
 
 export default async function Home() {
   await connection();
 
-  const { asOf, seed, source } = await loadOperatingModel();
-  const data = buildProcessExplorerData(seed, asOf);
-  const analysis = buildFlowAnalysis(seed, asOf);
+  const { asOf, configuration, source } = await loadWorkspaceExperience();
 
-  return <ProcessExplorer analysis={analysis} data={data} source={source} />;
+  return (
+    <WorkspaceShell
+      activeView="home"
+      asOf={asOf}
+      configuration={configuration}
+      source={source}
+    >
+      <HomeOrientation
+        asOf={asOf}
+        configuration={configuration}
+        source={source}
+      />
+    </WorkspaceShell>
+  );
 }

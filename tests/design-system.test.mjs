@@ -18,6 +18,8 @@ test("Design System v1 defines the required neutral and semantic tokens", async 
     "--text",
     "--text-secondary",
     "--accent",
+    "--workspace-accent",
+    "--workspace-focus-ring",
     "--success",
     "--warning",
     "--error",
@@ -68,6 +70,25 @@ test("Explorer and FLOW both compose the shared design system", async () => {
   assert.match(flow, /from "\.\/ui\/primitives"/);
   assert.match(explorer, /ExpandableSection/);
   assert.match(flow, /Table/);
+});
+
+test("workspace branding cannot override semantic or evidence colors", async () => {
+  const css = await read("app/globals.css");
+
+  for (const token of [
+    "--workspace-accent",
+    "--success",
+    "--warning",
+    "--error",
+    "--evidence-direct",
+    "--evidence-indirect",
+    "--evidence-review",
+  ]) {
+    assert.match(css, new RegExp(`${token}:`));
+  }
+
+  assert.doesNotMatch(css, /--success:\s*var\(--workspace-accent/);
+  assert.doesNotMatch(css, /--evidence-review:\s*var\(--workspace-accent/);
 });
 
 test("FLOW preserves the approved evidence language", async () => {

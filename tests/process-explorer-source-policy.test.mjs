@@ -112,6 +112,7 @@ test("demo mode uses one injected request timestamp and never calls Neon", async
   assert.equal(clockCalls, 1);
   assert.equal(loaded.asOf, "2026-08-07T12:00:00.000Z");
   assert.equal(loaded.source.kind, "demo");
+  assert.equal(loaded.source.label, "Fictional sample organization");
   assert.equal(loaded.seed, seed);
 });
 
@@ -152,7 +153,11 @@ test("fallback is limited to recognized transient Neon failures", async () => {
     dependencies,
   );
   assert.equal(loaded.source.kind, "demo-fallback");
-  assert.match(loaded.source.notice, /fictional demo workspace/);
+  assert.equal(
+    loaded.source.label,
+    "Fictional sample organization — live data unavailable",
+  );
+  assert.match(loaded.source.notice, /fictional sample organization/);
 
   await assert.rejects(
     loadOperatingModelFromPolicy(configuration, {

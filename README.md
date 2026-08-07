@@ -9,6 +9,7 @@ Lotura is a Next.js App Router application backed by Neon Postgres and Drizzle O
 - [Design system](DESIGN_SYSTEM.md)
 - [Product roadmap](PRODUCT_ROADMAP.md)
 - [Architecture decisions](ARCHITECTURE_DECISIONS.md)
+- [Product language](LANGUAGE.md)
 - [Process Acquisition](PROCESS_ACQUISITION.md)
 - [Conflict Detection](CONFLICT_DETECTION.md)
 - [Restructuring Intelligence](RESTRUCTURING_INTELLIGENCE.md)
@@ -32,6 +33,14 @@ Run `nvm use` before installing dependencies if you use nvm.
 
 Never prefix any database or Lotura source variable with `NEXT_PUBLIC_`.
 
+## Read-only product routes
+
+- `/` introduces Lotura, identifies the Organization and data source, explains the operating-model snapshot, and defines the core vocabulary.
+- `/explorer` browses documented Processes and their Roles, Assignments, Steps, Exceptions, Systems, and Process dependencies.
+- `/flow` presents an evidence-based review of items to review, documented concentrations, and read-only what-if views.
+
+All three routes use one server-resolved `WorkspaceConfiguration` per request. In Version 0.2 that configuration is deliberately non-persistent: it uses `Organization.name`, a derived Organization monogram (or the Lotura mark), and the Lotura evergreen accent. It does not read branding from environment variables, hidden settings, customer-specific code, or database fields.
+
 ## Operating-model data sources
 
 The Process Explorer and FLOW Analysis receive the same normalized, read-only operating-model snapshot. Both the Neon adapter and the fixture produce the existing `ProcessExplorerSeed` input shape, so FLOW calculations remain pure and independent of the data source.
@@ -40,7 +49,7 @@ Set `LOTURA_EXPLORER_MODE` to one of:
 
 - `demo`: load `db/seeds/process-explorer.json` without connecting to Neon.
 - `neon`: load one configured organization from Neon and fail closed if the read is unavailable.
-- `neon-with-demo-fallback`: load Neon normally, but show a clearly labelled fictional demo workspace after a recognized transient connection failure.
+- `neon-with-demo-fallback`: load Neon normally, but show a clearly labelled fictional sample organization after a recognized transient connection failure.
 
 Local Development defaults to `demo`. Vercel Preview and Production default to `neon`. A self-hosted deployment can declare `LOTURA_RUNTIME_ENV=development`, `preview`, or `production`; otherwise `NODE_ENV=production` is treated as Production.
 
