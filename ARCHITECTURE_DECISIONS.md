@@ -69,6 +69,9 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-026 | Future concepts do not enter the schema before their lifecycles are designed | Accepted — product direction |
 | LAD-027 | Use a calm, neutral, typography-led product design system | Accepted — product direction |
 | LAD-028 | Organization appearance is constrained configuration layered over Lotura | Accepted — implemented |
+| LAD-029 | Private workspace access uses a replaceable provider boundary | Accepted — implemented preparation |
+| LAD-030 | Preparation state and sanitization remain explicit outside Version 0.1 | Accepted — implemented preparation |
+| LAD-031 | Dedicated deployments may supply constrained workspace appearance | Accepted — implemented preparation |
 
 ## Decision records
 
@@ -386,13 +389,49 @@ Workspace-brand CSS tokens are separate from Lotura-controlled semantic status a
 
 **Consequences and deferrals:** A future separately approved Organization migration may add `displayName`, `logoUrl`, and `accentColor` as the smallest persistence change. An appearance Settings surface, authorization, upload/storage policy, contrast enforcement on writes, audit history, and wider Organization settings remain deferred. The Version 0.2 implementation introduces no schema, migration, environment value, database write, or customer-specific source.
 
+### LAD-029 — Private workspace access uses a replaceable provider boundary
+
+**Decision:** Lotura supports a generic `public` access mode for the fictional demo and a temporary-password provider for preparation toward a tightly controlled private workspace. A deployed Neon workspace may not default to public access. Temporary credentials are verified with Argon2id in server-only Node code, while a short-lived signed session is checked optimistically by Proxy and authoritatively immediately before the operating-model loader.
+
+Proxy may validate a signed session and route a request, but it may not import the password verifier, initialize database code, or load the operating model. The data-access check remains the security boundary. Temporary sessions contain no password or operating-model data, expire after eight hours, and can be invalidated by rotating the server-only signing secret.
+
+**Why:** A private pilot needs a small fail-closed access boundary without coupling application identity to operating-model Users or Memberships. Separating the provider from access enforcement permits a later SAML or OpenID Connect provider to replace temporary credentials without redesigning Processes, Roles, Assignments, or organization scoping.
+
+**Alternatives considered:** Use operating-model Users as login accounts; protect only through Proxy; rely only on a platform password; create database sessions and a new schema; or expose a Neon workspace until SSO exists. These were rejected because they conflate identity domains, leave data checks too far from the source, require premature persistence, or create unacceptable exposure.
+
+**Consequences and deferrals:** Authentication changes session-cookie state only; it does not permit operating-model writes. The temporary provider does not authorize a private custom domain. Durable distributed login throttling or approved deployment protection, real credential creation, dedicated infrastructure, access review, incident response, and end-to-end security verification remain mandatory before exposure. SSO, multiple users, authorization roles, provisioning, recovery, MFA, and authentication audit persistence remain deferred.
+
+### LAD-030 — Preparation state and sanitization remain explicit outside Version 0.1
+
+**Decision:** Private snapshot preparation distinguishes `sanitized-working-draft`, `validated`, and `approved-for-pilot`. Each record retains source type, validator Role and date where applicable, open conflicts, and preparation state in an off-repository register. The visible snapshot uses the least-mature included state.
+
+Preparation state is not `Process.status` and is not persisted in Version 0.1. A structural validator may reject unknown fields, prohibited structures, invalid references, constraint violations, incomplete preparation coverage, and missing human-review attestation. It may not claim that arbitrary free text has been proven safe or sanitized.
+
+**Why:** Early visualization is useful before full institutional approval, but presenting incomplete observations as operational truth would violate Lotura’s evidence principles. Deterministic validation can enforce shape and known rules; meaning, classification, and contextual sensitivity still require accountable human judgment.
+
+**Alternatives considered:** Require full institutional approval before visualization; persist preparation state on Process; treat `draft` as an epistemic state; let a validator certify sanitization; or commit private intake files as fixtures. These were rejected because they slow learning unnecessarily, collapse distinct lifecycles, overstate automation, or weaken confidentiality.
+
+**Consequences and deferrals:** The validation-only format performs no database import or write. Private intake remains outside Git and requires human review. Observations, provenance, disagreements, reconciliation, approvals, version history, retention, and per-record confidentiality still require a future domain decision before persistence.
+
+### LAD-031 — Dedicated deployments may supply constrained workspace appearance
+
+**Decision:** A dedicated deployment may provide a display name, scope label, knowledge-state label, logo or monogram, and accent through validated server-only configuration. `Organization.name`, the derived monogram, and Lotura evergreen remain defaults. All surfaces consume the same `WorkspaceConfiguration`, and no component branches on an organization or customer name.
+
+This decision extends LAD-028 by allowing an explicit deployment configuration source for isolated private workspaces. It does not permit hidden customer behavior, unrestricted theming, database persistence, or a Settings surface.
+
+**Why:** A private workspace needs recognizable identity before appearance persistence and administration are justified. A bounded resolver provides that identity without introducing schema changes, writes, or organization-specific product logic.
+
+**Alternatives considered:** Keep every private workspace visually generic; hard-code institutional assets in components; commit customer data and conditions to the repository; or add appearance fields and administration immediately. These were rejected as confusing, bespoke, unsafe, or premature.
+
+**Consequences and deferrals:** Remote logo configuration requires an approved HTTPS asset host. Accent values must pass contrast validation and may not replace semantic or evidence tokens. Persistence, uploads, asset storage, appearance administration, authorization, and audit history remain deferred. No real organization values are committed by this preparation decision.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
 
 | Idea | Why deferred | Decision required before implementation |
 | --- | --- | --- |
-| Authentication and authorization | Version 0.1 first validated the read-only model; the JU Pilot requires explicit identity and access boundaries | Identity model, session architecture, Organization selection, roles/permissions, audit, and fail-closed behavior |
+| Full authentication and authorization | A replaceable temporary provider now prepares one private administrator; durable deployment protection and enterprise identity remain unresolved | SSO, multiple identities, provisioning, recovery, roles/permissions, audit, and access review |
 | Observations and provenance | Source, contributor, scope, privacy, timing, authority, and retention are not yet represented | Observation lifecycle and evidence-access decision |
 | Guided interviews and AI interviewing | Requires consent, approved scope, attribution, disclosure, and review | Acquisition, participant privacy, AI provenance, and authorization decisions |
 | Uploads, imports, Visio/PDF/flowchart parsing | Requires malware handling, source permissions, artifact retention, provenance, and conflict treatment | Artifact architecture, storage, security, and extraction decision |
@@ -426,6 +465,6 @@ The following ideas are recorded so postponement is visible and deliberate.
 
 ## Current implementation boundary
 
-The implemented baseline remains Version 0.1: a read-only Process Explorer and deterministic FLOW Analysis over the approved operating-model schema, backed by either a fictional fixture or a server-only, Organization-scoped Neon snapshot.
+The implemented baseline remains Version 0.1: a read-only Process Explorer and deterministic FLOW Analysis over the approved operating-model schema, backed by either a fictional fixture or a server-only, Organization-scoped Neon snapshot. Generic temporary authentication, constrained deployment appearance, and validation-only snapshot preparation are code readiness only; they do not authorize or create a private deployment.
 
 Creating this register does not approve or implement any deferred capability and does not change code, schema, migrations, databases, credentials, environments, deployments, or infrastructure.

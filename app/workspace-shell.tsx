@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 
+import { workspaceAccessContext } from "@/lib/authentication";
 import type { OperatingModelSource } from "@/lib/process-explorer-source-policy.mjs";
 import type { WorkspaceConfiguration } from "@/lib/workspace-configuration.mjs";
 
@@ -93,17 +94,44 @@ function WorkspaceIdentity({
         className="grid size-8 shrink-0 place-items-center rounded-[9px] bg-[var(--workspace-accent)] text-[11px] font-semibold text-[var(--workspace-accent-foreground)]"
         role="img"
       >
-        {appearance.logo.text}
+        {appearance.logo.kind === "image" ? (
+          // Configuration accepts an approved HTTPS asset host at runtime.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            alt=""
+            className="size-7 object-contain"
+            referrerPolicy="no-referrer"
+            src={appearance.logo.src}
+          />
+        ) : (
+          appearance.logo.text
+        )}
       </span>
       <div className="min-w-0">
         <p className="text-[11px] font-medium text-[var(--text-tertiary)]">
-          Organization
+          {appearance.scopeLabel ?? "Organization"}
         </p>
         <p className="truncate text-sm font-medium text-[var(--text)]">
           {appearance.displayName}
         </p>
       </div>
     </div>
+  );
+}
+
+async function WorkspaceSessionControl() {
+  const access = await workspaceAccessContext();
+  if (access.mode !== "temporary-password" || !access.authenticated) return null;
+
+  return (
+    <form action="/auth/logout" className="mt-3" method="post">
+      <button
+        className="text-[11px] font-medium text-[var(--text-secondary)] underline-offset-4 hover:text-[var(--text)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]"
+        type="submit"
+      >
+        Sign out
+      </button>
+    </form>
   );
 }
 
@@ -225,9 +253,24 @@ export function WorkspaceShell({
 
         <div className="border-t border-[var(--border)] px-5 py-4">
           <SourceStatus asOf={asOf} source={source} />
+          {configuration.knowledgeState ? (
+            <div className="mt-3">
+              <Badge
+                dot
+                tone={
+                  configuration.knowledgeState.tone === "informational"
+                    ? "info"
+                    : configuration.knowledgeState.tone
+                }
+              >
+                {configuration.knowledgeState.label}
+              </Badge>
+            </div>
+          ) : null}
           <p className="mt-3 text-[11px] font-medium leading-4 text-[var(--text-tertiary)]">
             Explore only — nothing you do here changes data.
           </p>
+          <WorkspaceSessionControl />
         </div>
       </aside>
 
@@ -235,9 +278,12 @@ export function WorkspaceShell({
         <header className="border-b border-[var(--border)] bg-[var(--surface)] lg:hidden">
           <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
             <WorkspaceIdentity configuration={configuration} />
-            <Badge dot tone={sourceTone(source)}>
-              {source.label}
-            </Badge>
+            <div className="flex shrink-0 flex-col items-end">
+              <Badge dot tone={sourceTone(source)}>
+                {source.label}
+              </Badge>
+              <WorkspaceSessionControl />
+            </div>
           </div>
           <div className="flex gap-1 overflow-x-auto px-3 pb-3 sm:px-5">
             <WorkspaceNavigation activeView={activeView} />
@@ -245,6 +291,21 @@ export function WorkspaceShell({
         </header>
 
         <main className="mx-auto max-w-[1560px] px-4 py-6 sm:px-6 sm:py-8 xl:px-8">
+          {configuration.knowledgeState ? (
+            <Alert
+              className="mb-5"
+              tone={
+                configuration.knowledgeState.tone === "informational"
+                  ? "info"
+                  : configuration.knowledgeState.tone
+              }
+            >
+              <p className="font-medium">{configuration.knowledgeState.label}</p>
+              <p className="mt-0.5 text-xs leading-5 opacity-90">
+                {configuration.knowledgeState.description}
+              </p>
+            </Alert>
+          ) : null}
           {source.notice ? (
             <Alert className="mb-5" tone="warning">
               {source.notice}

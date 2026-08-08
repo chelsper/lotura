@@ -9,6 +9,10 @@ import {
   hasAccessibleContrast,
   resolveWorkspaceConfiguration,
 } from "../lib/workspace-configuration.mjs";
+import {
+  resolveWorkspaceConfigurationOverrides,
+  WorkspaceConfigurationError,
+} from "../lib/workspace-configuration-policy.mjs";
 
 test("workspace appearance resolves only the Organization name and Lotura defaults", () => {
   const configuration = resolveWorkspaceConfiguration({
@@ -16,12 +20,14 @@ test("workspace appearance resolves only the Organization name and Lotura defaul
   });
 
   assert.equal(configuration.appearance.displayName, "Northstar Service Collective");
+  assert.equal(configuration.appearance.scopeLabel, null);
   assert.deepEqual(configuration.appearance.logo, {
     kind: "monogram",
     text: "NS",
     accessibleLabel: "Northstar Service Collective monogram",
   });
   assert.deepEqual(configuration.appearance.accent, LOTURA_DEFAULT_ACCENT);
+  assert.equal(configuration.knowledgeState, null);
 });
 
 test("workspace appearance uses the Lotura mark when no monogram can be derived", () => {
@@ -44,7 +50,7 @@ test("contrast utilities validate accessible workspace presentation", () => {
   assert.ok(contrastRatio("#ffffff", "#000000") > 20);
 });
 
-test("workspace configuration has no persistent or environment-driven source", async () => {
+test("workspace resolver remains pure with no persistent or direct environment source", async () => {
   const source = await readFile(
     new URL("../lib/workspace-configuration.mjs", import.meta.url),
     "utf8",
@@ -54,5 +60,58 @@ test("workspace configuration has no persistent or environment-driven source", a
     source,
     /process\.env|DATABASE_URL|drizzle|from ["'][^"']*db|fetch\(|customer/i,
   );
-  assert.match(source, /resolveWorkspaceConfiguration\(\{ organizationName \}\)/);
+  assert.match(source, /resolveWorkspaceConfiguration\(\{[\s\S]*organizationName,[\s\S]*overrides = \{\}/);
+});
+
+test("workspace appearance accepts constrained generic overrides", () => {
+  const overrides = resolveWorkspaceConfigurationOverrides({
+    LOTURA_WORKSPACE_ACCENT: "#123456",
+    LOTURA_WORKSPACE_DISPLAY_NAME: "Fictional Private Workspace",
+    LOTURA_WORKSPACE_KNOWLEDGE_STATE: "sanitized-working-draft",
+    LOTURA_WORKSPACE_LOGO_MONOGRAM: "FP",
+    LOTURA_WORKSPACE_SCOPE_LABEL: "Fictional exercise",
+  });
+  const configuration = resolveWorkspaceConfiguration({
+    organizationName: "Stored Fictional Organization",
+    overrides,
+  });
+
+  assert.equal(configuration.appearance.displayName, "Fictional Private Workspace");
+  assert.equal(configuration.appearance.scopeLabel, "Fictional exercise");
+  assert.equal(configuration.appearance.logo.kind, "monogram");
+  assert.equal(configuration.appearance.logo.text, "FP");
+  assert.equal(configuration.appearance.accent.base, "#123456");
+  assert.equal(
+    hasAccessibleContrast(
+      configuration.appearance.accent.foreground,
+      configuration.appearance.accent.base,
+    ),
+    true,
+  );
+  assert.equal(configuration.knowledgeState.label, "Sanitized working draft");
+  assert.match(configuration.knowledgeState.description, /Human sanitization review remains required/);
+});
+
+test("workspace environment policy rejects unsafe or ambiguous presentation values", () => {
+  assert.throws(
+    () =>
+      resolveWorkspaceConfigurationOverrides({
+        LOTURA_WORKSPACE_LOGO_URL: "http://example.test/logo.svg",
+      }),
+    WorkspaceConfigurationError,
+  );
+  assert.throws(
+    () =>
+      resolveWorkspaceConfigurationOverrides({
+        LOTURA_WORKSPACE_KNOWLEDGE_STATE: "official",
+      }),
+    WorkspaceConfigurationError,
+  );
+  assert.throws(
+    () =>
+      resolveWorkspaceConfigurationOverrides({
+        LOTURA_WORKSPACE_LOGO_MONOGRAM: "A B",
+      }),
+    WorkspaceConfigurationError,
+  );
 });

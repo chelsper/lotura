@@ -15,6 +15,8 @@ Lotura is a Next.js App Router application backed by Neon Postgres and Drizzle O
 - [Restructuring Intelligence](RESTRUCTURING_INTELLIGENCE.md)
 - [Continuous Improvement product direction](docs/product-vision.md)
 - [Future Continuous Improvement domain model](docs/domain-model.md)
+- [Private workspace preparation](docs/private-workspace-preparation.md)
+- [Validation-only snapshot format](docs/operating-model-import.md)
 
 ## Requirements
 
@@ -39,7 +41,31 @@ Never prefix any database or Lotura source variable with `NEXT_PUBLIC_`.
 - `/explorer` browses documented Processes and their Roles, Assignments, Steps, Exceptions, Systems, and Process dependencies.
 - `/flow` presents an evidence-based review of items to review, documented concentrations, and read-only what-if views.
 
-All three routes use one server-resolved `WorkspaceConfiguration` per request. In Version 0.2 that configuration is deliberately non-persistent: it uses `Organization.name`, a derived Organization monogram (or the Lotura mark), and the Lotura evergreen accent. It does not read branding from environment variables, hidden settings, customer-specific code, or database fields.
+All routes use one server-resolved `WorkspaceConfiguration` per request. The configuration remains non-persistent: it uses `Organization.name`, a derived Organization monogram (or the Lotura mark), and the Lotura evergreen accent by default. A dedicated deployment may provide validated display name, scope, knowledge-state label, logo, monogram, and accent overrides through server-only configuration. Components never contain customer-specific presentation logic, and branding cannot override semantic or evidence colors.
+
+## Workspace access modes
+
+`LOTURA_AUTH_MODE` supports:
+
+- `public`: permitted for the fictional demo. Production and Preview Neon workspaces reject public mode.
+- `temporary-password`: one temporary administrator credential verified server-side with Argon2id and an eight-hour signed session.
+
+Development and deployed demo mode remain public when the value is omitted. A deployed Neon workspace fails configuration validation unless `temporary-password` is explicit and its server-only identifier, Argon2id hash, and base64url session secret are present.
+
+`proxy.ts` performs signed-session routing only. It does not import Argon2, database code, or operating-model code. The authoritative check runs in `loadWorkspaceExperience()` before `loadOperatingModel()`, so a missing or invalid session cannot initiate a Neon read.
+
+Temporary authentication is preparation for a future private deployment, not authorization to expose one. Durable distributed login throttling or approved deployment-level protection must be configured and verified before a private custom domain becomes accessible. SSO remains the intended replacement.
+
+Optional server-only presentation variables are:
+
+- `LOTURA_WORKSPACE_DISPLAY_NAME`
+- `LOTURA_WORKSPACE_SCOPE_LABEL`
+- `LOTURA_WORKSPACE_KNOWLEDGE_STATE`
+- `LOTURA_WORKSPACE_LOGO_URL`
+- `LOTURA_WORKSPACE_LOGO_MONOGRAM`
+- `LOTURA_WORKSPACE_ACCENT`
+
+Knowledge state is limited to `sanitized-working-draft`, `validated`, and `approved-for-pilot`. It describes preparation confidence and permitted use; it is not persisted and does not replace `Process.status`.
 
 ## Operating-model data sources
 
@@ -95,6 +121,18 @@ npm run db:seed:explorer
 The seed command uses `DATABASE_URL_UNPOOLED`, runs in a transaction, and refuses to continue unless the application tables are empty. It must not be run against a shared, preview, production, or retained migration-evidence branch. Seeding is a separate, manually approved provisioning action; it is never invoked by the application, build, or deployment.
 
 The minimum safe demo setup is a new isolated development branch with migrations `0000` through `0003`, one execution of the existing seed command, and a separate read-only runtime credential for subsequent Explorer requests. Do not place the owner/migration credential in the runtime `DATABASE_URL` for a deployed environment.
+
+### Validation-only private snapshot preparation
+
+Validate the structure of an off-repository snapshot without connecting to a database:
+
+```bash
+npm run snapshot:validate -- /absolute/path/to/snapshot.json
+```
+
+This command is not an importer. It reads JSON, checks the approved field vocabulary, references, Version 0.1 constraints, preparation-register coverage, and human-review attestation, then prints counts and findings. It imports no database module, makes no network request, and writes nothing.
+
+Passing validation does not prove arbitrary free text is safe or sanitized. Human review remains mandatory. See [Private workspace preparation](docs/private-workspace-preparation.md) and the [snapshot format](docs/operating-model-import.md).
 
 ## Verification
 
