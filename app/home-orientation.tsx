@@ -3,59 +3,19 @@ import Link from "next/link";
 import type { OperatingModelSource } from "@/lib/process-explorer-source-policy.mjs";
 import type { WorkspaceConfiguration } from "@/lib/workspace-configuration.mjs";
 
-import {
-  ArrowIcon,
-  ExplorerIcon,
-  FlowIcon,
-  InfoIcon,
-  LayersIcon,
-} from "./ui/icons";
+import { ArrowIcon, InfoIcon, LayersIcon } from "./ui/icons";
 import { Badge } from "./ui/primitives";
 import { formatOperatingModelTimestamp } from "./workspace-shell";
 
 const vocabulary = [
-  {
-    term: "Process",
-    definition: "Repeatable work performed to achieve an outcome.",
-    example: "Receive a service request",
-  },
-  {
-    term: "Role",
-    definition:
-      "Durable organizational responsibility that exists independently of one person.",
-    example: "Client Services Lead",
-  },
-  {
-    term: "Assignment",
-    definition:
-      "The person currently filling a Role, including permanent, interim, acting, or backup coverage.",
-    example: "Amara Patel currently fills the Client Services Lead Role",
-  },
-  {
-    term: "System",
-    definition:
-      "Technology, an external service, or an operational record used by the work.",
-    example: "Relay CRM",
-  },
-  {
-    term: "Exception",
-    definition:
-      "A legitimate alternate path used when the standard Process does not apply.",
-    example: "Required information is missing",
-  },
-  {
-    term: "Dependency",
-    definition:
-      "A connection showing how one Process relies on, supplies, or triggers another.",
-    example: "Receiving a request triggers eligibility assessment",
-  },
-  {
-    term: "FLOW",
-    definition:
-      "An evidence-based review of the operating model for gaps, concentrations, and possible change impact.",
-    example: "Reviewing acting coverage before it becomes outdated",
-  },
-];
+  ["Process", "Repeatable work performed to achieve an outcome."],
+  ["Role", "Durable responsibility that exists independently of one person."],
+  ["Assignment", "The person currently filling a Role."],
+  ["System", "Technology, a service, or a record used by the work."],
+  ["Exception", "A legitimate alternate path when the usual Process does not apply."],
+  ["Dependency", "A connection showing how one Process relates to another."],
+  ["FLOW", "An evidence-based review of the connected operating model."],
+] as const;
 
 function sourceTone(source: OperatingModelSource) {
   if (source.kind === "neon") return "success" as const;
@@ -72,164 +32,113 @@ export function HomeOrientation({
   configuration: WorkspaceConfiguration;
   source: OperatingModelSource;
 }) {
+  const isFictionalSample = source.kind !== "neon";
+
   return (
     <div className="mx-auto max-w-6xl">
-      <section className="border-b border-[var(--border)] pb-8 sm:pb-10">
-        <p className="flex items-center gap-2 text-xs font-medium text-[var(--text-tertiary)]">
-          <LayersIcon className="size-3.5" />
-          Organization workspace
-        </p>
-        <h1 className="mt-4 max-w-4xl text-[34px] font-semibold leading-[1.08] tracking-[-0.05em] text-[var(--text)] sm:text-[46px]">
-          Understand how your organization works.
-        </h1>
-        <p className="mt-4 max-w-3xl text-[15px] leading-7 text-[var(--text-secondary)] sm:text-base">
-          Lotura shows how work connects across processes, roles, people,
-          systems, exceptions, and dependencies—so you can understand
-          responsibility, find gaps, and review change before acting.
-        </p>
+      <section className="grid min-h-[calc(100vh-7rem)] content-center gap-10 py-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.65fr)] lg:gap-16 lg:py-12">
+        <div>
+          <p className="flex items-center gap-2 text-xs font-medium text-[var(--text-tertiary)]">
+            <LayersIcon className="size-3.5" />
+            Organization workspace
+          </p>
+          <h1 className="mt-5 max-w-4xl text-[42px] font-semibold leading-[1.04] tracking-[-0.055em] text-[var(--text)] sm:text-[58px]">
+            See how your organization really works.
+          </h1>
+          <p className="mt-5 max-w-3xl text-base leading-7 text-[var(--text-secondary)] sm:text-[17px]">
+            Lotura connects work, ownership, people, systems, exceptions, and
+            dependencies—so you can understand the organization before
+            changing it.
+          </p>
 
-        <div className="mt-7 grid gap-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-4 sm:grid-cols-3 sm:p-5">
-          <div>
-            <p className="text-[11px] font-medium text-[var(--text-tertiary)]">
-              Organization
-            </p>
-            <p className="mt-1 text-sm font-semibold text-[var(--text)]">
-              {configuration.appearance.displayName}
-            </p>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Link
+              className="group inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-[var(--workspace-accent)] px-4 text-sm font-medium text-[var(--workspace-accent-foreground)] transition-colors hover:bg-[var(--workspace-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)] focus-visible:ring-offset-2"
+              href="/overview"
+            >
+              See {configuration.appearance.displayName}’s organization
+              <ArrowIcon className="size-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+            <a
+              className="inline-flex h-11 items-center gap-2 rounded-[10px] px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]"
+              href="#how-lotura-works"
+            >
+              <InfoIcon className="size-4" />
+              See how Lotura works
+            </a>
           </div>
-          <div>
+        </div>
+
+        <aside className="self-center rounded-[16px] border border-[var(--border)] bg-[var(--surface)] p-5 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-[11px] font-medium text-[var(--text-tertiary)]">
-              Data source
+              You are viewing
             </p>
-            <div className="mt-1">
-              <Badge dot tone={sourceTone(source)}>
-                {source.label}
-              </Badge>
-            </div>
+            <Badge dot tone={sourceTone(source)}>
+              {source.label}
+            </Badge>
           </div>
-          <div>
-            <p className="text-[11px] font-medium text-[var(--text-tertiary)]">
-              Operating-model snapshot
+          <p className="mt-3 text-lg font-semibold tracking-[-0.025em] text-[var(--text)]">
+            {configuration.appearance.displayName}
+          </p>
+          {isFictionalSample ? (
+            <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
+              This sample follows a service request from intake through
+              eligibility, delivery, billing, and recovery.
             </p>
-            <p className="mt-1 font-mono text-[11px] leading-5 text-[var(--text-secondary)]">
+          ) : (
+            <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
+              This workspace is showing the connected operating model from the
+              live database.
+            </p>
+          )}
+          <div className="mt-5 border-t border-[var(--border)] pt-4">
+            <p className="text-[11px] text-[var(--text-tertiary)]">
+              Data current as of
+            </p>
+            <p className="mt-1 text-xs text-[var(--text-secondary)]">
               {formatOperatingModelTimestamp(asOf)} UTC
             </p>
+            <p className="mt-3 text-[11px] font-medium leading-5 text-[var(--text-tertiary)]">
+              Explore only — nothing you do here changes data.
+            </p>
           </div>
-        </div>
-        <p className="mt-3 text-xs text-[var(--text-tertiary)]">
-          Explore only — nothing you do here changes data.
-        </p>
-      </section>
-
-      <section aria-labelledby="start-heading" className="py-8 sm:py-10">
-        <div className="max-w-2xl">
-          <p className="text-xs font-medium text-[var(--text-tertiary)]">
-            Start here
-          </p>
-          <h2
-            className="mt-1 text-2xl font-semibold tracking-[-0.035em] text-[var(--text)]"
-            id="start-heading"
-          >
-            Choose what you want to understand
-          </h2>
-        </div>
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
-          <Link
-            className="group rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5 transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]"
-            href="/explorer"
-          >
-            <ExplorerIcon className="size-5 text-[var(--workspace-accent)]" />
-            <h3 className="mt-4 text-base font-semibold text-[var(--text)]">
-              Explore a process
-            </h3>
-            <p className="mt-1.5 text-sm leading-6 text-[var(--text-secondary)]">
-              See who owns the work, how it is performed, what it uses, and
-              which processes it depends on.
-            </p>
-            <span className="mt-4 flex items-center gap-1.5 text-xs font-medium text-[var(--workspace-accent)]">
-              Open Explorer
-              <ArrowIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-            </span>
-          </Link>
-
-          <Link
-            className="group rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5 transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]"
-            href="/flow"
-          >
-            <FlowIcon className="size-5 text-[var(--workspace-accent)]" />
-            <h3 className="mt-4 text-base font-semibold text-[var(--text)]">
-              Review FLOW findings
-            </h3>
-            <p className="mt-1.5 text-sm leading-6 text-[var(--text-secondary)]">
-              See evidence-based items that may deserve attention before
-              something changes.
-            </p>
-            <span className="mt-4 flex items-center gap-1.5 text-xs font-medium text-[var(--workspace-accent)]">
-              Open FLOW Analysis
-              <ArrowIcon className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-            </span>
-          </Link>
-
-          <a
-            className="group rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-5 transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]"
-            href="#how-lotura-works"
-          >
-            <InfoIcon className="size-5 text-[var(--workspace-accent)]" />
-            <h3 className="mt-4 text-base font-semibold text-[var(--text)]">
-              See how Lotura works
-            </h3>
-            <p className="mt-1.5 text-sm leading-6 text-[var(--text-secondary)]">
-              Learn the core terms used throughout the operating model.
-            </p>
-            <span className="mt-4 flex items-center gap-1.5 text-xs font-medium text-[var(--workspace-accent)]">
-              Learn the vocabulary
-              <ArrowIcon className="size-3.5 rotate-90 transition-transform group-hover:translate-y-0.5" />
-            </span>
-          </a>
-        </div>
+        </aside>
       </section>
 
       <details
         className="group scroll-mt-6 rounded-[14px] border border-[var(--border)] bg-[var(--surface)]"
         id="how-lotura-works"
-        open
       >
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-[14px] px-5 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)] sm:px-6">
           <span>
             <span className="block text-xs font-medium text-[var(--text-tertiary)]">
-              Core vocabulary
+              A quick guide
             </span>
             <span className="mt-1 block text-xl font-semibold tracking-[-0.025em] text-[var(--text)]">
               How Lotura works
             </span>
             <span className="mt-1.5 block max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
-              Lotura models the organization through connected records. Each
-              record answers a different question about how work gets done.
+              Lotura connects the records that explain how an organization gets
+              work done.
             </span>
           </span>
           <span className="text-xs font-medium text-[var(--workspace-accent)] group-open:hidden">
-            Show terms
+            Show the terms
           </span>
           <span className="hidden text-xs font-medium text-[var(--text-tertiary)] group-open:block">
-            Hide terms
+            Hide the terms
           </span>
         </summary>
-        <div className="border-t border-[var(--border)] px-5 py-5 sm:px-6">
-          <div className="grid gap-px overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--border)] sm:grid-cols-2">
-            {vocabulary.map((item) => (
-              <article className="bg-[var(--surface)] p-4" key={item.term}>
-                <h3 className="text-sm font-semibold text-[var(--text)]">
-                  {item.term}
-                </h3>
-                <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-                  {item.definition}
-                </p>
-                <p className="mt-2 text-[11px] leading-5 text-[var(--text-tertiary)]">
-                  Example: {item.example}
-                </p>
-              </article>
-            ))}
-          </div>
+        <div className="grid gap-px border-t border-[var(--border)] bg-[var(--border)] sm:grid-cols-2 lg:grid-cols-3">
+          {vocabulary.map(([term, definition]) => (
+            <article className="bg-[var(--surface)] p-4" key={term}>
+              <h2 className="text-sm font-semibold text-[var(--text)]">{term}</h2>
+              <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+                {definition}
+              </p>
+            </article>
+          ))}
         </div>
       </details>
     </div>

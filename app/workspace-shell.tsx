@@ -7,10 +7,15 @@ import type { WorkspaceConfiguration } from "@/lib/workspace-configuration.mjs";
 import { ExplorerIcon, FlowIcon, HomeIcon } from "./ui/icons";
 import { Alert, Badge, cn } from "./ui/primitives";
 
-export type WorkspaceView = "home" | "explorer" | "flow";
+export type WorkspaceView = "overview" | "explorer" | "flow";
 
 const navigation = [
-  { id: "home" as const, href: "/", icon: HomeIcon, label: "Home" },
+  {
+    id: "overview" as const,
+    href: "/overview",
+    icon: HomeIcon,
+    label: "Overview",
+  },
   {
     id: "explorer" as const,
     href: "/explorer",
@@ -21,14 +26,14 @@ const navigation = [
     id: "flow" as const,
     href: "/flow",
     icon: FlowIcon,
-    label: "FLOW Analysis",
+    label: "FLOW",
   },
 ];
 
 export function formatOperatingModelTimestamp(value: string) {
   return new Intl.DateTimeFormat("en-US", {
     dateStyle: "medium",
-    timeStyle: "medium",
+    timeStyle: "short",
     timeZone: "UTC",
   }).format(new Date(value));
 }
@@ -39,7 +44,11 @@ function sourceTone(source: OperatingModelSource) {
   return "neutral" as const;
 }
 
-function WorkspaceNavigation({ activeView }: { activeView: WorkspaceView }) {
+function WorkspaceNavigation({
+  activeView,
+}: {
+  activeView?: WorkspaceView;
+}) {
   return (
     <nav
       aria-label="Product"
@@ -111,9 +120,9 @@ function SourceStatus({
         {source.label}
       </Badge>
       <p className="mt-2 text-[11px] leading-4 text-[var(--text-tertiary)]">
-        Operating-model snapshot
+        Data current as of
       </p>
-      <p className="mt-0.5 font-mono text-[10px] leading-4 text-[var(--text-secondary)]">
+      <p className="mt-0.5 text-[11px] leading-4 text-[var(--text-secondary)]">
         {formatOperatingModelTimestamp(asOf)} UTC
       </p>
     </div>
@@ -171,7 +180,7 @@ export function WorkspaceShell({
   configuration,
   source,
 }: {
-  activeView: WorkspaceView;
+  activeView?: WorkspaceView;
   asOf: string;
   children: ReactNode;
   configuration: WorkspaceConfiguration;

@@ -8,54 +8,70 @@ async function read(path) {
   return readFile(new URL(path, root), "utf8");
 }
 
-test("Home, Explorer, and FLOW are distinct orientation routes", async () => {
+test("Overview, Explorer, Process Detail, and FLOW are distinct story routes", async () => {
   await Promise.all([
     access(new URL("app/page.tsx", root)),
+    access(new URL("app/overview/page.tsx", root)),
     access(new URL("app/explorer/page.tsx", root)),
+    access(new URL("app/explorer/[processId]/page.tsx", root)),
     access(new URL("app/flow/page.tsx", root)),
   ]);
 
   const shell = await read("app/workspace-shell.tsx");
-  assert.match(shell, /href: "\/".*label: "Home"/s);
+  assert.match(shell, /href: "\/overview".*label: "Overview"/s);
   assert.match(shell, /href: "\/explorer".*label: "Explorer"/s);
-  assert.match(shell, /href: "\/flow".*label: "FLOW Analysis"/s);
+  assert.match(shell, /href: "\/flow".*label: "FLOW"/s);
+  assert.doesNotMatch(shell, /label: "Home"/);
+  assert.doesNotMatch(shell, /label: "Operating Model"/);
 });
 
 test("Home answers what Lotura is, what is shown, and what to do next", async () => {
   const home = await read("app/home-orientation.tsx");
 
   for (const copy of [
-    "Understand how your organization works.",
+    "See how your organization really works.",
+    "Lotura connects work, ownership, people, systems, exceptions, and",
     "Organization workspace",
-    "Operating-model snapshot",
+    "Data current as of",
     "Explore only — nothing you do here changes data.",
-    "Explore a process",
-    "Review FLOW findings",
+    "See {configuration.appearance.displayName}’s organization",
+    "This sample follows a service request from intake through",
     "See how Lotura works",
-    "Lotura models the organization through connected records.",
   ]) {
     assert.match(home, new RegExp(copy.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
 });
 
-test("Explorer uses the canonical ownership, responsibility, exception, and dependency language", async () => {
-  const explorer = await read("app/process-explorer.tsx");
+test("Explorer browses while Process Detail explains accountability and context", async () => {
+  const [explorer, detail] = await Promise.all([
+    read("app/process-explorer.tsx"),
+    read("app/process-detail.tsx"),
+  ]);
 
   for (const copy of [
-    "Owner role:",
-    "Responsible role:",
-    "Documented process",
-    "Process dependencies",
-    "Processes this work relies on.",
-    "Processes that receive or follow this work.",
-    "Tap a process to view its details below.",
-    "View connected process",
+    "Owner Role:",
+    "Local process dependencies",
+    "Tap a process to preview its dependencies below, then choose View process.",
+    "View process",
   ]) {
     assert.match(explorer, new RegExp(copy.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
 
-  assert.doesNotMatch(explorer, />Connections</);
-  assert.doesNotMatch(explorer, /Read-only definition/);
+  for (const copy of [
+    "Purpose",
+    "Owner Role",
+    "Current assignment",
+    "Responsibilities remain. People change.",
+    "Systems used",
+    "Exceptions",
+    "Process dependencies",
+    "Responsible Role:",
+  ]) {
+    assert.match(detail, new RegExp(copy.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+
+  assert.match(explorer, /href=\{processHref\(process\.id\)\}/);
+  assert.match(detail, /href=\{processHref\(dependency\.processId\)\}/);
 });
 
 test("FLOW frames analysis as review and preserves distinct evidence language", async () => {
@@ -66,12 +82,19 @@ test("FLOW frames analysis as review and preserves distinct evidence language", 
   ]);
 
   assert.match(page, /Evidence-based review/);
-  assert.match(page, /Items to review/);
   assert.match(flow, /Explore a what-if/);
-  assert.match(flow, /does not change or approve anything/);
+  assert.match(flow, /Exploring this scenario changes and approves nothing\./);
   assert.match(flow, /Documented reach/);
   assert.match(flow, /does not measure workload, performance, importance, or risk/);
   assert.match(flow, /open=\{defaultExplanationOpen\}/);
+  assert.ok(
+    flow.indexOf('title="Items to review"') <
+      flow.indexOf('title="Explore a what-if"'),
+  );
+  assert.ok(
+    flow.indexOf('title="Explore a what-if"') <
+      flow.indexOf('title="Concentrations"'),
+  );
 
   for (const evidence of [
     "Direct impact",

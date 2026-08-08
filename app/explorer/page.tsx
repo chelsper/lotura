@@ -29,7 +29,7 @@ export default async function ExplorerPage({
       source={source}
     >
       <WorkspacePageHeader
-        description="Choose a process to see who owns it, how the work is performed, which systems and exceptions shape it, and which processes it relies on or affects."
+        description="Browse, search, and filter the organization’s documented Processes. Select one to preview its immediate dependencies, then open its dedicated page for the complete picture."
         eyebrow={
           <>
             <LayersIcon className="size-3.5" />
@@ -41,7 +41,7 @@ export default async function ExplorerPage({
           { label: "Roles", value: data.roles.length },
           { label: "Systems", value: data.systems.length },
         ]}
-        title="Process Explorer"
+        title="Explorer"
       />
       <ProcessExplorer data={data} initialProcessId={initialProcessId} />
     </WorkspaceShell>

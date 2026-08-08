@@ -8,10 +8,13 @@ Use plain language before implementation or database terminology. Capitalize nam
 | --- | --- | --- | --- |
 | Lotura | An organizational intelligence platform for understanding and safely evolving how work gets done. | “Open Lotura to review how service intake connects to eligibility.” | workflow app, SOP wiki, task manager |
 | Organization | The institution whose operating model is being viewed. | Northstar Service Collective | Workspace when it means the Organization; tenant in primary UI |
+| Organization overview | The orientation surface that explains the Organization as a connected operating model and recommends where to begin. | “Start with the Organization overview.” | dashboard, organization dashboard, operating-model page |
 | Operating model | The connected Processes, Roles, people, Assignments, Systems, Exceptions, and Dependencies that describe how the Organization works. | The intake-to-delivery operating model | workflow library, process repository |
 | Operating-model snapshot | The consistent set of records Lotura is showing at one visible time. | Data current as of Aug 7, 2026, 2:30 PM UTC | last updated when that is not what the timestamp means; independent timestamps per panel |
 | Documented process | A Process definition present in the operating-model snapshot. The phrase does not imply approval unless approval data exists. | Client intake is a documented process. | approved process, read-only definition |
 | Process | Repeatable work performed to achieve an outcome. | Receive a service request | workflow, SOP, procedure when Process is meant |
+| Explorer | The place to browse, search, filter, and follow connections among documented Processes. | Filter Explorer to Processes using Relay CRM. | process detail, process library when connected context is meant |
+| Process detail | The complete understanding surface for one Process, including purpose, accountability, context, dependencies, and Steps. | Open Receive a service request to understand its connected context. | Explorer when one Process is meant; SOP page |
 | Step | One ordered part of a Process definition. | Confirm the requester’s contact information. | task when no work execution exists |
 | Owner role | The durable Role intended to hold responsibility for a Process. | Owner role: Client Services Lead | owner, process owner person, assignee |
 | Responsible role | The Role responsible for a Step, explicitly recorded or inherited from the Process owner. | Responsible role: Intake Coordinator | step owner person, task assignee |
@@ -29,6 +32,7 @@ Use plain language before implementation or database terminology. Capitalize nam
 | Potential indirect impact | A connected part of the operating model may also be affected. | A downstream Process may need review after an upstream change. | direct impact, guaranteed consequence |
 | Review recommended | The model identifies a question that needs human judgment or more evidence. | Review whether acting coverage remains current. | required change, failed control, automatic recommendation |
 | What-if | A read-only exploration of what might need review if a Role, System, or Process changes. | What if Relay CRM becomes unavailable? | simulation when outcomes are not predicted; approved scenario |
+| Documented reach | A neutral description of how many recorded operating-model relationships touch a Role, System, or Process. | This Role owns four Processes and is responsible for eleven Steps. | workload, performance, importance, risk score |
 | Fictional sample organization | Clearly labelled fictional operating-model data used for demonstration or tests. | Northstar appears as a Fictional sample organization in demo mode. | fictional demo, live sample, customer data |
 | Live database | The configured Organization’s current read-only Neon snapshot. | Data source: Live database | production data when environment and approval state are unknown |
 | Explore only | A trust statement that the current surface cannot change data. | Explore only — nothing you do here changes data. | read-only workspace when “workspace” could mean the Organization |
@@ -41,6 +45,15 @@ Use plain language before implementation or database terminology. Capitalize nam
 - Do not say graph connectivity proves operational failure, causation, or mandatory change.
 - Say **Fictional sample organization** whenever fictional records are visible. Say **Live database** only when the live source succeeds.
 - Use **evidence-based review** in primary UI. Reserve implementation terms such as deterministic, table names, and field names for methodology disclosures and technical documentation.
+
+## Product-story rules
+
+- Introduce the Organization before asking a first-time user to interpret individual Processes.
+- Define an operating model in plain language before using the term as shorthand.
+- Use **Explorer** for browsing and following local connections. Use **Process detail** for complete understanding of one Process.
+- Put Owner Role and current assignment together, while keeping their meanings distinct. Responsibilities remain; people change.
+- Show Systems, Exceptions, and Process dependencies before the Step sequence when explaining why Lotura is more than a Process library.
+- Keep What-if inside FLOW and always state that exploring a scenario changes and approves nothing.
 
 ## Grammar and capitalization
 

@@ -60,15 +60,17 @@ test("the shared primitive layer exposes the v1 component language", async () =>
   }
 });
 
-test("Explorer and FLOW both compose the shared design system", async () => {
-  const [explorer, flow] = await Promise.all([
+test("Explorer, Process Detail, and FLOW compose the shared design system", async () => {
+  const [explorer, processDetail, flow] = await Promise.all([
     read("app/process-explorer.tsx"),
+    read("app/process-detail.tsx"),
     read("app/flow-analysis.tsx"),
   ]);
 
   assert.match(explorer, /from "\.\/ui\/primitives"/);
+  assert.match(processDetail, /from "\.\/ui\/primitives"/);
   assert.match(flow, /from "\.\/ui\/primitives"/);
-  assert.match(explorer, /ExpandableSection/);
+  assert.match(processDetail, /ExpandableSection/);
   assert.match(flow, /Table/);
 });
 
