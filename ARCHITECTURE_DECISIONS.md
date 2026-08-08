@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document is the authoritative register of Lotura’s major product and architecture decisions as of August 7, 2026. It records what was decided, why it was decided, alternatives considered, consequences, and ideas intentionally deferred.
+This document is the authoritative register of Lotura’s major product and architecture decisions as of August 8, 2026. It records what was decided, why it was decided, alternatives considered, consequences, and ideas intentionally deferred.
 
 It complements, rather than replaces:
 
@@ -72,6 +72,8 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-029 | Private workspace access uses a replaceable provider boundary | Accepted — implemented preparation |
 | LAD-030 | Preparation state and sanitization remain explicit outside Version 0.1 | Accepted — implemented preparation |
 | LAD-031 | Dedicated deployments may supply constrained workspace appearance | Accepted — implemented preparation |
+| LAD-032 | Discovery is an expected outcome of documentation | Accepted — product direction |
+| LAD-033 | Structure, responsibility mandates, and human coverage remain distinct | Accepted — product direction |
 
 ## Decision records
 
@@ -424,6 +426,40 @@ This decision extends LAD-028 by allowing an explicit deployment configuration s
 **Alternatives considered:** Keep every private workspace visually generic; hard-code institutional assets in components; commit customer data and conditions to the repository; or add appearance fields and administration immediately. These were rejected as confusing, bespoke, unsafe, or premature.
 
 **Consequences and deferrals:** Remote logo configuration requires an approved HTTPS asset host. Accent values must pass contrast validation and may not replace semantic or evidence tokens. Persistence, uploads, asset storage, appearance administration, authorization, and audit history remain deferred. No real organization values are committed by this preparation decision.
+
+### LAD-032 — Discovery is an expected outcome of documentation
+
+**Decision:** Lotura should treat missing steps, assumptions, unknowns, validation needs, conflicting observations, ownership ambiguity, undocumented workarounds, and unresolved boundaries discovered during documentation as valuable organizational knowledge. Capture experiences should permit an interview or working draft to pause without manufacturing completeness or resolving uncertainty prematurely.
+
+Future knowledge models and interfaces should distinguish **Known**, **Assumed**, **Unknown**, **Needs validation**, and **Conflicting observations**. These are epistemic states attached to sourced organizational knowledge; they are not substitutes for `Process.status`, approval, version history, or deterministic FLOW findings.
+
+> Document reality first. Improve it second.
+
+> Disagreement is data.
+
+**Why:** Attempting to describe real work is itself a discovery method. Contributors often expose gaps and inconsistencies only when they try to define boundaries, order Steps, identify ownership, or explain handoffs. Forcing a complete answer hides precisely the knowledge Lotura exists to reveal and encourages polished but inaccurate operational records.
+
+**Alternatives considered:** Require every field before saving; collapse uncertainty into free-text notes; let AI infer the most likely answer; treat a working draft as incomplete noise; or require immediate reconciliation during capture. These were rejected because they destroy provenance, overstate certainty, interrupt honest discovery, or silently convert inference into organizational truth.
+
+**Consequences and deferrals:** Future Process Acquisition, guided interviews, observations, conflict detection, reconciliation, and approval should preserve pause/resume state, source, scope, contributor, time, sensitivity, and unresolved questions. The Version 0.1 schema does not represent these knowledge states and is unchanged. A future domain proposal must decide whether they belong to observations, claims, field-level evidence, preparation records, or another explicitly governed model before adding tables or migrations.
+
+### LAD-033 — Structure, responsibility mandates, and human coverage remain distinct
+
+**Decision:** Lotura’s future organizational-structure model must distinguish Person, User, Position, PositionAssignment, PositionReportingRelationship, Operational Role, ResponsibilityHolder, RoleMandate, and RoleCoverage.
+
+A Person is a human represented in the organizational model. A User is an application identity, and a Person does not need to be a Lotura User. A Position is a durable structural seat. PositionAssignment records a Person occupying or covering that seat. PositionReportingRelationship records structural reporting between Positions. The existing `Role` is the durable Operational Role referenced by the operating model. RoleMandate allocates that Role to a ResponsibilityHolder for an effective period, while RoleCoverage records permanent, interim, acting, delegated, or backup Person-level coverage of a specific mandate.
+
+Reporting hierarchy must never imply Process ownership. A Position title must never create or equal an Operational Role. One Position may hold several Operational Roles; an Operational Role may move between Positions without rewriting Process references; and temporary RoleCoverage must not alter PositionAssignment or reporting structure.
+
+For the smallest Position-first Version 0.2 model, Position is the only supported ResponsibilityHolder. `RoleMandate` should reference a Position directly. ResponsibilityHolder remains a domain abstraction rather than a polymorphic table, generic type-and-ID reference, or speculative family of subtype entities. OrganizationUnit, CollectiveBody/Committee, and ExternalOrganization may become holder types only after real requirements and their lifecycles are approved.
+
+The existing `RoleAssignment` remains a valid Version 0.1 construct and is closest to future RoleCoverage, but it links Membership directly to Role and has no RoleMandate. It must be reconciled through Person and an unambiguous effective RoleMandate rather than renamed or silently repurposed. The Version 0.1 partial unique constraint permitting one active primary `RoleAssignment` per Role is not a universal long-term business rule.
+
+**Why:** Real organizational charts contain repeated titles, personnel changes, vacancies, cross-unit and matrix reporting, incomplete relationships, and source-specific inconsistencies. Operational responsibility can move independently of reporting structure and may later be held by committees or external organizations. Collapsing these concepts would cause personnel or structural changes to rewrite operational truth and would make temporary coverage indistinguishable from reorganization.
+
+**Alternatives considered:** Treat every job title as a Role; make Position and Operational Role the same entity; retain a bare Position–Role join; attach a manager directly to a User or Person; infer Process ownership from reporting lines; introduce a polymorphic ResponsibilityHolder table before a second holder kind exists; or keep the organizational chart as an unrelated document. These were rejected because they conflate identity, structure, responsibility, and coverage; weaken referential integrity; add premature abstraction; or disconnect organization structure from the operating model.
+
+**Consequences and deferrals:** The generic proposal is documented in [docs/organization-structure-domain.md](docs/organization-structure-domain.md). The Version 0.1 schema remains unchanged. Person identity reconciliation, OrganizationUnit semantics, PositionAssignment and reporting rules, RoleMandate sharing and scope, RoleCoverage cardinality, the `RoleAssignment` transition, source provenance, cycle prevention, privacy, deletion behavior, migration sequence, import reconciliation, and restructuring-version semantics require explicit approval before implementation.
 
 ## Intentionally deferred ideas register
 

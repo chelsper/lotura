@@ -31,6 +31,14 @@ Processes, Roles, Systems, Exceptions, Dependencies, and Assignments together fo
 
 These concepts are valuable individually, but Lotura's organizational intelligence emerges from their relationships. A process should be understood not only by its steps, but also by its ownership, current coverage, systems, exceptions, and place in the wider process network.
 
+### Organizational structure and operational responsibility
+
+Lotura should connect the organization’s formal structure to its operating model without treating them as the same thing. A Person is a human represented in the model; a User is an application identity; a Position is a durable structural seat; and an Operational Role is a durable responsibility referenced by Processes and other operating-model records.
+
+Position occupancy, Position reporting, allocation of an Operational Role to a durable holder, and Person-level coverage of that responsibility answer different questions and should remain separately traceable. Reporting hierarchy must never imply Process ownership, and a Position title must never automatically become an Operational Role.
+
+The initial structural model may support Position as the only kind of ResponsibilityHolder. The product should preserve a clean path for future evidence to justify OrganizationUnits, Collective Bodies or Committees, and External Organizations as additional mandate holders without adding those abstractions prematurely.
+
 ## Product philosophy
 
 ### Model reality without overstating certainty
@@ -44,6 +52,28 @@ Lotura should preserve observations before establishing organizational truth. Wh
 Observations should retain their source, context, timing, scope, and relationship to the operating model. Conflicting observations should remain visible rather than being silently overwritten, averaged, or resolved by AI. Reconciliation, consensus, and approval may establish an authoritative organizational record, but that record should remain traceable to the observations and disagreements that informed it.
 
 This distinction allows Lotura to learn how work actually happens while preserving accountability for what the organization ultimately accepts as true.
+
+### Discovery through documentation
+
+**Discovery is an expected outcome of documentation.**
+
+People frequently discover missing steps, conflicting assumptions, ownership ambiguity, undocumented workarounds, unresolved handoffs, and process weaknesses while attempting to describe current work. Those discoveries are not failures of capture. They are valuable organizational knowledge and often reveal more than a polished description produced by forcing premature completeness.
+
+Lotura should intentionally preserve discovery as it happens. Future capture experiences should distinguish:
+
+- **Known** — supported by the stated source within the current scope;
+- **Assumed** — believed to be true but not yet supported sufficiently;
+- **Unknown** — information that has not been established;
+- **Needs validation** — a claim or relationship requiring accountable confirmation; and
+- **Conflicting observations** — multiple sourced accounts that cannot yet be reconciled honestly.
+
+These states describe the maturity of organizational knowledge, not the operational lifecycle of a Process. They should retain source, scope, time, and context and should not be collapsed automatically into `Process.status` or approved organizational truth.
+
+> Document reality first. Improve it second.
+
+> Disagreement is data.
+
+Lotura does not just document organizations. It helps organizations discover themselves. An incomplete answer is often more valuable than a polished but inaccurate one, and an unresolved question should remain visible until the organization has evidence and authority to resolve it.
 
 ### Make evidence inspectable
 
