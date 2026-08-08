@@ -54,6 +54,8 @@ This distinction preserves continuity when an employee joins, leaves, takes inte
 
 Lotura should not redefine a role around the habits, title, availability, or performance of its current assignee.
 
+Person, User, Position, and Operational Role are separate concepts. A User is an application identity, a Position is a structural seat, and an Operational Role is durable responsibility. Reporting hierarchy and Position titles must never manufacture Process ownership. A RoleMandate may allocate responsibility to a Position while RoleCoverage identifies the Person providing current coverage; changing temporary coverage does not reorganize the reporting structure.
+
 **Product test:** Can the organization understand responsibility before, during, and after a personnel change without rewriting the process?
 
 ## 6. Processes outlive departments
@@ -107,6 +109,22 @@ Explorer, FLOW Analysis, Knowledge Capture, Conflict Detection, Process Acquisit
 The product should remain general enough to learn from real organizations without embedding custom logic for one institution.
 
 **Product test:** Does the capability strengthen a coherent operating model, or does it create an isolated workflow, document store, or customer-specific product branch?
+
+## Discovery through documentation
+
+**Discovery is an expected outcome of documentation.**
+
+The act of describing current work should be allowed to reveal missing steps, assumptions, ownership ambiguity, undocumented workarounds, conflicting accounts, and weaknesses in the operating model. Lotura should preserve these discoveries instead of treating them as form errors or pressuring contributors to manufacture complete answers.
+
+Future knowledge-capture experiences should distinguish **Known**, **Assumed**, **Unknown**, **Needs validation**, and **Conflicting observations**. An incomplete answer is often more valuable than a polished but inaccurate one because it exposes where organizational understanding must mature.
+
+> Document reality first. Improve it second.
+
+> Disagreement is data.
+
+Gaps are valuable organizational knowledge. Lotura should help people document reality first, preserve honest uncertainty, and return later for reconciliation, approval, or improvement without erasing the discovery path.
+
+**Product test:** Can a contributor pause with unresolved questions intact and later resume from the same evidence without being forced to imply certainty?
 
 ## Evidence language
 
