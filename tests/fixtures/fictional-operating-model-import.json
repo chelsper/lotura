@@ -1,0 +1,220 @@
+{
+  "formatVersion": "1.0",
+  "manifest": {
+    "snapshotKey": "harbor-garden-working-draft",
+    "organizationKey": "harbor-garden-cooperative",
+    "scopeLabel": "Fictional operations exercise",
+    "asOf": "2026-08-07T16:00:00.000Z",
+    "knowledgeState": "sanitized-working-draft",
+    "sanitizationAttestation": {
+      "humanReviewed": true,
+      "reviewedByRole": "Fictional Data Steward",
+      "reviewedAt": "2026-08-07T15:30:00.000Z"
+    }
+  },
+  "operatingModel": {
+    "organization": {
+      "key": "harbor-garden-cooperative",
+      "name": "Harbor Garden Cooperative"
+    },
+    "users": [
+      {
+        "key": "avery-stone",
+        "email": "avery.stone@example.test",
+        "displayName": "Avery Stone"
+      }
+    ],
+    "memberships": [
+      {
+        "key": "avery-membership",
+        "userKey": "avery-stone",
+        "accessLevel": "member",
+        "status": "active"
+      }
+    ],
+    "roles": [
+      {
+        "key": "garden-coordinator",
+        "name": "Garden Coordinator",
+        "description": "Coordinates the fictional garden schedule.",
+        "status": "active"
+      }
+    ],
+    "roleAssignments": [
+      {
+        "key": "garden-coordinator-primary",
+        "roleKey": "garden-coordinator",
+        "membershipKey": "avery-membership",
+        "assignmentType": "permanent",
+        "status": "active",
+        "effectiveFrom": "2026-01-05T14:00:00.000Z"
+      }
+    ],
+    "systems": [
+      {
+        "key": "garden-log",
+        "name": "Garden Log",
+        "description": "Fictional planting and harvest record.",
+        "systemType": "manual_record",
+        "ownerRoleKey": "garden-coordinator",
+        "status": "active"
+      }
+    ],
+    "processes": [
+      {
+        "key": "plan-weekly-work",
+        "name": "Plan weekly garden work",
+        "purpose": "Prepare a fictional weekly work plan.",
+        "ownerRoleKey": "garden-coordinator",
+        "status": "active"
+      },
+      {
+        "key": "record-completed-work",
+        "name": "Record completed garden work",
+        "purpose": "Preserve a fictional record of completed work.",
+        "ownerRoleKey": "garden-coordinator",
+        "status": "active"
+      }
+    ],
+    "processSteps": [
+      {
+        "key": "review-garden-log",
+        "processKey": "plan-weekly-work",
+        "position": 1,
+        "title": "Review the garden log",
+        "instructions": "Review the fictional log for planned work.",
+        "responsibleRoleKey": "garden-coordinator"
+      },
+      {
+        "key": "note-completed-work",
+        "processKey": "record-completed-work",
+        "position": 1,
+        "title": "Note completed work",
+        "instructions": "Record the fictional work that was completed.",
+        "responsibleRoleKey": "garden-coordinator"
+      }
+    ],
+    "exceptions": [
+      {
+        "key": "garden-log-unavailable",
+        "processKey": "plan-weekly-work",
+        "processStepKey": "review-garden-log",
+        "name": "Garden log unavailable",
+        "condition": "The fictional garden log cannot be opened.",
+        "response": "Pause planning until the fictional record is available.",
+        "status": "active",
+        "ownerRoleKey": "garden-coordinator"
+      }
+    ],
+    "processSystems": [
+      {
+        "key": "planning-uses-garden-log",
+        "processKey": "plan-weekly-work",
+        "systemKey": "garden-log",
+        "usage": "Review the fictional work record."
+      }
+    ],
+    "processDependencies": [
+      {
+        "key": "planning-provides-recording",
+        "sourceProcessKey": "plan-weekly-work",
+        "targetProcessKey": "record-completed-work",
+        "dependencyType": "provides_to",
+        "description": "The fictional plan provides context for the completion record."
+      }
+    ]
+  },
+  "preparationRegister": [
+    {
+      "recordType": "organization",
+      "recordKey": "harbor-garden-cooperative",
+      "state": "sanitized-working-draft",
+      "sourceType": "working-session",
+      "openConflicts": []
+    },
+    {
+      "recordType": "user",
+      "recordKey": "avery-stone",
+      "state": "sanitized-working-draft",
+      "sourceType": "working-session",
+      "openConflicts": []
+    },
+    {
+      "recordType": "membership",
+      "recordKey": "avery-membership",
+      "state": "sanitized-working-draft",
+      "sourceType": "working-session",
+      "openConflicts": []
+    },
+    {
+      "recordType": "role",
+      "recordKey": "garden-coordinator",
+      "state": "sanitized-working-draft",
+      "sourceType": "working-session",
+      "openConflicts": []
+    },
+    {
+      "recordType": "roleAssignment",
+      "recordKey": "garden-coordinator-primary",
+      "state": "sanitized-working-draft",
+      "sourceType": "working-session",
+      "openConflicts": []
+    },
+    {
+      "recordType": "system",
+      "recordKey": "garden-log",
+      "state": "sanitized-working-draft",
+      "sourceType": "working-session",
+      "openConflicts": []
+    },
+    {
+      "recordType": "process",
+      "recordKey": "plan-weekly-work",
+      "state": "sanitized-working-draft",
+      "sourceType": "working-session",
+      "openConflicts": []
+    },
+    {
+      "recordType": "process",
+      "recordKey": "record-completed-work",
+      "state": "sanitized-working-draft",
+      "sourceType": "working-session",
+      "openConflicts": []
+    },
+    {
+      "recordType": "processStep",
+      "recordKey": "review-garden-log",
+      "state": "sanitized-working-draft",
+      "sourceType": "working-session",
+      "openConflicts": []
+    },
+    {
+      "recordType": "processStep",
+      "recordKey": "note-completed-work",
+      "state": "sanitized-working-draft",
+      "sourceType": "working-session",
+      "openConflicts": []
+    },
+    {
+      "recordType": "exception",
+      "recordKey": "garden-log-unavailable",
+      "state": "sanitized-working-draft",
+      "sourceType": "working-session",
+      "openConflicts": []
+    },
+    {
+      "recordType": "processSystem",
+      "recordKey": "planning-uses-garden-log",
+      "state": "sanitized-working-draft",
+      "sourceType": "working-session",
+      "openConflicts": []
+    },
+    {
+      "recordType": "processDependency",
+      "recordKey": "planning-provides-recording",
+      "state": "sanitized-working-draft",
+      "sourceType": "working-session",
+      "openConflicts": []
+    }
+  ]
+}
