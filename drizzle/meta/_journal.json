@@ -29,6 +29,27 @@
       "when": 1786064155857,
       "tag": "0003_operational_relationships",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786290869069,
+      "tag": "0004_structural_identity_and_current_organization_context",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786290917631,
+      "tag": "0005_occupancy_and_reporting_structure",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786290963634,
+      "tag": "0006_operating_model_responsibility_bridge",
+      "breakpoints": true
     }
   ]
 }
