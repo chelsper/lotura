@@ -33,6 +33,14 @@ test("authoritative access runs before every operating-model load", async () => 
   assert.ok(loadPosition > accessPosition);
 });
 
+test("authoritative access runs before every Organization Structure load", async () => {
+  const source = await read("lib/organization-structure-experience.ts");
+  const accessPosition = source.indexOf("await requireWorkspaceAccess()");
+  const loadPosition = source.indexOf("await loadOrganizationStructure()");
+  assert.ok(accessPosition >= 0);
+  assert.ok(loadPosition > accessPosition);
+});
+
 test("login and logout are POST-only session routes with secure cookie flags", async () => {
   const [login, logout] = await Promise.all([
     read("app/auth/login/route.ts"),

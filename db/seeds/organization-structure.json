@@ -1,0 +1,111 @@
+{
+  "organization": {
+    "name": "Northstar Service Collective"
+  },
+  "snapshot": {
+    "stableKey": "a1828d11-491c-41b0-820c-8af7bce1a1b3",
+    "sourceAsOf": "2026-07-31T17:00:00.000Z",
+    "isPartial": true,
+    "vacancyEvidenceComplete": true,
+    "approvedForImportAt": "2026-08-01T13:00:00.000Z",
+    "importedAt": "2026-08-01T13:05:00.000Z",
+    "currentForPilotUseAt": "2026-08-01T13:10:00.000Z"
+  },
+  "people": [
+    { "stableKey": "2c9d9346-b134-47ec-95f6-369ca8d56c41", "displayName": "Morgan Hale", "status": "active" },
+    { "stableKey": "3088ae64-82c4-42b0-8b46-15328c78d803", "displayName": "Amara Patel", "status": "active" },
+    { "stableKey": "3d741536-c783-4f8e-9490-c19d923de846", "displayName": "Taylor Brooks", "status": "active" },
+    { "stableKey": "45c654b0-c8f6-4747-b91b-42cfb969b172", "displayName": "Jordan Kim", "status": "active" },
+    { "stableKey": "5db3ce48-068b-4bfe-80e4-9a49b12ec7bf", "displayName": "Sam Reed", "status": "active" },
+    { "stableKey": "62e797d8-f5e7-4ef3-8c29-a77387e17554", "displayName": "Riley Chen", "status": "active" },
+    { "stableKey": "7728598a-ce41-408e-bc8f-4fcb5cc638c2", "displayName": "Casey Morgan", "status": "active" },
+    { "stableKey": "86f98525-3d45-484d-9046-f09d0aa3db38", "displayName": "Alex Rivers", "status": "active" },
+    { "stableKey": "970c5170-73ee-4f3e-b02d-90aa2ab1744f", "displayName": "Jamie Cole", "status": "active" },
+    { "stableKey": "a2848a8a-d975-4ba1-9b6c-ab68d54c9ef7", "displayName": "Drew Miller", "status": "active" },
+    { "stableKey": "b786b3e4-74b3-451d-b1b5-c752456968f1", "displayName": "Quinn Avery", "status": "active" },
+    { "stableKey": "c12ead5c-0da1-4095-8f3e-15763080a15f", "displayName": "Jordan Lee", "status": "active" },
+    { "stableKey": "d42046d2-3b0b-482e-a8cc-5dfaf40ca88d", "displayName": "Jordan Lee", "status": "active" }
+  ],
+  "organizationUnits": [
+    { "stableKey": "116b13b8-f763-4ee0-9571-7acb2298b8cb", "name": "Executive Coordination", "isProvisional": false, "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "stableKey": "2e52328e-0042-4ddb-97ee-18ca7f398e5c", "name": "Client Services", "parentOrganizationUnitKey": "116b13b8-f763-4ee0-9571-7acb2298b8cb", "isProvisional": false, "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "stableKey": "37b14874-ea8c-4473-ae2a-3fd450809979", "name": "Program Delivery", "parentOrganizationUnitKey": "116b13b8-f763-4ee0-9571-7acb2298b8cb", "isProvisional": false, "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "stableKey": "49fc39bc-5f0b-4d9e-a16d-e30c40795303", "name": "Finance Operations", "parentOrganizationUnitKey": "116b13b8-f763-4ee0-9571-7acb2298b8cb", "isProvisional": false, "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "stableKey": "5a270fb3-ad4b-4cff-babe-b96082441f14", "name": "Technology & Records", "parentOrganizationUnitKey": "116b13b8-f763-4ee0-9571-7acb2298b8cb", "isProvisional": false, "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "stableKey": "6f9320a5-0aaf-425a-bd2d-274dfdf1be8f", "name": "Community Partnerships", "isProvisional": true, "status": "active", "effectiveFrom": "2025-06-01T00:00:00.000Z" }
+  ],
+  "positions": [
+    { "stableKey": "102dc60c-597e-4d1f-84c7-304f044e74c3", "organizationUnitKey": "116b13b8-f763-4ee0-9571-7acb2298b8cb", "title": "Executive Director of Services", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "stableKey": "218ab812-1e5e-4704-a195-c9756ac6809a", "organizationUnitKey": "2e52328e-0042-4ddb-97ee-18ca7f398e5c", "title": "Client Services Lead", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "stableKey": "31d036ad-d6dd-40bf-9292-7a70e5934f92", "organizationUnitKey": "2e52328e-0042-4ddb-97ee-18ca7f398e5c", "title": "Service Coordinator", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "stableKey": "461df8a2-664c-45b2-8869-a9db25eb479e", "organizationUnitKey": "37b14874-ea8c-4473-ae2a-3fd450809979", "title": "Service Coordinator", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "stableKey": "553ddca1-f262-4aca-a109-6e9c9b385beb", "organizationUnitKey": "37b14874-ea8c-4473-ae2a-3fd450809979", "title": "Program Manager", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "stableKey": "6a2cc3f6-516c-40c2-a7ba-2ec8fb88dafd", "organizationUnitKey": "37b14874-ea8c-4473-ae2a-3fd450809979", "title": "Delivery Lead", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "stableKey": "75f2f3e0-56e9-42da-ab75-37e491531187", "organizationUnitKey": "49fc39bc-5f0b-4d9e-a16d-e30c40795303", "title": "Finance Operations Lead", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "stableKey": "84232496-1656-46f8-bab3-2ae2ac3ed7df", "organizationUnitKey": "49fc39bc-5f0b-4d9e-a16d-e30c40795303", "title": "Billing Coordinator", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "stableKey": "9c57eb86-0435-4903-a179-e1b19c914f4e", "organizationUnitKey": "2e52328e-0042-4ddb-97ee-18ca7f398e5c", "title": "Service Recovery Lead", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "stableKey": "a0aa1d59-5683-4cb8-a97d-dca0956bc929", "organizationUnitKey": "5a270fb3-ad4b-4cff-babe-b96082441f14", "title": "Systems Steward", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "stableKey": "b60c8ea6-af55-4f4d-af45-65a429c38c52", "organizationUnitKey": "5a270fb3-ad4b-4cff-babe-b96082441f14", "title": "Data Coordinator", "status": "active", "effectiveFrom": "2025-01-01T00:00:00.000Z" },
+    { "stableKey": "c346822e-c741-423a-b095-4622abe4c53d", "organizationUnitKey": "6f9320a5-0aaf-425a-bd2d-274dfdf1be8f", "title": "Community Liaison", "status": "active", "effectiveFrom": "2025-06-01T00:00:00.000Z" },
+    { "stableKey": "d2723b71-d4d0-46bb-8314-0054170af6d8", "organizationUnitKey": "2e52328e-0042-4ddb-97ee-18ca7f398e5c", "title": "Operations Assistant", "status": "active", "effectiveFrom": "2025-01-01T00:00:00.000Z" },
+    { "stableKey": "e5234678-9e72-45d3-8964-908e8a71c26e", "organizationUnitKey": "5a270fb3-ad4b-4cff-babe-b96082441f14", "title": "Records Analyst", "status": "active", "effectiveFrom": "2025-01-01T00:00:00.000Z" }
+  ],
+  "positionAssignments": [
+    { "key": "assignment-executive", "positionKey": "102dc60c-597e-4d1f-84c7-304f044e74c3", "personKey": "2c9d9346-b134-47ec-95f6-369ca8d56c41", "assignmentType": "incumbent", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "assignment-client-lead", "positionKey": "218ab812-1e5e-4704-a195-c9756ac6809a", "personKey": "3088ae64-82c4-42b0-8b46-15328c78d803", "assignmentType": "incumbent", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "assignment-coordinator-one", "positionKey": "31d036ad-d6dd-40bf-9292-7a70e5934f92", "personKey": "3d741536-c783-4f8e-9490-c19d923de846", "assignmentType": "incumbent", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "assignment-coordinator-two", "positionKey": "461df8a2-664c-45b2-8869-a9db25eb479e", "personKey": "45c654b0-c8f6-4747-b91b-42cfb969b172", "assignmentType": "incumbent", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "assignment-program-manager", "positionKey": "553ddca1-f262-4aca-a109-6e9c9b385beb", "personKey": "5db3ce48-068b-4bfe-80e4-9a49b12ec7bf", "assignmentType": "incumbent", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "assignment-delivery-lead", "positionKey": "6a2cc3f6-516c-40c2-a7ba-2ec8fb88dafd", "personKey": "62e797d8-f5e7-4ef3-8c29-a77387e17554", "assignmentType": "incumbent", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "assignment-finance-lead", "positionKey": "75f2f3e0-56e9-42da-ab75-37e491531187", "personKey": "7728598a-ce41-408e-bc8f-4fcb5cc638c2", "assignmentType": "incumbent", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "assignment-billing-one", "positionKey": "84232496-1656-46f8-bab3-2ae2ac3ed7df", "personKey": "86f98525-3d45-484d-9046-f09d0aa3db38", "assignmentType": "job_share", "status": "active", "effectiveFrom": "2025-01-01T00:00:00.000Z" },
+    { "key": "assignment-billing-two", "positionKey": "84232496-1656-46f8-bab3-2ae2ac3ed7df", "personKey": "970c5170-73ee-4f3e-b02d-90aa2ab1744f", "assignmentType": "job_share", "status": "active", "effectiveFrom": "2025-01-01T00:00:00.000Z" },
+    { "key": "assignment-recovery", "positionKey": "9c57eb86-0435-4903-a179-e1b19c914f4e", "personKey": "a2848a8a-d975-4ba1-9b6c-ab68d54c9ef7", "assignmentType": "incumbent", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "assignment-systems", "positionKey": "a0aa1d59-5683-4cb8-a97d-dca0956bc929", "personKey": "b786b3e4-74b3-451d-b1b5-c752456968f1", "assignmentType": "incumbent", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "assignment-community-acting", "positionKey": "c346822e-c741-423a-b095-4622abe4c53d", "personKey": "3d741536-c783-4f8e-9490-c19d923de846", "assignmentType": "acting", "status": "active", "effectiveFrom": "2026-06-01T00:00:00.000Z", "effectiveUntil": "2026-10-01T00:00:00.000Z", "reason": "Temporary coverage while the permanent appointment is reviewed." },
+    { "key": "assignment-operations-assistant", "positionKey": "d2723b71-d4d0-46bb-8314-0054170af6d8", "personKey": "c12ead5c-0da1-4095-8f3e-15763080a15f", "assignmentType": "incumbent", "status": "active", "effectiveFrom": "2025-01-01T00:00:00.000Z" },
+    { "key": "assignment-records-analyst", "positionKey": "e5234678-9e72-45d3-8964-908e8a71c26e", "personKey": "d42046d2-3b0b-482e-a8cc-5dfaf40ca88d", "assignmentType": "incumbent", "status": "active", "effectiveFrom": "2025-01-01T00:00:00.000Z" }
+  ],
+  "positionReportingRelationships": [
+    { "key": "report-client-executive", "subordinatePositionKey": "218ab812-1e5e-4704-a195-c9756ac6809a", "managerPositionKey": "102dc60c-597e-4d1f-84c7-304f044e74c3", "relationshipType": "primary", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "report-program-executive", "subordinatePositionKey": "553ddca1-f262-4aca-a109-6e9c9b385beb", "managerPositionKey": "102dc60c-597e-4d1f-84c7-304f044e74c3", "relationshipType": "primary", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "report-finance-executive", "subordinatePositionKey": "75f2f3e0-56e9-42da-ab75-37e491531187", "managerPositionKey": "102dc60c-597e-4d1f-84c7-304f044e74c3", "relationshipType": "primary", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "report-systems-executive", "subordinatePositionKey": "a0aa1d59-5683-4cb8-a97d-dca0956bc929", "managerPositionKey": "102dc60c-597e-4d1f-84c7-304f044e74c3", "relationshipType": "primary", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "report-community-executive", "subordinatePositionKey": "c346822e-c741-423a-b095-4622abe4c53d", "managerPositionKey": "102dc60c-597e-4d1f-84c7-304f044e74c3", "relationshipType": "primary", "status": "active", "effectiveFrom": "2025-06-01T00:00:00.000Z" },
+    { "key": "report-coordinator-client", "subordinatePositionKey": "31d036ad-d6dd-40bf-9292-7a70e5934f92", "managerPositionKey": "218ab812-1e5e-4704-a195-c9756ac6809a", "relationshipType": "primary", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "report-recovery-client", "subordinatePositionKey": "9c57eb86-0435-4903-a179-e1b19c914f4e", "managerPositionKey": "218ab812-1e5e-4704-a195-c9756ac6809a", "relationshipType": "primary", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "report-assistant-client", "subordinatePositionKey": "d2723b71-d4d0-46bb-8314-0054170af6d8", "managerPositionKey": "218ab812-1e5e-4704-a195-c9756ac6809a", "relationshipType": "primary", "status": "active", "effectiveFrom": "2025-01-01T00:00:00.000Z" },
+    { "key": "report-delivery-program", "subordinatePositionKey": "6a2cc3f6-516c-40c2-a7ba-2ec8fb88dafd", "managerPositionKey": "553ddca1-f262-4aca-a109-6e9c9b385beb", "relationshipType": "primary", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "report-coordinator-program", "subordinatePositionKey": "461df8a2-664c-45b2-8869-a9db25eb479e", "managerPositionKey": "553ddca1-f262-4aca-a109-6e9c9b385beb", "relationshipType": "primary", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "report-billing-finance", "subordinatePositionKey": "84232496-1656-46f8-bab3-2ae2ac3ed7df", "managerPositionKey": "75f2f3e0-56e9-42da-ab75-37e491531187", "relationshipType": "primary", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "report-data-systems", "subordinatePositionKey": "b60c8ea6-af55-4f4d-af45-65a429c38c52", "managerPositionKey": "a0aa1d59-5683-4cb8-a97d-dca0956bc929", "relationshipType": "primary", "status": "active", "effectiveFrom": "2025-01-01T00:00:00.000Z" },
+    { "key": "report-records-systems", "subordinatePositionKey": "e5234678-9e72-45d3-8964-908e8a71c26e", "managerPositionKey": "a0aa1d59-5683-4cb8-a97d-dca0956bc929", "relationshipType": "primary", "status": "active", "effectiveFrom": "2025-01-01T00:00:00.000Z" },
+    { "key": "report-records-client-dotted", "subordinatePositionKey": "e5234678-9e72-45d3-8964-908e8a71c26e", "managerPositionKey": "218ab812-1e5e-4704-a195-c9756ac6809a", "relationshipType": "dotted_line", "status": "active", "effectiveFrom": "2025-01-01T00:00:00.000Z", "reason": "Coordinates client-record quality across Units." },
+    { "key": "report-billing-systems-functional", "subordinatePositionKey": "84232496-1656-46f8-bab3-2ae2ac3ed7df", "managerPositionKey": "a0aa1d59-5683-4cb8-a97d-dca0956bc929", "relationshipType": "functional", "status": "active", "effectiveFrom": "2025-01-01T00:00:00.000Z", "reason": "Receives functional guidance for billing-system administration." }
+  ],
+  "roleMandates": [
+    { "key": "mandate-client-lead", "positionKey": "218ab812-1e5e-4704-a195-c9756ac6809a", "roleKey": "client-services-lead", "mandateType": "primary", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "mandate-operations-primary", "positionKey": "31d036ad-d6dd-40bf-9292-7a70e5934f92", "roleKey": "operations-coordinator", "mandateType": "primary", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "mandate-operations-shared", "positionKey": "461df8a2-664c-45b2-8869-a9db25eb479e", "roleKey": "operations-coordinator", "mandateType": "shared", "scope": "Program delivery scheduling support", "status": "active", "effectiveFrom": "2025-01-01T00:00:00.000Z" },
+    { "key": "mandate-program", "positionKey": "553ddca1-f262-4aca-a109-6e9c9b385beb", "roleKey": "program-manager", "mandateType": "primary", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "mandate-delivery", "positionKey": "6a2cc3f6-516c-40c2-a7ba-2ec8fb88dafd", "roleKey": "delivery-lead", "mandateType": "primary", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "mandate-finance", "positionKey": "75f2f3e0-56e9-42da-ab75-37e491531187", "roleKey": "finance-operations-lead", "mandateType": "primary", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "mandate-finance-shared", "positionKey": "84232496-1656-46f8-bab3-2ae2ac3ed7df", "roleKey": "finance-operations-lead", "mandateType": "shared", "scope": "Invoice preparation and reconciliation support", "status": "active", "effectiveFrom": "2025-01-01T00:00:00.000Z" },
+    { "key": "mandate-recovery", "positionKey": "9c57eb86-0435-4903-a179-e1b19c914f4e", "roleKey": "service-recovery-lead", "mandateType": "primary", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "mandate-systems", "positionKey": "a0aa1d59-5683-4cb8-a97d-dca0956bc929", "roleKey": "systems-steward", "mandateType": "primary", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "mandate-systems-shared", "positionKey": "b60c8ea6-af55-4f4d-af45-65a429c38c52", "roleKey": "systems-steward", "mandateType": "shared", "scope": "Data-quality monitoring", "status": "active", "effectiveFrom": "2025-01-01T00:00:00.000Z" }
+  ],
+  "roleCoverages": [
+    { "key": "coverage-client", "roleMandateKey": "mandate-client-lead", "personKey": "3088ae64-82c4-42b0-8b46-15328c78d803", "coverageType": "permanent", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "coverage-operations-primary", "roleMandateKey": "mandate-operations-primary", "personKey": "3d741536-c783-4f8e-9490-c19d923de846", "coverageType": "permanent", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "coverage-operations-shared", "roleMandateKey": "mandate-operations-shared", "personKey": "45c654b0-c8f6-4747-b91b-42cfb969b172", "coverageType": "permanent", "status": "active", "effectiveFrom": "2025-01-01T00:00:00.000Z" },
+    { "key": "coverage-program", "roleMandateKey": "mandate-program", "personKey": "5db3ce48-068b-4bfe-80e4-9a49b12ec7bf", "coverageType": "permanent", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "coverage-delivery", "roleMandateKey": "mandate-delivery", "personKey": "62e797d8-f5e7-4ef3-8c29-a77387e17554", "coverageType": "permanent", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "coverage-finance", "roleMandateKey": "mandate-finance", "personKey": "7728598a-ce41-408e-bc8f-4fcb5cc638c2", "coverageType": "permanent", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "coverage-finance-share-one", "roleMandateKey": "mandate-finance-shared", "personKey": "86f98525-3d45-484d-9046-f09d0aa3db38", "coverageType": "permanent", "status": "active", "effectiveFrom": "2025-01-01T00:00:00.000Z" },
+    { "key": "coverage-finance-share-two", "roleMandateKey": "mandate-finance-shared", "personKey": "970c5170-73ee-4f3e-b02d-90aa2ab1744f", "coverageType": "permanent", "status": "active", "effectiveFrom": "2025-01-01T00:00:00.000Z" },
+    { "key": "coverage-recovery", "roleMandateKey": "mandate-recovery", "personKey": "a2848a8a-d975-4ba1-9b6c-ab68d54c9ef7", "coverageType": "permanent", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" },
+    { "key": "coverage-recovery-acting", "roleMandateKey": "mandate-recovery", "personKey": "3d741536-c783-4f8e-9490-c19d923de846", "coverageType": "acting", "status": "active", "effectiveFrom": "2026-06-01T00:00:00.000Z", "effectiveUntil": "2026-10-01T00:00:00.000Z", "reason": "Provides temporary backup during a planned coverage period." },
+    { "key": "coverage-systems", "roleMandateKey": "mandate-systems", "personKey": "b786b3e4-74b3-451d-b1b5-c752456968f1", "coverageType": "permanent", "status": "active", "effectiveFrom": "2024-01-01T00:00:00.000Z" }
+  ]
+}

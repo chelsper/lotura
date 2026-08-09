@@ -123,6 +123,47 @@ export function LayersIcon({ className = "size-5" }: IconProps) {
   );
 }
 
+export function OrganizationIcon({ className = "size-5" }: IconProps) {
+  return (
+    <svg {...shared} className={className}>
+      <rect
+        height="5"
+        rx="1.25"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        width="8"
+        x="8"
+        y="3.5"
+      />
+      <rect
+        height="5"
+        rx="1.25"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        width="7"
+        x="3.5"
+        y="15.5"
+      />
+      <rect
+        height="5"
+        rx="1.25"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        width="7"
+        x="13.5"
+        y="15.5"
+      />
+      <path
+        d="M12 8.5v3.5m-5 0h10M7 12v3.5m10-3.5v3.5"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.6"
+      />
+    </svg>
+  );
+}
+
 export function RoleIcon({ className = "size-5" }: IconProps) {
   return (
     <svg {...shared} className={className}>

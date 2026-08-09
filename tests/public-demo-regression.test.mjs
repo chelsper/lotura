@@ -64,3 +64,18 @@ test("the repository fixture remains fictional and unchanged as the demo source"
   assert.equal(seed.processes.length, 6);
   assert.ok(seed.users.every((user) => user.email.endsWith("@example.test")));
 });
+
+test("the separate structure fixture is fictional and leaves the operating fixture intact", async () => {
+  const [structure, operating] = await Promise.all(
+    ["organization-structure.json", "process-explorer.json"].map(async (name) =>
+      JSON.parse(
+        await readFile(new URL(`../db/seeds/${name}`, import.meta.url), "utf8"),
+      ),
+    ),
+  );
+
+  assert.equal(structure.organization.name, "Northstar Service Collective");
+  assert.equal(operating.processes.length, 6);
+  assert.ok(structure.people.length > 0);
+  assert.doesNotMatch(JSON.stringify(structure), /Jacksonville|University|JU Pilot/i);
+});
