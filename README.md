@@ -16,6 +16,7 @@ Lotura is a Next.js App Router application backed by Neon Postgres and Drizzle O
 - [Continuous Improvement product direction](docs/product-vision.md)
 - [Future Continuous Improvement domain model](docs/domain-model.md)
 - [Future Organization Structure and Responsibility domain model](docs/organization-structure-domain.md)
+- [Organization Structure Resolution & Approval v0.1](docs/organization-structure-resolution.md)
 - [Private workspace preparation](docs/private-workspace-preparation.md)
 - [Validation-only snapshot format](docs/operating-model-import.md)
 

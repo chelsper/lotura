@@ -11,6 +11,12 @@ import {
   organizationStructureColumnDefinitions,
   OrganizationStructurePreviewError,
 } from "@/lib/organization-structure-preview.mjs";
+import {
+  createOrganizationStructureResolutionSession,
+} from "@/lib/organization-structure-resolution.mjs";
+import type {
+  OrganizationStructureResolutionSession,
+} from "@/lib/organization-structure-resolution.mjs";
 import type {
   OrganizationStructureCell,
   OrganizationStructureColumnId,
@@ -45,6 +51,7 @@ import {
   TableRow,
   cn,
 } from "../../ui/primitives";
+import { OrganizationStructureResolutionExperience } from "./organization-structure-resolution";
 
 type WorkbookSheet = {
   data: OrganizationStructureCell[][];
@@ -999,10 +1006,12 @@ function IssuesTab({
 function PreviewStep({
   onChangeColumns,
   onReset,
+  onStartReview,
   preview,
 }: {
   onChangeColumns: () => void;
   onReset: () => void;
+  onStartReview: () => void;
   preview: OrganizationStructurePreview;
 }) {
   const [activeTab, setActiveTab] = useState<PreviewTab>("overview");
@@ -1035,6 +1044,9 @@ function PreviewStep({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button onClick={onStartReview} variant="primary">
+              Review and prepare evidence
+            </Button>
             <Button onClick={onChangeColumns} variant="secondary">
               Review columns
             </Button>
@@ -1106,6 +1118,9 @@ export function OrganizationStructurePreviewExperience({
   const [mapping, setMapping] = useState<OrganizationStructureColumnMapping | null>(null);
   const [showMapping, setShowMapping] = useState(false);
   const [preview, setPreview] = useState<OrganizationStructurePreview | null>(null);
+  const [resolutionSession, setResolutionSession] =
+    useState<OrganizationStructureResolutionSession | null>(null);
+  const [resolutionActive, setResolutionActive] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -1130,6 +1145,8 @@ export function OrganizationStructurePreviewExperience({
     setMapping(null);
     setShowMapping(false);
     setPreview(null);
+    setResolutionSession(null);
+    setResolutionActive(false);
     setError(null);
   };
 
@@ -1150,6 +1167,8 @@ export function OrganizationStructurePreviewExperience({
       sourceAsOf,
     });
     setPreview(built);
+    setResolutionSession(null);
+    setResolutionActive(false);
     setShowMapping(false);
     setError(null);
   };
@@ -1278,6 +1297,13 @@ export function OrganizationStructurePreviewExperience({
           selectedSheet={selectedSheet}
           sheets={sheets}
         />
+      ) : preview && resolutionActive && resolutionSession ? (
+        <OrganizationStructureResolutionExperience
+          onBackToEvidence={() => setResolutionActive(false)}
+          onSessionChange={setResolutionSession}
+          preview={preview}
+          session={resolutionSession}
+        />
       ) : preview ? (
         <PreviewStep
           onChangeColumns={() => {
@@ -1285,6 +1311,12 @@ export function OrganizationStructurePreviewExperience({
             setError(null);
           }}
           onReset={reset}
+          onStartReview={() => {
+            setResolutionSession((current) =>
+              current ?? createOrganizationStructureResolutionSession(),
+            );
+            setResolutionActive(true);
+          }}
           preview={preview}
         />
       ) : (
@@ -1305,7 +1337,7 @@ export function OrganizationStructurePreviewExperience({
       )}
 
       <footer className="border-t border-[var(--border)] bg-[var(--surface)] px-4 py-4 text-center text-[11px] leading-5 text-[var(--text-tertiary)] sm:px-6">
-        Explore only — this preview sends nothing, stores nothing, and imports nothing.
+        Explore and review only — this experience sends nothing, persists nothing, and imports nothing.
       </footer>
     </div>
   );
