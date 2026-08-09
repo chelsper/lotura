@@ -5,10 +5,15 @@ import { workspaceAccessContext } from "@/lib/authentication";
 import type { OperatingModelSource } from "@/lib/process-explorer-source-policy.mjs";
 import type { WorkspaceConfiguration } from "@/lib/workspace-configuration.mjs";
 
-import { ExplorerIcon, FlowIcon, HomeIcon } from "./ui/icons";
+import {
+  ExplorerIcon,
+  FlowIcon,
+  HomeIcon,
+  OrganizationIcon,
+} from "./ui/icons";
 import { Alert, Badge, cn } from "./ui/primitives";
 
-export type WorkspaceView = "overview" | "explorer" | "flow";
+export type WorkspaceView = "overview" | "organization" | "explorer" | "flow";
 
 const navigation = [
   {
@@ -16,6 +21,12 @@ const navigation = [
     href: "/overview",
     icon: HomeIcon,
     label: "Overview",
+  },
+  {
+    id: "organization" as const,
+    href: "/organization",
+    icon: OrganizationIcon,
+    label: "Organization",
   },
   {
     id: "explorer" as const,
@@ -53,7 +64,7 @@ function WorkspaceNavigation({
   return (
     <nav
       aria-label="Product"
-      className="space-y-1 max-lg:flex max-lg:gap-1 max-lg:space-y-0"
+      className="space-y-1 max-lg:flex max-lg:min-w-max max-lg:gap-1 max-lg:space-y-0"
     >
       {navigation.map((item) => {
         const Icon = item.icon;
@@ -63,7 +74,7 @@ function WorkspaceNavigation({
           <Link
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)] max-lg:w-auto",
+              "flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)] max-lg:w-auto max-lg:shrink-0 max-sm:gap-1.5 max-sm:px-1.5 max-sm:text-xs",
               active
                 ? "bg-[var(--workspace-accent-subtle)] text-[var(--workspace-accent)]"
                 : "text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text)]",
