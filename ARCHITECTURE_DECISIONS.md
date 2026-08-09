@@ -461,6 +461,18 @@ The existing `RoleAssignment` remains a valid Version 0.1 construct and is close
 
 **Consequences and deferrals:** The generic proposal is documented in [docs/organization-structure-domain.md](docs/organization-structure-domain.md). The Version 0.1 schema remains unchanged. Person identity reconciliation, OrganizationUnit semantics, PositionAssignment and reporting rules, RoleMandate sharing and scope, RoleCoverage cardinality, the `RoleAssignment` transition, source provenance, cycle prevention, privacy, deletion behavior, migration sequence, import reconciliation, and restructuring-version semantics require explicit approval before implementation.
 
+### LAD-034 — Organization Structure review remains a transient evidence overlay before import
+
+**Decision:** Organization Structure Resolution & Approval v0.1 separates immutable source evidence, reversible browser-session review decisions, and explicit local approval of a reviewed subset as a future import basis. Review decisions reference exact source-row keys and never rewrite parsed workbook evidence. Readiness is recalculated deterministically from evidence and decisions; unresolved blockers prevent local approval, and warnings require an explicit treatment. Local approval states exactly: “Approved for import — local session only. Nothing has been saved or imported.”
+
+The v0.1 review session remains in browser memory. It has no browser storage, server action, route handler, upload or import endpoint, database persistence, telemetry of source values, or export package. Refreshing or closing the tab erases decisions and approval. The authoritative workspace-access check remains server-side before the local preview is rendered.
+
+**Why:** Administrators need to classify ambiguity and establish an explicit proposed import basis without letting either a workbook or a reviewer’s first interpretation silently become organizational truth. A transient layer validates the review model while avoiding premature storage, authorization, retention, audit, and governance decisions. It also keeps evidence separate from interpretation and makes reversal deterministic.
+
+**Alternatives considered:** Mutate parsed rows during review; treat a clean parse as approval; require row-by-row confirmation; add a quality score; provide global resolve-all or approve-all-clean actions; persist decisions in browser storage; build an import endpoint immediately; or store review artifacts in the permanent domain. These were rejected because they obscure provenance, encourage artificial certainty, do not scale, or create unapproved persistence and security boundaries.
+
+**Consequences and deferrals:** The implemented experience groups homogeneous issues, shows impact before applying bulk treatment, preserves external-validation states, and requires an approval attestation. It cannot prove free text is sanitized or authoritative. Real multi-session institutional review will require authenticated encrypted staging or a governed encrypted package, authorization, audit history, retention, concurrency, and source-value access controls. Stable identity reconciliation, Organization Unit semantics, approval authority, staged-package lifecycle, importer transaction boundaries, and schema implications remain unresolved. [docs/organization-structure-resolution.md](docs/organization-structure-resolution.md) records the current boundary. No schema, migration, database, or importer change is approved.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
