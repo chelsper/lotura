@@ -110,6 +110,29 @@ The product should remain general enough to learn from real organizations withou
 
 **Product test:** Does the capability strengthen a coherent operating model, or does it create an isolated workflow, document store, or customer-specific product branch?
 
+## 11. Governance is multidimensional
+
+Organizational hierarchy, operational responsibility, visibility,
+contribution, approval, analysis, administration, and stewardship answer
+different questions. No one dimension should silently grant another.
+
+A President may analyze the whole organization without administering its
+canonical structure. A Process Steward may approve a proposed Process change
+without supervising its contributor. A Workspace Administrator may configure
+Lotura without owning the work represented in it.
+
+Stewardship means accountable care for organizational knowledge. A Steward is
+not automatically the manager, Process Owner, system administrator, or current
+performer. Reporting hierarchy must never manufacture approval or
+administrative authority.
+
+Most contributors should suggest attributable updates rather than overwrite
+approved organizational knowledge. Direct canonical maintenance is a scoped,
+audited administrative capability and must never erase evidence or history.
+
+**Product test:** Can the product explain separately why someone may view,
+contribute, approve, analyze, administer, or steward this knowledge?
+
 ## Discovery through documentation
 
 **Discovery is an expected outcome of documentation.**

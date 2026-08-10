@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document is the authoritative register of Lotura’s major product and architecture decisions as of August 8, 2026. It records what was decided, why it was decided, alternatives considered, consequences, and ideas intentionally deferred.
+This document is the authoritative register of Lotura’s major product and architecture decisions as of August 10, 2026. It records what was decided, why it was decided, alternatives considered, consequences, and ideas intentionally deferred.
 
 It complements, rather than replaces:
 
@@ -11,7 +11,8 @@ It complements, rather than replaces:
 - [PRODUCT_ROADMAP.md](PRODUCT_ROADMAP.md), which sequences product outcomes;
 - [PROCESS_ACQUISITION.md](PROCESS_ACQUISITION.md), which defines future knowledge-entry paths;
 - [CONFLICT_DETECTION.md](CONFLICT_DETECTION.md), which defines how disagreement should be preserved and reconciled;
-- [RESTRUCTURING_INTELLIGENCE.md](RESTRUCTURING_INTELLIGENCE.md), which defines future scenario analysis; and
+- [RESTRUCTURING_INTELLIGENCE.md](RESTRUCTURING_INTELLIGENCE.md), which defines future scenario analysis;
+- [GOVERNANCE_AND_STEWARDSHIP.md](GOVERNANCE_AND_STEWARDSHIP.md), which defines governance dimensions, profiles, and stewardship direction; and
 - [docs/domain-model.md](docs/domain-model.md), which describes future continuous-improvement concepts.
 
 This is a living decision log, not an implementation specification. Existing records should not be silently rewritten when direction changes. A later decision should mark an earlier decision **superseded**, explain why, and preserve the prior rationale.
@@ -74,6 +75,8 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-031 | Dedicated deployments may supply constrained workspace appearance | Accepted — implemented preparation |
 | LAD-032 | Discovery is an expected outcome of documentation | Accepted — product direction |
 | LAD-033 | Structure, responsibility mandates, and human coverage remain distinct | Accepted — product direction |
+| LAD-034 | Organization Structure review remains a transient evidence overlay before import | Accepted — implemented |
+| LAD-035 | Governance is multidimensional and Stewardship is distinct | Accepted — product direction |
 
 ## Decision records
 
@@ -473,6 +476,22 @@ The v0.1 review session remains in browser memory. It has no browser storage, se
 
 **Consequences and deferrals:** The implemented experience groups homogeneous issues, shows impact before applying bulk treatment, preserves external-validation states, and requires an approval attestation. It cannot prove free text is sanitized or authoritative. Real multi-session institutional review will require authenticated encrypted staging or a governed encrypted package, authorization, audit history, retention, concurrency, and source-value access controls. Stable identity reconciliation, Organization Unit semantics, approval authority, staged-package lifecycle, importer transaction boundaries, and schema implications remain unresolved. [docs/organization-structure-resolution.md](docs/organization-structure-resolution.md) records the current boundary. No schema, migration, database, or importer change is approved.
 
+### LAD-035 — Governance is multidimensional and Stewardship is distinct
+
+**Decision:** Lotura models governance through independent dimensions of visibility, contribution, approval, analysis, administration, and stewardship. Organizational hierarchy and operational responsibility provide context but do not automatically grant authority in any of those dimensions.
+
+Stewardship is accountable care for a defined body of organizational knowledge. A Steward is not necessarily the manager, Process Owner, system administrator, organizational owner, or current performer. Future Stewardship may apply to Organization Units, Processes, Operational Roles, Systems, and Policies.
+
+The first product vocabulary includes four generic profiles: Workspace Administrator, Contributor, Manager / Approver, and Leadership / Organizational Analyst. These are understandable profiles rather than one ascending permission hierarchy. Leadership does not imply Workspace Administration; Manager status does not imply approval; and Workspace Administration does not imply Process ownership. Every administrative change remains scoped and auditable.
+
+Most contributors should suggest attributable updates rather than directly overwrite approved knowledge. Future approval routing may recommend additional reviewers from connected Processes, Roles, Units, Systems, and dependencies, but connectivity remains evidence for review rather than proof of mandatory authority.
+
+**Why:** Organizational authority is multidimensional in real institutions. Collapsing it into a single user-role hierarchy would make reporting managers automatic approvers, make executives automatic administrators, and make system configuration indistinguishable from responsibility for organizational knowledge. Stewardship gives Lotura an explicit model for maintaining knowledge after initial documentation.
+
+**Alternatives considered:** One ascending role hierarchy; infer approvers from reporting relationships; equate Process ownership with approval; let Workspace Administrators approve or overwrite all knowledge; attach permissions directly to job titles; or defer all governance language until SSO. These were rejected because they conflate structure, responsibility, access, approval, analysis, and accountability or hide the product's long-term maintenance model.
+
+**Consequences and deferrals:** The private pilot may communicate governance with honest read-only sections that say Not assigned, Not configured, or Needs validation when no governance evidence exists. It must not invent Stewards or authority from JU titles, reporting lines, assignments, or Process ownership. The complete engine requires separate decisions for identity reconciliation, scoped policies, Steward identity and delegation, effective timing, proposal and approval records, committees, analytical permissions, notifications, audit, retention, and evidence access. This decision authorizes no schema, migration, credential, environment, database, deployment, or JU-specific change. [GOVERNANCE_AND_STEWARDSHIP.md](GOVERNANCE_AND_STEWARDSHIP.md) records the product boundary.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -480,6 +499,7 @@ The following ideas are recorded so postponement is visible and deliberate.
 | Idea | Why deferred | Decision required before implementation |
 | --- | --- | --- |
 | Full authentication and authorization | A replaceable temporary provider now prepares one private administrator; durable deployment protection and enterprise identity remain unresolved | SSO, multiple identities, provisioning, recovery, roles/permissions, audit, and access review |
+| Governance and Stewardship engine | Dimensions, profiles, and Stewardship direction are accepted, but scope, delegation, effective timing, proposals, approval routing, and policy enforcement are unresolved | Governance domain, authorization, workflow, audit, retention, and identity decisions |
 | Observations and provenance | Source, contributor, scope, privacy, timing, authority, and retention are not yet represented | Observation lifecycle and evidence-access decision |
 | Guided interviews and AI interviewing | Requires consent, approved scope, attribution, disclosure, and review | Acquisition, participant privacy, AI provenance, and authorization decisions |
 | Uploads, imports, Visio/PDF/flowchart parsing | Requires malware handling, source permissions, artifact retention, provenance, and conflict treatment | Artifact architecture, storage, security, and extraction decision |

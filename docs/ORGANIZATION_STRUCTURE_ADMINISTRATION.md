@@ -41,6 +41,24 @@ Every form carries the canonical record's last observed `updated_at` revision.
 The write statement compares that revision again and rejects a stale edit. This
 is deterministic compare-and-set protection, not collaborative editing.
 
+## Governance boundary
+
+Direct canonical maintenance is a Workspace Administrator capability. It is
+not the normal contribution path for employees, Process participants,
+managers, or executives, and none of those identities receives administration
+authority from reporting hierarchy or Position title.
+
+The temporary private-pilot administrator represents one tightly controlled
+Workspace Administrator only. Every accepted action remains scoped and
+audited; the administrator cannot bypass or erase the change ledger.
+
+Future Contributors should normally use **Suggest an update** so evidence,
+review, cross-functional effects, and approval remain explicit. That proposal
+and governance workflow is intentionally not implemented by this v0.1
+administration boundary. Leadership analysis, Process approval, Stewardship,
+and Workspace Administration remain independent concepts as defined in
+[GOVERNANCE_AND_STEWARDSHIP.md](../GOVERNANCE_AND_STEWARDSHIP.md).
+
 ## Runtime security boundary
 
 Administration is disabled unless all of these conditions are true:
