@@ -30,6 +30,7 @@ type EffectiveRecord = {
   effectiveFrom: string;
   effectiveUntil?: string;
   reason?: string;
+  updatedAt?: string;
 };
 
 export type OrganizationStructureSeed = {
@@ -47,6 +48,7 @@ export type OrganizationStructureSeed = {
     stableKey: string;
     displayName: string;
     status: "active" | "inactive";
+    updatedAt?: string;
   }>;
   organizationUnits: Array<{
     stableKey: string;
@@ -57,6 +59,7 @@ export type OrganizationStructureSeed = {
     statusReason?: string;
     effectiveFrom: string;
     effectiveUntil?: string;
+    updatedAt?: string;
   }>;
   positions: Array<{
     stableKey: string;
@@ -66,6 +69,7 @@ export type OrganizationStructureSeed = {
     statusReason?: string;
     effectiveFrom: string;
     effectiveUntil?: string;
+    updatedAt?: string;
   }>;
   positionAssignments: Array<
     EffectiveRecord & {
@@ -103,12 +107,14 @@ export type OrganizationUnitSummary = {
   name: string;
   isProvisional: boolean;
   status: StructuralLifecycleStatus;
+  revision: string;
 };
 
 export type OrganizationPersonSummary = {
   id: string;
   name: string;
   status: "active" | "inactive";
+  revision: string;
 };
 
 export type OccupancyState = {
@@ -128,6 +134,7 @@ export type OrganizationPositionSummary = {
   status: StructuralLifecycleStatus;
   unit: OrganizationUnitSummary | null;
   occupancy: OccupancyState;
+  revision: string;
 };
 
 export type StructureProcess = {
@@ -147,6 +154,7 @@ export type StructureRelationship = {
   isCrossUnit: boolean;
   effectiveFrom: string;
   effectiveUntil: string | null;
+  revision: string;
 };
 
 export type StructureMandate = {
@@ -163,6 +171,7 @@ export type StructureMandate = {
     reason: string | null;
     effectiveFrom: string;
     effectiveUntil: string | null;
+    revision: string;
   }>;
   processes: StructureProcess[];
   systems: Array<{ id: string; name: string; usage: string }>;
@@ -180,6 +189,7 @@ export type OrganizationPosition = OrganizationPositionSummary & {
     reason: string | null;
     effectiveFrom: string;
     effectiveUntil: string | null;
+    revision: string;
   }>;
   primaryManager: StructureRelationship | null;
   directReports: StructureRelationship[];

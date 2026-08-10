@@ -4,10 +4,12 @@ import type {
   OrganizationPerson,
   OrganizationStructureData,
 } from "@/lib/organization-structure-data.mjs";
+import type { StructureChangeSummary } from "@/lib/organization-structure-administration";
 
 import { RoleIcon } from "../ui/icons";
 import { Alert, Badge, Card, EmptyState } from "../ui/primitives";
 import { formatOperatingModelTimestamp } from "../workspace-shell";
+import { StructureAdministrationPanel } from "./structure-administration-panel";
 import { StructureContext } from "./structure-context";
 
 function positionHref(id: string) {
@@ -23,9 +25,13 @@ function period(from: string, until: string | null) {
 }
 
 export function PersonDetail({
+  administrationEnabled,
+  changes,
   data,
   person,
 }: {
+  administrationEnabled: boolean;
+  changes: StructureChangeSummary[];
   data: OrganizationStructureData;
   person: OrganizationPerson;
 }) {
@@ -171,6 +177,14 @@ export function PersonDetail({
           )}
         </div>
       </Card>
+      {administrationEnabled ? (
+        <StructureAdministrationPanel
+          changes={changes}
+          data={data}
+          entity={person}
+          entityType="person"
+        />
+      ) : null}
     </div>
   );
 }

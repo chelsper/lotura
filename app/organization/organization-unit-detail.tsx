@@ -4,10 +4,12 @@ import type {
   OrganizationStructureData,
   OrganizationUnit,
 } from "@/lib/organization-structure-data.mjs";
+import type { StructureChangeSummary } from "@/lib/organization-structure-administration";
 
 import { ArrowIcon, OrganizationIcon, RoleIcon } from "../ui/icons";
 import { Alert, Badge, Card, EmptyState } from "../ui/primitives";
 import { StructureContext } from "./structure-context";
+import { StructureAdministrationPanel } from "./structure-administration-panel";
 
 function unitHref(id: string) {
   return `/organization/units/${encodeURIComponent(id)}`;
@@ -22,9 +24,13 @@ function processHref(id: string) {
 }
 
 export function OrganizationUnitDetail({
+  administrationEnabled,
+  changes,
   data,
   unit,
 }: {
+  administrationEnabled: boolean;
+  changes: StructureChangeSummary[];
   data: OrganizationStructureData;
   unit: OrganizationUnit;
 }) {
@@ -208,6 +214,14 @@ export function OrganizationUnitDetail({
           ) : null}
         </Card>
       </section>
+      {administrationEnabled ? (
+        <StructureAdministrationPanel
+          changes={changes}
+          data={data}
+          entity={unit}
+          entityType="organization_unit"
+        />
+      ) : null}
     </div>
   );
 }

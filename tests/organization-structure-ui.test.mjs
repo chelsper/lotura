@@ -77,21 +77,49 @@ test("the UI preserves the four structural distinctions and approved trust langu
   assert.doesNotMatch(combined, /institutionally approved truth|confirmed organizational truth/i);
 });
 
-test("Organization Structure UI contains no edit, import, or persistence controls", async () => {
+test("Organization Structure administration is explicit and disabled by default", async () => {
   const sources = await Promise.all(
     [
-      "app/organization/page.tsx",
-      "app/organization/organization-browser.tsx",
+      "lib/organization-structure-experience.ts",
+      "lib/organization-structure-administration-policy.mjs",
       "app/organization/organization-unit-detail.tsx",
       "app/organization/position-detail.tsx",
       "app/organization/person-detail.tsx",
-      "app/organization/focused-hierarchy.tsx",
+      "app/organization/structure-administration-panel.tsx",
     ].map(read),
   );
   const combined = sources.join("\n");
-  assert.doesNotMatch(combined, /use server|server action|method=.{0,3}["']post/i);
+  assert.match(combined, /LOTURA_STRUCTURE_ADMIN_MODE \|\| "disabled"/);
+  assert.match(combined, /administrationEnabled \?/);
+  assert.match(combined, /do not modify the source workbook or its import ledger/i);
+  assert.match(combined, /Remove from current structure/);
   assert.doesNotMatch(combined, /localStorage|sessionStorage|indexedDB|fetch\(/i);
-  assert.doesNotMatch(combined, /Save|Create Position|Edit Position|Approve for import/);
+});
+
+test("structure mutations are server-only, access-checked, scoped, and never hard-delete", async () => {
+  const [actions, administration, policy, proxy] = await Promise.all([
+    read("app/organization/actions.ts"),
+    read("lib/organization-structure-administration.ts"),
+    read("lib/organization-structure-administration-policy.mjs"),
+    read("proxy.ts"),
+  ]);
+  assert.match(actions, /^"use server";/);
+  assert.match(administration, /^import "server-only";/);
+  assert.ok(
+    administration.indexOf("await requireWorkspaceAccess()") <
+      administration.indexOf("mutationClient(configuration.databaseUrl)"),
+  );
+  assert.match(administration, /organization_id = \$[1234]/);
+  assert.doesNotMatch(administration, /delete\s+from/i);
+  assert.match(policy, /LOTURA_STRUCTURE_ADMIN_DATABASE_URL/);
+  assert.match(policy, /cannot reuse runtime, owner, or migration credentials/);
+  assert.doesNotMatch(administration, /DATABASE_URL(?:_UNPOOLED)?/);
+  assert.match(administration, /with changed as/i);
+  assert.match(administration, /insert into organization_structure_changes/i);
+  assert.match(administration, /replacePositionAssignment/);
+  assert.match(administration, /correctPositionReportingRelationship/);
+  assert.doesNotMatch(actions, /organizationId|organization_id/);
+  assert.doesNotMatch(proxy, /organization-structure-administration|LOTURA_STRUCTURE_ADMIN_DATABASE_URL/);
 });
 
 test("Person UI excludes unrelated personal and institutional data categories", async () => {
