@@ -4,6 +4,7 @@ import type {
   OrganizationPosition,
   OrganizationStructureData,
 } from "@/lib/organization-structure-data.mjs";
+import type { StructureChangeSummary } from "@/lib/organization-structure-administration";
 
 import { RoleIcon, SystemIcon } from "../ui/icons";
 import {
@@ -16,6 +17,7 @@ import {
 import { formatOperatingModelTimestamp } from "../workspace-shell";
 import { FocusedHierarchy } from "./focused-hierarchy";
 import { StructureContext } from "./structure-context";
+import { StructureAdministrationPanel } from "./structure-administration-panel";
 
 function personHref(id: string) {
   return `/organization/people/${encodeURIComponent(id)}`;
@@ -34,9 +36,13 @@ function period(from: string, until: string | null) {
 }
 
 export function PositionDetail({
+  administrationEnabled,
+  changes,
   data,
   position,
 }: {
+  administrationEnabled: boolean;
+  changes: StructureChangeSummary[];
   data: OrganizationStructureData;
   position: OrganizationPosition;
 }) {
@@ -233,6 +239,14 @@ export function PositionDetail({
           </p>
         </Card>
       </section>
+      {administrationEnabled ? (
+        <StructureAdministrationPanel
+          changes={changes}
+          data={data}
+          entity={position}
+          entityType="position"
+        />
+      ) : null}
     </div>
   );
 }

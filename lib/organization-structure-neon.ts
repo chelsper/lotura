@@ -1,12 +1,13 @@
 import "server-only";
 
-import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
   exception as exceptionTable,
   membership,
   organization,
+  organizationStructureChange,
   organizationStructureImport,
   organizationUnit,
   person,
@@ -27,6 +28,55 @@ import {
 
 import { mapNeonOrganizationStructure } from "./organization-structure-data.mjs";
 import { mapNeonOperatingModel } from "./process-explorer-neon-data.mjs";
+import type { StructureChangeSummary } from "./organization-structure-administration";
+
+function changeSummary(
+  row: {
+    action: StructureChangeSummary["action"];
+    actorIdentifier: string;
+    afterState: unknown;
+    beforeState: unknown;
+    changeKind: "correction" | "organizational_change";
+    createdAt: Date;
+    effectiveAt: Date;
+    id: string;
+    reason: string;
+    targetStableKey: string;
+    targetType: StructureChangeSummary["targetType"];
+  },
+): StructureChangeSummary {
+  return {
+    ...row,
+    afterState: row.afterState as Record<string, unknown>,
+    beforeState: row.beforeState as Record<string, unknown>,
+    createdAt: row.createdAt.toISOString(),
+    effectiveAt: row.effectiveAt.toISOString(),
+  };
+}
+
+export async function loadNeonOrganizationStructureChanges(
+  organizationId: number,
+) {
+  const rows = await db
+    .select({
+      action: organizationStructureChange.changeAction,
+      actorIdentifier: organizationStructureChange.actorIdentifier,
+      afterState: organizationStructureChange.afterState,
+      beforeState: organizationStructureChange.beforeState,
+      changeKind: organizationStructureChange.changeKind,
+      createdAt: organizationStructureChange.createdAt,
+      effectiveAt: organizationStructureChange.effectiveAt,
+      id: organizationStructureChange.stableKey,
+      reason: organizationStructureChange.reason,
+      targetStableKey: organizationStructureChange.targetStableKey,
+      targetType: organizationStructureChange.entityType,
+    })
+    .from(organizationStructureChange)
+    .where(eq(organizationStructureChange.organizationId, organizationId))
+    .orderBy(desc(organizationStructureChange.createdAt));
+
+  return rows.map(changeSummary);
+}
 
 export async function loadNeonOrganizationStructure(organizationId: number) {
   const [
@@ -219,6 +269,7 @@ export async function loadNeonOrganizationStructure(organizationId: number) {
         stableKey: person.stableKey,
         displayName: person.displayName,
         status: person.status,
+        updatedAt: person.updatedAt,
       })
       .from(person)
       .where(eq(person.organizationId, organizationId))
@@ -234,6 +285,7 @@ export async function loadNeonOrganizationStructure(organizationId: number) {
         statusReason: organizationUnit.statusReason,
         effectiveFrom: organizationUnit.effectiveFrom,
         effectiveUntil: organizationUnit.effectiveUntil,
+        updatedAt: organizationUnit.updatedAt,
       })
       .from(organizationUnit)
       .where(eq(organizationUnit.organizationId, organizationId))
@@ -248,6 +300,7 @@ export async function loadNeonOrganizationStructure(organizationId: number) {
         statusReason: position.statusReason,
         effectiveFrom: position.effectiveFrom,
         effectiveUntil: position.effectiveUntil,
+        updatedAt: position.updatedAt,
       })
       .from(position)
       .where(eq(position.organizationId, organizationId))
@@ -262,6 +315,7 @@ export async function loadNeonOrganizationStructure(organizationId: number) {
         effectiveFrom: positionAssignment.effectiveFrom,
         effectiveUntil: positionAssignment.effectiveUntil,
         reason: positionAssignment.reason,
+        updatedAt: positionAssignment.updatedAt,
       })
       .from(positionAssignment)
       .where(eq(positionAssignment.organizationId, organizationId))
@@ -281,6 +335,7 @@ export async function loadNeonOrganizationStructure(organizationId: number) {
         effectiveFrom: positionReportingRelationship.effectiveFrom,
         effectiveUntil: positionReportingRelationship.effectiveUntil,
         reason: positionReportingRelationship.reason,
+        updatedAt: positionReportingRelationship.updatedAt,
       })
       .from(positionReportingRelationship)
       .where(

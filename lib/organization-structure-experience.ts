@@ -1,13 +1,19 @@
 import "server-only";
 
 import { requireWorkspaceAccess } from "./authentication";
+import { resolveOrganizationStructureAdministrationConfiguration } from "./organization-structure-administration-policy.mjs";
 import { buildOrganizationStructureData } from "./organization-structure-data.mjs";
 import { loadOrganizationStructure } from "./organization-structure-source";
 import { resolveWorkspaceConfiguration } from "./workspace-configuration.mjs";
 import { resolveWorkspaceConfigurationOverrides } from "./workspace-configuration-policy.mjs";
 
 export async function loadOrganizationStructureExperience() {
-  await requireWorkspaceAccess();
+  const runtimeAccess = await requireWorkspaceAccess();
+  const administration =
+    resolveOrganizationStructureAdministrationConfiguration(
+      process.env,
+      runtimeAccess,
+    );
   const { asOf, operatingModel, source, structure } =
     await loadOrganizationStructure();
   const data = buildOrganizationStructureData(structure, operatingModel, asOf);
@@ -15,6 +21,11 @@ export async function loadOrganizationStructureExperience() {
     organizationName: data.organization.name,
     overrides: resolveWorkspaceConfigurationOverrides(process.env),
   });
+  const changes = administration.enabled
+    ? await import("./organization-structure-neon").then(({ loadNeonOrganizationStructureChanges }) =>
+        loadNeonOrganizationStructureChanges(administration.organizationId),
+      )
+    : [];
 
-  return { asOf, configuration, data, source };
+  return { administration, asOf, changes, configuration, data, source };
 }

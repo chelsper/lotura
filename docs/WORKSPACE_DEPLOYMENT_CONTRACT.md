@@ -1,0 +1,51 @@
+# Lotura Shared-Code Workspace Deployment Contract
+
+Lotura has one continuously evolving application. Public demonstration and
+private pilot deployments may differ through reviewed configuration, isolated
+credentials, and isolated data. They must not diverge through customer-specific
+branches or conditionals.
+
+Every release report records the exact `main` commit deployed to each
+environment. Temporary deployment lag is acceptable; code divergence is not.
+
+## Public Demo — `lotura.app`
+
+- deploys reviewed shared `main`;
+- uses `LOTURA_EXPLORER_MODE=demo` and the fictional Northstar fixture only;
+- remains public and read-only;
+- has no Neon runtime, owner/migration, or structural-write credential;
+- keeps `LOTURA_STRUCTURE_ADMIN_MODE` absent or `disabled`;
+- receives no JU data, identity, branding, or configuration; and
+- renders no structural-administration controls.
+
+## Private JU Pilot
+
+- deploys the same reviewed shared `main` to the dedicated JU Vercel project;
+- uses authenticated private-workspace access;
+- reads only the configured JU Organization from the isolated JU Neon database
+  through a dedicated SELECT-only runtime role;
+- uses a separate least-privilege structural-write role only through the
+  server-only `LOTURA_STRUCTURE_ADMIN_DATABASE_URL`;
+- enables administration explicitly with
+  `LOTURA_STRUCTURE_ADMIN_MODE=enabled` only after migration and privilege
+  verification;
+- resolves JU presentation through generic Workspace Configuration; and
+- receives no public-demo fixture fallback.
+
+The temporary pilot administrator represents the initial Workspace
+Administrator. It is not a substitute for the future multidimensional
+Governance and Stewardship engine.
+
+## Environment isolation
+
+The structural-write credential must not be configured in:
+
+- the Public Demo project;
+- any Preview deployment;
+- Development; or
+- client-visible variables, browser code, source files, logs, or repository
+  artifacts.
+
+Public Demo and JU Pilot data, credentials, configuration, domains, and access
+remain independently managed. A release is acceptable only when those
+differences are configuration and data differences applied to the same code.

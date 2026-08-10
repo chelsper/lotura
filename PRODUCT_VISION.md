@@ -8,6 +8,8 @@ This document records the enduring product direction and architecture principles
 
 Lotura is an organizational intelligence platform that helps organizations discover, document, understand, improve, and safely evolve how work gets done.
 
+Lotura is becoming the system that helps organizations **discover, govern, and continuously improve their organizational knowledge**. Governance means keeping that knowledge maintained, reviewed, explainable, and trusted over time—not merely restricting access to it.
+
 Its purpose is to make the real operating model of an organization visible and understandable: who is expected to own work, how responsibility is currently assigned, which systems enable it, where exceptions occur, and how a change in one part of the organization may affect another.
 
 ## Core principle
@@ -82,6 +84,16 @@ Every analysis should expose the facts and relationships on which it is based. U
 ### Preserve accountability
 
 Organizational truth remains accountable to people. Lotura can surface gaps, concentration, and change implications, but it should not silently redefine ownership, approve operational changes, or substitute generated content for institutional decisions.
+
+### Govern knowledge through stewardship
+
+Authority inside an organization is multidimensional. Organizational hierarchy, operational responsibility, visibility, contribution, approval, analysis, administration, and stewardship are related but independent.
+
+Stewards should eventually be visibly accountable for keeping defined organizational knowledge accurate and appropriately reviewed. A Steward is not necessarily the manager, Process Owner, system administrator, or person currently performing the work. Reporting hierarchy must never create approval or administrative authority automatically.
+
+Most contributors should suggest attributable updates rather than overwrite approved knowledge directly. Workspace Administrators may maintain canonical structure within explicit scope, but they cannot bypass audit history. Leadership may receive organization-wide analytical authority without receiving Workspace Administration.
+
+The enduring governance direction is defined in [GOVERNANCE_AND_STEWARDSHIP.md](GOVERNANCE_AND_STEWARDSHIP.md).
 
 ### Treat improvement as measured learning
 
@@ -179,6 +191,10 @@ The operating model must not be trapped in opaque AI output or customer-specific
 ### 8. Evolve the model deliberately
 
 The architecture should support incremental growth without prematurely turning future concepts into schema. New entities and relationships should be introduced when their lifecycle, ownership, evidence, and organizational boundaries are understood.
+
+### 9. Governance is multidimensional
+
+Visibility, contribution, approval, analysis, administration, and stewardship should have independently configurable scope. Product profiles may provide understandable defaults, but they must not collapse governance into reporting hierarchy or one universal role level.
 
 ## Roadmap phases
 

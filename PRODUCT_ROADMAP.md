@@ -12,6 +12,7 @@ The phases are intentionally cumulative. Each phase should deepen the same share
 - Processes, Roles, Systems, Exceptions, Dependencies, and Assignments remain the operating-model foundation.
 - Deterministic, evidence-based interpretation precedes automation and AI assistance.
 - Human stewards remain responsible for organizational truth and approved change.
+- Governance distinguishes visibility, contribution, approval, analysis, administration, and stewardship rather than deriving authority from reporting hierarchy.
 - Development, JU Pilot, Demo/Sandbox, and future production environments use the same product while isolating data, credentials, configuration, and access.
 - Real-world learning should improve the shared platform; it should not produce customer-specific application logic.
 - A deferred idea is intentionally postponed until its product boundaries and evidence requirements are understood. Deferred does not mean forgotten.
@@ -66,6 +67,8 @@ Enable authorized people to observe, discover, reconcile, approve, and steward a
 ### Product milestones
 
 - Introduce authentication and organization-scoped authorization.
+- Introduce the generic Workspace Administrator, Contributor, Manager / Approver, and Leadership / Organizational Analyst profiles without treating them as a single authority hierarchy.
+- Make Stewardship visible for important organizational knowledge while preserving the difference between a Steward, manager, Process Owner, system administrator, and current performer.
 - Support the private JU Pilot using approved institutional process information in an isolated environment.
 - Provide a blank Demo/Sandbox customer workspace with an optional, clearly labelled fictional sample organization.
 - Preserve process observations as first-class evidence with their source, participant perspective, timing, context, scope, and relationship to the operating model.
@@ -76,6 +79,8 @@ Enable authorized people to observe, discover, reconcile, approve, and steward a
 - Provide reconciliation tools that let stewards compare evidence, preserve unresolved differences, and propose a coherent operating-model definition.
 - Represent consensus explicitly, including what is agreed, disputed, uncertain, or still awaiting evidence.
 - Add an approval workflow that separates observation, proposed interpretation, reviewer consensus, and approved organizational truth.
+- Route review and approval from explicit governance scope and connected operating-model context rather than automatically using the contributor's manager.
+- Make **Suggest an update** the normal contribution path for approved knowledge; reserve direct canonical maintenance for scoped, audited Workspace Administration.
 - Preserve version history for approved definitions, including authorship, approval, effective timing, and supersession.
 - Support change requests tied to the observations, conflicts, processes, roles, systems, exceptions, and dependencies that motivated them.
 - Begin the continuous-improvement loop by turning accepted observations and change requests into traceable improvement opportunities. Measurement and sustainment mature in Phase 3.
@@ -161,6 +166,8 @@ Support governed, secure, interoperable use of Lotura across complex organizatio
 ### Product milestones
 
 - Add enterprise identity capabilities such as single sign-on, managed provisioning, and role-based administration.
+- Add independently scoped visibility, contribution, approval, analytical, administrative, and stewardship policies.
+- Support delegated Stewardship, cross-functional review, governance committees, and effective-dated authority without collapsing them into reporting hierarchy.
 - Support organizational hierarchies, delegated stewardship, and appropriately scoped cross-unit visibility.
 - Provide comprehensive audit history for access, approvals, knowledge changes, exports, and administrative actions.
 - Add configurable retention, archival, legal, privacy, residency, and evidence-governance controls.
@@ -185,6 +192,7 @@ This register makes intentional postponement visible so ideas are neither mistak
 | Deferred idea | Earliest relevant phase | Why it is intentionally postponed |
 | --- | --- | --- |
 | Authentication and authorization | Phase 2 | The read-only operating-model foundation needed validation before access policy was introduced. |
+| Governance and Stewardship engine | Phase 2 through Phase 5 | Product vocabulary and boundaries are established, but scoped policy, delegation, approval routing, effective timing, audit, and enterprise identity require separate design. |
 | Editing and knowledge stewardship | Phase 2 | Capture requires provenance, observation status, review meaning, and organizational authorization. |
 | JU Pilot with institutional information | Phase 2 | Pilot use requires private authenticated access and explicit data approval. |
 | Guided and AI-assisted interviews | Phase 2 | Interviewing requires approved scope, disclosure, provenance, observation preservation, and human review. |

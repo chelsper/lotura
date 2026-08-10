@@ -13,7 +13,7 @@ export default async function OrganizationUnitPage({
 }) {
   await connection();
   const { unitId } = await params;
-  const { asOf, configuration, data, source } =
+  const { administration, asOf, changes, configuration, data, source } =
     await loadOrganizationStructureExperience();
   const unit = data.units.find((item) => item.id === unitId);
 
@@ -26,7 +26,12 @@ export default async function OrganizationUnitPage({
       configuration={configuration}
       source={source}
     >
-      <OrganizationUnitDetail data={data} unit={unit} />
+      <OrganizationUnitDetail
+        administrationEnabled={administration.enabled}
+        changes={changes}
+        data={data}
+        unit={unit}
+      />
     </WorkspaceShell>
   );
 }

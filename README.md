@@ -151,4 +151,12 @@ npx drizzle-kit check
 
 The Vercel project should use the Next.js framework preset, repository root `.`, the default Next.js output directory, `npm run build`, and Node.js 24.x. A `vercel.json` file is intentionally unnecessary for this single-app repository.
 
-Store `DATABASE_URL` and `DATABASE_URL_UNPOOLED` as sensitive Vercel environment variables. Production and Preview should use separate Neon branches/credentials so preview deployments cannot mutate production data. The Neon/Vercel integration can automate per-preview database branches; otherwise configure environment-specific values manually.
+Store only the least-privilege runtime `DATABASE_URL` required by a deployed
+Neon workspace. `DATABASE_URL_UNPOOLED` is an explicit administrative migration
+or seed credential and is not a runtime fallback or ordinary deployment value.
+Production and Preview must use isolated data and credentials so preview
+deployments cannot mutate production data.
+
+The Public Demo and private-pilot configuration boundary, including the
+server-only structural-write credential, is defined in
+[docs/WORKSPACE_DEPLOYMENT_CONTRACT.md](docs/WORKSPACE_DEPLOYMENT_CONTRACT.md).

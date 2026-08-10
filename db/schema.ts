@@ -5,6 +5,7 @@ import {
   foreignKey,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -98,6 +99,28 @@ export const roleCoverageType = pgEnum("role_coverage_type", [
   "delegated",
   "backup",
 ]);
+
+export const organizationStructureChangeKind = pgEnum(
+  "organization_structure_change_kind",
+  ["correction", "organizational_change"],
+);
+
+export const organizationStructureChangeAction = pgEnum(
+  "organization_structure_change_action",
+  [
+    "update",
+    "remove_from_current_structure",
+    "end_assignment",
+    "replace_assignment",
+    "end_reporting_relationship",
+    "correct_reporting_relationship",
+  ],
+);
+
+export const organizationStructureChangeEntityType = pgEnum(
+  "organization_structure_change_entity_type",
+  ["organization_unit", "position", "person"],
+);
 
 export const organization = pgTable("organizations", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -671,6 +694,11 @@ export const person = pgTable(
       table.id,
       table.organizationId,
     ),
+    unique("people_id_org_stable_key_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+    ),
     check(
       "people_display_name_not_blank_check",
       sql`char_length(trim(${table.displayName})) > 0`,
@@ -754,6 +782,11 @@ export const organizationUnit = pgTable(
     unique("organization_units_id_organization_id_unique").on(
       table.id,
       table.organizationId,
+    ),
+    unique("organization_units_id_org_stable_key_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
     ),
     check(
       "organization_units_name_not_blank_check",
@@ -852,6 +885,11 @@ export const position = pgTable(
     unique("positions_id_organization_id_unique").on(
       table.id,
       table.organizationId,
+    ),
+    unique("positions_id_org_stable_key_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
     ),
     check(
       "positions_title_not_blank_check",
@@ -1222,6 +1260,107 @@ export const roleCoverage = pgTable(
     ),
     index("role_coverages_introduced_by_import_id_idx").on(
       table.introducedByImportId,
+    ),
+  ],
+);
+
+export const organizationStructureChange = pgTable(
+  "organization_structure_changes",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    entityType:
+      organizationStructureChangeEntityType("entity_type").notNull(),
+    targetStableKey: uuid("target_stable_key").notNull(),
+    organizationUnitId: integer("organization_unit_id"),
+    positionId: integer("position_id"),
+    personId: integer("person_id"),
+    changeKind: organizationStructureChangeKind("change_kind").notNull(),
+    changeAction:
+      organizationStructureChangeAction("change_action").notNull(),
+    beforeState: jsonb("before_state").notNull(),
+    afterState: jsonb("after_state").notNull(),
+    reason: text("reason").notNull(),
+    effectiveAt: timestamp("effective_at", { withTimezone: true }).notNull(),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "organization_structure_changes_org_fk",
+      columns: [table.organizationId],
+      foreignColumns: [organization.id],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "organization_structure_changes_unit_org_fk",
+      columns: [
+        table.organizationUnitId,
+        table.organizationId,
+        table.targetStableKey,
+      ],
+      foreignColumns: [
+        organizationUnit.id,
+        organizationUnit.organizationId,
+        organizationUnit.stableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "organization_structure_changes_position_org_fk",
+      columns: [table.positionId, table.organizationId, table.targetStableKey],
+      foreignColumns: [position.id, position.organizationId, position.stableKey],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "organization_structure_changes_person_org_fk",
+      columns: [table.personId, table.organizationId, table.targetStableKey],
+      foreignColumns: [person.id, person.organizationId, person.stableKey],
+    }).onDelete("restrict"),
+    unique("organization_structure_changes_stable_key_unique").on(
+      table.stableKey,
+    ),
+    check(
+      "organization_structure_changes_target_check",
+      sql`(${table.entityType} = 'organization_unit' and ${table.organizationUnitId} is not null and ${table.positionId} is null and ${table.personId} is null) or (${table.entityType} = 'position' and ${table.organizationUnitId} is null and ${table.positionId} is not null and ${table.personId} is null) or (${table.entityType} = 'person' and ${table.organizationUnitId} is null and ${table.positionId} is null and ${table.personId} is not null)`,
+    ),
+    check(
+      "organization_structure_changes_reason_not_blank_check",
+      sql`char_length(trim(${table.reason})) > 0`,
+    ),
+    check(
+      "organization_structure_changes_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    check(
+      "organization_structure_changes_json_objects_check",
+      sql`jsonb_typeof(${table.beforeState}) = 'object' and jsonb_typeof(${table.afterState}) = 'object'`,
+    ),
+    check(
+      "organization_structure_changes_effective_at_check",
+      sql`${table.effectiveAt} <= ${table.createdAt}`,
+    ),
+    index("organization_structure_changes_org_created_idx").on(
+      table.organizationId,
+      table.createdAt,
+    ),
+    index("organization_structure_changes_target_created_idx").on(
+      table.organizationId,
+      table.entityType,
+      table.targetStableKey,
+      table.createdAt,
+    ),
+    index("organization_structure_changes_unit_created_idx").on(
+      table.organizationUnitId,
+      table.createdAt,
+    ),
+    index("organization_structure_changes_position_created_idx").on(
+      table.positionId,
+      table.createdAt,
+    ),
+    index("organization_structure_changes_person_created_idx").on(
+      table.personId,
+      table.createdAt,
     ),
   ],
 );
