@@ -1,8 +1,13 @@
 import { getRoleCoverage } from "@/lib/flow-analysis.mjs";
+import {
+  getCanonicalRoleCoverage,
+  type CurrentRoleCoverage,
+} from "@/lib/process-role-coverage.mjs";
 
 export type ActiveInactiveStatus = "active" | "inactive";
 export type ProcessStatus = "draft" | "active" | "archived";
 export type AssignmentType = "permanent" | "interim" | "acting" | "backup";
+export type CoverageType = AssignmentType | "delegated";
 export type AssignmentStatus = "scheduled" | "active" | "ended" | "cancelled";
 export type SystemType =
   | "software"
@@ -43,6 +48,32 @@ type SeedRoleAssignment = {
   effectiveFrom: string;
   effectiveUntil?: string;
   reason?: string;
+};
+
+type SeedPerson = {
+  key: string;
+  displayName: string;
+  status: ActiveInactiveStatus;
+};
+
+type SeedRoleMandate = {
+  key: string;
+  roleKey: string;
+  mandateType: "primary" | "shared";
+  scope?: string;
+  status: AssignmentStatus;
+  effectiveFrom: string;
+  effectiveUntil?: string;
+};
+
+type SeedRoleCoverage = {
+  key: string;
+  roleMandateKey: string;
+  personKey: string;
+  coverageType: CoverageType;
+  status: AssignmentStatus;
+  effectiveFrom: string;
+  effectiveUntil?: string;
 };
 
 type SeedSystem = {
@@ -102,6 +133,9 @@ export type ProcessExplorerSeed = {
   memberships: SeedMembership[];
   roles: SeedRole[];
   roleAssignments: SeedRoleAssignment[];
+  people?: SeedPerson[];
+  roleMandates?: SeedRoleMandate[];
+  roleCoverages?: SeedRoleCoverage[];
   systems: SeedSystem[];
   processes: SeedProcess[];
   processSteps: SeedProcessStep[];
@@ -119,6 +153,14 @@ export type ExplorerRole = {
     name: string;
     assignmentType: AssignmentType;
   } | null;
+  currentCoverage: Array<
+    CurrentRoleCoverage | {
+      name: string;
+      coverageType: AssignmentType;
+      mandateType: null;
+      scope: null;
+    }
+  >;
 };
 
 export type ExplorerSystem = {
@@ -313,6 +355,7 @@ export function buildProcessExplorerData(
   const coverageByRole = new Map(
     getRoleCoverage(seed, asOf).map((item) => [item.roleId, item]),
   );
+  const canonicalCoverageByRole = getCanonicalRoleCoverage(seed, asOf);
 
   const roles = seed.roles.map<ExplorerRole>((role) => {
     const currentAssignment = coverageByRole.get(role.key)?.primary ?? null;
@@ -332,6 +375,18 @@ export function buildProcessExplorerData(
       description: role.description ?? null,
       status: role.status,
       currentAssignee,
+      currentCoverage: canonicalCoverageByRole
+        ? (canonicalCoverageByRole.get(role.key) ?? [])
+        : currentAssignment
+          ? [
+              {
+                name: currentAssignment.personName,
+                coverageType: currentAssignment.assignmentType,
+                mandateType: null,
+                scope: null,
+              },
+            ]
+          : [],
     };
   });
   const rolesByKey = new Map(roles.map((item) => [item.id, item]));

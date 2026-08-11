@@ -28,6 +28,34 @@ export type NeonOperatingModelRows = {
     effectiveUntil: string | Date | null;
     reason: string | null;
   }>;
+  people: Array<{
+    id: number;
+    displayName: string;
+    status: ActiveInactiveStatus;
+  }>;
+  roleMandates: Array<{
+    id: number;
+    roleId: number;
+    mandateType: "primary" | "shared";
+    scope: string | null;
+    status: "scheduled" | "active" | "ended" | "cancelled";
+    effectiveFrom: string | Date;
+    effectiveUntil: string | Date | null;
+  }>;
+  roleCoverages: Array<{
+    id: number;
+    roleMandateId: number;
+    personId: number;
+    coverageType:
+      | "permanent"
+      | "interim"
+      | "acting"
+      | "delegated"
+      | "backup";
+    status: "scheduled" | "active" | "ended" | "cancelled";
+    effectiveFrom: string | Date;
+    effectiveUntil: string | Date | null;
+  }>;
   systems: Array<{
     id: number;
     name: string;

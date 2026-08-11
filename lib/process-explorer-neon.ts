@@ -7,12 +7,15 @@ import {
   exception as exceptionTable,
   membership,
   organization,
+  person,
   process as processTable,
   processDependency,
   processStep,
   processSystem,
   role,
   roleAssignment,
+  roleCoverage,
+  roleMandate,
   system as systemTable,
   user,
 } from "@/db/schema";
@@ -27,6 +30,9 @@ export async function loadNeonOperatingModel(organizationId: number) {
     memberships,
     roles,
     roleAssignments,
+    people,
+    roleMandates,
+    roleCoverages,
     systems,
     processes,
     processSteps,
@@ -94,6 +100,45 @@ export async function loadNeonOperatingModel(organizationId: number) {
         asc(roleAssignment.roleId),
         asc(roleAssignment.effectiveFrom),
         asc(roleAssignment.id),
+      ),
+    db
+      .select({
+        id: person.id,
+        displayName: person.displayName,
+        status: person.status,
+      })
+      .from(person)
+      .where(eq(person.organizationId, organizationId))
+      .orderBy(asc(person.displayName), asc(person.id)),
+    db
+      .select({
+        id: roleMandate.id,
+        roleId: roleMandate.roleId,
+        mandateType: roleMandate.mandateType,
+        scope: roleMandate.scope,
+        status: roleMandate.status,
+        effectiveFrom: roleMandate.effectiveFrom,
+        effectiveUntil: roleMandate.effectiveUntil,
+      })
+      .from(roleMandate)
+      .where(eq(roleMandate.organizationId, organizationId))
+      .orderBy(asc(roleMandate.roleId), asc(roleMandate.id)),
+    db
+      .select({
+        id: roleCoverage.id,
+        roleMandateId: roleCoverage.roleMandateId,
+        personId: roleCoverage.personId,
+        coverageType: roleCoverage.coverageType,
+        status: roleCoverage.status,
+        effectiveFrom: roleCoverage.effectiveFrom,
+        effectiveUntil: roleCoverage.effectiveUntil,
+      })
+      .from(roleCoverage)
+      .where(eq(roleCoverage.organizationId, organizationId))
+      .orderBy(
+        asc(roleCoverage.roleMandateId),
+        asc(roleCoverage.effectiveFrom),
+        asc(roleCoverage.id),
       ),
     db
       .select({
@@ -188,6 +233,9 @@ export async function loadNeonOperatingModel(organizationId: number) {
     memberships,
     roles,
     roleAssignments,
+    people,
+    roleMandates,
+    roleCoverages,
     systems,
     processes,
     processSteps,

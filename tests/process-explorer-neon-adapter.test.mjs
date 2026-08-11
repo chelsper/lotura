@@ -35,6 +35,35 @@ function operatingModelRows() {
         reason: null,
       },
     ],
+    people: [
+      {
+        id: 11,
+        displayName: "Jamie Coverage",
+        status: "active",
+      },
+    ],
+    roleMandates: [
+      {
+        id: 12,
+        roleId: 3,
+        mandateType: "primary",
+        scope: null,
+        status: "active",
+        effectiveFrom: new Date("2026-01-01T00:00:00.000Z"),
+        effectiveUntil: null,
+      },
+    ],
+    roleCoverages: [
+      {
+        id: 13,
+        roleMandateId: 12,
+        personId: 11,
+        coverageType: "permanent",
+        status: "active",
+        effectiveFrom: new Date("2026-01-01T00:00:00.000Z"),
+        effectiveUntil: null,
+      },
+    ],
     systems: [
       {
         id: 5,
@@ -113,6 +142,13 @@ test("Neon rows map every Version 0.1 entity and relationship into the pure inpu
     loaded.seed.roleAssignments[0].membershipKey,
     "membership:2",
   );
+  assert.equal(loaded.seed.people[0].key, "person:11");
+  assert.equal(loaded.seed.roleMandates[0].roleKey, "role:3");
+  assert.equal(
+    loaded.seed.roleCoverages[0].roleMandateKey,
+    "mandate:12",
+  );
+  assert.equal(loaded.seed.roleCoverages[0].personKey, "person:11");
   assert.equal(loaded.seed.systems[0].ownerRoleKey, "role:3");
   assert.equal(loaded.seed.processes[0].ownerRoleKey, "role:3");
   assert.equal(loaded.seed.processSteps[0].processKey, "process:6");
@@ -131,6 +167,11 @@ test("Neon rows map every Version 0.1 entity and relationship into the pure inpu
   assert.equal(analysis.organization.name, "Fictional Operations Group");
   assert.equal(analysis.asOf, "2026-08-07T12:01:02.345Z");
   assert.equal(analysis.roleCoverage[0].primary.personName, "Alex Example");
+  assert.notEqual(
+    analysis.roleCoverage[0].primary.personName,
+    loaded.seed.people[0].displayName,
+    "FLOW must continue using Version 0.1 RoleAssignment until separately approved",
+  );
 });
 
 test("the mapper rejects missing organizations and invalid snapshot timestamps", () => {
@@ -164,6 +205,9 @@ test("the runtime adapter is organization-scoped and contains only read queries"
     "membership.organizationId, organizationId",
     "role.organizationId, organizationId",
     "roleAssignment.organizationId, organizationId",
+    "person.organizationId, organizationId",
+    "roleMandate.organizationId, organizationId",
+    "roleCoverage.organizationId, organizationId",
     "systemTable.organizationId, organizationId",
     "processTable.organizationId, organizationId",
     "processStep.organizationId, organizationId",
