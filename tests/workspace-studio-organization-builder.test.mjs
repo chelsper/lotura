@@ -138,6 +138,24 @@ test("possible duplicates require explicit review while legitimate duplicates re
   assert.match(administration, /lower\(trim\(duplicate\.display_name\)\)/);
 });
 
+test("creation failures preserve the review reason and disclose only safe failure categories", async () => {
+  const [form, administration] = await Promise.all([
+    read("app/studio/organization/structure-create-form.tsx"),
+    read("lib/organization-structure-administration.ts"),
+  ]);
+  assert.match(form, /const \[reason, setReason\] = useState\(""\)/);
+  assert.match(form, /<CreationMetadataFields reason=\{reason\} setReason=\{setReason\} \/>/);
+  assert.match(form, /value=\{reason\}/);
+  assert.match(administration, /organizationUnitCreationFailure/);
+  assert.match(administration, /code === "42501"/);
+  assert.match(administration, /code === "40001"/);
+  assert.match(administration, /\["23503", "23505", "23514"\]\.includes\(code\)/);
+  assert.doesNotMatch(
+    administration,
+    /console\.error\([^\n]+(?:message|databaseUrl|reason|name)/,
+  );
+});
+
 test("initial Position Assignment preserves the Person, Position, and Role boundary", async () => {
   const [administration, panel] = await Promise.all([
     read("lib/organization-structure-administration.ts"),

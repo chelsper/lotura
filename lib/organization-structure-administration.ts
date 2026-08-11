@@ -512,6 +512,74 @@ function createdStableKey(rows: DatabaseRow[]) {
   return typeof value === "string" && validUuid(value) ? value : null;
 }
 
+type SafeDatabaseError = {
+  code?: unknown;
+  constraint?: unknown;
+  routine?: unknown;
+  table?: unknown;
+};
+
+function organizationUnitCreationFailure(
+  error: unknown,
+): StructureMutationResult {
+  const databaseError =
+    typeof error === "object" && error !== null
+      ? (error as SafeDatabaseError)
+      : null;
+  const code =
+    typeof databaseError?.code === "string" ? databaseError.code : "unknown";
+
+  // Never log submitted names, reasons, credentials, URLs, or raw database
+  // messages. These stable PostgreSQL identifiers are enough to distinguish a
+  // privilege/configuration problem from a canonical-data conflict.
+  console.error("Organization Unit creation failed.", {
+    code,
+    constraint:
+      typeof databaseError?.constraint === "string"
+        ? databaseError.constraint
+        : undefined,
+    routine:
+      typeof databaseError?.routine === "string"
+        ? databaseError.routine
+        : undefined,
+    table:
+      typeof databaseError?.table === "string"
+        ? databaseError.table
+        : undefined,
+  });
+
+  if (code === "42501") {
+    return {
+      ok: false,
+      code: "unavailable",
+      message:
+        "The Workspace write role is missing an approved Organization Unit creation privilege. No change was made.",
+    };
+  }
+  if (code === "40001") {
+    return {
+      ok: false,
+      code: "conflict",
+      message:
+        "The organization changed while this Unit was being added. Review the current structure and try again.",
+    };
+  }
+  if (["23503", "23505", "23514"].includes(code)) {
+    return {
+      ok: false,
+      code: "blocked",
+      message:
+        "The Organization Unit conflicts with the current canonical hierarchy. Review its name and parent Unit, then try again.",
+    };
+  }
+  return {
+    ok: false,
+    code: "unavailable",
+    message:
+      "The Organization Unit could not be added. No partial change was accepted.",
+  };
+}
+
 export async function createOrganizationUnit(
   input: CreateOrganizationUnitMutation,
 ): Promise<StructureMutationResult> {
@@ -619,12 +687,8 @@ export async function createOrganizationUnit(
         "Organization Unit added to the current structure with an append-only history event.",
       stableKey,
     };
-  } catch {
-    return {
-      ok: false,
-      code: "unavailable",
-      message: "The Organization Unit could not be added. No partial change was accepted.",
-    };
+  } catch (error) {
+    return organizationUnitCreationFailure(error);
   }
 }
 
