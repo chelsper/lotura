@@ -634,18 +634,21 @@ export async function createOrganizationUnit(
          insert into organization_units
            (organization_id, name, parent_organization_unit_id,
             is_provisional, status, effective_from)
-         select $1, $2, $3, false, 'active', $4::timestamptz
+         select $1::integer, $2::varchar(255), $3::integer,
+           false, 'active', $4::timestamptz
          where ($3::integer is null or exists (
            select 1 from organization_units parent
-           where parent.id = $3 and parent.organization_id = $1
+           where parent.id = $3::integer
+             and parent.organization_id = $1::integer
              and parent.status = 'active'
          ))
          and ($5::boolean or not exists (
            select 1 from organization_units duplicate
-           where duplicate.organization_id = $1
+           where duplicate.organization_id = $1::integer
              and duplicate.status = 'active'
-             and lower(trim(duplicate.name)) = lower(trim($2))
-             and duplicate.parent_organization_unit_id is not distinct from $3
+             and lower(trim(duplicate.name)) = lower(trim($2::text))
+             and duplicate.parent_organization_unit_id
+               is not distinct from $3::integer
          ))
          returning id, stable_key
        ),
@@ -744,18 +747,21 @@ export async function createPosition(
       `with changed as (
          insert into positions
            (organization_id, organization_unit_id, title, status, effective_from)
-         select $1, $2, $3, 'active', $4::timestamptz
+         select $1::integer, $2::integer, $3::varchar(255),
+           'active', $4::timestamptz
          where ($2::integer is null or exists (
            select 1 from organization_units unit
-           where unit.id = $2 and unit.organization_id = $1
+           where unit.id = $2::integer
+             and unit.organization_id = $1::integer
              and unit.status = 'active'
          ))
          and ($5::boolean or not exists (
            select 1 from positions duplicate
-           where duplicate.organization_id = $1
+           where duplicate.organization_id = $1::integer
              and duplicate.status = 'active'
-             and lower(trim(duplicate.title)) = lower(trim($3))
-             and duplicate.organization_unit_id is not distinct from $2
+             and lower(trim(duplicate.title)) = lower(trim($3::text))
+             and duplicate.organization_unit_id
+               is not distinct from $2::integer
          ))
          returning id, stable_key
        ),
@@ -832,14 +838,14 @@ export async function createPerson(
     const afterState = { displayName, status: "active" };
     const rows = await atomicQuery(
       sql,
-      `with changed as (
+       `with changed as (
          insert into people (organization_id, display_name, status)
-         select $1, $2, 'active'
+         select $1::integer, $2::varchar(255), 'active'
          where $3::boolean or not exists (
            select 1 from people duplicate
-           where duplicate.organization_id = $1
+           where duplicate.organization_id = $1::integer
              and duplicate.status = 'active'
-             and lower(trim(duplicate.display_name)) = lower(trim($2))
+             and lower(trim(duplicate.display_name)) = lower(trim($2::text))
          )
          returning id, stable_key
        ),

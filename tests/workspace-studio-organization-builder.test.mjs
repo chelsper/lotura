@@ -110,6 +110,26 @@ test("creation uses database-generated stable keys and atomic append-only histor
   assert.doesNotMatch(administration, /delete\s+from/i);
 });
 
+test("creation SQL explicitly types values reused by inserts and duplicate checks", async () => {
+  const administration = await read(
+    "lib/organization-structure-administration.ts",
+  );
+  assert.match(
+    administration,
+    /select \$1::integer, \$2::varchar\(255\), \$3::integer,/,
+  );
+  assert.match(
+    administration,
+    /select \$1::integer, \$2::integer, \$3::varchar\(255\),/,
+  );
+  assert.match(
+    administration,
+    /select \$1::integer, \$2::varchar\(255\), 'active'/,
+  );
+  assert.match(administration, /lower\(trim\(\$2::text\)\)/);
+  assert.match(administration, /lower\(trim\(\$3::text\)\)/);
+});
+
 test("creation and assignment reauthorize, scope related keys, and never accept Organization from clients", async () => {
   const [actions, administration] = await Promise.all([
     read("app/organization/actions.ts"),
