@@ -59,6 +59,14 @@ test("new Operational Roles exist only inside an atomic first-mandate transactio
     administration,
     /lower\(trim\(existing_role\.name\)\) = lower\(trim\(\$5\)\)/,
   );
+  assert.match(
+    administration,
+    /console\.error\("organization_structure_role_mandate_failed", \{ sqlState \}\)/,
+  );
+  assert.doesNotMatch(
+    administration,
+    /console\.error\([^;\n]*(?:message|stack|query|values)/,
+  );
 });
 
 test("mandate and coverage writes are tenant-scoped and compare-and-set protected", async () => {

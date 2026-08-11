@@ -2188,7 +2188,16 @@ export async function establishRoleMandate(
         ? "Operational Role created and explicitly mandated to this Position. No responsibility was inferred from its title or reporting line."
         : "Operational Role mandate established. No responsibility was inferred from the Position title or reporting line.",
     };
-  } catch {
+  } catch (error) {
+    const sqlState =
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      typeof error.code === "string" &&
+      /^[0-9A-Z]{5}$/.test(error.code)
+        ? error.code
+        : "unknown";
+    console.error("organization_structure_role_mandate_failed", { sqlState });
     return {
       ok: false,
       code: "blocked",
