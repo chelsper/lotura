@@ -39,6 +39,21 @@ function effectiveDateDefault() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function formatAdministrativeTimestamp(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(new Date(value));
+}
+
+function formatAdministrativeDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeZone: "UTC",
+  }).format(new Date(value));
+}
+
 function entityLabel(entityType: StructureEntityType) {
   return {
     organization_unit: "Organization Unit",
@@ -1176,7 +1191,7 @@ function displayStateValue(value: unknown) {
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
     const date = new Date(value);
-    if (Number.isFinite(date.getTime())) return date.toLocaleString();
+    if (Number.isFinite(date.getTime())) return formatAdministrativeTimestamp(value);
   }
   return String(value);
 }
@@ -1304,12 +1319,12 @@ export function StructureAdministrationPanel({
                     {changeActionLabel(change.action)}
                   </p>
                   <span className="text-[11px] text-[var(--text-tertiary)]">
-                    {new Date(change.createdAt).toLocaleString()}
+                    {formatAdministrativeTimestamp(change.createdAt)} UTC
                   </span>
                 </div>
                 <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">{change.reason}</p>
                 <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
-                  {change.changeKind === "correction" ? "Correction" : "Organizational change"} · effective {new Date(change.effectiveAt).toLocaleDateString()} · {change.actorIdentifier}
+                  {change.changeKind === "correction" ? "Correction" : "Organizational change"} · effective {formatAdministrativeDate(change.effectiveAt)} UTC · {change.actorIdentifier}
                 </p>
                 <StateComparison change={change} />
               </li>
