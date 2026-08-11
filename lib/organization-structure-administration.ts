@@ -513,9 +513,10 @@ export async function updateStructureEntity(
       };
       changedSql = `update organization_units
         set name = $1, parent_organization_unit_id = $2,
-          updated_at = transaction_timestamp()
+          updated_at = date_trunc('milliseconds', transaction_timestamp())
         where id = $3 and organization_id = $4
-          and stable_key = $5::uuid and updated_at = $6::timestamptz
+          and stable_key = $5::uuid
+          and date_trunc('milliseconds', updated_at) = $6::timestamptz
         returning id`;
       changedValues = [
         name,
@@ -560,9 +561,10 @@ export async function updateStructureEntity(
       afterState = { ...beforeState, organizationUnitId, title };
       changedSql = `update positions
         set title = $1, organization_unit_id = $2,
-          updated_at = transaction_timestamp()
+          updated_at = date_trunc('milliseconds', transaction_timestamp())
         where id = $3 and organization_id = $4
-          and stable_key = $5::uuid and updated_at = $6::timestamptz
+          and stable_key = $5::uuid
+          and date_trunc('milliseconds', updated_at) = $6::timestamptz
         returning id`;
       changedValues = [
         title,
@@ -590,9 +592,11 @@ export async function updateStructureEntity(
       }
       afterState = { ...beforeState, displayName };
       changedSql = `update people
-        set display_name = $1, updated_at = transaction_timestamp()
+        set display_name = $1,
+            updated_at = date_trunc('milliseconds', transaction_timestamp())
         where id = $2 and organization_id = $3
-          and stable_key = $4::uuid and updated_at = $5::timestamptz
+          and stable_key = $4::uuid
+          and date_trunc('milliseconds', updated_at) = $5::timestamptz
         returning id`;
       changedValues = [
         displayName,
@@ -782,16 +786,17 @@ export async function removeStructureEntity(
     const changedSql =
       input.entityType === "person"
         ? `update people
-           set status = 'inactive', updated_at = transaction_timestamp()
+           set status = 'inactive',
+             updated_at = date_trunc('milliseconds', transaction_timestamp())
            where stable_key = $1::uuid and id = $2 and organization_id = $3
-             and updated_at = $4::timestamptz ${blockerClause}
+             and date_trunc('milliseconds', updated_at) = $4::timestamptz ${blockerClause}
            returning id`
         : `update ${descriptor.table}
            set status = 'retired', status_reason = $5,
              effective_until = $6::timestamptz,
-             updated_at = transaction_timestamp()
+             updated_at = date_trunc('milliseconds', transaction_timestamp())
            where stable_key = $1::uuid and id = $2 and organization_id = $3
-             and updated_at = $4::timestamptz ${blockerClause}
+             and date_trunc('milliseconds', updated_at) = $4::timestamptz ${blockerClause}
            returning id`;
     const changedValues =
       input.entityType === "person"
@@ -937,9 +942,9 @@ export async function endPositionAssignment(
       `with changed as (
          update position_assignments
          set status = 'ended', effective_until = $1::timestamptz,
-           updated_at = transaction_timestamp()
+           updated_at = date_trunc('milliseconds', transaction_timestamp())
          where id = $2 and organization_id = $3 and position_id = $4
-           and updated_at = $5::timestamptz
+           and date_trunc('milliseconds', updated_at) = $5::timestamptz
            and status in ('scheduled', 'active')
          returning position_id as id
        ),
@@ -1078,9 +1083,9 @@ export async function replacePositionAssignment(
       `with changed as (
          update position_assignments
          set status = 'ended', effective_until = $1::timestamptz,
-           updated_at = transaction_timestamp()
+           updated_at = date_trunc('milliseconds', transaction_timestamp())
          where id = $2 and organization_id = $3 and position_id = $4
-           and updated_at = $5::timestamptz
+           and date_trunc('milliseconds', updated_at) = $5::timestamptz
            and status in ('scheduled', 'active')
          returning id, organization_id, position_id, assignment_type
        ),
@@ -1289,9 +1294,10 @@ export async function establishPositionReportingRelationship(
       sql,
       `with changed as (
          update positions
-         set updated_at = transaction_timestamp()
+         set updated_at = date_trunc('milliseconds', transaction_timestamp())
          where id = $1 and organization_id = $2
-           and stable_key = $3::uuid and updated_at = $4::timestamptz
+           and stable_key = $3::uuid
+           and date_trunc('milliseconds', updated_at) = $4::timestamptz
            and status = 'active'
            and not exists (
              select 1 from position_reporting_relationships current_relation
@@ -1449,11 +1455,11 @@ export async function replacePositionReportingRelationship(
       `with changed as (
          update position_reporting_relationships
          set status = 'ended', effective_until = $1::timestamptz,
-           updated_at = transaction_timestamp()
+           updated_at = date_trunc('milliseconds', transaction_timestamp())
          where id = $2 and organization_id = $3
            and subordinate_position_id = $4
            and relationship_type = 'primary'
-           and updated_at = $5::timestamptz
+           and date_trunc('milliseconds', updated_at) = $5::timestamptz
            and status in ('scheduled', 'active')
          returning subordinate_position_id as id, organization_id
        ),
@@ -1579,10 +1585,10 @@ export async function endPositionReportingRelationship(
       `with changed as (
          update position_reporting_relationships
          set status = 'ended', effective_until = $1::timestamptz,
-           updated_at = transaction_timestamp()
+           updated_at = date_trunc('milliseconds', transaction_timestamp())
          where id = $2 and organization_id = $3
            and subordinate_position_id = $4
-           and updated_at = $5::timestamptz
+           and date_trunc('milliseconds', updated_at) = $5::timestamptz
            and status in ('scheduled', 'active')
          returning subordinate_position_id as id
        ),
@@ -1726,10 +1732,11 @@ export async function correctPositionReportingRelationship(
       `with changed as (
          update position_reporting_relationships
          set manager_position_id = $1, relationship_type = $2,
-           reason = $3, updated_at = transaction_timestamp()
+           reason = $3,
+           updated_at = date_trunc('milliseconds', transaction_timestamp())
          where id = $4 and organization_id = $5
            and subordinate_position_id = $6
-           and updated_at = $7::timestamptz
+           and date_trunc('milliseconds', updated_at) = $7::timestamptz
            and status in ('scheduled', 'active')
          returning subordinate_position_id as id
        ),
@@ -2017,9 +2024,10 @@ export async function establishRoleMandate(
         sql,
         `with changed as (
            update positions
-           set updated_at = transaction_timestamp()
+           set updated_at = date_trunc('milliseconds', transaction_timestamp())
            where id = $1 and organization_id = $2
-             and stable_key = $3::uuid and updated_at = $4::timestamptz
+             and stable_key = $3::uuid
+             and date_trunc('milliseconds', updated_at) = $4::timestamptz
              and status = 'active'
            returning id, organization_id
          ),
@@ -2096,9 +2104,10 @@ export async function establishRoleMandate(
         sql,
         `with changed as (
            update positions
-           set updated_at = transaction_timestamp()
+           set updated_at = date_trunc('milliseconds', transaction_timestamp())
            where id = $1 and organization_id = $2
-             and stable_key = $3::uuid and updated_at = $4::timestamptz
+             and stable_key = $3::uuid
+             and date_trunc('milliseconds', updated_at) = $4::timestamptz
              and status = 'active'
              and exists (
                select 1 from roles selected_role
@@ -2256,9 +2265,9 @@ export async function endRoleMandate(
       `with changed as (
          update role_mandates
          set status = 'ended', effective_until = $1::timestamptz,
-           updated_at = transaction_timestamp()
+           updated_at = date_trunc('milliseconds', transaction_timestamp())
          where id = $2 and organization_id = $3 and position_id = $4
-           and updated_at = $5::timestamptz
+           and date_trunc('milliseconds', updated_at) = $5::timestamptz
            and status in ('scheduled', 'active')
            and not exists (
              select 1 from role_coverages current_coverage
@@ -2432,9 +2441,9 @@ export async function establishRoleCoverage(
       sql,
       `with changed as (
          update role_mandates
-         set updated_at = transaction_timestamp()
+         set updated_at = date_trunc('milliseconds', transaction_timestamp())
          where id = $1 and organization_id = $2 and position_id = $3
-           and updated_at = $4::timestamptz
+           and date_trunc('milliseconds', updated_at) = $4::timestamptz
            and status in ('scheduled', 'active')
            and not exists (
              select 1 from role_coverages existing_coverage
@@ -2577,9 +2586,10 @@ export async function endRoleCoverage(
       `with ended as (
          update role_coverages
          set status = 'ended', effective_until = $1::timestamptz,
-           updated_at = transaction_timestamp()
+           updated_at = date_trunc('milliseconds', transaction_timestamp())
          where id = $2 and organization_id = $3
-           and role_mandate_id = $4 and updated_at = $5::timestamptz
+           and role_mandate_id = $4
+           and date_trunc('milliseconds', updated_at) = $5::timestamptz
            and status in ('scheduled', 'active')
          returning role_mandate_id
        ),

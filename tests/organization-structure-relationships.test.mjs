@@ -71,7 +71,7 @@ test("establish and replace are scoped, compare-and-set, and atomically audited"
   );
   assert.match(
     administration,
-    /and stable_key = \$3::uuid and updated_at = \$4::timestamptz/,
+    /and stable_key = \$3::uuid\s+and date_trunc\('milliseconds', updated_at\) = \$4::timestamptz/,
   );
   assert.match(
     administration,

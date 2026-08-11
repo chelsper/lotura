@@ -85,7 +85,11 @@ test("mandate and coverage writes are tenant-scoped and compare-and-set protecte
     /where organization_id = \$1 and stable_key = \$2::uuid\s+and status = 'active'/,
   );
   assert.ok(
-    [...administration.matchAll(/updated_at = \$\d+::timestamptz/g)].length >= 12,
+    [
+      ...administration.matchAll(
+        /date_trunc\('milliseconds', updated_at\) = \$\d+::timestamptz/g,
+      ),
+    ].length >= 12,
   );
   assert.ok(
     [...administration.matchAll(/administrationAccess\(\)/g)].length >= 12,
