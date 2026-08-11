@@ -4,16 +4,23 @@ import Link from "next/link";
 import { workspaceAccessContext } from "@/lib/authentication";
 import type { OperatingModelSource } from "@/lib/process-explorer-source-policy.mjs";
 import type { WorkspaceConfiguration } from "@/lib/workspace-configuration.mjs";
+import { workspaceStudioAvailable } from "@/lib/workspace-studio-availability";
 
 import {
   ExplorerIcon,
   FlowIcon,
   HomeIcon,
+  LayersIcon,
   OrganizationIcon,
 } from "./ui/icons";
 import { Alert, Badge, cn } from "./ui/primitives";
 
-export type WorkspaceView = "overview" | "organization" | "explorer" | "flow";
+export type WorkspaceView =
+  | "overview"
+  | "organization"
+  | "explorer"
+  | "flow"
+  | "studio";
 
 const navigation = [
   {
@@ -40,6 +47,13 @@ const navigation = [
     icon: FlowIcon,
     label: "FLOW",
   },
+  {
+    id: "studio" as const,
+    href: "/studio",
+    icon: LayersIcon,
+    label: "Workspace Studio",
+    studioOnly: true,
+  },
 ];
 
 export function formatOperatingModelTimestamp(value: string) {
@@ -58,15 +72,17 @@ function sourceTone(source: OperatingModelSource) {
 
 function WorkspaceNavigation({
   activeView,
+  studioEnabled,
 }: {
   activeView?: WorkspaceView;
+  studioEnabled: boolean;
 }) {
   return (
     <nav
       aria-label="Product"
       className="space-y-1 max-lg:flex max-lg:min-w-max max-lg:gap-1 max-lg:space-y-0"
     >
-      {navigation.map((item) => {
+      {navigation.filter((item) => !("studioOnly" in item) || studioEnabled).map((item) => {
         const Icon = item.icon;
         const active = activeView === item.id;
 
@@ -212,7 +228,7 @@ export function WorkspacePageHeader({
   );
 }
 
-export function WorkspaceShell({
+export async function WorkspaceShell({
   activeView,
   asOf,
   children,
@@ -225,6 +241,7 @@ export function WorkspaceShell({
   configuration: WorkspaceConfiguration;
   source: OperatingModelSource;
 }) {
+  const studioEnabled = await workspaceStudioAvailable();
   const { accent } = configuration.appearance;
   const style = {
     "--workspace-accent": accent.base,
@@ -259,7 +276,7 @@ export function WorkspaceShell({
         </div>
 
         <div className="flex-1 px-3 py-4">
-          <WorkspaceNavigation activeView={activeView} />
+          <WorkspaceNavigation activeView={activeView} studioEnabled={studioEnabled} />
         </div>
 
         <div className="border-t border-[var(--border)] px-5 py-4">
@@ -279,7 +296,11 @@ export function WorkspaceShell({
             </div>
           ) : null}
           <p className="mt-3 text-[11px] font-medium leading-4 text-[var(--text-tertiary)]">
-            Explore only — nothing you do here changes data.
+            {activeView === "studio"
+              ? "Workspace Administrator — accepted changes are saved with append-only history."
+              : studioEnabled
+                ? "Browse view — maintain canonical records in Workspace Studio."
+                : "Explore only — nothing you do here changes data."}
           </p>
           <WorkspaceSessionControl />
         </div>
@@ -297,7 +318,7 @@ export function WorkspaceShell({
             </div>
           </div>
           <div className="flex gap-1 overflow-x-auto px-3 pb-3 sm:px-5">
-            <WorkspaceNavigation activeView={activeView} />
+            <WorkspaceNavigation activeView={activeView} studioEnabled={studioEnabled} />
           </div>
         </header>
 

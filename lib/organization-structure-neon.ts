@@ -300,6 +300,7 @@ export async function loadNeonOrganizationStructure(organizationId: number) {
         statusReason: position.statusReason,
         effectiveFrom: position.effectiveFrom,
         effectiveUntil: position.effectiveUntil,
+        introducedByImportId: position.introducedByImportId,
         updatedAt: position.updatedAt,
       })
       .from(position)

@@ -120,6 +120,8 @@ export const organizationStructureChangeAction = pgEnum(
     "end_role_mandate",
     "establish_role_coverage",
     "end_role_coverage",
+    "create",
+    "establish_assignment",
   ],
 );
 

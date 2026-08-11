@@ -22,7 +22,9 @@ export type StructureChangeAction =
   | "establish_role_mandate"
   | "end_role_mandate"
   | "establish_role_coverage"
-  | "end_role_coverage";
+  | "end_role_coverage"
+  | "create"
+  | "establish_assignment";
 
 export type StructureChangeSummary = {
   action: StructureChangeAction;
@@ -39,7 +41,7 @@ export type StructureChangeSummary = {
 };
 
 export type StructureMutationResult =
-  | { ok: true; message: string }
+  | { ok: true; message: string; stableKey?: string }
   | {
       ok: false;
       code: "blocked" | "conflict" | "invalid" | "not_found" | "unavailable";
@@ -51,6 +53,24 @@ type ChangeMetadata = {
   effectiveAt: Date;
   expectedRevision: string;
   reason: string;
+};
+
+type CreationMetadata = Omit<ChangeMetadata, "expectedRevision"> & {
+  acknowledgePossibleDuplicate: boolean;
+};
+
+type CreateOrganizationUnitMutation = CreationMetadata & {
+  name: string;
+  parentOrganizationUnitStableKey?: string | null;
+};
+
+type CreatePositionMutation = CreationMetadata & {
+  organizationUnitStableKey?: string | null;
+  title: string;
+};
+
+type CreatePersonMutation = CreationMetadata & {
+  displayName: string;
 };
 
 type CommonMutation = ChangeMetadata & {
@@ -73,6 +93,12 @@ type AssignmentMutation = ChangeMetadata & {
 
 type ReplaceAssignmentMutation = AssignmentMutation & {
   replacementPersonStableKey: string;
+};
+
+type EstablishAssignmentMutation = ChangeMetadata & {
+  assignmentType: "incumbent" | "job_share" | "interim" | "acting" | "backup";
+  personStableKey: string;
+  positionStableKey: string;
 };
 
 type ReportingMutation = ChangeMetadata & {
@@ -248,8 +274,8 @@ function recordId(key: string, prefix: string) {
   return Number.isSafeInteger(id) ? id : null;
 }
 
-function validateMetadata(
-  input: ChangeMetadata,
+function validateChangeDetails(
+  input: Pick<ChangeMetadata, "changeKind" | "effectiveAt" | "reason">,
 ): StructureMutationResult | null {
   if (
     !Number.isFinite(input.effectiveAt.getTime()) ||
@@ -268,6 +294,14 @@ function validateMetadata(
       message: "Enter a reason of 2,000 characters or fewer.",
     };
   }
+  return null;
+}
+
+function validateMetadata(
+  input: ChangeMetadata,
+): StructureMutationResult | null {
+  const invalid = validateChangeDetails(input);
+  if (invalid) return invalid;
   if (!Number.isFinite(new Date(input.expectedRevision).getTime())) {
     return {
       ok: false,
@@ -276,6 +310,12 @@ function validateMetadata(
     };
   }
   return null;
+}
+
+function validateCreationMetadata(
+  input: CreationMetadata,
+): StructureMutationResult | null {
+  return validateChangeDetails(input);
 }
 
 function validateCommon(input: CommonMutation): StructureMutationResult | null {
@@ -417,6 +457,339 @@ function auditCte(
     from changed
     returning 1
   )`;
+}
+
+function creationAuditCte(
+  descriptor: ReturnType<typeof targetDescriptor>,
+  entityType: StructureEntityType,
+  parameterOffset: number,
+) {
+  const p = (index: number) => `$${parameterOffset + index + 1}`;
+  return `audit as (
+    insert into organization_structure_changes
+      (organization_id, entity_type, target_stable_key, ${descriptor.auditColumn},
+       change_kind, change_action, before_state, after_state, reason,
+       effective_at, actor_identifier)
+    select ${p(0)}, '${entityType}', changed.stable_key, changed.id,
+      ${p(1)}::organization_structure_change_kind,
+      'create', '{}'::jsonb, ${p(2)}::jsonb, ${p(3)},
+      ${p(4)}::timestamptz, ${p(5)}
+    from changed
+    returning 1
+  )`;
+}
+
+function createdStableKey(rows: DatabaseRow[]) {
+  const value = rows[0]?.stable_key;
+  return typeof value === "string" && validUuid(value) ? value : null;
+}
+
+export async function createOrganizationUnit(
+  input: CreateOrganizationUnitMutation,
+): Promise<StructureMutationResult> {
+  const invalid = validateCreationMetadata(input);
+  if (invalid) return invalid;
+  const name = input.name.trim();
+  if (!name || name.length > 255) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Enter an Organization Unit name of 255 characters or fewer.",
+    };
+  }
+
+  let configuration: EnabledOrganizationStructureAdministrationConfiguration;
+  try {
+    configuration = await administrationAccess();
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Structure administration is unavailable.",
+    };
+  }
+
+  const sql = mutationClient(configuration.databaseUrl);
+  try {
+    const parentStableKey = input.parentOrganizationUnitStableKey ?? null;
+    const parentId = await unitIdForStableKey(
+      sql,
+      configuration,
+      parentStableKey,
+    );
+    if (parentId === undefined) {
+      return {
+        ok: false,
+        code: "invalid",
+        message: "The selected parent Organization Unit is unavailable.",
+      };
+    }
+    const afterState = {
+      effectiveUntil: null,
+      isProvisional: false,
+      name,
+      parentOrganizationUnitStableKey: parentStableKey,
+      status: "active",
+      statusReason: null,
+    };
+    const rows = await atomicQuery(
+      sql,
+      `with changed as (
+         insert into organization_units
+           (organization_id, name, parent_organization_unit_id,
+            is_provisional, status, effective_from)
+         select $1, $2, $3, false, 'active', $4::timestamptz
+         where ($3::integer is null or exists (
+           select 1 from organization_units parent
+           where parent.id = $3 and parent.organization_id = $1
+             and parent.status = 'active'
+         ))
+         and ($5::boolean or not exists (
+           select 1 from organization_units duplicate
+           where duplicate.organization_id = $1
+             and duplicate.status = 'active'
+             and lower(trim(duplicate.name)) = lower(trim($2))
+             and duplicate.parent_organization_unit_id is not distinct from $3
+         ))
+         returning id, stable_key
+       ),
+       ${creationAuditCte(
+         targetDescriptor("organization_unit"),
+         "organization_unit",
+         5,
+       )}
+       select
+         (select count(*)::int from changed) as changed_count,
+         (select count(*)::int from audit) as audit_count,
+         (select stable_key::text from changed limit 1) as stable_key`,
+      [
+        configuration.organizationId,
+        name,
+        parentId,
+        input.effectiveAt.toISOString(),
+        input.acknowledgePossibleDuplicate,
+        configuration.organizationId,
+        input.changeKind,
+        JSON.stringify(afterState),
+        input.reason.trim(),
+        input.effectiveAt.toISOString(),
+        configuration.actorIdentifier,
+      ],
+    );
+    const stableKey = createdStableKey(rows);
+    if (!mutationAccepted(rows) || !stableKey) {
+      return {
+        ok: false,
+        code: "blocked",
+        message:
+          "A matching active Organization Unit may already exist, or its selected parent changed. Review the current structure before creating another Unit.",
+      };
+    }
+    return {
+      ok: true,
+      message:
+        "Organization Unit added to the current structure with an append-only history event.",
+      stableKey,
+    };
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "The Organization Unit could not be added. No partial change was accepted.",
+    };
+  }
+}
+
+export async function createPosition(
+  input: CreatePositionMutation,
+): Promise<StructureMutationResult> {
+  const invalid = validateCreationMetadata(input);
+  if (invalid) return invalid;
+  const title = input.title.trim();
+  if (!title || title.length > 255) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Enter a Position title of 255 characters or fewer.",
+    };
+  }
+
+  let configuration: EnabledOrganizationStructureAdministrationConfiguration;
+  try {
+    configuration = await administrationAccess();
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Structure administration is unavailable.",
+    };
+  }
+
+  const sql = mutationClient(configuration.databaseUrl);
+  try {
+    const unitStableKey = input.organizationUnitStableKey ?? null;
+    const unitId = await unitIdForStableKey(
+      sql,
+      configuration,
+      unitStableKey,
+    );
+    if (unitId === undefined) {
+      return {
+        ok: false,
+        code: "invalid",
+        message: "The selected Organization Unit is unavailable.",
+      };
+    }
+    const afterState = {
+      effectiveUntil: null,
+      organizationUnitStableKey: unitStableKey,
+      status: "active",
+      statusReason: null,
+      title,
+    };
+    const rows = await atomicQuery(
+      sql,
+      `with changed as (
+         insert into positions
+           (organization_id, organization_unit_id, title, status, effective_from)
+         select $1, $2, $3, 'active', $4::timestamptz
+         where ($2::integer is null or exists (
+           select 1 from organization_units unit
+           where unit.id = $2 and unit.organization_id = $1
+             and unit.status = 'active'
+         ))
+         and ($5::boolean or not exists (
+           select 1 from positions duplicate
+           where duplicate.organization_id = $1
+             and duplicate.status = 'active'
+             and lower(trim(duplicate.title)) = lower(trim($3))
+             and duplicate.organization_unit_id is not distinct from $2
+         ))
+         returning id, stable_key
+       ),
+       ${creationAuditCte(targetDescriptor("position"), "position", 5)}
+       select
+         (select count(*)::int from changed) as changed_count,
+         (select count(*)::int from audit) as audit_count,
+         (select stable_key::text from changed limit 1) as stable_key`,
+      [
+        configuration.organizationId,
+        unitId,
+        title,
+        input.effectiveAt.toISOString(),
+        input.acknowledgePossibleDuplicate,
+        configuration.organizationId,
+        input.changeKind,
+        JSON.stringify(afterState),
+        input.reason.trim(),
+        input.effectiveAt.toISOString(),
+        configuration.actorIdentifier,
+      ],
+    );
+    const stableKey = createdStableKey(rows);
+    if (!mutationAccepted(rows) || !stableKey) {
+      return {
+        ok: false,
+        code: "blocked",
+        message:
+          "A matching active Position may already exist in that Unit, or the selected Unit changed. Review the current structure before creating another Position.",
+      };
+    }
+    return {
+      ok: true,
+      message:
+        "Position added to the current structure with an append-only history event.",
+      stableKey,
+    };
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "The Position could not be added. No partial change was accepted.",
+    };
+  }
+}
+
+export async function createPerson(
+  input: CreatePersonMutation,
+): Promise<StructureMutationResult> {
+  const invalid = validateCreationMetadata(input);
+  if (invalid) return invalid;
+  const displayName = input.displayName.trim();
+  if (!displayName || displayName.length > 255) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Enter a Person display name of 255 characters or fewer.",
+    };
+  }
+
+  let configuration: EnabledOrganizationStructureAdministrationConfiguration;
+  try {
+    configuration = await administrationAccess();
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Structure administration is unavailable.",
+    };
+  }
+
+  const sql = mutationClient(configuration.databaseUrl);
+  try {
+    const afterState = { displayName, status: "active" };
+    const rows = await atomicQuery(
+      sql,
+      `with changed as (
+         insert into people (organization_id, display_name, status)
+         select $1, $2, 'active'
+         where $3::boolean or not exists (
+           select 1 from people duplicate
+           where duplicate.organization_id = $1
+             and duplicate.status = 'active'
+             and lower(trim(duplicate.display_name)) = lower(trim($2))
+         )
+         returning id, stable_key
+       ),
+       ${creationAuditCte(targetDescriptor("person"), "person", 3)}
+       select
+         (select count(*)::int from changed) as changed_count,
+         (select count(*)::int from audit) as audit_count,
+         (select stable_key::text from changed limit 1) as stable_key`,
+      [
+        configuration.organizationId,
+        displayName,
+        input.acknowledgePossibleDuplicate,
+        configuration.organizationId,
+        input.changeKind,
+        JSON.stringify(afterState),
+        input.reason.trim(),
+        input.effectiveAt.toISOString(),
+        configuration.actorIdentifier,
+      ],
+    );
+    const stableKey = createdStableKey(rows);
+    if (!mutationAccepted(rows) || !stableKey) {
+      return {
+        ok: false,
+        code: "blocked",
+        message:
+          "A matching active Person may already exist. Review the current structure before creating another Person record.",
+      };
+    }
+    return {
+      ok: true,
+      message:
+        "Person added to the current structure with an append-only history event. No Lotura User was created.",
+      stableKey,
+    };
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "The Person could not be added. No partial change was accepted.",
+    };
+  }
 }
 
 export async function updateStructureEntity(
@@ -888,6 +1261,196 @@ async function assignmentContext(
     [configuration.organizationId, assignmentId, positionStableKey],
   )) as DatabaseRow[];
   return rows[0];
+}
+
+export async function establishPositionAssignment(
+  input: EstablishAssignmentMutation,
+): Promise<StructureMutationResult> {
+  const invalid = validateMetadata(input);
+  if (invalid) return invalid;
+  if (
+    !validUuid(input.positionStableKey) ||
+    !validUuid(input.personStableKey)
+  ) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Select an available Position and Person.",
+    };
+  }
+  if (
+    !["incumbent", "job_share", "interim", "acting", "backup"].includes(
+      input.assignmentType,
+    )
+  ) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Select a valid Position Assignment type.",
+    };
+  }
+
+  let configuration: EnabledOrganizationStructureAdministrationConfiguration;
+  try {
+    configuration = await administrationAccess();
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Structure administration is unavailable.",
+    };
+  }
+
+  const sql = mutationClient(configuration.databaseUrl);
+  try {
+    const position = await positionForStableKey(
+      sql,
+      configuration,
+      input.positionStableKey,
+    );
+    if (!position) {
+      return {
+        ok: false,
+        code: "not_found",
+        message: "The Position was not found in this organization.",
+      };
+    }
+    if (!revisionsMatch(position, input.expectedRevision)) {
+      return {
+        ok: false,
+        code: "conflict",
+        message:
+          "This Position changed after the page loaded. Refresh before trying again.",
+      };
+    }
+    if (input.effectiveAt < new Date(String(position.effective_from))) {
+      return {
+        ok: false,
+        code: "invalid",
+        message:
+          "The Assignment cannot begin before the Position became effective.",
+      };
+    }
+    const people = (await sql.query(
+      `select id, stable_key, display_name from people
+       where organization_id = $1 and stable_key = $2::uuid
+         and status = 'active' limit 1`,
+      [configuration.organizationId, input.personStableKey],
+    )) as DatabaseRow[];
+    const assignedPerson = people[0];
+    if (!assignedPerson) {
+      return {
+        ok: false,
+        code: "invalid",
+        message: "The selected Person is unavailable in this organization.",
+      };
+    }
+
+    const beforeState = { assignment: null };
+    const afterState = {
+      assignmentType: input.assignmentType,
+      effectiveFrom: input.effectiveAt.toISOString(),
+      effectiveUntil: null,
+      personName: assignedPerson.display_name,
+      personStableKey: input.personStableKey,
+      reason: input.reason.trim(),
+      status: "active",
+    };
+    const rows = await atomicQuery(
+      sql,
+      `with changed as (
+         update positions
+         set updated_at = date_trunc('milliseconds', transaction_timestamp())
+         where id = $1 and organization_id = $2
+           and stable_key = $3::uuid
+           and date_trunc('milliseconds', updated_at) = $4::timestamptz
+           and status = 'active'
+           and exists (
+             select 1 from people selected_person
+             where selected_person.id = $5
+               and selected_person.organization_id = $2
+               and selected_person.status = 'active'
+           )
+           and not exists (
+             select 1 from position_assignments duplicate
+             where duplicate.organization_id = $2
+               and duplicate.position_id = $1
+               and duplicate.person_id = $5
+               and duplicate.assignment_type = $6::position_assignment_type
+               and duplicate.status in ('scheduled', 'active')
+           )
+           and ($6::position_assignment_type <> 'incumbent' or not exists (
+             select 1 from position_assignments incumbent
+             where incumbent.organization_id = $2
+               and incumbent.position_id = $1
+               and incumbent.assignment_type = 'incumbent'
+               and incumbent.status = 'active'
+           ))
+         returning id, organization_id
+       ),
+       assignment as (
+         insert into position_assignments
+           (organization_id, position_id, person_id, assignment_type,
+            status, effective_from, reason)
+         select changed.organization_id, changed.id, $5,
+           $6::position_assignment_type, 'active', $7::timestamptz, $8
+         from changed
+         returning id
+       ),
+       audit as (
+         insert into organization_structure_changes
+           (organization_id, entity_type, target_stable_key, position_id,
+            change_kind, change_action, before_state, after_state, reason,
+            effective_at, actor_identifier)
+         select $2, 'position', $3::uuid, changed.id,
+           $9::organization_structure_change_kind, 'establish_assignment',
+           $10::jsonb, $11::jsonb, $8, $7::timestamptz, $12
+         from changed, assignment
+         returning 1
+       )
+       select
+         (select count(*)::int from changed) as changed_count,
+         (select count(*)::int from assignment) as assignment_count,
+         (select count(*)::int from audit) as audit_count`,
+      [
+        position.id,
+        configuration.organizationId,
+        input.positionStableKey,
+        input.expectedRevision,
+        assignedPerson.id,
+        input.assignmentType,
+        input.effectiveAt.toISOString(),
+        input.reason.trim(),
+        input.changeKind,
+        JSON.stringify(beforeState),
+        JSON.stringify(afterState),
+        configuration.actorIdentifier,
+      ],
+    );
+    if (
+      !mutationAccepted(rows) ||
+      Number(rows[0]?.assignment_count ?? 0) !== 1
+    ) {
+      return {
+        ok: false,
+        code: "conflict",
+        message:
+          "The Position or its current Assignments changed. Refresh before trying again.",
+      };
+    }
+    return {
+      ok: true,
+      message:
+        "Position Assignment established explicitly. Reporting and operational responsibility were not inferred.",
+    };
+  } catch {
+    return {
+      ok: false,
+      code: "blocked",
+      message:
+        "The Position Assignment was rejected. Review current occupancy, dates, and Assignment type; no partial change was accepted.",
+    };
+  }
 }
 
 export async function endPositionAssignment(

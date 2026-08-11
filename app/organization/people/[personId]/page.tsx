@@ -13,7 +13,7 @@ export default async function OrganizationPersonPage({
 }) {
   await connection();
   const { personId } = await params;
-  const { administration, asOf, changes, configuration, data, source } =
+  const { administration, asOf, configuration, data, source } =
     await loadOrganizationStructureExperience();
   const person = data.people.find((item) => item.id === personId);
 
@@ -28,7 +28,6 @@ export default async function OrganizationPersonPage({
     >
       <PersonDetail
         administrationEnabled={administration.enabled}
-        changes={changes}
         data={data}
         person={person}
       />

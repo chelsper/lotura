@@ -5,12 +5,16 @@ import { redirect } from "next/navigation";
 
 import {
   correctPositionReportingRelationship,
+  createOrganizationUnit,
+  createPerson,
+  createPosition,
   endRoleCoverage,
   endRoleMandate,
   endPositionAssignment,
   endPositionReportingRelationship,
   establishRoleCoverage,
   establishRoleMandate,
+  establishPositionAssignment,
   establishPositionReportingRelationship,
   removeStructureEntity,
   replacePositionAssignment,
@@ -79,6 +83,19 @@ function changeMetadata(formData: FormData) {
   };
 }
 
+function creationMetadata(formData: FormData) {
+  const parsedChangeKind = changeKind(formData);
+  const parsedEffectiveAt = effectiveAt(formData);
+  if (!parsedChangeKind || !parsedEffectiveAt) return null;
+  return {
+    acknowledgePossibleDuplicate:
+      textValue(formData, "acknowledgePossibleDuplicate") === "confirmed",
+    changeKind: parsedChangeKind,
+    effectiveAt: parsedEffectiveAt,
+    reason: textValue(formData, "reason"),
+  };
+}
+
 function targetPath(entityType: StructureEntityType, stableKey: string) {
   const segment =
     entityType === "organization_unit"
@@ -87,6 +104,86 @@ function targetPath(entityType: StructureEntityType, stableKey: string) {
         ? "positions"
         : "people";
   return `/organization/${segment}/${encodeURIComponent(stableKey)}`;
+}
+
+function studioTargetPath(entityType: StructureEntityType, stableKey: string) {
+  const segment =
+    entityType === "organization_unit"
+      ? "units"
+      : entityType === "position"
+        ? "positions"
+        : "people";
+  return `/studio/organization/${segment}/${encodeURIComponent(stableKey)}`;
+}
+
+export async function createOrganizationUnitAction(
+  _previousState: StructureActionState,
+  formData: FormData,
+): Promise<StructureActionState> {
+  const metadata = creationMetadata(formData);
+  if (!metadata) {
+    return { status: "error", message: "Review the new Unit details and try again." };
+  }
+  const result = await createOrganizationUnit({
+    ...metadata,
+    name: textValue(formData, "name"),
+    parentOrganizationUnitStableKey:
+      textValue(formData, "parentOrganizationUnitStableKey") || null,
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+  if (!result.stableKey) {
+    return { status: "error", message: "The new Unit could not be opened safely." };
+  }
+  revalidatePath("/organization");
+  revalidatePath("/studio");
+  revalidatePath("/studio/organization");
+  redirect(studioTargetPath("organization_unit", result.stableKey));
+}
+
+export async function createPositionAction(
+  _previousState: StructureActionState,
+  formData: FormData,
+): Promise<StructureActionState> {
+  const metadata = creationMetadata(formData);
+  if (!metadata) {
+    return { status: "error", message: "Review the new Position details and try again." };
+  }
+  const result = await createPosition({
+    ...metadata,
+    organizationUnitStableKey:
+      textValue(formData, "organizationUnitStableKey") || null,
+    title: textValue(formData, "title"),
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+  if (!result.stableKey) {
+    return { status: "error", message: "The new Position could not be opened safely." };
+  }
+  revalidatePath("/organization");
+  revalidatePath("/studio");
+  revalidatePath("/studio/organization");
+  redirect(studioTargetPath("position", result.stableKey));
+}
+
+export async function createPersonAction(
+  _previousState: StructureActionState,
+  formData: FormData,
+): Promise<StructureActionState> {
+  const metadata = creationMetadata(formData);
+  if (!metadata) {
+    return { status: "error", message: "Review the new Person details and try again." };
+  }
+  const result = await createPerson({
+    ...metadata,
+    displayName: textValue(formData, "displayName"),
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+  if (!result.stableKey) {
+    return { status: "error", message: "The new Person could not be opened safely." };
+  }
+  revalidatePath("/organization");
+  revalidatePath("/studio");
+  revalidatePath("/studio/organization");
+  redirect(studioTargetPath("person", result.stableKey));
 }
 
 export async function updateStructureEntityAction(
@@ -112,6 +209,7 @@ export async function updateStructureEntityAction(
 
   revalidatePath("/organization");
   revalidatePath(targetPath(common.entityType, common.stableKey));
+  revalidatePath(studioTargetPath(common.entityType, common.stableKey));
   return { status: "success", message: result.message };
 }
 
@@ -131,7 +229,9 @@ export async function removeStructureEntityAction(
   if (!result.ok) return { status: "error", message: result.message };
 
   revalidatePath("/organization");
-  redirect("/organization");
+  revalidatePath("/studio");
+  revalidatePath("/studio/organization");
+  redirect("/studio/organization");
 }
 
 function revalidatePosition(stableKey: string) {
@@ -139,6 +239,44 @@ function revalidatePosition(stableKey: string) {
   revalidatePath(
     `/organization/positions/${encodeURIComponent(stableKey)}`,
   );
+  revalidatePath(
+    `/studio/organization/positions/${encodeURIComponent(stableKey)}`,
+  );
+}
+
+export async function establishPositionAssignmentAction(
+  _previousState: StructureActionState,
+  formData: FormData,
+): Promise<StructureActionState> {
+  const metadata = changeMetadata(formData);
+  const positionStableKey = textValue(formData, "positionStableKey");
+  const assignmentType = textValue(formData, "assignmentType");
+  if (
+    !metadata ||
+    !positionStableKey ||
+    !["incumbent", "job_share", "interim", "acting", "backup"].includes(
+      assignmentType,
+    )
+  ) {
+    return {
+      status: "error",
+      message: "Review the new Position Assignment and try again.",
+    };
+  }
+  const result = await establishPositionAssignment({
+    ...metadata,
+    assignmentType: assignmentType as
+      | "incumbent"
+      | "job_share"
+      | "interim"
+      | "acting"
+      | "backup",
+    personStableKey: textValue(formData, "personStableKey"),
+    positionStableKey,
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+  revalidatePosition(positionStableKey);
+  return { status: "success", message: result.message };
 }
 
 export async function endPositionAssignmentAction(

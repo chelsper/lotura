@@ -42,3 +42,42 @@ export async function loadOrganizationStructureExperience() {
     source,
   };
 }
+
+export async function loadWorkspaceStudioExperience() {
+  const runtimeAccess = await requireWorkspaceAccess();
+  const administration =
+    resolveOrganizationStructureAdministrationConfiguration(
+      process.env,
+      runtimeAccess,
+    );
+  if (!administration.enabled) {
+    return { enabled: false as const };
+  }
+
+  const processAcquisition = resolveProcessAcquisitionConfiguration(
+    process.env,
+    runtimeAccess,
+  );
+  const { asOf, operatingModel, source, structure } =
+    await loadOrganizationStructure();
+  const data = buildOrganizationStructureData(structure, operatingModel, asOf);
+  const configuration = resolveWorkspaceConfiguration({
+    organizationName: data.organization.name,
+    overrides: resolveWorkspaceConfigurationOverrides(process.env),
+  });
+  const changes = await import("./organization-structure-neon").then(
+    ({ loadNeonOrganizationStructureChanges }) =>
+      loadNeonOrganizationStructureChanges(administration.organizationId),
+  );
+
+  return {
+    administration,
+    asOf,
+    changes,
+    configuration,
+    data,
+    enabled: true as const,
+    processAcquisition,
+    source,
+  };
+}
