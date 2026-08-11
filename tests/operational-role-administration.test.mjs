@@ -57,7 +57,11 @@ test("new Operational Roles exist only inside an atomic first-mandate transactio
   assert.match(administration, /from changed, created_role, mandate\s+returning 1/);
   assert.match(
     administration,
-    /lower\(trim\(existing_role\.name\)\) = lower\(trim\(\$5\)\)/,
+    /lower\(trim\(existing_role\.name\)\) = lower\(trim\(\$5::text\)\)/,
+  );
+  assert.match(
+    administration,
+    /select changed\.organization_id, \$5::text,\s+nullif\(\$6::text, ''\), 'active'/,
   );
   assert.match(
     administration,
