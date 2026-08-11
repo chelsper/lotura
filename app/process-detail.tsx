@@ -346,7 +346,7 @@ export function ProcessDetail({
           {authoringEnabled ? (
             <Link
               className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[var(--workspace-accent-border)] bg-[var(--workspace-accent-subtle)] px-3 text-xs font-medium text-[var(--workspace-accent)] transition-colors hover:bg-[var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]"
-              href={`/explorer/${encodeURIComponent(process.id)}/maintain`}
+              href={`/studio/processes/${encodeURIComponent(process.id)}`}
             >
               Maintain Process
             </Link>

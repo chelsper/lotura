@@ -227,15 +227,37 @@ function OwnerForm({ context, today }: { context: ProcessAuthoringContext; today
   );
 }
 
-export function ProcessAuthoringWorkspace({ context, today }: { context: ProcessAuthoringContext; today: string }) {
+export function ProcessAuthoringWorkspace({
+  context,
+  surface = "explorer",
+  today,
+}: {
+  context: ProcessAuthoringContext;
+  surface?: "explorer" | "studio";
+  today: string;
+}) {
+  const processHref = `/explorer/${encodeURIComponent(context.process.id)}`;
+
   return (
     <div className="mx-auto max-w-6xl">
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-tertiary)]">
-        <Link className="hover:text-[var(--workspace-accent)]" href="/explorer">Explorer</Link>
-        <span aria-hidden="true">/</span>
-        <Link className="hover:text-[var(--workspace-accent)]" href={`/explorer/${encodeURIComponent(context.process.id)}`}>{context.process.name}</Link>
-        <span aria-hidden="true">/</span>
-        <span className="text-[var(--text-secondary)]">Maintain Process</span>
+        {surface === "studio" ? (
+          <>
+            <Link className="hover:text-[var(--workspace-accent)]" href="/studio">Workspace Studio</Link>
+            <span aria-hidden="true">/</span>
+            <Link className="hover:text-[var(--workspace-accent)]" href="/studio/processes">Processes</Link>
+            <span aria-hidden="true">/</span>
+            <span className="text-[var(--text-secondary)]">{context.process.name}</span>
+          </>
+        ) : (
+          <>
+            <Link className="hover:text-[var(--workspace-accent)]" href="/explorer">Explorer</Link>
+            <span aria-hidden="true">/</span>
+            <Link className="hover:text-[var(--workspace-accent)]" href={processHref}>{context.process.name}</Link>
+            <span aria-hidden="true">/</span>
+            <span className="text-[var(--text-secondary)]">Maintain Process</span>
+          </>
+        )}
       </nav>
 
       <header className="mt-5 border-b border-[var(--border)] pb-7">
@@ -275,7 +297,7 @@ export function ProcessAuthoringWorkspace({ context, today }: { context: Process
         <p className="text-xs font-medium text-[var(--text-tertiary)]">How the work happens</p>
         <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">Current read-only context</h2>
         <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">Steps, responsible Roles, Systems, Exceptions, and Process dependencies remain visible on Process Detail. Their authoring controls are intentionally deferred to later slices.</p>
-        <Link className="mt-4 inline-flex text-sm font-medium text-[var(--workspace-accent)] hover:underline" href={`/explorer/${encodeURIComponent(context.process.id)}`}>View complete Process Detail</Link>
+        <Link className="mt-4 inline-flex text-sm font-medium text-[var(--workspace-accent)] hover:underline" href={processHref}>View complete Process Detail</Link>
       </Card>
 
       <Card className="mt-5 p-4 sm:p-6">

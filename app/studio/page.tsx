@@ -78,7 +78,7 @@ export default async function WorkspaceStudioPage() {
           <div className="grid gap-4 md:grid-cols-2">
             {[
               { icon: RoleIcon, title: "Responsibilities", description: "Create and maintain Operational Roles, Position mandates, and explicit human coverage.", href: "/studio/responsibilities" },
-              { icon: LayersIcon, title: "Processes", description: "Draft Process definition and operating-model relationships through the existing authoring boundary." },
+              { icon: LayersIcon, title: "Processes", description: "Find, start, and maintain Draft Processes through the existing authoring boundary.", href: "/studio/processes" },
               { icon: SystemIcon, title: "Technology", description: "Systems and the work that depends on them. Technology Builder remains intentionally deferred." },
               { icon: LayersIcon, title: "Activity", description: "A future read-only timeline across existing append-only ledgers, without implying causality." },
             ].map((area) => {

@@ -50,6 +50,8 @@ function revalidateProcess(processKey: string) {
   revalidatePath("/explorer");
   revalidatePath(`/explorer/${encoded}`);
   revalidatePath(`/explorer/${encoded}/maintain`);
+  revalidatePath("/studio/processes");
+  revalidatePath(`/studio/processes/${encoded}`);
   revalidatePath("/organization");
 }
 
