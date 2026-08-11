@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import type {
   OrganizationPerson,
@@ -153,16 +153,47 @@ function EditForm({
     updateStructureEntityAction,
     initialStructureActionState,
   );
+  const [unitName, setUnitName] = useState(
+    entityType === "organization_unit"
+      ? (entity as OrganizationUnit).name
+      : "",
+  );
+  const duplicateUnit =
+    entityType === "organization_unit"
+      ? data.units.find(
+          (unit) =>
+            unit.id !== entity.id &&
+            unit.status === "active" &&
+            unit.name.trim().toLocaleLowerCase() ===
+              unitName.trim().toLocaleLowerCase(),
+        )
+      : null;
   return (
     <form action={action} className="mt-4 grid gap-4 sm:grid-cols-2">
       <HiddenIdentity entity={entity} entityType={entityType} />
       {entityType === "organization_unit" ? (
-        <label className="block sm:col-span-2">
-          <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-            Organization Unit name
-          </span>
-          <Input defaultValue={(entity as OrganizationUnit).name} maxLength={255} name="name" required />
-        </label>
+        <>
+          <label className="block sm:col-span-2">
+            <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+              Rename this Organization Unit
+            </span>
+            <Input
+              maxLength={255}
+              name="name"
+              onChange={(event) => setUnitName(event.target.value)}
+              required
+              value={unitName}
+            />
+            <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
+              This renames the Unit itself for every Position connected to it. It does not move a Person or Position.
+            </span>
+          </label>
+          {duplicateUnit ? (
+            <Alert className="sm:col-span-2" tone="warning">
+              Another active Organization Unit already uses this name. To move someone, open their Position and select the existing Unit instead of renaming this record.
+            </Alert>
+          ) : null}
+        </>
       ) : null}
       {entityType === "position" ? (
         <>
@@ -174,7 +205,7 @@ function EditForm({
           </label>
           <label className="block">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-              Organization Unit
+              Move this Position to an Organization Unit
             </span>
             <Select
               defaultValue={(entity as OrganizationPosition).unit?.id ?? ""}
@@ -182,9 +213,14 @@ function EditForm({
             >
               <option value="">No Organization Unit recorded</option>
               {data.units.map((unit) => (
-                <option key={unit.id} value={unit.id}>{unit.name}</option>
+                <option key={unit.id} value={unit.id}>
+                  {unit.name}{unit.parent ? ` — within ${unit.parent.name}` : " — root Unit"}
+                </option>
               ))}
             </Select>
+            <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
+              Choose an existing Unit by its stable identity. This moves the Position and its current occupants without renaming either Unit.
+            </span>
           </label>
         </>
       ) : null}
