@@ -24,7 +24,13 @@ function normalized(value: string) {
   return value.trim().toLocaleLowerCase();
 }
 
-function CreationMetadataFields() {
+function CreationMetadataFields({
+  reason,
+  setReason,
+}: {
+  reason: string;
+  setReason: (value: string) => void;
+}) {
   return (
     <>
       <label className="block">
@@ -50,8 +56,10 @@ function CreationMetadataFields() {
           className="min-h-24 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none transition focus:border-[var(--accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
           maxLength={2000}
           name="reason"
+          onChange={(event) => setReason(event.target.value)}
           placeholder="Explain why this canonical record is being added."
           required
+          value={reason}
         />
       </label>
     </>
@@ -78,6 +86,7 @@ export function StructureCreateForm({
     initialStructureActionState,
   );
   const [name, setName] = useState("");
+  const [reason, setReason] = useState("");
   const [unitStableKey, setUnitStableKey] = useState(initialUnitStableKey);
   const duplicate = useMemo(() => {
     const value = normalized(name);
@@ -228,7 +237,7 @@ export function StructureCreateForm({
         </Alert>
       ) : null}
 
-      <CreationMetadataFields />
+      <CreationMetadataFields reason={reason} setReason={setReason} />
       {state.status !== "idle" ? (
         <Alert
           className="sm:col-span-2"
