@@ -9,6 +9,11 @@ import type {
   OrganizationStructureData,
   OrganizationUnit,
 } from "@/lib/organization-structure-data.mjs";
+import type { OrganizationUnitHierarchyNode } from "@/lib/organization-unit-hierarchy.mjs";
+import {
+  buildOrganizationUnitHierarchy,
+  organizationUnitPath,
+} from "@/lib/organization-unit-hierarchy.mjs";
 
 import {
   ArrowIcon,
@@ -29,7 +34,15 @@ function entityHref(basePath: string, type: BrowserView, id: string) {
   return `${basePath}/${type}/${encodeURIComponent(id)}`;
 }
 
-function UnitRow({ basePath, unit }: { basePath: string; unit: OrganizationUnit }) {
+function UnitRow({
+  basePath,
+  hierarchyPath,
+  unit,
+}: {
+  basePath: string;
+  hierarchyPath?: string;
+  unit: OrganizationUnit;
+}) {
   return (
     <Link
       className="group flex items-center justify-between gap-4 border-b border-[var(--border)] px-4 py-4 transition-colors last:border-b-0 hover:bg-[var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--workspace-focus-ring)] sm:px-5"
@@ -44,11 +57,80 @@ function UnitRow({ basePath, unit }: { basePath: string; unit: OrganizationUnit 
         </div>
         <p className="mt-1 text-xs text-[var(--text-secondary)]">
           {unit.positions.length} {unit.positions.length === 1 ? "Position" : "Positions"}
-          {unit.parent ? ` · Within ${unit.parent.name}` : " · Root Unit"}
+          {` · ${unit.children.length} direct ${unit.children.length === 1 ? "child Unit" : "child Units"}`}
         </p>
+        {hierarchyPath ? (
+          <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+            {hierarchyPath}
+          </p>
+        ) : null}
       </div>
       <ArrowIcon className="size-4 shrink-0 text-[var(--text-tertiary)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--workspace-accent)]" />
     </Link>
+  );
+}
+
+function UnitTreeNode({
+  basePath,
+  node,
+}: {
+  basePath: string;
+  node: OrganizationUnitHierarchyNode;
+}) {
+  const [expanded, setExpanded] = useState(node.depth === 0);
+  const hasChildren = node.children.length > 0;
+  return (
+    <div
+      aria-expanded={hasChildren ? expanded : undefined}
+      aria-selected={false}
+      role="treeitem"
+    >
+      <div
+        className="flex items-center gap-2 border-b border-[var(--border)] pr-4 transition-colors hover:bg-[var(--surface-subtle)] sm:pr-5"
+        style={{ paddingLeft: `${Math.min(node.depth, 8) * 20 + 12}px` }}
+      >
+        {hasChildren ? (
+          <button
+            aria-label={`${expanded ? "Collapse" : "Expand"} ${node.unit.name}`}
+            className="flex size-7 shrink-0 items-center justify-center rounded-md text-sm text-[var(--text-tertiary)] hover:bg-[var(--surface)] hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]"
+            onClick={() => setExpanded((current) => !current)}
+            type="button"
+          >
+            <span aria-hidden="true">{expanded ? "−" : "+"}</span>
+          </button>
+        ) : (
+          <span aria-hidden="true" className="size-7 shrink-0" />
+        )}
+        <Link
+          className="group flex min-w-0 flex-1 items-center justify-between gap-4 py-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--workspace-focus-ring)]"
+          href={entityHref(basePath, "units", node.unit.id)}
+        >
+          <span className="min-w-0">
+            <span className="flex flex-wrap items-center gap-2">
+              <span className="truncate text-sm font-semibold text-[var(--text)]">
+                {node.unit.name}
+              </span>
+              {node.unit.isProvisional ? <Badge tone="warning">Provisional</Badge> : null}
+            </span>
+            <span className="mt-1 block text-xs text-[var(--text-secondary)]">
+              {node.unit.positions.length} {node.unit.positions.length === 1 ? "Position" : "Positions"}
+              {` · ${node.children.length} direct ${node.children.length === 1 ? "child" : "children"}`}
+              {node.descendantCount > node.children.length
+                ? ` · ${node.descendantCount} total descendants`
+                : ""}
+            </span>
+          </span>
+          <ArrowIcon className="size-4 shrink-0 text-[var(--text-tertiary)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--workspace-accent)]" />
+        </Link>
+      </div>
+      {hasChildren && expanded ? (
+        <div role="group">
+          {node.children.map((child) => (
+            <UnitTreeNode basePath={basePath} key={child.unit.id} node={child} />
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -135,6 +217,10 @@ export function OrganizationBrowser({
       ),
     };
   }, [data, normalizedQuery]);
+  const unitHierarchy = useMemo(
+    () => buildOrganizationUnitHierarchy(data.units),
+    [data.units],
+  );
 
   const tabs: Array<{ id: BrowserView; label: string; count: number }> = [
     { id: "units", label: "Organization Units", count: results.units.length },
@@ -184,7 +270,25 @@ export function OrganizationBrowser({
         </div>
 
         <div aria-live="polite">
-          {view === "units" && results.units.map((unit) => <UnitRow basePath={basePath} key={unit.id} unit={unit} />)}
+          {view === "units" && !normalizedQuery ? (
+            <div aria-label="Organization Unit hierarchy" role="tree">
+              {unitHierarchy.map((node) => (
+                <UnitTreeNode basePath={basePath} key={node.unit.id} node={node} />
+              ))}
+            </div>
+          ) : null}
+          {view === "units" && normalizedQuery
+            ? results.units.map((unit) => (
+                <UnitRow
+                  basePath={basePath}
+                  hierarchyPath={organizationUnitPath(data.units, unit.id)
+                    .map((item) => item.name)
+                    .join(" / ")}
+                  key={unit.id}
+                  unit={unit}
+                />
+              ))
+            : null}
           {view === "positions" &&
             results.positions.map((position) => (
               <PositionRow basePath={basePath} key={position.id} position={position} />

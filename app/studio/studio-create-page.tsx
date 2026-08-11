@@ -10,9 +10,11 @@ type CreationType = "organization_unit" | "position" | "person";
 export function StudioCreatePage({
   data,
   entityType,
+  initialUnitStableKey,
 }: {
   data: OrganizationStructureData;
   entityType: CreationType;
+  initialUnitStableKey?: string;
 }) {
   const presentation = {
     organization_unit: {
@@ -57,7 +59,11 @@ export function StudioCreatePage({
         Canonical existence does not establish institutional approval. Review possible duplicates and record the reason and effective date honestly.
       </Alert>
       <Card className="mt-5 p-4 sm:p-6">
-        <StructureCreateForm data={data} entityType={entityType} />
+        <StructureCreateForm
+          data={data}
+          entityType={entityType}
+          initialUnitStableKey={initialUnitStableKey}
+        />
       </Card>
     </div>
   );

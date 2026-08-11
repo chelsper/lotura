@@ -4,10 +4,12 @@ import type {
   OrganizationStructureData,
   OrganizationUnit,
 } from "@/lib/organization-structure-data.mjs";
+import { organizationUnitPath } from "@/lib/organization-unit-hierarchy.mjs";
 
-import { ArrowIcon, OrganizationIcon, RoleIcon } from "../ui/icons";
+import { ArrowIcon, RoleIcon } from "../ui/icons";
 import { Alert, Badge, Card, EmptyState } from "../ui/primitives";
 import { StructureContext } from "./structure-context";
+import { UnitHierarchyContext } from "./unit-hierarchy-context";
 
 function unitHref(id: string) {
   return `/organization/units/${encodeURIComponent(id)}`;
@@ -30,14 +32,25 @@ export function OrganizationUnitDetail({
   data: OrganizationStructureData;
   unit: OrganizationUnit;
 }) {
+  const hierarchyPath = organizationUnitPath(data.units, unit.id);
   return (
     <div className="mx-auto max-w-6xl">
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-tertiary)]">
         <Link className="hover:text-[var(--workspace-accent)]" href="/organization">
           Organization
         </Link>
-        <span aria-hidden="true">/</span>
-        <span className="text-[var(--text-secondary)]">{unit.name}</span>
+        {hierarchyPath.map((item) => (
+          <span className="flex items-center gap-2" key={item.id}>
+            <span aria-hidden="true">/</span>
+            {item.id === unit.id ? (
+              <span className="text-[var(--text-secondary)]">{item.name}</span>
+            ) : (
+              <Link className="hover:text-[var(--workspace-accent)]" href={unitHref(item.id)}>
+                {item.name}
+              </Link>
+            )}
+          </span>
+        ))}
       </nav>
 
       <header className="mt-5 border-b border-[var(--border)] pb-7 sm:pb-9">
@@ -65,41 +78,16 @@ export function OrganizationUnitDetail({
       </header>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <Card className="p-4 sm:p-5">
-          <p className="flex items-center gap-2 text-xs font-medium text-[var(--text-tertiary)]">
-            <OrganizationIcon className="size-3.5" />
-            Unit hierarchy
-          </p>
-          <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
-              <dt className="text-[11px] text-[var(--text-tertiary)]">Parent Unit</dt>
-              <dd className="mt-1 text-sm text-[var(--text)]">
-                {unit.parent ? (
-                  <Link className="font-medium hover:text-[var(--workspace-accent)]" href={unitHref(unit.parent.id)}>
-                    {unit.parent.name}
-                  </Link>
-                ) : (
-                  "No parent Unit recorded"
-                )}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[11px] text-[var(--text-tertiary)]">Child Units</dt>
-              <dd className="mt-1 text-sm text-[var(--text)]">
-                {unit.children.length > 0
-                  ? unit.children.map((child, index) => (
-                      <span key={child.id}>
-                        {index > 0 ? ", " : null}
-                        <Link className="font-medium hover:text-[var(--workspace-accent)]" href={unitHref(child.id)}>
-                          {child.name}
-                        </Link>
-                      </span>
-                    ))
-                  : "No child Units recorded"}
-              </dd>
-            </div>
-          </dl>
-        </Card>
+        <UnitHierarchyContext
+          addChildHref={
+            administrationEnabled
+              ? `/studio/organization/units/new?parent=${encodeURIComponent(unit.id)}`
+              : undefined
+          }
+          basePath="/organization"
+          data={data}
+          unit={unit}
+        />
         <StructureContext compact data={data} />
       </div>
 

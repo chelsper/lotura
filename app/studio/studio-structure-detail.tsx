@@ -6,12 +6,14 @@ import type {
   OrganizationStructureData,
   OrganizationUnit,
 } from "@/lib/organization-structure-data.mjs";
+import { organizationUnitPath } from "@/lib/organization-unit-hierarchy.mjs";
 import type {
   StructureChangeSummary,
   StructureEntityType,
 } from "@/lib/organization-structure-administration";
 
 import { StructureAdministrationPanel } from "../organization/structure-administration-panel";
+import { UnitHierarchyContext } from "../organization/unit-hierarchy-context";
 import { ArrowIcon } from "../ui/icons";
 import { Badge, Card } from "../ui/primitives";
 
@@ -60,6 +62,10 @@ export function StudioStructureDetail({
   entityType: StructureEntityType;
 }) {
   const presentation = entityPresentation(entity, entityType);
+  const hierarchyPath =
+    entityType === "organization_unit"
+      ? organizationUnitPath(data.units, entity.id)
+      : [];
   return (
     <div className="mx-auto max-w-6xl">
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-tertiary)]">
@@ -70,8 +76,28 @@ export function StudioStructureDetail({
         <Link className="hover:text-[var(--workspace-accent)]" href="/studio/organization">
           Organization
         </Link>
-        <span aria-hidden="true">/</span>
-        <span className="text-[var(--text-secondary)]">{presentation.title}</span>
+        {hierarchyPath.length > 0 ? (
+          hierarchyPath.map((item) => (
+            <span className="flex items-center gap-2" key={item.id}>
+              <span aria-hidden="true">/</span>
+              {item.id === entity.id ? (
+                <span className="text-[var(--text-secondary)]">{item.name}</span>
+              ) : (
+                <Link
+                  className="hover:text-[var(--workspace-accent)]"
+                  href={`/studio/organization/units/${encodeURIComponent(item.id)}`}
+                >
+                  {item.name}
+                </Link>
+              )}
+            </span>
+          ))
+        ) : (
+          <>
+            <span aria-hidden="true">/</span>
+            <span className="text-[var(--text-secondary)]">{presentation.title}</span>
+          </>
+        )}
       </nav>
 
       <header className="mt-5 border-b border-[var(--border)] pb-7 sm:pb-9">
@@ -98,6 +124,17 @@ export function StudioStructureDetail({
           </Link>
         </div>
       </header>
+
+      {entityType === "organization_unit" ? (
+        <div className="mt-6">
+          <UnitHierarchyContext
+            addChildHref={`/studio/organization/units/new?parent=${encodeURIComponent(entity.id)}`}
+            basePath="/studio/organization"
+            data={data}
+            unit={entity as OrganizationUnit}
+          />
+        </div>
+      ) : null}
 
       <Card className="mt-6 p-4 sm:p-5">
         <p className="text-xs font-medium text-[var(--text-tertiary)]">Canonical maintenance boundary</p>

@@ -34,7 +34,7 @@ test("Organization Unit parent maintenance is explicit and cycle-safe", async ()
   assert.match(administration, /parent_organization_unit_id = \$2/);
   assert.match(administration, /organization_id = \$4/);
   assert.match(administration, /An Organization Unit cannot be its own parent/);
-  assert.match(panel, /Parent Unit \/ Reports within/);
+  assert.match(panel, /Parent Organization Unit/);
   assert.match(panel, /Descendant Units are excluded/);
   assert.match(panel, /does not create a manager relationship or assign Process ownership/);
   assert.match(
