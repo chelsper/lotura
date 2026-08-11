@@ -70,6 +70,7 @@ export type OrganizationStructureSeed = {
     effectiveFrom: string;
     effectiveUntil?: string;
     updatedAt?: string;
+    vacancyEvidenceSupported?: boolean;
   }>;
   positionAssignments: Array<
     EffectiveRecord & {

@@ -20,6 +20,26 @@ A procedure describes one path through work. An organization is a connected syst
 
 The product must not collapse into an SOP repository, internal wiki, task manager, or workflow engine. Documentation is valuable, but its greater value comes from connecting operational definitions to the organizational context in which they are expected to work.
 
+## The organizational digital twin
+
+Lotura's product is an organizational digital twin: a living, evidence-based
+representation of how an organization is structured, how work happens, who
+holds responsibility, which technology supports it, what exceptions and
+dependencies exist, and how those relationships change over time.
+
+The digital twin is not automatically complete, institutionally approved, or
+synchronized with real-world activity. It reflects the evidence, canonical
+records, effective timing, and visible limitations available to the
+organization at a point in time. Uncertainty, disagreement, missing context,
+and unresolved questions remain part of the model rather than defects to hide.
+
+**Workspace Studio** is the governed authoring environment for that digital
+twin. Organization, Explorer, Process Detail, and FLOW help people understand
+the model; Workspace Studio is where appropriately authorized people build and
+maintain it. A unified Studio experience must not collapse the underlying
+domains, permissions, credentials, or append-only histories into one
+unrestricted administration boundary.
+
 ## The operating model
 
 Processes, Roles, Systems, Exceptions, Dependencies, and Assignments together form the organization's operating model.
@@ -195,6 +215,19 @@ The architecture should support incremental growth without prematurely turning f
 ### 9. Governance is multidimensional
 
 Visibility, contribution, approval, analysis, administration, and stewardship should have independently configurable scope. Product profiles may provide understandable defaults, but they must not collapse governance into reporting hierarchy or one universal role level.
+
+### 10. The digital twin remains evidence-based
+
+Workspace Studio should make the organization feel buildable and connected,
+but the resulting digital twin must never be presented as automatically
+complete or authoritative. Inventory counts describe documented records;
+Workspace Health presents deterministic facts and questions rather than a
+score; and Activity presents recorded changes without inventing causality.
+
+Structured authoring, evidence review, governance, approved versions,
+continuous improvement, and scenario analysis may enrich the same digital twin
+over time. Each capability must preserve its own source, authority, effective
+time, and limitation rather than flattening them into one apparent truth.
 
 ## Roadmap phases
 

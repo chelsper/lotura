@@ -16,7 +16,6 @@ export default async function OrganizationPositionPage({
   const {
     administration,
     asOf,
-    changes,
     configuration,
     data,
     processAcquisition,
@@ -35,7 +34,6 @@ export default async function OrganizationPositionPage({
     >
       <PositionDetail
         administrationEnabled={administration.enabled}
-        changes={changes}
         data={data}
         position={position}
         processAcquisitionEnabled={processAcquisition.enabled}

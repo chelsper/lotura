@@ -4,12 +4,10 @@ import type {
   OrganizationPerson,
   OrganizationStructureData,
 } from "@/lib/organization-structure-data.mjs";
-import type { StructureChangeSummary } from "@/lib/organization-structure-administration";
 
 import { RoleIcon } from "../ui/icons";
 import { Alert, Badge, Card, EmptyState } from "../ui/primitives";
 import { formatOperatingModelTimestamp } from "../workspace-shell";
-import { StructureAdministrationPanel } from "./structure-administration-panel";
 import { StructureContext } from "./structure-context";
 
 function positionHref(id: string) {
@@ -26,12 +24,10 @@ function period(from: string, until: string | null) {
 
 export function PersonDetail({
   administrationEnabled,
-  changes,
   data,
   person,
 }: {
   administrationEnabled: boolean;
-  changes: StructureChangeSummary[];
   data: OrganizationStructureData;
   person: OrganizationPerson;
 }) {
@@ -57,6 +53,14 @@ export function PersonDetail({
           This page shows only documented Position and Operational Role context.
           A Person in the organizational model is not necessarily a Lotura User.
         </p>
+        {administrationEnabled ? (
+          <Link
+            className="mt-4 inline-flex text-xs font-medium text-[var(--workspace-accent)] hover:underline"
+            href={`/studio/organization/people/${encodeURIComponent(person.id)}`}
+          >
+            Maintain in Workspace Studio →
+          </Link>
+        ) : null}
       </header>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -185,14 +189,6 @@ export function PersonDetail({
           )}
         </div>
       </Card>
-      {administrationEnabled ? (
-        <StructureAdministrationPanel
-          changes={changes}
-          data={data}
-          entity={person}
-          entityType="person"
-        />
-      ) : null}
     </div>
   );
 }

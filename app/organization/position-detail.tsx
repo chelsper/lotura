@@ -4,7 +4,6 @@ import type {
   OrganizationPosition,
   OrganizationStructureData,
 } from "@/lib/organization-structure-data.mjs";
-import type { StructureChangeSummary } from "@/lib/organization-structure-administration";
 
 import { RoleIcon, SystemIcon } from "../ui/icons";
 import {
@@ -17,7 +16,6 @@ import {
 import { formatOperatingModelTimestamp } from "../workspace-shell";
 import { FocusedHierarchy } from "./focused-hierarchy";
 import { StructureContext } from "./structure-context";
-import { StructureAdministrationPanel } from "./structure-administration-panel";
 
 function personHref(id: string) {
   return `/organization/people/${encodeURIComponent(id)}`;
@@ -37,13 +35,11 @@ function period(from: string, until: string | null) {
 
 export function PositionDetail({
   administrationEnabled,
-  changes,
   data,
   position,
   processAcquisitionEnabled,
 }: {
   administrationEnabled: boolean;
-  changes: StructureChangeSummary[];
   data: OrganizationStructureData;
   position: OrganizationPosition;
   processAcquisitionEnabled: boolean;
@@ -98,6 +94,14 @@ export function PositionDetail({
         <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">
           Position is structural. Operational Role is responsibility. Person is current human coverage.
         </p>
+        {administrationEnabled ? (
+          <Link
+            className="mt-4 inline-flex text-xs font-medium text-[var(--workspace-accent)] hover:underline"
+            href={`/studio/organization/positions/${encodeURIComponent(position.id)}`}
+          >
+            Maintain in Workspace Studio →
+          </Link>
+        ) : null}
       </header>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -251,14 +255,6 @@ export function PositionDetail({
           </p>
         </Card>
       </section>
-      {administrationEnabled ? (
-        <StructureAdministrationPanel
-          changes={changes}
-          data={data}
-          entity={position}
-          entityType="position"
-        />
-      ) : null}
     </div>
   );
 }

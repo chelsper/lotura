@@ -25,15 +25,15 @@ import {
 
 type BrowserView = "units" | "positions" | "people";
 
-function entityHref(type: BrowserView, id: string) {
-  return `/organization/${type}/${encodeURIComponent(id)}`;
+function entityHref(basePath: string, type: BrowserView, id: string) {
+  return `${basePath}/${type}/${encodeURIComponent(id)}`;
 }
 
-function UnitRow({ unit }: { unit: OrganizationUnit }) {
+function UnitRow({ basePath, unit }: { basePath: string; unit: OrganizationUnit }) {
   return (
     <Link
       className="group flex items-center justify-between gap-4 border-b border-[var(--border)] px-4 py-4 transition-colors last:border-b-0 hover:bg-[var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--workspace-focus-ring)] sm:px-5"
-      href={entityHref("units", unit.id)}
+      href={entityHref(basePath, "units", unit.id)}
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
@@ -52,11 +52,11 @@ function UnitRow({ unit }: { unit: OrganizationUnit }) {
   );
 }
 
-function PositionRow({ position }: { position: OrganizationPosition }) {
+function PositionRow({ basePath, position }: { basePath: string; position: OrganizationPosition }) {
   return (
     <Link
       className="group flex items-center justify-between gap-4 border-b border-[var(--border)] px-4 py-4 transition-colors last:border-b-0 hover:bg-[var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--workspace-focus-ring)] sm:px-5"
-      href={entityHref("positions", position.id)}
+      href={entityHref(basePath, "positions", position.id)}
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
@@ -77,11 +77,11 @@ function PositionRow({ position }: { position: OrganizationPosition }) {
   );
 }
 
-function PersonRow({ person }: { person: OrganizationPerson }) {
+function PersonRow({ basePath, person }: { basePath: string; person: OrganizationPerson }) {
   return (
     <Link
       className="group flex items-center justify-between gap-4 border-b border-[var(--border)] px-4 py-4 transition-colors last:border-b-0 hover:bg-[var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--workspace-focus-ring)] sm:px-5"
-      href={entityHref("people", person.id)}
+      href={entityHref(basePath, "people", person.id)}
     >
       <div className="min-w-0">
         <h3 className="text-sm font-semibold text-[var(--text)]">{person.name}</h3>
@@ -98,7 +98,13 @@ function PersonRow({ person }: { person: OrganizationPerson }) {
   );
 }
 
-export function OrganizationBrowser({ data }: { data: OrganizationStructureData }) {
+export function OrganizationBrowser({
+  basePath = "/organization",
+  data,
+}: {
+  basePath?: string;
+  data: OrganizationStructureData;
+}) {
   const [view, setView] = useState<BrowserView>("units");
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -178,13 +184,13 @@ export function OrganizationBrowser({ data }: { data: OrganizationStructureData 
         </div>
 
         <div aria-live="polite">
-          {view === "units" && results.units.map((unit) => <UnitRow key={unit.id} unit={unit} />)}
+          {view === "units" && results.units.map((unit) => <UnitRow basePath={basePath} key={unit.id} unit={unit} />)}
           {view === "positions" &&
             results.positions.map((position) => (
-              <PositionRow key={position.id} position={position} />
+              <PositionRow basePath={basePath} key={position.id} position={position} />
             ))}
           {view === "people" &&
-            results.people.map((person) => <PersonRow key={person.id} person={person} />)}
+            results.people.map((person) => <PersonRow basePath={basePath} key={person.id} person={person} />)}
           {results[view].length === 0 ? (
             <div className="p-5">
               <EmptyState title="No matching structure records">
@@ -211,7 +217,7 @@ export function OrganizationBrowser({ data }: { data: OrganizationStructureData 
             {leadership.map((position) => (
               <Link
                 className="group flex items-center justify-between gap-3 rounded-[10px] border border-[var(--border)] p-3 text-xs font-medium text-[var(--text)] transition-colors hover:bg-[var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]"
-                href={entityHref("positions", position.id)}
+                href={entityHref(basePath, "positions", position.id)}
                 key={position.id}
               >
                 <span>

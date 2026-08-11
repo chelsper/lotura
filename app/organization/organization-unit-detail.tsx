@@ -4,12 +4,10 @@ import type {
   OrganizationStructureData,
   OrganizationUnit,
 } from "@/lib/organization-structure-data.mjs";
-import type { StructureChangeSummary } from "@/lib/organization-structure-administration";
 
 import { ArrowIcon, OrganizationIcon, RoleIcon } from "../ui/icons";
 import { Alert, Badge, Card, EmptyState } from "../ui/primitives";
 import { StructureContext } from "./structure-context";
-import { StructureAdministrationPanel } from "./structure-administration-panel";
 
 function unitHref(id: string) {
   return `/organization/units/${encodeURIComponent(id)}`;
@@ -25,12 +23,10 @@ function processHref(id: string) {
 
 export function OrganizationUnitDetail({
   administrationEnabled,
-  changes,
   data,
   unit,
 }: {
   administrationEnabled: boolean;
-  changes: StructureChangeSummary[];
   data: OrganizationStructureData;
   unit: OrganizationUnit;
 }) {
@@ -58,6 +54,14 @@ export function OrganizationUnitDetail({
           Review the Positions documented within this Unit and how their
           Operational Roles connect the structure to Processes.
         </p>
+        {administrationEnabled ? (
+          <Link
+            className="mt-4 inline-flex text-xs font-medium text-[var(--workspace-accent)] hover:underline"
+            href={`/studio/organization/units/${encodeURIComponent(unit.id)}`}
+          >
+            Maintain in Workspace Studio →
+          </Link>
+        ) : null}
       </header>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -214,14 +218,6 @@ export function OrganizationUnitDetail({
           ) : null}
         </Card>
       </section>
-      {administrationEnabled ? (
-        <StructureAdministrationPanel
-          changes={changes}
-          data={data}
-          entity={unit}
-          entityType="organization_unit"
-        />
-      ) : null}
     </div>
   );
 }

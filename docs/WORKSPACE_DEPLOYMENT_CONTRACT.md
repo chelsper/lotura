@@ -34,6 +34,9 @@ environment. Temporary deployment lag is acceptable; code divergence is not.
 - enables administration explicitly with
   `LOTURA_STRUCTURE_ADMIN_MODE=enabled` only after migration and privilege
   verification;
+- exposes Workspace Studio only through that authenticated, organization-scoped
+  structural-administration boundary; creation actions require migration `0011`
+  and the separately reviewed column-level INSERT/sequence grants;
 - enables Process authoring explicitly with
   `LOTURA_OPERATING_MODEL_AUTHORING_MODE=enabled` only after migration `0010`
   and its separate privilege verification;

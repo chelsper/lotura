@@ -2,10 +2,11 @@
 
 Organization Structure Administration maintains Lotura’s canonical current
 structure without rewriting the source workbook or its import ledger. It is
-intentionally small: an authorized administrator may correct the displayed name of an
-Organization Unit, Position, or Person; assign, change, or remove a Unit's
+intentionally bounded: an authorized administrator may create an Organization
+Unit, Position, or Person; correct its displayed name; assign, change, or remove a Unit's
 parent; move a Position to a reviewed Organization Unit; end or replace a
-Position Assignment; establish, replace, end, or correct a Position reporting
+Position Assignment; establish an initial Position Assignment; establish,
+replace, end, or correct a Position reporting
 relationship; explicitly establish or end a Position-to-Operational-Role
 mandate; explicitly establish or end Person-level Role Coverage; or remove an
 eligible canonical record from the current structure.
@@ -64,6 +65,15 @@ Every form carries the canonical record's last observed `updated_at` revision.
 The write statement compares that revision again and rejects a stale edit. This
 is deterministic compare-and-set protection, not collaborative editing.
 
+Workspace Studio is the primary authoring surface for these capabilities. The
+Organization browser remains an understanding surface and links authorized
+administrators into the matching stable-key Studio record. Creating a Person
+does not create a User or login. Creating a Position never creates an
+Operational Role. Creating or parenting a Unit never creates reporting or
+Process ownership. Exact same-context names and titles require an explicit
+possible-duplicate acknowledgment because duplicate names may still be valid
+organizational facts.
+
 ## Governance boundary
 
 Direct canonical maintenance is a Workspace Administrator capability. It is
@@ -119,6 +129,11 @@ The dedicated administration role receives only:
   `parent_organization_unit_id`, `effective_until`, `updated_at`), and `positions` (`title`,
   `organization_unit_id`, `status`, `status_reason`, `effective_until`,
   `updated_at`);
+- column-level `INSERT` on `people` (`organization_id`, `display_name`,
+  `status`), `organization_units` (`organization_id`, `name`,
+  `parent_organization_unit_id`, `is_provisional`, `status`,
+  `effective_from`), and `positions` (`organization_id`,
+  `organization_unit_id`, `title`, `status`, `effective_from`);
 - column-level `UPDATE` on `position_assignments` (`status`,
   `effective_until`, `updated_at`) and `position_reporting_relationships`
   (`manager_position_id`, `relationship_type`, `status`, `effective_until`,
@@ -141,7 +156,8 @@ The dedicated administration role receives only:
 - column-level `INSERT` on `organization_structure_changes` for the audited
   Organization, entity target, action, before/after state, reason, effective
   time, and actor fields;
-- `USAGE` on `position_assignments_id_seq`,
+- `USAGE` on `people_id_seq`, `organization_units_id_seq`,
+  `positions_id_seq`, `position_assignments_id_seq`,
   `position_reporting_relationships_id_seq`, `roles_id_seq`,
   `role_mandates_id_seq`, `role_coverages_id_seq`, and
   `organization_structure_changes_id_seq`.
@@ -169,13 +185,22 @@ TO <structure_admin_role>;
 
 GRANT UPDATE (display_name, status, updated_at)
   ON people TO <structure_admin_role>;
+GRANT INSERT (organization_id, display_name, status)
+  ON people TO <structure_admin_role>;
 GRANT UPDATE (
   name, parent_organization_unit_id, status, status_reason,
   effective_until, updated_at
 )
   ON organization_units TO <structure_admin_role>;
+GRANT INSERT (
+  organization_id, name, parent_organization_unit_id,
+  is_provisional, status, effective_from
+) ON organization_units TO <structure_admin_role>;
 GRANT UPDATE (
   title, organization_unit_id, status, status_reason, effective_until, updated_at
+) ON positions TO <structure_admin_role>;
+GRANT INSERT (
+  organization_id, organization_unit_id, title, status, effective_from
 ) ON positions TO <structure_admin_role>;
 GRANT UPDATE (status, effective_until, updated_at)
   ON position_assignments TO <structure_admin_role>;
@@ -213,6 +238,9 @@ GRANT INSERT (
 ) ON organization_structure_changes TO <structure_admin_role>;
 
 GRANT USAGE ON SEQUENCE
+  people_id_seq,
+  organization_units_id_seq,
+  positions_id_seq,
   position_assignments_id_seq,
   position_reporting_relationships_id_seq,
   roles_id_seq,
@@ -247,8 +275,7 @@ The shared-code environment boundary is defined in
 
 ## v0.1 limitations
 
-- No bulk changes, merges, standalone Position/Person/Unit creation,
-  reactivation, Role renaming/retirement, mandate correction/replacement, or
+- No bulk changes, merges, reactivation, Role renaming/retirement, mandate correction/replacement, or
   coverage correction/replacement is included.
 - A new Operational Role can be created only together with its first explicit
   Position mandate. Standalone Role creation is intentionally unavailable.

@@ -21,6 +21,7 @@ import {
   endPositionReportingRelationshipAction,
   establishRoleCoverageAction,
   establishRoleMandateAction,
+  establishPositionAssignmentAction,
   establishPositionReportingRelationshipAction,
   removeStructureEntityAction,
   replacePositionAssignmentAction,
@@ -458,6 +459,60 @@ function ReplaceAssignmentForm({
   );
 }
 
+function EstablishAssignmentForm({
+  data,
+  position,
+}: {
+  data: OrganizationStructureData;
+  position: OrganizationPosition;
+}) {
+  const [state, action, pending] = useActionState(
+    establishPositionAssignmentAction,
+    initialStructureActionState,
+  );
+  const availablePeople = data.people.filter((person) => person.status === "active");
+  return (
+    <form action={action} className="mt-3 grid gap-3 sm:grid-cols-2">
+      <PositionRelationshipIdentity position={position} />
+      <label className="block sm:col-span-2">
+        <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+          Person
+        </span>
+        <Select name="personStableKey" required>
+          <option value="">Select a Person</option>
+          {availablePeople.map((person) => (
+            <option key={person.id} value={person.id}>
+              {person.name}
+            </option>
+          ))}
+        </Select>
+      </label>
+      <label className="block sm:col-span-2">
+        <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+          Assignment type
+        </span>
+        <Select defaultValue="incumbent" name="assignmentType" required>
+          <option value="incumbent">Incumbent</option>
+          <option value="job_share">Job share</option>
+          <option value="interim">Interim</option>
+          <option value="acting">Acting</option>
+          <option value="backup">Backup</option>
+        </Select>
+      </label>
+      <Alert className="sm:col-span-2" tone="info">
+        This records structural occupancy only. It does not grant an Operational Role, Role Coverage, Process ownership, or application access.
+      </Alert>
+      <ChangeMetadataFields />
+      <ActionResult state={state} />
+      <div className="sm:col-span-2">
+        <Button disabled={pending || availablePeople.length === 0} type="submit" variant="primary">
+          {pending ? "Establishing Assignment…" : "Establish Position Assignment"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 function AssignmentAdministration({
   data,
   position,
@@ -471,9 +526,16 @@ function AssignmentAdministration({
         Assignment maintenance
       </h3>
       <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
-        Ending preserves the Assignment as history. Replacing ends the current
-        record and creates its replacement in the same audited transaction.
+        Add an explicit current occupant or coverage relationship. Ending
+        preserves the Assignment as history. Replacing ends the current record
+        and creates its replacement in the same audited transaction.
       </p>
+      <details className="mt-4 rounded-[10px] bg-[var(--surface-subtle)] p-3">
+        <summary className="cursor-pointer text-xs font-semibold text-[var(--text)]">
+          Establish Position Assignment
+        </summary>
+        <EstablishAssignmentForm data={data} position={position} />
+      </details>
       {position.assignments.length > 0 ? (
         <div className="mt-4 space-y-3">
           {position.assignments.map((assignment) => (
@@ -1236,12 +1298,14 @@ function StateComparison({ change }: { change: StructureChangeSummary }) {
 
 function changeActionLabel(action: StructureChangeSummary["action"]) {
   return {
+    create: "Canonical record created",
     correct_reporting_relationship: "Reporting relationship corrected",
     end_assignment: "Assignment ended",
     end_reporting_relationship: "Reporting relationship ended",
     end_role_coverage: "Role Coverage ended",
     end_role_mandate: "Operational Role mandate ended",
     establish_reporting_relationship: "Reporting relationship established",
+    establish_assignment: "Position Assignment established",
     establish_role_coverage: "Role Coverage established",
     establish_role_mandate: "Operational Role mandate established",
     remove_from_current_structure: "Removed from current structure",

@@ -16,6 +16,34 @@ The phases are intentionally cumulative. Each phase should deepen the same share
 - Development, JU Pilot, Demo/Sandbox, and future production environments use the same product while isolating data, credentials, configuration, and access.
 - Real-world learning should improve the shared platform; it should not produce customer-specific application logic.
 - A deferred idea is intentionally postponed until its product boundaries and evidence requirements are understood. Deferred does not mean forgotten.
+- Workspace Studio is the governed authoring environment for Lotura's organizational digital twin; it unifies the product experience without creating one unrestricted write boundary.
+
+## Workspace Studio product sequence
+
+Workspace Studio gives authorized people one coherent place to build and
+govern the organization's digital twin. Its product sequence is intentionally
+memorable while its implementation remains incremental:
+
+1. **Organization Builder** — Units, Positions, People, Position Assignments,
+   and reporting relationships.
+2. **Responsibility Builder** — Operational Roles, Role Mandates, and Role
+   Coverage.
+3. **Process Builder** — Process acquisition and maintenance of the connected
+   operating model.
+4. **Technology Builder** — Systems and their explicit Process relationships.
+5. **Studio synthesis** — current documented-model facts, explainable
+   Workspace Health questions, Activity, and honest Governance and Discovery
+   entry points.
+
+Knowledge becomes a cross-cutting evidence lens rather than a disconnected
+document library. Discovery becomes the long-term home for source intake,
+review, reconciliation, imports, and guided interviews. Activity becomes the
+chronological product view over domain-specific append-only histories without
+replacing them or inventing causality.
+
+The relationship canvas and contextual AI assistance belong inside the Studio
+direction, but remain intentionally postponed until the core builders produce
+trustworthy connected data and their governance boundaries are approved.
 
 ## Phase 1 – Platform Foundation (completed)
 
@@ -67,6 +95,14 @@ Enable authorized people to observe, discover, reconcile, approve, and steward a
 ### Product milestones
 
 - Introduce authentication and organization-scoped authorization.
+- Establish Workspace Studio as the governed authoring environment for the
+  organizational digital twin, beginning with Organization Builder rather
+  than a broad settings-style Administration product.
+- Keep Organization, Explorer, Process Detail, and FLOW as understanding
+  surfaces while Studio becomes the authorized maintenance surface.
+- Present deterministic current-model facts and Things to review without
+  health scores, invented validation counts, or unsupported completeness
+  measures.
 - Introduce the generic Workspace Administrator, Contributor, Manager / Approver, and Leadership / Organizational Analyst profiles without treating them as a single authority hierarchy.
 - Make Stewardship visible for important organizational knowledge while preserving the difference between a Steward, manager, Process Owner, system administrator, and current performer.
 - Support the private JU Pilot using approved institutional process information in an isolated environment.
