@@ -17,12 +17,14 @@ import {
   correctPositionReportingRelationshipAction,
   endPositionAssignmentAction,
   endPositionReportingRelationshipAction,
-  initialStructureActionState,
   removeStructureEntityAction,
   replacePositionAssignmentAction,
-  type StructureActionState,
   updateStructureEntityAction,
 } from "./actions";
+import {
+  initialStructureActionState,
+  type StructureActionState,
+} from "./action-state";
 import { Alert, Button, Card, Input, Select } from "../ui/primitives";
 
 type EditableEntity = OrganizationUnit | OrganizationPosition | OrganizationPerson;

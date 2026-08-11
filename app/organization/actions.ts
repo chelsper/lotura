@@ -13,16 +13,7 @@ import {
   type StructureEntityType,
   updateStructureEntity,
 } from "@/lib/organization-structure-administration";
-
-export type StructureActionState = {
-  message: string;
-  status: "idle" | "error" | "success";
-};
-
-export const initialStructureActionState: StructureActionState = {
-  message: "",
-  status: "idle",
-};
+import type { StructureActionState } from "./action-state";
 
 function textValue(formData: FormData, name: string) {
   const value = formData.get(name);
