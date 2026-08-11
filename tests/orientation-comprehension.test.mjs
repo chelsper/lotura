@@ -60,7 +60,7 @@ test("Explorer browses while Process Detail explains accountability and context"
   for (const copy of [
     "Purpose",
     "Owner Role",
-    "Current assignment",
+    "Current Role coverage",
     "Responsibilities remain. People change.",
     "Systems used",
     "Exceptions",

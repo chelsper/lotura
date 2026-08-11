@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import type {
-  AssignmentType,
+  CoverageType,
   DependencyType,
   ExplorerDependency,
   ExplorerProcess,
@@ -23,10 +23,11 @@ import {
   ExpandableSection,
 } from "./ui/primitives";
 
-const assignmentLabels: Record<AssignmentType, string> = {
+const coverageLabels: Record<CoverageType, string> = {
   permanent: "Permanent",
   interim: "Interim",
   acting: "Acting",
+  delegated: "Delegated",
   backup: "Backup",
 };
 
@@ -63,6 +64,7 @@ function getInitials(name: string) {
 
 function ProcessSummary({ process }: { process: ExplorerProcess }) {
   const dependencyCount = process.upstream.length + process.downstream.length;
+  const currentCoverage = process.ownerRole?.currentCoverage ?? [];
 
   return (
     <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -79,27 +81,38 @@ function ProcessSummary({ process }: { process: ExplorerProcess }) {
       </div>
       <div className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-4">
         <p className="text-[11px] font-medium text-[var(--text-tertiary)]">
-          Current assignment
+          Current Role coverage
         </p>
-        <div className="mt-1.5 flex items-center gap-2.5">
-          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--workspace-accent-subtle)] text-[10px] font-semibold text-[var(--workspace-accent)]">
-            {process.ownerRole?.currentAssignee
-              ? getInitials(process.ownerRole.currentAssignee.name)
-              : "—"}
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-[var(--text)]">
-              {process.ownerRole?.currentAssignee?.name ?? "No current assignment"}
-            </p>
-            {process.ownerRole?.currentAssignee ? (
-              <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">
-                {assignmentLabels[process.ownerRole.currentAssignee.assignmentType]} coverage
+        <div className="mt-1.5 space-y-2">
+          {currentCoverage.length > 0 ? currentCoverage.map((coverage, index) => (
+            <div className="flex items-center gap-2.5" key={`${coverage.name}:${coverage.coverageType}:${index}`}>
+              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--workspace-accent-subtle)] text-[10px] font-semibold text-[var(--workspace-accent)]">
+                {getInitials(coverage.name)}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-[var(--text)]">
+                  {coverage.name}
+                </p>
+                <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">
+                  {coverageLabels[coverage.coverageType]} coverage
+                  {coverage.mandateType === "primary" ? " · Primary mandate" : null}
+                  {coverage.mandateType === "shared" ? ` · Shared mandate${coverage.scope ? ` — ${coverage.scope}` : ""}` : null}
+                </p>
+              </div>
+            </div>
+          )) : (
+            <div className="flex items-center gap-2.5">
+              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--workspace-accent-subtle)] text-[10px] font-semibold text-[var(--workspace-accent)]">
+                —
+              </span>
+              <p className="text-sm font-semibold text-[var(--text)]">
+                No current Role coverage
               </p>
-            ) : null}
-          </div>
+            </div>
+          )}
         </div>
         <p className="mt-2 text-[11px] leading-4 text-[var(--text-tertiary)]">
-          The person filling the Role in this snapshot.
+          People explicitly covering an active mandate for the Owner Role in this snapshot.
         </p>
       </div>
       <div className="rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-4">
@@ -123,7 +136,7 @@ function OwnershipPrinciple() {
       <RoleIcon className="mt-0.5 size-4 shrink-0 text-[var(--workspace-accent)]" />
       <p className="text-xs leading-5 text-[var(--text-secondary)]">
         <strong className="font-medium text-[var(--text)]">Responsibilities remain. People change.</strong>{" "}
-        Lotura separates the accountable Role from the person currently assigned to it.
+        Lotura separates the accountable Role from the people currently covering it.
       </p>
     </div>
   );

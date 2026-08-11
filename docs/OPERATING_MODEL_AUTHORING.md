@@ -13,7 +13,7 @@ Slice A covers only immutable Process identity, Process name and purpose, explic
 - A Working draft remains a Working draft after ownership is assigned.
 - Canonical existence and lifecycle status do not establish institutional approval.
 - The audit ledger is not approved Process version history.
-- Process Detail may show RoleCoverage while FLOW continues its Version 0.1 RoleAssignment interpretation.
+- Process Detail shows current Person-level RoleCoverage through effective RoleMandates when canonical structure data is available. Fictional Version 0.1 fixtures retain a RoleAssignment compatibility view. FLOW continues its Version 0.1 RoleAssignment interpretation until that analytical transition is separately approved.
 - Clearing an Owner Role is permitted only for a Draft. Active and archived Processes must retain accountable ownership; this is an explicit product and governance rule backed by the existing database constraint.
 - The history actor is the authenticated Lotura application identity at the time of change. It is not inferred from or coupled to Person, Position, Membership, Role Mandate, Role Coverage, or current organizational assignment.
 
