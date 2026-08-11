@@ -82,11 +82,13 @@ The route name is deliberately concise while the product label remains
 
 - `/studio` — Studio home with current-model facts, supported review questions,
   continue-building actions, and recent structural Activity;
-- `/studio/organization` — searchable Organization Builder with Unit,
-  Position, and Person views;
-- `/studio/organization/units/new` — add an Organizational Unit;
+- `/studio/organization` — searchable Organization Builder with an expandable
+  parent/child Unit hierarchy plus Position and Person views;
+- `/studio/organization/units/new` — add an Organizational Unit, optionally
+  from a parent Unit with that stable identity preselected;
 - `/studio/organization/units/[stableKey]` — maintain one Unit and its parent
-  relationship;
+  relationship, review its full hierarchy path and direct children, and add a
+  child Unit in context;
 - `/studio/organization/positions/new` — add a Position;
 - `/studio/organization/positions/[stableKey]` — maintain one Position,
   Unit placement, Assignments, and reporting relationships; and
@@ -120,6 +122,14 @@ corresponding slice provides useful current capability:
 Existing bookmarked maintenance and acquisition routes should remain
 backward-compatible during the transition. Redirecting or retiring them
 requires separate route and regression review.
+
+Organization Unit hierarchy is an explicit structural relationship. A parent
+Unit groups child Units, but it never creates or implies a Position reporting
+relationship, Process ownership, Role mandate, Role Coverage, or operational
+responsibility. The browser presents a focused expandable tree and hierarchy
+paths rather than one organization-wide diagram. Reparenting continues to use
+the existing same-Organization foreign key, stale-write protection,
+append-only history, and deferred cycle constraint.
 
 ## Studio home
 

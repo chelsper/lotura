@@ -271,7 +271,7 @@ function EditForm({
           ) : null}
           <label className="block sm:col-span-2">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-              Parent Unit / Reports within
+              Parent Organization Unit
             </span>
             <Select
               defaultValue={(entity as OrganizationUnit).parent?.id ?? ""}

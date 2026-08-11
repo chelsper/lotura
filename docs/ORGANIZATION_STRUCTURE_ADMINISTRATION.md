@@ -44,6 +44,11 @@ An Organization Unit parent records Unit hierarchy only. It never creates a
 manager relationship, Process ownership, or operational responsibility. Unit
 parent changes reuse the existing same-Organization foreign key and deferred
 cycle trigger; self-parent and multi-level cycles fail before commit.
+Workspace Studio exposes this existing relationship as an expandable Unit tree,
+full hierarchy paths, direct-child navigation, and an in-context Add child Unit
+action. The selected parent is passed only as an initial stable-key choice; the
+server revalidates Organization scope, lifecycle state, duplicate context, and
+cycle safety inside the audited write transaction.
 
 An Assignment replacement ends the prior Assignment and creates the replacement
 inside the same audited transaction. A reporting correction may correct the

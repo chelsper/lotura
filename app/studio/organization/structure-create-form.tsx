@@ -61,9 +61,11 @@ function CreationMetadataFields() {
 export function StructureCreateForm({
   data,
   entityType,
+  initialUnitStableKey = "",
 }: {
   data: OrganizationStructureData;
   entityType: CreationType;
+  initialUnitStableKey?: string;
 }) {
   const action =
     entityType === "organization_unit"
@@ -76,7 +78,7 @@ export function StructureCreateForm({
     initialStructureActionState,
   );
   const [name, setName] = useState("");
-  const [unitStableKey, setUnitStableKey] = useState("");
+  const [unitStableKey, setUnitStableKey] = useState(initialUnitStableKey);
   const duplicate = useMemo(() => {
     const value = normalized(name);
     if (!value) return null;
@@ -125,7 +127,7 @@ export function StructureCreateForm({
           </label>
           <label className="block sm:col-span-2">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-              Parent Unit / Reports within
+              Parent Organization Unit
             </span>
             <Select
               name="parentOrganizationUnitStableKey"

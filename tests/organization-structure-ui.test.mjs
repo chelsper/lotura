@@ -116,7 +116,7 @@ test("organizational placement uses existing Unit identities instead of Unit ren
   assert.match(panel, /It does not move a Person or Position/);
   assert.match(panel, /Another active Organization Unit already uses this name/);
   assert.match(panel, /onChange=\{\(event\) => setUnitName\(event\.target\.value\)\}/);
-  assert.match(panel, /Parent Unit \/ Reports within/);
+  assert.match(panel, /Parent Organization Unit/);
   assert.match(panel, /name="parentOrganizationUnitStableKey"/);
   assert.match(person, /Open this Position to change its Organization Unit/);
 });
