@@ -357,6 +357,7 @@ export async function loadNeonOrganizationStructure(organizationId: number) {
         effectiveFrom: roleMandate.effectiveFrom,
         effectiveUntil: roleMandate.effectiveUntil,
         reason: roleMandate.reason,
+        updatedAt: roleMandate.updatedAt,
       })
       .from(roleMandate)
       .where(eq(roleMandate.organizationId, organizationId))
@@ -375,6 +376,7 @@ export async function loadNeonOrganizationStructure(organizationId: number) {
         effectiveFrom: roleCoverage.effectiveFrom,
         effectiveUntil: roleCoverage.effectiveUntil,
         reason: roleCoverage.reason,
+        updatedAt: roleCoverage.updatedAt,
       })
       .from(roleCoverage)
       .where(eq(roleCoverage.organizationId, organizationId))

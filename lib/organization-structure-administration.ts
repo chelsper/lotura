@@ -18,7 +18,11 @@ export type StructureChangeAction =
   | "end_reporting_relationship"
   | "correct_reporting_relationship"
   | "establish_reporting_relationship"
-  | "replace_reporting_relationship";
+  | "replace_reporting_relationship"
+  | "establish_role_mandate"
+  | "end_role_mandate"
+  | "establish_role_coverage"
+  | "end_role_coverage";
 
 export type StructureChangeSummary = {
   action: StructureChangeAction;
@@ -93,6 +97,30 @@ type ReplaceReportingMutation = ReportingMutation & {
   relationshipReason?: string | null;
 };
 
+type EstablishRoleMandateMutation = ChangeMetadata & {
+  mandateType: "primary" | "shared";
+  newRoleDescription?: string | null;
+  newRoleName?: string | null;
+  positionStableKey: string;
+  roleKey?: string | null;
+  scope?: string | null;
+};
+
+type RoleMandateMutation = ChangeMetadata & {
+  mandateRecordKey: string;
+  positionStableKey: string;
+};
+
+type EstablishRoleCoverageMutation = RoleMandateMutation & {
+  coverageReason?: string | null;
+  coverageType: "permanent" | "interim" | "acting" | "delegated" | "backup";
+  personStableKey: string;
+};
+
+type EndRoleCoverageMutation = RoleMandateMutation & {
+  coverageRecordKey: string;
+};
+
 type DatabaseRow = Record<string, unknown>;
 
 function mutationClient(databaseUrl: string) {
@@ -151,6 +179,36 @@ function reportingState(row: DatabaseRow) {
     reason: row.reason,
     relationshipRecordId: row.id,
     relationshipType: row.relationship_type,
+    status: row.status,
+  };
+}
+
+function mandateState(row: DatabaseRow) {
+  return {
+    effectiveFrom: row.effective_from,
+    effectiveUntil: row.effective_until,
+    mandateRecordId: row.id,
+    mandateType: row.mandate_type,
+    operationalRoleId: `role:${row.role_id}`,
+    operationalRoleName: row.role_name,
+    reason: row.reason,
+    scope: row.scope,
+    status: row.status,
+  };
+}
+
+function coverageState(row: DatabaseRow) {
+  return {
+    coverageRecordId: row.id,
+    coverageType: row.coverage_type,
+    effectiveFrom: row.effective_from,
+    effectiveUntil: row.effective_until,
+    operationalRoleId: `role:${row.role_id}`,
+    operationalRoleName: row.role_name,
+    personStableKey: row.person_stable_key,
+    personName: row.person_name,
+    reason: row.reason,
+    roleMandateRecordId: row.role_mandate_id,
     status: row.status,
   };
 }
@@ -1721,6 +1779,859 @@ export async function correctPositionReportingRelationship(
       code: "blocked",
       message:
         "The reporting correction was rejected. Review cycle, manager, and current-record constraints; no partial change was accepted.",
+    };
+  }
+}
+
+async function roleMandateContext(
+  sql: MutationClient,
+  configuration: EnabledOrganizationStructureAdministrationConfiguration,
+  positionStableKey: string,
+  mandateRecordKey: string,
+) {
+  const mandateId = recordId(mandateRecordKey, "role-mandate");
+  if (!mandateId || !validUuid(positionStableKey)) return undefined;
+  const rows = (await sql.query(
+    `select mandate.*, role.name as role_name,
+       position.stable_key as position_stable_key,
+       exists (
+         select 1 from role_coverages coverage
+         where coverage.organization_id = mandate.organization_id
+           and coverage.role_mandate_id = mandate.id
+           and coverage.status in ('scheduled', 'active')
+       ) as has_current_coverage
+     from role_mandates mandate
+     join positions position
+       on position.id = mandate.position_id
+       and position.organization_id = mandate.organization_id
+     join roles role
+       on role.id = mandate.role_id
+       and role.organization_id = mandate.organization_id
+     where mandate.organization_id = $1 and mandate.id = $2
+       and position.stable_key = $3::uuid and position.status = 'active'
+       and mandate.status in ('scheduled', 'active')
+     limit 1`,
+    [configuration.organizationId, mandateId, positionStableKey],
+  )) as DatabaseRow[];
+  return rows[0];
+}
+
+async function roleCoverageContext(
+  sql: MutationClient,
+  configuration: EnabledOrganizationStructureAdministrationConfiguration,
+  positionStableKey: string,
+  mandateRecordKey: string,
+  coverageRecordKey: string,
+) {
+  const mandateId = recordId(mandateRecordKey, "role-mandate");
+  const coverageId = recordId(coverageRecordKey, "role-coverage");
+  if (!mandateId || !coverageId || !validUuid(positionStableKey)) {
+    return undefined;
+  }
+  const rows = (await sql.query(
+    `select coverage.*, mandate.position_id, mandate.role_id,
+       position.stable_key as position_stable_key,
+       role.name as role_name, person.stable_key as person_stable_key,
+       person.display_name as person_name
+     from role_coverages coverage
+     join role_mandates mandate
+       on mandate.id = coverage.role_mandate_id
+       and mandate.organization_id = coverage.organization_id
+     join positions position
+       on position.id = mandate.position_id
+       and position.organization_id = mandate.organization_id
+     join roles role
+       on role.id = mandate.role_id
+       and role.organization_id = mandate.organization_id
+     join people person
+       on person.id = coverage.person_id
+       and person.organization_id = coverage.organization_id
+     where coverage.organization_id = $1 and coverage.id = $2
+       and mandate.id = $3 and position.stable_key = $4::uuid
+       and position.status = 'active'
+       and coverage.status in ('scheduled', 'active')
+     limit 1`,
+    [configuration.organizationId, coverageId, mandateId, positionStableKey],
+  )) as DatabaseRow[];
+  return rows[0];
+}
+
+function validateRoleMandateChange(
+  input: EstablishRoleMandateMutation,
+): StructureMutationResult | null {
+  const invalid = validateMetadata(input);
+  if (invalid) return invalid;
+  if (input.changeKind !== "organizational_change") {
+    return {
+      ok: false,
+      code: "invalid",
+      message:
+        "Establishing an Operational Role mandate must be classified as an organizational change.",
+    };
+  }
+  if (!validUuid(input.positionStableKey)) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "The Position identifier is invalid.",
+    };
+  }
+  if (!['primary', 'shared'].includes(input.mandateType)) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Select a valid mandate type.",
+    };
+  }
+  const scope = input.scope?.trim() ?? "";
+  if (input.mandateType === "shared" && !scope) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Shared responsibility requires an explicit scope.",
+    };
+  }
+  if (scope.length > 2000) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Enter a mandate scope of 2,000 characters or fewer.",
+    };
+  }
+  if ((input.newRoleDescription?.trim().length ?? 0) > 2000) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Enter a Role description of 2,000 characters or fewer.",
+    };
+  }
+  return null;
+}
+
+export async function establishRoleMandate(
+  input: EstablishRoleMandateMutation,
+): Promise<StructureMutationResult> {
+  const invalid = validateRoleMandateChange(input);
+  if (invalid) return invalid;
+
+  const creatingRole = input.roleKey === "create-new";
+  const selectedRoleId = creatingRole
+    ? null
+    : recordId(input.roleKey ?? "", "role");
+  const newRoleName = input.newRoleName?.trim() ?? "";
+  if (
+    (!creatingRole && !selectedRoleId) ||
+    (creatingRole && (!newRoleName || newRoleName.length > 255))
+  ) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: creatingRole
+        ? "Enter an Operational Role name of 255 characters or fewer."
+        : "Select an active Operational Role or choose to create one.",
+    };
+  }
+
+  let configuration: EnabledOrganizationStructureAdministrationConfiguration;
+  try {
+    configuration = await administrationAccess();
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Structure administration is unavailable.",
+    };
+  }
+
+  const sql = mutationClient(configuration.databaseUrl);
+  try {
+    const position = await positionForStableKey(
+      sql,
+      configuration,
+      input.positionStableKey,
+    );
+    if (!position) {
+      return {
+        ok: false,
+        code: "not_found",
+        message: "The Position was not found in this organization.",
+      };
+    }
+    if (!revisionsMatch(position, input.expectedRevision)) {
+      return {
+        ok: false,
+        code: "conflict",
+        message:
+          "This Position changed after the page loaded. Refresh before trying again.",
+      };
+    }
+    if (input.effectiveAt < new Date(String(position.effective_from))) {
+      return {
+        ok: false,
+        code: "invalid",
+        message: "The mandate cannot begin before the Position became effective.",
+      };
+    }
+
+    let roleName = newRoleName;
+    if (selectedRoleId) {
+      const roles = (await sql.query(
+        `select id, name from roles
+         where organization_id = $1 and id = $2 and status = 'active'
+         limit 1`,
+        [configuration.organizationId, selectedRoleId],
+      )) as DatabaseRow[];
+      if (!roles[0]) {
+        return {
+          ok: false,
+          code: "invalid",
+          message: "The selected Operational Role is unavailable in this organization.",
+        };
+      }
+      roleName = String(roles[0].name);
+    }
+
+    const beforeState = {
+      mandateType: null,
+      operationalRoleCreated: null,
+      operationalRoleId: null,
+      operationalRoleName: null,
+      scope: null,
+      status: null,
+    };
+    const baseAfterState = {
+      effectiveFrom: input.effectiveAt.toISOString(),
+      effectiveUntil: null,
+      mandateType: input.mandateType,
+      operationalRoleCreated: creatingRole,
+      operationalRoleId: selectedRoleId ? `role:${selectedRoleId}` : null,
+      operationalRoleName: roleName,
+      reason: input.reason.trim(),
+      scope: input.scope?.trim() || null,
+      status: "active",
+    };
+
+    let rows: DatabaseRow[];
+    if (creatingRole) {
+      rows = await atomicQuery(
+        sql,
+        `with changed as (
+           update positions
+           set updated_at = transaction_timestamp()
+           where id = $1 and organization_id = $2
+             and stable_key = $3::uuid and updated_at = $4::timestamptz
+             and status = 'active'
+           returning id, organization_id
+         ),
+         created_role as (
+           insert into roles
+             (organization_id, name, description, status)
+           select changed.organization_id, $5, nullif($6, ''), 'active'
+           from changed
+           where not exists (
+             select 1 from roles existing_role
+             where existing_role.organization_id = changed.organization_id
+               and lower(trim(existing_role.name)) = lower(trim($5))
+           )
+           returning id, name
+         ),
+         mandate as (
+           insert into role_mandates
+             (organization_id, position_id, role_id, mandate_type, scope,
+              status, effective_from, reason)
+           select changed.organization_id, changed.id, created_role.id,
+             $7::role_mandate_type, nullif($8, ''), 'active',
+             $9::timestamptz, $10
+           from changed, created_role
+           returning id
+         ),
+         audit as (
+           insert into organization_structure_changes
+             (organization_id, entity_type, target_stable_key, position_id,
+              change_kind, change_action, before_state, after_state, reason,
+              effective_at, actor_identifier)
+           select $2, 'position', $3::uuid, changed.id,
+             'organizational_change', 'establish_role_mandate', $11::jsonb,
+             jsonb_set($12::jsonb, '{operationalRoleId}',
+               to_jsonb('role:' || created_role.id::text)),
+             $10, $9::timestamptz, $13
+           from changed, created_role, mandate
+           returning 1
+         )
+         select
+           (select count(*)::int from changed) as changed_count,
+           (select count(*)::int from created_role) as role_count,
+           (select count(*)::int from mandate) as mandate_count,
+           (select count(*)::int from audit) as audit_count`,
+        [
+          position.id,
+          configuration.organizationId,
+          input.positionStableKey,
+          input.expectedRevision,
+          newRoleName,
+          input.newRoleDescription?.trim() ?? "",
+          input.mandateType,
+          input.scope?.trim() ?? "",
+          input.effectiveAt.toISOString(),
+          input.reason.trim(),
+          JSON.stringify(beforeState),
+          JSON.stringify(baseAfterState),
+          configuration.actorIdentifier,
+        ],
+      );
+      if (
+        !mutationAccepted(rows) ||
+        Number(rows[0]?.role_count ?? 0) !== 1 ||
+        Number(rows[0]?.mandate_count ?? 0) !== 1
+      ) {
+        return {
+          ok: false,
+          code: "conflict",
+          message:
+            "The Role name or Position responsibility changed. Refresh and select an existing Role if it is now available.",
+        };
+      }
+    } else {
+      rows = await atomicQuery(
+        sql,
+        `with changed as (
+           update positions
+           set updated_at = transaction_timestamp()
+           where id = $1 and organization_id = $2
+             and stable_key = $3::uuid and updated_at = $4::timestamptz
+             and status = 'active'
+             and exists (
+               select 1 from roles selected_role
+               where selected_role.id = $5
+                 and selected_role.organization_id = $2
+                 and selected_role.status = 'active'
+             )
+             and not exists (
+               select 1 from role_mandates existing_mandate
+               where existing_mandate.organization_id = $2
+                 and existing_mandate.position_id = $1
+                 and existing_mandate.role_id = $5
+                 and existing_mandate.status in ('scheduled', 'active')
+             )
+           returning id, organization_id
+         ),
+         mandate as (
+           insert into role_mandates
+             (organization_id, position_id, role_id, mandate_type, scope,
+              status, effective_from, reason)
+           select changed.organization_id, changed.id, $5,
+             $6::role_mandate_type, nullif($7, ''), 'active',
+             $8::timestamptz, $9
+           from changed
+           returning id
+         ),
+         audit as (
+           insert into organization_structure_changes
+             (organization_id, entity_type, target_stable_key, position_id,
+              change_kind, change_action, before_state, after_state, reason,
+              effective_at, actor_identifier)
+           select $2, 'position', $3::uuid, changed.id,
+             'organizational_change', 'establish_role_mandate', $10::jsonb,
+             $11::jsonb, $9, $8::timestamptz, $12
+           from changed, mandate
+           returning 1
+         )
+         select
+           (select count(*)::int from changed) as changed_count,
+           (select count(*)::int from mandate) as mandate_count,
+           (select count(*)::int from audit) as audit_count`,
+        [
+          position.id,
+          configuration.organizationId,
+          input.positionStableKey,
+          input.expectedRevision,
+          selectedRoleId,
+          input.mandateType,
+          input.scope?.trim() ?? "",
+          input.effectiveAt.toISOString(),
+          input.reason.trim(),
+          JSON.stringify(beforeState),
+          JSON.stringify(baseAfterState),
+          configuration.actorIdentifier,
+        ],
+      );
+      if (
+        !mutationAccepted(rows) ||
+        Number(rows[0]?.mandate_count ?? 0) !== 1
+      ) {
+        return {
+          ok: false,
+          code: "conflict",
+          message:
+            "This Position or Operational Role mandate changed. Refresh before trying again.",
+        };
+      }
+    }
+
+    return {
+      ok: true,
+      message: creatingRole
+        ? "Operational Role created and explicitly mandated to this Position. No responsibility was inferred from its title or reporting line."
+        : "Operational Role mandate established. No responsibility was inferred from the Position title or reporting line.",
+    };
+  } catch {
+    return {
+      ok: false,
+      code: "blocked",
+      message:
+        "The Role mandate was rejected. Review existing primary or shared mandates and the required scope; no partial change was accepted.",
+    };
+  }
+}
+
+export async function endRoleMandate(
+  input: RoleMandateMutation,
+): Promise<StructureMutationResult> {
+  const invalid = validateMetadata(input);
+  if (invalid) return invalid;
+  if (input.changeKind !== "organizational_change") {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Ending a Role mandate must be an organizational change.",
+    };
+  }
+
+  let configuration: EnabledOrganizationStructureAdministrationConfiguration;
+  try {
+    configuration = await administrationAccess();
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Structure administration is unavailable.",
+    };
+  }
+  const sql = mutationClient(configuration.databaseUrl);
+  try {
+    const mandate = await roleMandateContext(
+      sql,
+      configuration,
+      input.positionStableKey,
+      input.mandateRecordKey,
+    );
+    if (!mandate) {
+      return {
+        ok: false,
+        code: "not_found",
+        message: "The current Role mandate was not found.",
+      };
+    }
+    if (!revisionsMatch(mandate, input.expectedRevision)) {
+      return {
+        ok: false,
+        code: "conflict",
+        message:
+          "This Role mandate changed after the page loaded. Refresh before trying again.",
+      };
+    }
+    if (mandate.has_current_coverage) {
+      return {
+        ok: false,
+        code: "blocked",
+        message:
+          "End current Role Coverage before ending this mandate. Coverage history will not be erased automatically.",
+      };
+    }
+    if (input.effectiveAt <= new Date(String(mandate.effective_from))) {
+      return {
+        ok: false,
+        code: "invalid",
+        message: "The end date must be after the Role mandate began.",
+      };
+    }
+    const beforeState = mandateState(mandate);
+    const afterState = {
+      ...beforeState,
+      effectiveUntil: input.effectiveAt.toISOString(),
+      status: "ended",
+    };
+    const rows = await atomicQuery(
+      sql,
+      `with changed as (
+         update role_mandates
+         set status = 'ended', effective_until = $1::timestamptz,
+           updated_at = transaction_timestamp()
+         where id = $2 and organization_id = $3 and position_id = $4
+           and updated_at = $5::timestamptz
+           and status in ('scheduled', 'active')
+           and not exists (
+             select 1 from role_coverages current_coverage
+             where current_coverage.organization_id = $3
+               and current_coverage.role_mandate_id = $2
+               and current_coverage.status in ('scheduled', 'active')
+           )
+         returning position_id as id
+       ),
+       ${auditCte(
+         targetDescriptor("position"),
+         "position",
+         "end_role_mandate",
+         5,
+       )}
+       select
+         (select count(*)::int from changed) as changed_count,
+         (select count(*)::int from audit) as audit_count`,
+      [
+        input.effectiveAt.toISOString(),
+        mandate.id,
+        configuration.organizationId,
+        mandate.position_id,
+        input.expectedRevision,
+        configuration.organizationId,
+        input.positionStableKey,
+        input.changeKind,
+        JSON.stringify(beforeState),
+        JSON.stringify(afterState),
+        input.reason.trim(),
+        input.effectiveAt.toISOString(),
+        configuration.actorIdentifier,
+      ],
+    );
+    if (!mutationAccepted(rows)) {
+      return {
+        ok: false,
+        code: "conflict",
+        message:
+          "This mandate or its coverage changed. Refresh before trying again.",
+      };
+    }
+    return {
+      ok: true,
+      message: "Role mandate ended. Its prior allocation remains in history.",
+    };
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "The Role mandate could not be ended. No partial change was accepted.",
+    };
+  }
+}
+
+export async function establishRoleCoverage(
+  input: EstablishRoleCoverageMutation,
+): Promise<StructureMutationResult> {
+  const invalid = validateMetadata(input);
+  if (invalid) return invalid;
+  if (input.changeKind !== "organizational_change") {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Establishing Role Coverage must be an organizational change.",
+    };
+  }
+  if (
+    !["permanent", "interim", "acting", "delegated", "backup"].includes(
+      input.coverageType,
+    ) ||
+    !validUuid(input.personStableKey)
+  ) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Select a Person and valid coverage type.",
+    };
+  }
+  const coverageReason = input.coverageReason?.trim() ?? "";
+  if (input.coverageType !== "permanent" && !coverageReason) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Temporary or delegated coverage requires a specific reason.",
+    };
+  }
+  if (coverageReason.length > 2000) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Enter coverage context of 2,000 characters or fewer.",
+    };
+  }
+
+  let configuration: EnabledOrganizationStructureAdministrationConfiguration;
+  try {
+    configuration = await administrationAccess();
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Structure administration is unavailable.",
+    };
+  }
+  const sql = mutationClient(configuration.databaseUrl);
+  try {
+    const mandate = await roleMandateContext(
+      sql,
+      configuration,
+      input.positionStableKey,
+      input.mandateRecordKey,
+    );
+    if (!mandate) {
+      return {
+        ok: false,
+        code: "not_found",
+        message: "The current Role mandate was not found.",
+      };
+    }
+    if (!revisionsMatch(mandate, input.expectedRevision)) {
+      return {
+        ok: false,
+        code: "conflict",
+        message:
+          "This Role mandate changed after the page loaded. Refresh before trying again.",
+      };
+    }
+    if (input.effectiveAt < new Date(String(mandate.effective_from))) {
+      return {
+        ok: false,
+        code: "invalid",
+        message: "Coverage cannot begin before the Role mandate.",
+      };
+    }
+    const people = (await sql.query(
+      `select id, stable_key, display_name from people
+       where organization_id = $1 and stable_key = $2::uuid
+         and status = 'active' limit 1`,
+      [configuration.organizationId, input.personStableKey],
+    )) as DatabaseRow[];
+    const coveringPerson = people[0];
+    if (!coveringPerson) {
+      return {
+        ok: false,
+        code: "invalid",
+        message: "The selected Person is unavailable in this organization.",
+      };
+    }
+    const beforeState = {
+      coverageType: null,
+      operationalRoleId: `role:${mandate.role_id}`,
+      operationalRoleName: mandate.role_name,
+      personStableKey: null,
+      personName: null,
+      status: null,
+    };
+    const afterState = {
+      coverageType: input.coverageType,
+      effectiveFrom: input.effectiveAt.toISOString(),
+      effectiveUntil: null,
+      operationalRoleId: `role:${mandate.role_id}`,
+      operationalRoleName: mandate.role_name,
+      personStableKey: input.personStableKey,
+      personName: coveringPerson.display_name,
+      reason: coverageReason || null,
+      roleMandateRecordId: mandate.id,
+      status: "active",
+    };
+    const rows = await atomicQuery(
+      sql,
+      `with changed as (
+         update role_mandates
+         set updated_at = transaction_timestamp()
+         where id = $1 and organization_id = $2 and position_id = $3
+           and updated_at = $4::timestamptz
+           and status in ('scheduled', 'active')
+           and not exists (
+             select 1 from role_coverages existing_coverage
+             where existing_coverage.organization_id = $2
+               and existing_coverage.role_mandate_id = $1
+               and existing_coverage.person_id = $5
+               and existing_coverage.coverage_type = $6::role_coverage_type
+               and existing_coverage.status in ('scheduled', 'active')
+           )
+         returning position_id as id
+       ),
+       coverage as (
+         insert into role_coverages
+           (organization_id, role_mandate_id, person_id, coverage_type,
+            status, effective_from, reason)
+         select $2, $1, $5, $6::role_coverage_type, 'active',
+           $7::timestamptz, nullif($8, '')
+         from changed
+         returning id
+       ),
+       audit as (
+         insert into organization_structure_changes
+           (organization_id, entity_type, target_stable_key, position_id,
+            change_kind, change_action, before_state, after_state, reason,
+            effective_at, actor_identifier)
+         select $2, 'position', $9::uuid, changed.id,
+           'organizational_change', 'establish_role_coverage', $10::jsonb,
+           $11::jsonb, $12, $7::timestamptz, $13
+         from changed, coverage
+         returning 1
+       )
+       select
+         (select count(*)::int from changed) as changed_count,
+         (select count(*)::int from coverage) as coverage_count,
+         (select count(*)::int from audit) as audit_count`,
+      [
+        mandate.id,
+        configuration.organizationId,
+        mandate.position_id,
+        input.expectedRevision,
+        coveringPerson.id,
+        input.coverageType,
+        input.effectiveAt.toISOString(),
+        coverageReason,
+        input.positionStableKey,
+        JSON.stringify(beforeState),
+        JSON.stringify(afterState),
+        input.reason.trim(),
+        configuration.actorIdentifier,
+      ],
+    );
+    if (
+      !mutationAccepted(rows) ||
+      Number(rows[0]?.coverage_count ?? 0) !== 1
+    ) {
+      return {
+        ok: false,
+        code: "conflict",
+        message:
+          "This mandate or matching coverage changed. Refresh before trying again.",
+      };
+    }
+    return {
+      ok: true,
+      message:
+        "Role Coverage established explicitly. Position occupancy and reporting hierarchy were not changed.",
+    };
+  } catch {
+    return {
+      ok: false,
+      code: "blocked",
+      message:
+        "Role Coverage was rejected. Review the mandate, Person, dates, and coverage context; no partial change was accepted.",
+    };
+  }
+}
+
+export async function endRoleCoverage(
+  input: EndRoleCoverageMutation,
+): Promise<StructureMutationResult> {
+  const invalid = validateMetadata(input);
+  if (invalid) return invalid;
+  if (input.changeKind !== "organizational_change") {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Ending Role Coverage must be an organizational change.",
+    };
+  }
+
+  let configuration: EnabledOrganizationStructureAdministrationConfiguration;
+  try {
+    configuration = await administrationAccess();
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Structure administration is unavailable.",
+    };
+  }
+  const sql = mutationClient(configuration.databaseUrl);
+  try {
+    const coverage = await roleCoverageContext(
+      sql,
+      configuration,
+      input.positionStableKey,
+      input.mandateRecordKey,
+      input.coverageRecordKey,
+    );
+    if (!coverage) {
+      return {
+        ok: false,
+        code: "not_found",
+        message: "The current Role Coverage was not found.",
+      };
+    }
+    if (!revisionsMatch(coverage, input.expectedRevision)) {
+      return {
+        ok: false,
+        code: "conflict",
+        message:
+          "This Role Coverage changed after the page loaded. Refresh before trying again.",
+      };
+    }
+    if (input.effectiveAt <= new Date(String(coverage.effective_from))) {
+      return {
+        ok: false,
+        code: "invalid",
+        message: "The end date must be after Role Coverage began.",
+      };
+    }
+    const beforeState = coverageState(coverage);
+    const afterState = {
+      ...beforeState,
+      effectiveUntil: input.effectiveAt.toISOString(),
+      status: "ended",
+    };
+    const rows = await atomicQuery(
+      sql,
+      `with ended as (
+         update role_coverages
+         set status = 'ended', effective_until = $1::timestamptz,
+           updated_at = transaction_timestamp()
+         where id = $2 and organization_id = $3
+           and role_mandate_id = $4 and updated_at = $5::timestamptz
+           and status in ('scheduled', 'active')
+         returning role_mandate_id
+       ),
+       changed as (
+         select mandate.position_id as id
+         from ended
+         join role_mandates mandate
+           on mandate.id = ended.role_mandate_id
+           and mandate.organization_id = $3
+       ),
+       ${auditCte(
+         targetDescriptor("position"),
+         "position",
+         "end_role_coverage",
+         5,
+       )}
+       select
+         (select count(*)::int from changed) as changed_count,
+         (select count(*)::int from audit) as audit_count`,
+      [
+        input.effectiveAt.toISOString(),
+        coverage.id,
+        configuration.organizationId,
+        coverage.role_mandate_id,
+        input.expectedRevision,
+        configuration.organizationId,
+        input.positionStableKey,
+        input.changeKind,
+        JSON.stringify(beforeState),
+        JSON.stringify(afterState),
+        input.reason.trim(),
+        input.effectiveAt.toISOString(),
+        configuration.actorIdentifier,
+      ],
+    );
+    if (!mutationAccepted(rows)) {
+      return {
+        ok: false,
+        code: "conflict",
+        message:
+          "This Role Coverage changed after the page loaded. Refresh before trying again.",
+      };
+    }
+    return {
+      ok: true,
+      message: "Role Coverage ended. Its prior state remains in history.",
+    };
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Role Coverage could not be ended. No partial change was accepted.",
     };
   }
 }

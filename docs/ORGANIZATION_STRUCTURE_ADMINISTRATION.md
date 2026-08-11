@@ -6,7 +6,9 @@ intentionally small: an authorized administrator may correct the displayed name 
 Organization Unit, Position, or Person; assign, change, or remove a Unit's
 parent; move a Position to a reviewed Organization Unit; end or replace a
 Position Assignment; establish, replace, end, or correct a Position reporting
-relationship; or remove an eligible canonical record from the current structure.
+relationship; explicitly establish or end a Position-to-Operational-Role
+mandate; explicitly establish or end Person-level Role Coverage; or remove an
+eligible canonical record from the current structure.
 
 ## Truth and history boundaries
 
@@ -44,6 +46,19 @@ relationship and creates the new relationship in one audited transaction; it
 does not rewrite the prior structure as though it never existed. Current Person
 occupants are display context only. A Person with more than one Position has
 each Position's reporting relationship maintained independently.
+
+An Operational Role mandate is an explicit allocation of durable responsibility
+to a Position. The administrator may select an existing active Operational Role
+or create one only as part of establishing its first mandate. Lotura does not
+derive the Role from the Position title, Unit, occupants, or reporting line.
+Shared mandates require a documented scope. Ending a mandate is blocked until
+all current or scheduled Role Coverage has been ended explicitly.
+
+Role Coverage is an explicit Person-to-mandate relationship. Position occupancy
+is shown as context but is never copied automatically. Permanent, interim,
+acting, delegated, and backup coverage remain distinct; every non-permanent
+coverage record requires its own reason. Ending coverage does not change the
+Person's Position Assignment or reporting relationships.
 
 Every form carries the canonical record's last observed `updated_at` revision.
 The write statement compares that revision again and rejects a stale edit. This
@@ -96,8 +111,9 @@ The dedicated administration role receives only:
 
 - `CONNECT` to the intended database and `USAGE` on the application schema;
 - `SELECT` on `people`, `organization_units`, `positions`,
-  `position_assignments`, `position_reporting_relationships`, `role_mandates`,
-  and `role_coverages` for scoped validation and dependency checks;
+  `position_assignments`, `position_reporting_relationships`, `roles`,
+  `role_mandates`, and `role_coverages` for scoped validation and dependency
+  checks;
 - column-level `UPDATE` only on `people` (`display_name`, `status`,
   `updated_at`), `organization_units` (`name`, `status`, `status_reason`,
   `parent_organization_unit_id`, `effective_until`, `updated_at`), and `positions` (`title`,
@@ -113,11 +129,21 @@ The dedicated administration role receives only:
 - column-level `INSERT` on `position_reporting_relationships`
   (`organization_id`, `subordinate_position_id`, `manager_position_id`,
   `relationship_type`, `status`, `effective_from`, `reason`);
+- column-level `INSERT` on `roles` (`organization_id`, `name`, `description`,
+  `status`) only when the Role is created with its first mandate;
+- column-level `INSERT` on `role_mandates` (`organization_id`, `position_id`,
+  `role_id`, `mandate_type`, `scope`, `status`, `effective_from`, `reason`) and
+  column-level `UPDATE` on `status`, `effective_until`, and `updated_at`;
+- column-level `INSERT` on `role_coverages` (`organization_id`,
+  `role_mandate_id`, `person_id`, `coverage_type`, `status`, `effective_from`,
+  `reason`) and column-level `UPDATE` on `status`, `effective_until`, and
+  `updated_at`;
 - column-level `INSERT` on `organization_structure_changes` for the audited
   Organization, entity target, action, before/after state, reason, effective
   time, and actor fields;
 - `USAGE` on `position_assignments_id_seq`,
-  `position_reporting_relationships_id_seq`, and
+  `position_reporting_relationships_id_seq`, `roles_id_seq`,
+  `role_mandates_id_seq`, `role_coverages_id_seq`, and
   `organization_structure_changes_id_seq`.
 
 The normal SELECT-only runtime role receives `SELECT` on
@@ -136,6 +162,7 @@ GRANT SELECT ON TABLE
   positions,
   position_assignments,
   position_reporting_relationships,
+  roles,
   role_mandates,
   role_coverages
 TO <structure_admin_role>;
@@ -160,6 +187,20 @@ GRANT UPDATE (
   manager_position_id, relationship_type, status,
   effective_until, reason, updated_at
 ) ON position_reporting_relationships TO <structure_admin_role>;
+GRANT INSERT (organization_id, name, description, status)
+  ON roles TO <structure_admin_role>;
+GRANT INSERT (
+  organization_id, position_id, role_id, mandate_type, scope,
+  status, effective_from, reason
+) ON role_mandates TO <structure_admin_role>;
+GRANT UPDATE (status, effective_until, updated_at)
+  ON role_mandates TO <structure_admin_role>;
+GRANT INSERT (
+  organization_id, role_mandate_id, person_id, coverage_type,
+  status, effective_from, reason
+) ON role_coverages TO <structure_admin_role>;
+GRANT UPDATE (status, effective_until, updated_at)
+  ON role_coverages TO <structure_admin_role>;
 GRANT INSERT (
   organization_id, subordinate_position_id, manager_position_id,
   relationship_type, status, effective_from, reason
@@ -174,6 +215,9 @@ GRANT INSERT (
 GRANT USAGE ON SEQUENCE
   position_assignments_id_seq,
   position_reporting_relationships_id_seq,
+  roles_id_seq,
+  role_mandates_id_seq,
+  role_coverages_id_seq,
   organization_structure_changes_id_seq
 TO <structure_admin_role>;
 
@@ -204,14 +248,17 @@ The shared-code environment boundary is defined in
 ## v0.1 limitations
 
 - No bulk changes, merges, standalone Position/Person/Unit creation,
-  reactivation, or Role Mandate/Role Coverage editing is included.
+  reactivation, Role renaming/retirement, mandate correction/replacement, or
+  coverage correction/replacement is included.
+- A new Operational Role can be created only together with its first explicit
+  Position mandate. Standalone Role creation is intentionally unavailable.
 - New reporting relationships are limited to one explicit primary manager.
   Existing dotted-line and functional relationships may be corrected or ended;
   creating new secondary relationships is deferred.
 - An effective date is accepted only for a present or past change. Future
   scheduling is deferred.
-- Ending or reassigning dependent records needs a separately reviewed
-  administration milestone.
+- Ending Role Coverage and then its Role mandate is supported. Replacing a
+  mandate or coverage remains an explicit sequence rather than a silent rewrite.
 - Temporary-password access remains a pilot control, not the final enterprise
   authorization model. SSO, durable per-user authorization, and durable rate
   limiting remain required before broader institutional administration.

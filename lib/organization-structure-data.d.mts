@@ -162,6 +162,8 @@ export type StructureMandate = {
   type: RoleMandateType;
   typeLabel: string;
   scope: string | null;
+  reason: string | null;
+  revision: string;
   role: { id: string; name: string; status: "active" | "inactive" };
   coverage: Array<{
     id: string;
@@ -264,6 +266,12 @@ export type OrganizationUnit = OrganizationUnitSummary & {
 export type OrganizationStructureData = {
   organization: { name: string };
   asOf: string;
+  operationalRoles: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    status: "active" | "inactive";
+  }>;
   snapshot: {
     id: string;
     sourceAsOf: string;
