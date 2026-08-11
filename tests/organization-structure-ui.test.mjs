@@ -108,6 +108,8 @@ test("organizational placement uses existing Unit identities instead of Unit ren
   assert.match(panel, /It does not move a Person or Position/);
   assert.match(panel, /Another active Organization Unit already uses this name/);
   assert.match(panel, /onChange=\{\(event\) => setUnitName\(event\.target\.value\)\}/);
+  assert.match(panel, /Parent Unit \/ Reports within/);
+  assert.match(panel, /name="parentOrganizationUnitStableKey"/);
   assert.match(person, /Open this Position to change its Organization Unit/);
 });
 
@@ -133,6 +135,12 @@ test("structure mutations are server-only, access-checked, scoped, and never har
   assert.match(administration, /insert into organization_structure_changes/i);
   assert.match(administration, /replacePositionAssignment/);
   assert.match(administration, /correctPositionReportingRelationship/);
+  assert.match(administration, /establishPositionReportingRelationship/);
+  assert.match(administration, /replacePositionReportingRelationship/);
+  assert.match(
+    administration,
+    /current_relation\.organization_id = \$2/,
+  );
   assert.doesNotMatch(actions, /organizationId|organization_id/);
   assert.doesNotMatch(proxy, /organization-structure-administration|LOTURA_STRUCTURE_ADMIN_DATABASE_URL/);
 });

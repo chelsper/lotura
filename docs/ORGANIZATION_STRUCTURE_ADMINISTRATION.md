@@ -3,10 +3,10 @@
 Organization Structure Administration maintains Lotura’s canonical current
 structure without rewriting the source workbook or its import ledger. It is
 intentionally small: an authorized administrator may correct the displayed name of an
-Organization Unit, Position, or Person; move a Position to a reviewed
-Organization Unit; end or replace a Position Assignment; end or correct a
-reporting relationship; or remove an eligible canonical record from the current
-structure.
+Organization Unit, Position, or Person; assign, change, or remove a Unit's
+parent; move a Position to a reviewed Organization Unit; end or replace a
+Position Assignment; establish, replace, end, or correct a Position reporting
+relationship; or remove an eligible canonical record from the current structure.
 
 ## Truth and history boundaries
 
@@ -30,12 +30,20 @@ depend on the target. Those Assignments, reporting relationships, child Units,
 Positions, Role Mandates, or Role Coverage records must first be ended or
 reassigned explicitly. Lotura never silently cascades away structural history.
 
+An Organization Unit parent records Unit hierarchy only. It never creates a
+manager relationship, Process ownership, or operational responsibility. Unit
+parent changes reuse the existing same-Organization foreign key and deferred
+cycle trigger; self-parent and multi-level cycles fail before commit.
+
 An Assignment replacement ends the prior Assignment and creates the replacement
 inside the same audited transaction. A reporting correction may correct the
 manager Position, relationship type, or source context without changing Process
-responsibility. An organizational reporting change ends the old relationship;
-it does not rewrite the relationship as though the prior structure never
-existed.
+responsibility. Establishing a primary manager creates an explicit
+Position-to-Position relationship. Replacing a primary manager ends the prior
+relationship and creates the new relationship in one audited transaction; it
+does not rewrite the prior structure as though it never existed. Current Person
+occupants are display context only. A Person with more than one Position has
+each Position's reporting relationship maintained independently.
 
 Every form carries the canonical record's last observed `updated_at` revision.
 The write statement compares that revision again and rejects a stale edit. This
@@ -92,7 +100,7 @@ The dedicated administration role receives only:
   and `role_coverages` for scoped validation and dependency checks;
 - column-level `UPDATE` only on `people` (`display_name`, `status`,
   `updated_at`), `organization_units` (`name`, `status`, `status_reason`,
-  `effective_until`, `updated_at`), and `positions` (`title`,
+  `parent_organization_unit_id`, `effective_until`, `updated_at`), and `positions` (`title`,
   `organization_unit_id`, `status`, `status_reason`, `effective_until`,
   `updated_at`);
 - column-level `UPDATE` on `position_assignments` (`status`,
@@ -102,10 +110,14 @@ The dedicated administration role receives only:
 - column-level `INSERT` on `position_assignments` (`organization_id`,
   `position_id`, `person_id`, `assignment_type`, `status`, `effective_from`,
   `reason`);
+- column-level `INSERT` on `position_reporting_relationships`
+  (`organization_id`, `subordinate_position_id`, `manager_position_id`,
+  `relationship_type`, `status`, `effective_from`, `reason`);
 - column-level `INSERT` on `organization_structure_changes` for the audited
   Organization, entity target, action, before/after state, reason, effective
   time, and actor fields;
-- `USAGE` on `position_assignments_id_seq` and
+- `USAGE` on `position_assignments_id_seq`,
+  `position_reporting_relationships_id_seq`, and
   `organization_structure_changes_id_seq`.
 
 The normal SELECT-only runtime role receives `SELECT` on
@@ -130,7 +142,10 @@ TO <structure_admin_role>;
 
 GRANT UPDATE (display_name, status, updated_at)
   ON people TO <structure_admin_role>;
-GRANT UPDATE (name, status, status_reason, effective_until, updated_at)
+GRANT UPDATE (
+  name, parent_organization_unit_id, status, status_reason,
+  effective_until, updated_at
+)
   ON organization_units TO <structure_admin_role>;
 GRANT UPDATE (
   title, organization_unit_id, status, status_reason, effective_until, updated_at
@@ -146,6 +161,10 @@ GRANT UPDATE (
   effective_until, reason, updated_at
 ) ON position_reporting_relationships TO <structure_admin_role>;
 GRANT INSERT (
+  organization_id, subordinate_position_id, manager_position_id,
+  relationship_type, status, effective_from, reason
+) ON position_reporting_relationships TO <structure_admin_role>;
+GRANT INSERT (
   organization_id, entity_type, target_stable_key,
   organization_unit_id, position_id, person_id,
   change_kind, change_action, before_state, after_state,
@@ -154,6 +173,7 @@ GRANT INSERT (
 
 GRANT USAGE ON SEQUENCE
   position_assignments_id_seq,
+  position_reporting_relationships_id_seq,
   organization_structure_changes_id_seq
 TO <structure_admin_role>;
 
@@ -185,6 +205,9 @@ The shared-code environment boundary is defined in
 
 - No bulk changes, merges, standalone Position/Person/Unit creation,
   reactivation, or Role Mandate/Role Coverage editing is included.
+- New reporting relationships are limited to one explicit primary manager.
+  Existing dotted-line and functional relationships may be corrected or ended;
+  creating new secondary relationships is deferred.
 - An effective date is accepted only for a present or past change. Future
   scheduling is deferred.
 - Ending or reassigning dependent records needs a separately reviewed

@@ -7,8 +7,10 @@ import {
   correctPositionReportingRelationship,
   endPositionAssignment,
   endPositionReportingRelationship,
+  establishPositionReportingRelationship,
   removeStructureEntity,
   replacePositionAssignment,
+  replacePositionReportingRelationship,
   type StructureChangeKind,
   type StructureEntityType,
   updateStructureEntity,
@@ -98,6 +100,8 @@ export async function updateStructureEntityAction(
     name: textValue(formData, "name"),
     organizationUnitStableKey:
       textValue(formData, "organizationUnitStableKey") || null,
+    parentOrganizationUnitStableKey:
+      textValue(formData, "parentOrganizationUnitStableKey") || null,
     title: textValue(formData, "title"),
   });
   if (!result.ok) return { status: "error", message: result.message };
@@ -232,6 +236,59 @@ export async function correctPositionReportingRelationshipAction(
       | "primary"
       | "dotted_line"
       | "functional",
+    reportingRecordKey: textValue(formData, "reportingRecordKey"),
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+  revalidatePosition(positionStableKey);
+  return { status: "success", message: result.message };
+}
+
+export async function establishPositionReportingRelationshipAction(
+  _previousState: StructureActionState,
+  formData: FormData,
+): Promise<StructureActionState> {
+  const metadata = changeMetadata(formData);
+  const positionStableKey = textValue(formData, "positionStableKey");
+  if (!metadata || !positionStableKey) {
+    return {
+      status: "error",
+      message: "Review the new manager relationship and try again.",
+    };
+  }
+  const result = await establishPositionReportingRelationship({
+    ...metadata,
+    managerPositionStableKey: textValue(
+      formData,
+      "managerPositionStableKey",
+    ),
+    positionStableKey,
+    relationshipReason: textValue(formData, "relationshipReason") || null,
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+  revalidatePosition(positionStableKey);
+  return { status: "success", message: result.message };
+}
+
+export async function replacePositionReportingRelationshipAction(
+  _previousState: StructureActionState,
+  formData: FormData,
+): Promise<StructureActionState> {
+  const metadata = changeMetadata(formData);
+  const positionStableKey = textValue(formData, "positionStableKey");
+  if (!metadata || !positionStableKey) {
+    return {
+      status: "error",
+      message: "Review the replacement manager relationship and try again.",
+    };
+  }
+  const result = await replacePositionReportingRelationship({
+    ...metadata,
+    managerPositionStableKey: textValue(
+      formData,
+      "managerPositionStableKey",
+    ),
+    positionStableKey,
+    relationshipReason: textValue(formData, "relationshipReason") || null,
     reportingRecordKey: textValue(formData, "reportingRecordKey"),
   });
   if (!result.ok) return { status: "error", message: result.message };

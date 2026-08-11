@@ -1,0 +1,2 @@
+ALTER TYPE "public"."organization_structure_change_action" ADD VALUE 'establish_reporting_relationship';--> statement-breakpoint
+ALTER TYPE "public"."organization_structure_change_action" ADD VALUE 'replace_reporting_relationship';

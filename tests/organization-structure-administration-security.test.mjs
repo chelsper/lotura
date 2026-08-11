@@ -51,7 +51,7 @@ test("all mutable structural records use compare-and-set revisions", async () =>
   );
   const mutationStatements = [
     ...administration.matchAll(
-      /(?:update organization_units|update positions|update people|update position_assignments|update position_reporting_relationships)[\s\S]*?returning id/g,
+      /(?:update organization_units|update positions|update people|update position_assignments|update position_reporting_relationships)[\s\S]*?returning (?:position_id|subordinate_position_id)?(?: as )?id/g,
     ),
   ].map((match) => match[0]);
   assert.ok(mutationStatements.length >= 8);
@@ -72,12 +72,16 @@ test("assignment and reporting maintenance preserve history rather than hard-del
     "replacePositionAssignment",
     "endPositionReportingRelationship",
     "correctPositionReportingRelationship",
+    "establishPositionReportingRelationship",
+    "replacePositionReportingRelationship",
   ]) {
     assert.match(administration, new RegExp(`export async function ${capability}`));
   }
   assert.match(actions, /endPositionAssignmentAction/);
   assert.match(panel, /Replace Assignment/);
   assert.match(panel, /End reporting relationship/);
+  assert.match(panel, /Establish primary manager/);
+  assert.match(panel, /Replace primary manager/);
   assert.match(panel, /Review before and after/);
   assert.doesNotMatch(administration, /delete\s+from/i);
 });
@@ -89,6 +93,10 @@ test("the reviewed privilege contract is least-privilege and environment-isolate
   ]);
   assert.match(administration, /LOTURA_STRUCTURE_ADMIN_DATABASE_URL/);
   assert.match(administration, /GRANT INSERT \([\s\S]+organization_structure_changes/);
+  assert.match(
+    administration,
+    /GRANT INSERT \([\s\S]+subordinate_position_id[\s\S]+ON position_reporting_relationships/,
+  );
   assert.match(administration, /structural-write role does not require `SELECT`/);
   assert.match(administration, /neither `UPDATE` nor `DELETE`/);
   assert.match(deployment, /Northstar fixture only/);
