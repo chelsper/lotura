@@ -137,9 +137,11 @@ export async function loadNeonOrganizationStructure(organizationId: number) {
     db
       .select({
         id: role.id,
+        stableKey: role.stableKey,
         name: role.name,
         description: role.description,
         status: role.status,
+        updatedAt: role.updatedAt,
       })
       .from(role)
       .where(eq(role.organizationId, organizationId))

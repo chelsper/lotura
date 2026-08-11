@@ -77,20 +77,25 @@ export default async function WorkspaceStudioPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             {[
-              { icon: RoleIcon, title: "Responsibilities", description: "Operational Roles, mandates, and human coverage. Responsibility Builder is the next planned slice." },
+              { icon: RoleIcon, title: "Responsibilities", description: "Create and maintain Operational Roles, Position mandates, and explicit human coverage.", href: "/studio/responsibilities" },
               { icon: LayersIcon, title: "Processes", description: "Draft Process definition and operating-model relationships through the existing authoring boundary." },
               { icon: SystemIcon, title: "Technology", description: "Systems and the work that depends on them. Technology Builder remains intentionally deferred." },
               { icon: LayersIcon, title: "Activity", description: "A future read-only timeline across existing append-only ledgers, without implying causality." },
             ].map((area) => {
               const Icon = area.icon;
-              return (
-                <Card className="p-4 opacity-75 sm:p-5" key={area.title}>
-                  <p className="flex items-center gap-2 text-xs font-medium text-[var(--text-tertiary)]">
-                    <Icon className="size-4" /> Planned Studio area
+              const content = (
+                <Card className={`p-4 sm:p-5 ${area.href ? "h-full transition-colors group-hover:border-[var(--border-strong)] group-hover:bg-[var(--surface-hover)]" : "opacity-75"}`}>
+                  <p className={`flex items-center gap-2 text-xs font-medium ${area.href ? "text-[var(--workspace-accent)]" : "text-[var(--text-tertiary)]"}`}>
+                    <Icon className="size-4" /> {area.href ? "Available now" : "Planned Studio area"}
                   </p>
                   <h2 className="mt-2 text-base font-semibold text-[var(--text)]">{area.title}</h2>
                   <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">{area.description}</p>
                 </Card>
+              );
+              return area.href ? (
+                <Link className="group block" href={area.href} key={area.title}>{content}</Link>
+              ) : (
+                <div key={area.title}>{content}</div>
               );
             })}
           </div>

@@ -11,6 +11,13 @@ relationship; explicitly establish or end a Position-to-Operational-Role
 mandate; explicitly establish or end Person-level Role Coverage; or remove an
 eligible canonical record from the current structure.
 
+Responsibility Builder additionally permits an authorized administrator to
+correct an Operational Role name or description and to remove an eligible Role
+from the current responsibility model. A Role retains its immutable stable key
+through every correction. A new Role is still created only with its first
+explicit Position mandate, and that transaction records separate Role-creation
+and Position-mandate history events.
+
 ## Truth and history boundaries
 
 - The source workbook and its import-ledger fingerprint remain unchanged. Source
@@ -25,8 +32,8 @@ eligible canonical record from the current structure.
 - Change-ledger rows cannot be updated or deleted.
 - Stable keys never change.
 - “Remove from current structure” is not a hard delete. Organization Units and
-  Positions are retired; People are made inactive. Their identities, import
-  provenance, and history remain.
+  Positions are retired; People and Operational Roles are made inactive. Their
+  identities, import provenance where applicable, and history remain.
 
 Removal fails closed while current or scheduled structural records still
 depend on the target. Those Assignments, reporting relationships, child Units,
@@ -122,8 +129,9 @@ The dedicated administration role receives only:
 - `CONNECT` to the intended database and `USAGE` on the application schema;
 - `SELECT` on `people`, `organization_units`, `positions`,
   `position_assignments`, `position_reporting_relationships`, `roles`,
-  `role_mandates`, and `role_coverages` for scoped validation and dependency
-  checks;
+  `role_mandates`, `role_coverages`, `role_assignments`, `processes`,
+  `process_steps`, `exceptions`, and `systems` for scoped validation and
+  dependency checks;
 - column-level `UPDATE` only on `people` (`display_name`, `status`,
   `updated_at`), `organization_units` (`name`, `status`, `status_reason`,
   `parent_organization_unit_id`, `effective_until`, `updated_at`), and `positions` (`title`,
@@ -146,6 +154,9 @@ The dedicated administration role receives only:
   `relationship_type`, `status`, `effective_from`, `reason`);
 - column-level `INSERT` on `roles` (`organization_id`, `name`, `description`,
   `status`) only when the Role is created with its first mandate;
+- column-level `UPDATE` on `roles` (`name`, `description`, `status`,
+  `updated_at`) for stable-key-preserving definition maintenance and
+  dependency-aware inactivation;
 - column-level `INSERT` on `role_mandates` (`organization_id`, `position_id`,
   `role_id`, `mandate_type`, `scope`, `status`, `effective_from`, `reason`) and
   column-level `UPDATE` on `status`, `effective_until`, and `updated_at`;
@@ -180,7 +191,12 @@ GRANT SELECT ON TABLE
   position_reporting_relationships,
   roles,
   role_mandates,
-  role_coverages
+  role_coverages,
+  role_assignments,
+  processes,
+  process_steps,
+  exceptions,
+  systems
 TO <structure_admin_role>;
 
 GRANT UPDATE (display_name, status, updated_at)
@@ -214,6 +230,8 @@ GRANT UPDATE (
 ) ON position_reporting_relationships TO <structure_admin_role>;
 GRANT INSERT (organization_id, name, description, status)
   ON roles TO <structure_admin_role>;
+GRANT UPDATE (name, description, status, updated_at)
+  ON roles TO <structure_admin_role>;
 GRANT INSERT (
   organization_id, position_id, role_id, mandate_type, scope,
   status, effective_from, reason
@@ -232,7 +250,7 @@ GRANT INSERT (
 ) ON position_reporting_relationships TO <structure_admin_role>;
 GRANT INSERT (
   organization_id, entity_type, target_stable_key,
-  organization_unit_id, position_id, person_id,
+  organization_unit_id, position_id, person_id, role_id,
   change_kind, change_action, before_state, after_state,
   reason, effective_at, actor_identifier
 ) ON organization_structure_changes TO <structure_admin_role>;
@@ -275,8 +293,8 @@ The shared-code environment boundary is defined in
 
 ## v0.1 limitations
 
-- No bulk changes, merges, reactivation, Role renaming/retirement, mandate correction/replacement, or
-  coverage correction/replacement is included.
+- No bulk changes, merges, Role reactivation, mandate correction/replacement,
+  or coverage correction/replacement is included.
 - A new Operational Role can be created only together with its first explicit
   Position mandate. Standalone Role creation is intentionally unavailable.
 - New reporting relationships are limited to one explicit primary manager.

@@ -85,6 +85,13 @@
       "when": 1786470086537,
       "tag": "0011_workspace_studio_organization_builder",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1786474595617,
+      "tag": "0012_workspace_studio_responsibility_builder",
+      "breakpoints": true
     }
   ]
 }

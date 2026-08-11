@@ -80,6 +80,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-035 | Governance is multidimensional and Stewardship is distinct | Accepted — product direction |
 | LAD-036 | Operating-model authoring is administrative, draft-first, and historically traceable | Accepted — implementation authorized for Slice A |
 | LAD-037 | Workspace Studio is the governed authoring environment for the organizational digital twin | Accepted — product direction |
+| LAD-038 | Operational Roles have immutable identity and first-class responsibility history | Accepted — implementation authorized for Responsibility Builder v0.1 |
 
 ## Decision records
 
@@ -616,6 +617,81 @@ states, governance configuration, automated imports, and contextual AI remain
 intentionally deferred until their data, authority, temporal, evidence, and
 security semantics are approved.
 
+### LAD-038 — Operational Roles have immutable identity and first-class responsibility history
+
+**Status:** Accepted — implementation authorized for Responsibility Builder
+v0.1.
+
+**Context:** Workspace Studio Organization Builder established immutable stable
+identity and append-only maintenance history for Organization Units, Positions,
+and People. Operational Roles remain durable operating-model responsibilities,
+but their database identity is currently an internal integer and Role creation
+is recorded only as context within a Position-targeted mandate event. A
+first-class Responsibility Builder cannot provide stable Role routes, preserve
+Role corrections accurately, or explain Role retirement through indirect
+Position history alone.
+
+**Decision:** Every Operational Role receives an immutable, random Lotura UUID
+`stableKey` in addition to its existing database identity. Names, Position
+titles, organizational assignments, reporting relationships, source rows, and
+external identifiers never generate that identity. Existing operating-model
+keys and routes remain unchanged unless a later routing decision explicitly
+replaces them.
+
+Operational Role creation, definition maintenance, and removal from the current
+responsibility model use Role-targeted append-only Organization Structure
+history. Role creation in Responsibility Builder v0.1 must occur atomically
+with its first explicit Position mandate. The transaction records both the Role
+creation and the Position mandate as separate events. A Role is never inferred
+from a Position title, Person, Position Assignment, reporting relationship, or
+current coverage.
+
+Role name and description may be corrected or changed while preserving the
+stable key. Ordinary deletion is unavailable. Inactivation is blocked while a
+current or scheduled Process ownership, Step responsibility, Exception or
+System ownership, RoleAssignment, or RoleMandate still depends on the Role.
+Reactivation remains outside v0.1. Mandate and coverage replacement remains an
+explicit end-then-establish sequence so each accepted change is historically
+visible.
+
+Responsibility Builder reuses the dedicated Structure administration boundary,
+server-derived Organization and actor identity, authenticated private access,
+same-Organization validation, stale-write protection, atomic history, and the
+existing mandate and coverage semantics. It does not create a universal Studio
+credential, couple the authenticated actor to a Person or Position, transition
+legacy RoleAssignment, or change FLOW interpretation.
+
+**Why:** Roles outlive people and may move between Positions without rewriting
+Process references. Durable Role identity and direct history let Lotura explain
+that continuity without treating a mutable name or database sequence as
+organizational identity. Requiring an explicit first mandate prevents the
+builder from manufacturing disconnected responsibility records while keeping
+Position and Role conceptually separate.
+
+**Alternatives considered:** Use Role integer IDs in Studio routes; derive Role
+identity from its name; treat Position title as the Role; retain Position-only
+history; allow standalone active Roles without a mandate; add a generic global
+Studio history ledger; or implement ResponsibilityHolder polymorphism now.
+These were rejected because they expose storage identity, make renames unsafe,
+conflate structure and responsibility, obscure provenance, create avoidable
+orphan records, collapse domain-specific history, or introduce premature
+abstraction. A UI-only alternative cannot provide immutable Role identity or
+honest Role-targeted history.
+
+**Affected decisions:** This decision follows LAD-003, LAD-005, LAD-008 through
+LAD-010, LAD-015, LAD-018, LAD-020, LAD-026, LAD-029, LAD-033, and LAD-035. It
+extends LAD-037's Responsibility Builder direction and does not supersede it.
+It presents Process and System relationships as context only and does not alter
+LAD-006, LAD-007, LAD-011 through LAD-013, or LAD-036.
+
+**Consequences and deferrals:** Responsibility Builder v0.1 may add Role stable
+identity, Role-targeted structural history, Role definition maintenance, and
+the smallest reviewed Structure-admin privilege delta. Standalone orphan Role
+creation, Role reactivation, one-step mandate or coverage replacement,
+committee and external holders, RoleAssignment migration, governance workflow,
+bulk changes, Process/System authoring, and FLOW calculation changes remain
+intentionally deferred.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -659,10 +735,12 @@ The following ideas are recorded so postponement is visible and deliberate.
 
 ## Current implementation boundary
 
-The code baseline includes the read-only Process Explorer and deterministic FLOW Analysis over the approved operating model, backed by either a fictional fixture or a server-only, Organization-scoped Neon snapshot. Generic temporary authentication, constrained deployment appearance, Organization Structure administration, Process Acquisition, and Operating Model Authoring Slice A are configuration-gated capabilities for authenticated private workspaces. Operating Model Authoring remains disabled by default and requires migration `0010` plus its dedicated least-privilege Process administration credential before it can be enabled.
+The code baseline includes the read-only Process Explorer and deterministic FLOW Analysis over the approved operating model, backed by either a fictional fixture or a server-only, Organization-scoped Neon snapshot. Generic temporary authentication, constrained deployment appearance, Organization Structure administration, Process Acquisition, Operating Model Authoring Slice A, Workspace Studio Organization Builder, and Responsibility Builder are configuration-gated capabilities for authenticated private workspaces. Responsibility Builder requires forward-only migration `0012` and the reviewed least-privilege Structure administration credential delta before environment enablement.
 
 The public fixture/demo experience remains public, fictional, and read-only. A code or architecture decision does not authorize a migration, credential, environment change, deployment, or private-data import; each remains a separately approved operation.
 
-Workspace Studio is an accepted product direction, not an implemented route or
-permission boundary in this baseline. Existing read and maintenance experiences
-continue unchanged until an approved Studio implementation slice is completed.
+Workspace Studio now provides Organization Builder and Responsibility Builder
+through the existing domain-specific permission and history boundaries. Process,
+Technology, Knowledge, Governance, Discovery, Activity synthesis, relationship
+canvas, and AI expansion remain separately reviewed slices rather than implied
+capabilities of the Studio shell.

@@ -236,6 +236,8 @@ export async function removeStructureEntityAction(
 
 function revalidatePosition(stableKey: string) {
   revalidatePath("/organization");
+  revalidatePath("/studio");
+  revalidatePath("/studio/responsibilities");
   revalidatePath(
     `/organization/positions/${encodeURIComponent(stableKey)}`,
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 
 import type {
@@ -58,6 +59,7 @@ function formatAdministrativeDate(value: string) {
 function entityLabel(entityType: StructureEntityType) {
   return {
     organization_unit: "Organization Unit",
+    operational_role: "Operational Role",
     position: "Position",
     person: "Person",
   }[entityType];
@@ -1154,7 +1156,16 @@ function OperationalResponsibilityAdministration({
               key={mandate.id}
             >
               <p className="text-xs font-semibold text-[var(--text)]">
-                {mandate.role.name} · {mandate.typeLabel}
+                {mandate.role.stableKey ? (
+                  <Link
+                    className="hover:text-[var(--workspace-accent)] hover:underline"
+                    href={`/studio/responsibilities/roles/${encodeURIComponent(mandate.role.stableKey)}`}
+                  >
+                    {mandate.role.name}
+                  </Link>
+                ) : (
+                  mandate.role.name
+                )} · {mandate.typeLabel}
               </p>
               <p className="mt-1 text-[11px] leading-5 text-[var(--text-tertiary)]">
                 {mandate.scope ? `Scope: ${mandate.scope}` : "No narrower scope is recorded."}

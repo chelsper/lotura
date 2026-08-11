@@ -14,9 +14,11 @@ export type NeonOperatingModelRows = {
   }>;
   roles: Array<{
     id: number;
+    stableKey: string;
     name: string;
     description: string | null;
     status: ActiveInactiveStatus;
+    updatedAt: string | Date;
   }>;
   roleAssignments: Array<{
     id: number;

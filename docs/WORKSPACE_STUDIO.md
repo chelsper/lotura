@@ -78,7 +78,7 @@ experience with current data.
 The route name is deliberately concise while the product label remains
 **Workspace Studio**.
 
-### Slice 1 routes
+### Implemented Slice 1 and Slice 2 routes
 
 - `/studio` — Studio home with current-model facts, supported review questions,
   continue-building actions, and recent structural Activity;
@@ -92,7 +92,13 @@ The route name is deliberately concise while the product label remains
   Unit placement, Assignments, and reporting relationships; and
 - `/studio/organization/people/new` and
   `/studio/organization/people/[stableKey]` — add and maintain a Person and
-  review connected Position Assignments.
+  review connected Position Assignments;
+- `/studio/responsibilities` — search and review Operational Roles, current
+  Position mandates, human coverage, and connected operating-model context;
+- `/studio/responsibilities/roles/new` — create one Operational Role with its
+  first explicit Position mandate; and
+- `/studio/responsibilities/roles/[stableKey]` — maintain Role definition,
+  mandates, coverage, dependency-aware status, and append-only activity.
 
 Assignment and reporting actions remain contextual to a Position rather than
 becoming disconnected record-management routes. Existing `/organization`
@@ -104,7 +110,6 @@ matching Studio stable-key route.
 The following routes are reserved conceptually but should not ship until their
 corresponding slice provides useful current capability:
 
-- `/studio/responsibilities`;
 - `/studio/processes`;
 - `/studio/technology`;
 - `/studio/knowledge`;
@@ -232,7 +237,22 @@ vacancy statement.
 
 Create and maintain Operational Roles, Role Mandates, and Role Coverage while
 preserving Person, User, Position, Operational Role, mandate, and coverage as
-distinct concepts.
+distinct concepts. Operational Roles receive immutable stable identity and
+first-class append-only history under LAD-038. A new Role begins with an
+explicit first Position mandate; Position titles and reporting relationships
+never create responsibility automatically.
+
+Responsibility Builder provides an organization-scoped Role inventory, a
+guided Role-and-first-mandate flow, stable Role detail routes, definition
+maintenance, dependency-aware inactivation, explicit mandate and coverage
+maintenance, connected Process/System context, and Role activity. It reuses the
+Structure administration credential rather than introducing a universal Studio
+write role.
+
+Version 0.1 retains explicit end-then-establish sequences for replacing a
+mandate or coverage. Standalone orphan Role creation, reactivation,
+RoleAssignment transition, committee/external mandate holders, governance
+workflow, and FLOW calculation changes remain deferred.
 
 ### Slice 3 — Process Builder
 
@@ -302,6 +322,31 @@ state. Establishing an initial Position Assignment records the Position as the
 history target, rechecks Person and Position scope, uses the Position revision
 as a compare-and-set boundary, and preserves the effective-dated Assignment as
 a distinct record.
+
+## Slice 2 implementation boundary
+
+Responsibility Builder follows LAD-038 and reuses the authenticated Structure
+administration boundary. It adds immutable random UUID identity to Operational
+Roles and permits Role definition maintenance, dependency-aware inactivation,
+explicit Role Mandates, and explicit Role Coverage. A new Role is created only
+with its first Position mandate, and the same transaction records separate
+Role-targeted creation and Position-targeted mandate history.
+
+Migration `0012` is forward-only and additive. It adds `roles.stable_key`, the
+corresponding uniqueness and immutability protections, and an
+`operational_role` target with a tenant-safe Role foreign key in
+`organization_structure_changes`. It adds no new table and does not alter
+Process, System, RoleAssignment, FLOW, or public fixture semantics.
+
+The Structure administration privilege delta is limited to Role definition and
+status columns, the Role target column on append-only history, and read access
+to the tables required for inactivation dependency checks. No hard deletion,
+table-wide mutation, schema authority, migration authority, or universal Studio
+credential is introduced.
+
+Standalone Role creation, reactivation, one-step mandate/coverage replacement,
+RoleAssignment transition, committee/external holders, governance workflow,
+bulk operations, and FLOW changes remain outside Slice 2.
 
 ## Future workspace appearance
 

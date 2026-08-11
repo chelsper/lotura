@@ -1,0 +1,13 @@
+ALTER TYPE "public"."organization_structure_change_entity_type" ADD VALUE 'operational_role';--> statement-breakpoint
+ALTER TABLE "organization_structure_changes" DROP CONSTRAINT "organization_structure_changes_target_check";--> statement-breakpoint
+ALTER TABLE "organization_structure_changes" ADD COLUMN "role_id" integer;--> statement-breakpoint
+ALTER TABLE "roles" ADD COLUMN "stable_key" uuid DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
+ALTER TABLE "roles" ADD CONSTRAINT "roles_stable_key_unique" UNIQUE("stable_key");--> statement-breakpoint
+ALTER TABLE "roles" ADD CONSTRAINT "roles_id_org_stable_key_unique" UNIQUE("id","organization_id","stable_key");--> statement-breakpoint
+ALTER TABLE "organization_structure_changes" ADD CONSTRAINT "organization_structure_changes_role_org_fk" FOREIGN KEY ("role_id","organization_id","target_stable_key") REFERENCES "public"."roles"("id","organization_id","stable_key") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "organization_structure_changes_role_created_idx" ON "organization_structure_changes" USING btree ("role_id","created_at");--> statement-breakpoint
+ALTER TABLE "organization_structure_changes" ADD CONSTRAINT "organization_structure_changes_target_check" CHECK (("organization_structure_changes"."entity_type" = 'organization_unit' and "organization_structure_changes"."organization_unit_id" is not null and "organization_structure_changes"."position_id" is null and "organization_structure_changes"."person_id" is null and "organization_structure_changes"."role_id" is null) or ("organization_structure_changes"."entity_type" = 'position' and "organization_structure_changes"."organization_unit_id" is null and "organization_structure_changes"."position_id" is not null and "organization_structure_changes"."person_id" is null and "organization_structure_changes"."role_id" is null) or ("organization_structure_changes"."entity_type" = 'person' and "organization_structure_changes"."organization_unit_id" is null and "organization_structure_changes"."position_id" is null and "organization_structure_changes"."person_id" is not null and "organization_structure_changes"."role_id" is null) or ("organization_structure_changes"."entity_type" = 'operational_role' and "organization_structure_changes"."organization_unit_id" is null and "organization_structure_changes"."position_id" is null and "organization_structure_changes"."person_id" is null and "organization_structure_changes"."role_id" is not null));--> statement-breakpoint
+CREATE TRIGGER "roles_stable_key_immutable_trigger"
+BEFORE UPDATE OF "stable_key" ON "roles"
+FOR EACH ROW
+EXECUTE FUNCTION "public"."lotura_prevent_stable_key_update"();
