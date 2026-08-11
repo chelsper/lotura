@@ -122,6 +122,7 @@ export const organizationStructureChangeAction = pgEnum(
     "end_role_coverage",
     "create",
     "establish_assignment",
+    "merge_unit",
   ],
 );
 

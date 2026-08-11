@@ -16,6 +16,7 @@ import {
   establishRoleMandate,
   establishPositionAssignment,
   establishPositionReportingRelationship,
+  mergeOrganizationUnit,
   removeStructureEntity,
   replacePositionAssignment,
   replacePositionReportingRelationship,
@@ -232,6 +233,49 @@ export async function removeStructureEntityAction(
   revalidatePath("/studio");
   revalidatePath("/studio/organization");
   redirect("/studio/organization");
+}
+
+export async function mergeOrganizationUnitAction(
+  _previousState: StructureActionState,
+  formData: FormData,
+): Promise<StructureActionState> {
+  const metadata = changeMetadata(formData);
+  const sourceStableKey = textValue(formData, "sourceStableKey");
+  const targetStableKey = textValue(formData, "targetStableKey");
+  if (
+    !metadata ||
+    !sourceStableKey ||
+    !targetStableKey ||
+    textValue(formData, "confirmMerge") !== "confirmed"
+  ) {
+    return {
+      status: "error",
+      message: "Select the surviving Unit and confirm the reviewed merge impact.",
+    };
+  }
+
+  const result = await mergeOrganizationUnit({
+    ...metadata,
+    expectedImpactFingerprint: textValue(
+      formData,
+      "expectedImpactFingerprint",
+    ),
+    expectedTargetRevision: textValue(formData, "expectedTargetRevision"),
+    sourceStableKey,
+    targetStableKey,
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+  if (!result.stableKey) {
+    return {
+      status: "error",
+      message: "The surviving Unit could not be opened safely.",
+    };
+  }
+
+  revalidatePath("/organization");
+  revalidatePath("/studio");
+  revalidatePath("/studio/organization");
+  redirect(studioTargetPath("organization_unit", result.stableKey));
 }
 
 function revalidatePosition(stableKey: string) {

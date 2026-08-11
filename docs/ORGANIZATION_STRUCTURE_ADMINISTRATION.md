@@ -40,6 +40,24 @@ depend on the target. Those Assignments, reporting relationships, child Units,
 Positions, Role Mandates, or Role Coverage records must first be ended or
 reassigned explicitly. Lotura never silently cascades away structural history.
 
+### Merging duplicate Organization Units
+
+**Merge into existing Unit** is separate from rename, hierarchy movement, and
+moving one Position. The administrator selects the surviving active Unit and
+reviews the direct Positions, child Units, and current occupants affected.
+
+One serializable transaction moves the source Unit's direct Positions to the
+survivor, reparents its direct child Units, and retires the source Unit. It
+does not rewrite People, Position Assignments, reporting relationships, Role
+Mandates, Role Coverage, Process ownership, or operational responsibility.
+Both Unit stable keys and all import provenance remain available historically.
+The merge and each affected canonical relationship append history atomically;
+any stale review set or failed history event rolls back the entire operation.
+No other structural or operating-model relationship changes during the merge.
+Migration `0013` adds only the append-only `merge_unit` history action. The
+operation reuses the structural administrator's already reviewed column-level
+Unit, Position, and history privileges; it requires no broader database grant.
+
 An Organization Unit parent records Unit hierarchy only. It never creates a
 manager relationship, Process ownership, or operational responsibility. Unit
 parent changes reuse the existing same-Organization foreign key and deferred
@@ -298,7 +316,7 @@ The shared-code environment boundary is defined in
 
 ## v0.1 limitations
 
-- No bulk changes, merges, Role reactivation, mandate correction/replacement,
+- No bulk changes, Role reactivation, mandate correction/replacement,
   or coverage correction/replacement is included.
 - A new Operational Role can be created only together with its first explicit
   Position mandate. Standalone Role creation is intentionally unavailable.

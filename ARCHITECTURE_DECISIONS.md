@@ -81,6 +81,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-036 | Operating-model authoring is administrative, draft-first, and historically traceable | Accepted — implementation authorized for Slice A |
 | LAD-037 | Workspace Studio is the governed authoring environment for the organizational digital twin | Accepted — product direction |
 | LAD-038 | Operational Roles have immutable identity and first-class responsibility history | Accepted — implementation authorized for Responsibility Builder v0.1 |
+| LAD-039 | Duplicate Organization Units merge into one surviving identity without erasing evidence | Accepted — implementation authorized for Organization Unit Merge v0.1 |
 
 ## Decision records
 
@@ -691,6 +692,61 @@ creation, Role reactivation, one-step mandate or coverage replacement,
 committee and external holders, RoleAssignment migration, governance workflow,
 bulk changes, Process/System authoring, and FLOW calculation changes remain
 intentionally deferred.
+
+### LAD-039 — Duplicate Organization Units merge without erasing evidence
+
+**Status:** Accepted — implementation authorized for Organization Unit Merge
+v0.1.
+
+**Context:** Reviewed organizational evidence may produce two canonical
+Organization Units that are later determined to describe one durable grouping.
+Renaming one record does not consolidate their structural relationships, while
+hard deletion would erase stable identity, import provenance, and the path by
+which the duplicate was discovered. Moving every relationship manually is
+error-prone and can leave a partially merged structure.
+
+**Decision:** Workspace Studio provides a distinct **Merge into existing Unit**
+action. Rename continues to correct the label of one durable Unit; changing a
+parent continues to move one Unit within the hierarchy; moving a Position
+continues to affect one Position. Merge is the explicit consolidation action.
+
+The administrator selects the surviving active Unit and reviews the exact
+direct impact before confirming. In one serializable transaction, all active
+Positions directly assigned to the source Unit move to the survivor, all active
+direct child Units are reparented to the survivor, and the source Unit is
+retired. People, Position Assignments, Position reporting relationships, Role
+Mandates, Role Coverage, Process ownership, and operational responsibility are
+not rewritten or inferred. The source and survivor retain distinct immutable
+stable keys and all source-import provenance remains unchanged.
+
+The survivor must belong to the same Organization, remain active, differ from
+the source, and not be a descendant of the source. The operation uses source
+and target revision checks plus a deterministic impact fingerprint so stale or
+changed review sets fail before mutation. The merge event and every affected
+Position or child-Unit relationship change receive append-only history in the
+same transaction. Any failed mutation, constraint, or history insertion rolls
+back the complete merge. Ordinary hard deletion remains unavailable.
+
+**Why:** Duplicate consolidation is a correction to the organizational digital
+twin, not permission to erase evidence. A dedicated, previewed, atomic merge
+preserves explainability while preventing half-completed manual cleanup.
+
+**Alternatives considered:** Treat merge as rename; call it reassign; hard-delete
+the duplicate; update relationships without history; require row-by-row moves;
+or infer the survivor from names. These were rejected because they conflate
+different semantics, erase provenance, weaken auditability, create partial
+states, or manufacture authority.
+
+**Affected decisions:** This decision follows LAD-008, LAD-009, LAD-015,
+LAD-018, LAD-026, LAD-029, LAD-033, LAD-035, and LAD-037. It extends the
+history-preserving Organization Builder without superseding Position,
+reporting, responsibility, or evidence boundaries.
+
+**Consequences and deferrals:** Migration `0013` adds only the explicit
+`merge_unit` history action. No table, column, credential, or new privilege is
+required. Cross-Organization merges, automatic fuzzy duplicate detection,
+bulk merge suggestions, merge reversal, and source-evidence reconciliation
+remain deferred.
 
 ## Intentionally deferred ideas register
 
