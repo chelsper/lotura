@@ -13,8 +13,15 @@ export default async function OrganizationPositionPage({
 }) {
   await connection();
   const { positionId } = await params;
-  const { administration, asOf, changes, configuration, data, source } =
-    await loadOrganizationStructureExperience();
+  const {
+    administration,
+    asOf,
+    changes,
+    configuration,
+    data,
+    processAcquisition,
+    source,
+  } = await loadOrganizationStructureExperience();
   const position = data.positions.find((item) => item.id === positionId);
 
   if (!position) notFound();
@@ -31,6 +38,7 @@ export default async function OrganizationPositionPage({
         changes={changes}
         data={data}
         position={position}
+        processAcquisitionEnabled={processAcquisition.enabled}
       />
     </WorkspaceShell>
   );
