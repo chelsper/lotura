@@ -5,6 +5,17 @@ import test from "node:test";
 const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
 
+test("the Server Action module exports async functions only at runtime", async () => {
+  const [actions, actionState] = await Promise.all([
+    read("app/organization/actions.ts"),
+    read("app/organization/action-state.ts"),
+  ]);
+  assert.match(actions, /^"use server";/);
+  assert.doesNotMatch(actions, /export const|export class|export enum/);
+  assert.doesNotMatch(actions, /initialStructureActionState/);
+  assert.match(actionState, /export const initialStructureActionState/);
+});
+
 test("every structural mutation reauthorizes and uses trusted server scope", async () => {
   const [actions, administration] = await Promise.all([
     read("app/organization/actions.ts"),
