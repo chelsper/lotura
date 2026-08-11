@@ -56,9 +56,23 @@ test("all mutable structural records use compare-and-set revisions", async () =>
   ].map((match) => match[0]);
   assert.ok(mutationStatements.length >= 8);
   for (const statement of mutationStatements) {
-    assert.match(statement, /updated_at = \$\d+::timestamptz/);
+    assert.match(
+      statement,
+      /date_trunc\('milliseconds', updated_at\) = \$\d+::timestamptz/,
+    );
     assert.match(statement, /organization_id = \$\d+/);
   }
+  assert.ok(
+    [
+      ...administration.matchAll(
+        /updated_at = date_trunc\('milliseconds', transaction_timestamp\(\)\)/g,
+      ),
+    ].length >= 16,
+  );
+  assert.doesNotMatch(
+    administration,
+    /(?<!milliseconds', )updated_at = \$\d+::timestamptz/,
+  );
 });
 
 test("assignment and reporting maintenance preserve history rather than hard-delete", async () => {
