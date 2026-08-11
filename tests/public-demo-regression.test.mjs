@@ -12,6 +12,7 @@ import {
   resolveWorkspaceConfiguration,
 } from "../lib/workspace-configuration.mjs";
 import { resolveWorkspaceConfigurationOverrides } from "../lib/workspace-configuration-policy.mjs";
+import { resolveOperatingModelAuthoringConfiguration } from "../lib/operating-model-authoring-policy.mjs";
 
 test("Production fixture mode remains public and never calls Neon", async () => {
   const source = resolveOperatingModelConfiguration({
@@ -35,6 +36,13 @@ test("Production fixture mode remains public and never calls Neon", async () => 
   assert.equal(neonCalls, 0);
   assert.equal(loaded.source.kind, "demo");
   assert.equal(loaded.source.label, "Fictional sample organization");
+  assert.deepEqual(
+    resolveOperatingModelAuthoringConfiguration(
+      {},
+      { authentication, operatingModel: source },
+    ),
+    { enabled: false },
+  );
 });
 
 test("absent workspace overrides preserve the Northstar public presentation", () => {

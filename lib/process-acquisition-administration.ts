@@ -14,10 +14,12 @@ export type DraftProcessMutationResult =
     };
 
 type CreateDraftProcessInput = {
+  effectiveAt: Date;
   name: string;
   ownerConfirmed: boolean;
   ownerRoleKey?: string | null;
   purpose?: string | null;
+  reason: string;
 };
 
 function roleIdFromKey(value: string | null | undefined) {
@@ -46,6 +48,7 @@ export async function createDraftProcess(
 
   const name = input.name.trim();
   const purpose = input.purpose?.trim() || null;
+  const reason = input.reason.trim();
   if (name.length < 1 || name.length > 255) {
     return {
       ok: false,
@@ -58,6 +61,23 @@ export async function createDraftProcess(
       ok: false,
       code: "invalid",
       message: "Keep the initial purpose to 5,000 characters or fewer.",
+    };
+  }
+  if (!reason || reason.length > 2000) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Enter a reason of 2,000 characters or fewer.",
+    };
+  }
+  if (
+    !Number.isFinite(input.effectiveAt.getTime()) ||
+    input.effectiveAt > new Date()
+  ) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "The effective date cannot be in the future.",
     };
   }
 
@@ -108,13 +128,41 @@ export async function createDraftProcess(
            'draft'
          where not exists (select 1 from duplicate_process)
            and ($2::integer is null or exists (select 1 from selected_role))
-         returning id
+         returning id, organization_id, stable_key, name, purpose,
+           owner_role_id, status
+       ), history as (
+         insert into operating_model_changes
+           (organization_id, process_id, process_stable_key, entity_type,
+            target_reference, change_kind, change_action, before_state,
+            after_state, reason, effective_at, actor_identifier)
+         select inserted.organization_id, inserted.id, inserted.stable_key,
+           'process', 'process:' || inserted.stable_key::text,
+           'organizational_change', 'create_draft', '{}'::jsonb,
+           jsonb_build_object(
+             'name', inserted.name,
+             'purpose', inserted.purpose,
+             'ownerRoleId', case when inserted.owner_role_id is null
+               then null else 'role:' || inserted.owner_role_id::text end,
+             'status', inserted.status
+           ),
+           $5, $6::timestamptz, $7
+         from inserted
+         returning 1
        )
        select
          (select count(*)::int from selected_role) as role_count,
          (select count(*)::int from duplicate_process) as duplicate_count,
+         (select count(*)::int from history) as history_count,
          (select id from inserted) as process_id`,
-      [configuration.organizationId, ownerRoleId, name, purpose],
+      [
+        configuration.organizationId,
+        ownerRoleId,
+        name,
+        purpose,
+        reason,
+        input.effectiveAt.toISOString(),
+        configuration.actorIdentifier,
+      ],
     );
 
     const row = rows[0];
@@ -137,6 +185,13 @@ export async function createDraftProcess(
         ok: false,
         code: "not_found",
         message: "The selected active Operational Role was not found in this Organization.",
+      };
+    }
+    if (Number(row.history_count) !== 1) {
+      return {
+        ok: false,
+        code: "unavailable",
+        message: "Lotura could not preserve the Draft Process history.",
       };
     }
     const processId = Number(row.process_id);

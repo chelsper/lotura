@@ -17,10 +17,12 @@ export async function createDraftProcessAction(
   formData: FormData,
 ): Promise<ProcessAcquisitionActionState> {
   const result = await createDraftProcess({
+    effectiveAt: new Date(),
     name: text(formData, "name"),
     ownerConfirmed: text(formData, "ownerConfirmed") === "yes",
     ownerRoleKey: text(formData, "ownerRoleKey") || null,
     purpose: text(formData, "purpose") || null,
+    reason: text(formData, "reason"),
   });
 
   if (!result.ok) {

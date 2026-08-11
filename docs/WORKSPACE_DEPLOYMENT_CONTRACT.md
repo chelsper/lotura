@@ -15,6 +15,8 @@ environment. Temporary deployment lag is acceptable; code divergence is not.
 - remains public and read-only;
 - has no Neon runtime, owner/migration, or structural-write credential;
 - keeps `LOTURA_STRUCTURE_ADMIN_MODE` absent or `disabled`;
+- keeps `LOTURA_OPERATING_MODEL_AUTHORING_MODE` absent or `disabled` and has no
+  Process administration credential;
 - receives no JU data, identity, branding, or configuration; and
 - renders no structural-administration controls.
 
@@ -26,9 +28,15 @@ environment. Temporary deployment lag is acceptable; code divergence is not.
   through a dedicated SELECT-only runtime role;
 - uses a separate least-privilege structural-write role only through the
   server-only `LOTURA_STRUCTURE_ADMIN_DATABASE_URL`;
+- uses a distinct least-privilege Process administration role only through the
+  server-only `LOTURA_PROCESS_ADMIN_DATABASE_URL` when Operating Model
+  Authoring is enabled;
 - enables administration explicitly with
   `LOTURA_STRUCTURE_ADMIN_MODE=enabled` only after migration and privilege
   verification;
+- enables Process authoring explicitly with
+  `LOTURA_OPERATING_MODEL_AUTHORING_MODE=enabled` only after migration `0010`
+  and its separate privilege verification;
 - resolves JU presentation through generic Workspace Configuration; and
 - receives no public-demo fixture fallback.
 
@@ -38,7 +46,7 @@ Governance and Stewardship engine.
 
 ## Environment isolation
 
-The structural-write credential must not be configured in:
+Structural and Process write credentials must not be configured in:
 
 - the Public Demo project;
 - any Preview deployment;

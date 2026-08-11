@@ -128,6 +128,21 @@ export const organizationStructureChangeEntityType = pgEnum(
   ["organization_unit", "position", "person"],
 );
 
+export const operatingModelChangeKind = pgEnum(
+  "operating_model_change_kind",
+  ["correction", "organizational_change"],
+);
+
+export const operatingModelChangeEntityType = pgEnum(
+  "operating_model_change_entity_type",
+  ["process"],
+);
+
+export const operatingModelChangeAction = pgEnum(
+  "operating_model_change_action",
+  ["create_draft", "update_definition", "change_owner"],
+);
+
 export const organization = pgTable("organizations", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -290,6 +305,7 @@ export const process = pgTable(
   {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
     name: varchar("name", { length: 255 }).notNull(),
     purpose: text("purpose"),
     ownerRoleId: integer("owner_role_id"),
@@ -316,6 +332,12 @@ export const process = pgTable(
       table.id,
       table.organizationId,
     ),
+    unique("processes_stable_key_unique").on(table.stableKey),
+    unique("processes_id_org_stable_key_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+    ),
     check(
       "processes_owner_required_unless_draft_check",
       sql`${table.status} = 'draft' or ${table.ownerRoleId} is not null`,
@@ -325,6 +347,76 @@ export const process = pgTable(
     index("processes_organization_id_status_idx").on(
       table.organizationId,
       table.status,
+    ),
+  ],
+);
+
+export const operatingModelChange = pgTable(
+  "operating_model_changes",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    processId: integer("process_id").notNull(),
+    processStableKey: uuid("process_stable_key").notNull(),
+    entityType: operatingModelChangeEntityType("entity_type").notNull(),
+    targetReference: varchar("target_reference", { length: 255 }).notNull(),
+    changeKind: operatingModelChangeKind("change_kind").notNull(),
+    changeAction: operatingModelChangeAction("change_action").notNull(),
+    beforeState: jsonb("before_state").notNull(),
+    afterState: jsonb("after_state").notNull(),
+    reason: text("reason").notNull(),
+    effectiveAt: timestamp("effective_at", { withTimezone: true }).notNull(),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "operating_model_changes_process_org_stable_fk",
+      columns: [
+        table.processId,
+        table.organizationId,
+        table.processStableKey,
+      ],
+      foreignColumns: [
+        process.id,
+        process.organizationId,
+        process.stableKey,
+      ],
+    }).onDelete("restrict"),
+    unique("operating_model_changes_stable_key_unique").on(
+      table.stableKey,
+    ),
+    check(
+      "operating_model_changes_target_not_blank_check",
+      sql`char_length(trim(${table.targetReference})) > 0`,
+    ),
+    check(
+      "operating_model_changes_reason_not_blank_check",
+      sql`char_length(trim(${table.reason})) > 0`,
+    ),
+    check(
+      "operating_model_changes_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    check(
+      "operating_model_changes_json_objects_check",
+      sql`jsonb_typeof(${table.beforeState}) = 'object' and jsonb_typeof(${table.afterState}) = 'object'`,
+    ),
+    check(
+      "operating_model_changes_effective_at_check",
+      sql`${table.effectiveAt} <= ${table.createdAt}`,
+    ),
+    index("operating_model_changes_org_created_idx").on(
+      table.organizationId,
+      table.createdAt,
+    ),
+    index("operating_model_changes_process_created_idx").on(
+      table.organizationId,
+      table.processStableKey,
+      table.createdAt,
     ),
   ],
 );
