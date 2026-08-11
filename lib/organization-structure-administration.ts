@@ -28,7 +28,8 @@ export type StructureChangeAction =
   | "establish_role_coverage"
   | "end_role_coverage"
   | "create"
-  | "establish_assignment";
+  | "establish_assignment"
+  | "merge_unit";
 
 export type StructureChangeSummary = {
   action: StructureChangeAction;
@@ -80,6 +81,13 @@ type CreatePersonMutation = CreationMetadata & {
 type CommonMutation = ChangeMetadata & {
   entityType: StructureEntityType;
   stableKey: string;
+};
+
+type MergeOrganizationUnitMutation = ChangeMetadata & {
+  expectedImpactFingerprint: string;
+  expectedTargetRevision: string;
+  sourceStableKey: string;
+  targetStableKey: string;
 };
 
 type UpdateMutation = CommonMutation & {
@@ -1332,6 +1340,340 @@ export async function removeStructureEntity(
       code: "unavailable",
       message:
         "The record could not be removed. No partial change was accepted.",
+    };
+  }
+}
+
+export async function mergeOrganizationUnit(
+  input: MergeOrganizationUnitMutation,
+): Promise<StructureMutationResult> {
+  const invalid = validateMetadata(input);
+  if (invalid) return invalid;
+  if (
+    !validUuid(input.sourceStableKey) ||
+    !validUuid(input.targetStableKey) ||
+    input.sourceStableKey === input.targetStableKey ||
+    input.expectedImpactFingerprint.length > 100_000 ||
+    !Number.isFinite(new Date(input.expectedTargetRevision).getTime())
+  ) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Select a distinct active Organization Unit to receive this Unit.",
+    };
+  }
+
+  let configuration: EnabledOrganizationStructureAdministrationConfiguration;
+  try {
+    configuration = await administrationAccess();
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Structure administration is unavailable.",
+    };
+  }
+
+  const sql = mutationClient(configuration.databaseUrl);
+  try {
+    const [source, target] = await Promise.all([
+      currentTarget(
+        sql,
+        configuration,
+        "organization_unit",
+        input.sourceStableKey,
+      ),
+      currentTarget(
+        sql,
+        configuration,
+        "organization_unit",
+        input.targetStableKey,
+      ),
+    ]);
+    if (!source || !target) {
+      return {
+        ok: false,
+        code: "not_found",
+        message: "The source or surviving Organization Unit is unavailable.",
+      };
+    }
+    if (
+      !revisionsMatch(source, input.expectedRevision) ||
+      !revisionsMatch(target, input.expectedTargetRevision)
+    ) {
+      return {
+        ok: false,
+        code: "conflict",
+        message:
+          "The source or surviving Unit changed after the merge was reviewed. Refresh before trying again.",
+      };
+    }
+    if (input.effectiveAt <= new Date(String(source.effective_from))) {
+      return {
+        ok: false,
+        code: "invalid",
+        message: "The merge date must be after the source Unit became effective.",
+      };
+    }
+
+    const rows = await atomicQuery(
+      sql,
+      `with recursive
+       source_unit as materialized (
+         select source.*,
+           parent.stable_key as parent_organization_unit_stable_key
+         from organization_units source
+         left join organization_units parent
+           on parent.id = source.parent_organization_unit_id
+           and parent.organization_id = source.organization_id
+         where source.organization_id = $1::integer
+           and source.stable_key = $2::uuid
+           and source.status = 'active'
+           and date_trunc('milliseconds', source.updated_at) = $4::timestamptz
+       ),
+       target_unit as materialized (
+         select target.*
+         from organization_units target
+         where target.organization_id = $1::integer
+           and target.stable_key = $3::uuid
+           and target.status = 'active'
+           and date_trunc('milliseconds', target.updated_at) = $5::timestamptz
+       ),
+       descendants(id) as (
+         select child.id
+         from organization_units child
+         join source_unit source
+           on child.parent_organization_unit_id = source.id
+         where child.organization_id = $1::integer
+         union all
+         select child.id
+         from organization_units child
+         join descendants parent on child.parent_organization_unit_id = parent.id
+         where child.organization_id = $1::integer
+       ),
+       impact_members as materialized (
+         select 'p:' || position.stable_key::text as member
+         from positions position
+         join source_unit source on position.organization_unit_id = source.id
+         where position.organization_id = $1::integer
+           and position.status = 'active'
+         union all
+         select 'u:' || child.stable_key::text as member
+         from organization_units child
+         join source_unit source
+           on child.parent_organization_unit_id = source.id
+         where child.organization_id = $1::integer
+           and child.status = 'active'
+       ),
+       impact as materialized (
+         select coalesce(string_agg(member, '|' order by member), '') as fingerprint
+         from impact_members
+       ),
+       eligible as materialized (
+         select source.*, target.id as target_id,
+           target.stable_key as target_stable_key,
+           target.name as target_name
+         from source_unit source
+         cross join target_unit target
+         cross join impact
+         where source.id <> target.id
+           and not exists (
+             select 1 from descendants where descendants.id = target.id
+           )
+           and impact.fingerprint = $6::text
+           and $8::timestamptz > source.effective_from
+       ),
+       position_before as materialized (
+         select position.*
+         from positions position
+         join eligible source on position.organization_unit_id = source.id
+         where position.organization_id = $1::integer
+           and position.status = 'active'
+       ),
+       child_before as materialized (
+         select child.*
+         from organization_units child
+         join eligible source on child.parent_organization_unit_id = source.id
+         where child.organization_id = $1::integer
+           and child.status = 'active'
+       ),
+       moved_positions as (
+         update positions position
+         set organization_unit_id = eligible.target_id,
+           updated_at = date_trunc('milliseconds', transaction_timestamp())
+         from eligible, position_before prior
+         where position.id = prior.id
+           and position.organization_id = $1::integer
+         returning position.id, position.stable_key, position.title,
+           position.status, position.status_reason, position.effective_until
+       ),
+       moved_children as (
+         update organization_units child
+         set parent_organization_unit_id = eligible.target_id,
+           updated_at = date_trunc('milliseconds', transaction_timestamp())
+         from eligible, child_before prior
+         where child.id = prior.id
+           and child.organization_id = $1::integer
+         returning child.id, child.stable_key, child.name,
+           child.is_provisional, child.status, child.status_reason,
+           child.effective_until
+       ),
+       retired_source as (
+         update organization_units source
+         set status = 'retired', status_reason = $9::text,
+           effective_until = $8::timestamptz,
+           updated_at = date_trunc('milliseconds', transaction_timestamp())
+         from eligible
+         where source.id = eligible.id
+           and source.organization_id = $1::integer
+           and (select count(*) from moved_positions) =
+             (select count(*) from position_before)
+           and (select count(*) from moved_children) =
+             (select count(*) from child_before)
+         returning source.id, source.stable_key
+       ),
+       position_history as (
+         insert into organization_structure_changes
+           (organization_id, entity_type, target_stable_key, position_id,
+            change_kind, change_action, before_state, after_state, reason,
+            effective_at, actor_identifier)
+         select $1::integer, 'position', moved.stable_key, moved.id,
+           $7::organization_structure_change_kind, 'update',
+           jsonb_build_object(
+             'effectiveUntil', moved.effective_until,
+             'organizationUnitStableKey', eligible.stable_key,
+             'status', moved.status,
+             'statusReason', moved.status_reason,
+             'title', moved.title
+           ),
+           jsonb_build_object(
+             'effectiveUntil', moved.effective_until,
+             'organizationUnitStableKey', eligible.target_stable_key,
+             'status', moved.status,
+             'statusReason', moved.status_reason,
+             'title', moved.title
+           ),
+           $9::text, $8::timestamptz, $10::varchar(128)
+         from moved_positions moved cross join eligible
+         returning 1
+       ),
+       child_history as (
+         insert into organization_structure_changes
+           (organization_id, entity_type, target_stable_key,
+            organization_unit_id, change_kind, change_action,
+            before_state, after_state, reason, effective_at, actor_identifier)
+         select $1::integer, 'organization_unit', moved.stable_key, moved.id,
+           $7::organization_structure_change_kind, 'update',
+           jsonb_build_object(
+             'effectiveUntil', moved.effective_until,
+             'isProvisional', moved.is_provisional,
+             'name', moved.name,
+             'parentOrganizationUnitStableKey', eligible.stable_key,
+             'status', moved.status,
+             'statusReason', moved.status_reason
+           ),
+           jsonb_build_object(
+             'effectiveUntil', moved.effective_until,
+             'isProvisional', moved.is_provisional,
+             'name', moved.name,
+             'parentOrganizationUnitStableKey', eligible.target_stable_key,
+             'status', moved.status,
+             'statusReason', moved.status_reason
+           ),
+           $9::text, $8::timestamptz, $10::varchar(128)
+         from moved_children moved cross join eligible
+         returning 1
+       ),
+       source_history as (
+         insert into organization_structure_changes
+           (organization_id, entity_type, target_stable_key,
+            organization_unit_id, change_kind, change_action,
+            before_state, after_state, reason, effective_at, actor_identifier)
+         select $1::integer, 'organization_unit', retired.stable_key,
+           retired.id, $7::organization_structure_change_kind, 'merge_unit',
+           jsonb_build_object(
+             'effectiveUntil', eligible.effective_until,
+             'isProvisional', eligible.is_provisional,
+             'name', eligible.name,
+             'parentOrganizationUnitStableKey',
+               eligible.parent_organization_unit_stable_key,
+             'status', eligible.status,
+             'statusReason', eligible.status_reason
+           ),
+           jsonb_build_object(
+             'directChildUnitsMoved', (select count(*) from moved_children),
+             'directPositionsMoved', (select count(*) from moved_positions),
+             'effectiveUntil', $8::timestamptz,
+             'isProvisional', eligible.is_provisional,
+             'mergedIntoOrganizationUnitName', eligible.target_name,
+             'mergedIntoOrganizationUnitStableKey', eligible.target_stable_key,
+             'name', eligible.name,
+             'parentOrganizationUnitStableKey',
+               eligible.parent_organization_unit_stable_key,
+             'status', 'retired',
+             'statusReason', $9::text
+           ),
+           $9::text, $8::timestamptz, $10::varchar(128)
+         from retired_source retired cross join eligible
+         returning 1
+       )
+       select
+         (select count(*)::int from eligible) as eligible_count,
+         (select count(*)::int from moved_positions) as positions_moved,
+         (select count(*)::int from position_history) as position_history_count,
+         (select count(*)::int from moved_children) as children_moved,
+         (select count(*)::int from child_history) as child_history_count,
+         (select count(*)::int from retired_source) as retired_count,
+         (select count(*)::int from source_history) as source_history_count,
+         (select target_stable_key::text from eligible limit 1)
+           as target_stable_key`,
+      [
+        configuration.organizationId,
+        input.sourceStableKey,
+        input.targetStableKey,
+        input.expectedRevision,
+        input.expectedTargetRevision,
+        input.expectedImpactFingerprint,
+        input.changeKind,
+        input.effectiveAt.toISOString(),
+        input.reason.trim(),
+        configuration.actorIdentifier,
+      ],
+    );
+
+    const result = rows[0];
+    const positionsMoved = Number(result?.positions_moved ?? -1);
+    const childrenMoved = Number(result?.children_moved ?? -1);
+    const targetStableKey = result?.target_stable_key;
+    const accepted =
+      Number(result?.eligible_count ?? 0) === 1 &&
+      Number(result?.retired_count ?? 0) === 1 &&
+      Number(result?.source_history_count ?? 0) === 1 &&
+      positionsMoved >= 0 &&
+      childrenMoved >= 0 &&
+      Number(result?.position_history_count ?? -1) === positionsMoved &&
+      Number(result?.child_history_count ?? -1) === childrenMoved &&
+      typeof targetStableKey === "string" &&
+      validUuid(targetStableKey);
+    if (!accepted) {
+      return {
+        ok: false,
+        code: "conflict",
+        message:
+          "The hierarchy or merge impact changed after review. Refresh before trying again.",
+      };
+    }
+    return {
+      ok: true,
+      message: `Organization Unit merged. ${positionsMoved} Position${positionsMoved === 1 ? "" : "s"} and ${childrenMoved} child Unit${childrenMoved === 1 ? "" : "s"} moved; the source identity and history were retained.`,
+      stableKey: targetStableKey,
+    };
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message:
+        "The Organization Unit could not be merged. No partial change was accepted.",
     };
   }
 }

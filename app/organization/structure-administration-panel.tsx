@@ -24,6 +24,7 @@ import {
   establishRoleMandateAction,
   establishPositionAssignmentAction,
   establishPositionReportingRelationshipAction,
+  mergeOrganizationUnitAction,
   removeStructureEntityAction,
   replacePositionAssignmentAction,
   replacePositionReportingRelationshipAction,
@@ -102,8 +103,12 @@ function reportingPositionLabel(
 
 function ChangeMetadataFields({
   fixedKind,
+  onReasonChange,
+  reason,
 }: {
   fixedKind?: "correction" | "organizational_change";
+  onReasonChange?: (value: string) => void;
+  reason?: string;
 }) {
   return (
     <>
@@ -144,8 +149,14 @@ function ChangeMetadataFields({
           className="min-h-24 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none transition focus:border-[var(--accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
           maxLength={2000}
           name="reason"
+          onChange={
+            onReasonChange
+              ? (event) => onReasonChange(event.target.value)
+              : undefined
+          }
           placeholder="Explain why this evidence should be treated differently."
           required
+          value={reason}
         />
       </label>
     </>
@@ -376,6 +387,135 @@ function RemovalForm({
       <div className="sm:col-span-2">
         <Button disabled={pending} type="submit" variant="destructive">
           {pending ? "Checking relationships…" : "Remove from current structure"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function mergeImpactFingerprint(unit: OrganizationUnit) {
+  return [
+    ...unit.positions
+      .filter((position) => position.status === "active")
+      .map((position) => `p:${position.id}`),
+    ...unit.children
+      .filter((child) => child.status === "active")
+      .map((child) => `u:${child.id}`),
+  ]
+    .sort()
+    .join("|");
+}
+
+function MergeOrganizationUnitForm({
+  data,
+  unit,
+}: {
+  data: OrganizationStructureData;
+  unit: OrganizationUnit;
+}) {
+  const [state, action, pending] = useActionState(
+    mergeOrganizationUnitAction,
+    initialStructureActionState,
+  );
+  const [targetStableKey, setTargetStableKey] = useState("");
+  const [reason, setReason] = useState("");
+  const excludedTargetIds = descendantUnitIds(data.units, unit.id);
+  const targets = data.units.filter(
+    (candidate) =>
+      candidate.status === "active" && !excludedTargetIds.has(candidate.id),
+  );
+  const target = targets.find((candidate) => candidate.id === targetStableKey);
+  const directPositions = unit.positions.filter(
+    (position) => position.status === "active",
+  );
+  const directChildren = unit.children.filter(
+    (child) => child.status === "active",
+  );
+  const currentOccupants = new Set(
+    directPositions.flatMap((position) =>
+      position.assignments.map((assignment) => assignment.person.id),
+    ),
+  ).size;
+
+  return (
+    <form action={action} className="mt-4 grid gap-4 sm:grid-cols-2">
+      <input name="sourceStableKey" type="hidden" value={unit.id} />
+      <input name="expectedRevision" type="hidden" value={unit.revision} />
+      <input
+        name="expectedImpactFingerprint"
+        type="hidden"
+        value={mergeImpactFingerprint(unit)}
+      />
+      <input
+        name="expectedTargetRevision"
+        type="hidden"
+        value={target?.revision ?? ""}
+      />
+      <label className="block sm:col-span-2">
+        <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+          Surviving Organization Unit
+        </span>
+        <Select
+          name="targetStableKey"
+          onChange={(event) => setTargetStableKey(event.target.value)}
+          required
+          value={targetStableKey}
+        >
+          <option value="">Select an existing active Unit</option>
+          {targets.map((candidate) => (
+            <option key={candidate.id} value={candidate.id}>
+              {candidate.name}
+              {candidate.parent
+                ? ` — within ${candidate.parent.name}`
+                : " — root Unit"}
+            </option>
+          ))}
+        </Select>
+        <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
+          The source Unit and its import provenance remain historically visible.
+          This list excludes the source and all of its descendants.
+        </span>
+      </label>
+
+      <div className="rounded-[10px] border border-[var(--border)] bg-[var(--surface-subtle)] p-3 sm:col-span-2">
+        <p className="text-xs font-semibold text-[var(--text)]">
+          Direct merge impact
+        </p>
+        <ul className="mt-2 grid gap-1 text-xs leading-5 text-[var(--text-secondary)] sm:grid-cols-3">
+          <li>{directPositions.length} direct Position{directPositions.length === 1 ? "" : "s"} move</li>
+          <li>{directChildren.length} direct child Unit{directChildren.length === 1 ? "" : "s"} move</li>
+          <li>{currentOccupants} current occupant{currentOccupants === 1 ? "" : "s"} remain assigned</li>
+        </ul>
+        <p className="mt-2 text-xs leading-5 text-[var(--text-tertiary)]">
+          People, Position Assignments, reporting relationships, Role Mandates,
+          Role Coverage, Process ownership, and operational responsibility are
+          not changed or inferred.
+        </p>
+      </div>
+
+      <ChangeMetadataFields onReasonChange={setReason} reason={reason} />
+      <label className="flex items-start gap-3 rounded-[10px] border border-[var(--warning-border)] bg-[var(--warning-subtle)] p-3 sm:col-span-2">
+        <input
+          className="mt-0.5 size-4"
+          name="confirmMerge"
+          required
+          type="checkbox"
+          value="confirmed"
+        />
+        <span className="text-xs leading-5 text-[var(--warning)]">
+          I reviewed this impact. Merge the source into the selected survivor,
+          move its direct Positions and child Units, and retire—not delete—the
+          source identity.
+        </span>
+      </label>
+      <ActionResult state={state} />
+      <div className="sm:col-span-2">
+        <Button disabled={pending || !target} type="submit" variant="primary">
+          {pending
+            ? "Merging Unit…"
+            : target
+              ? `Merge into ${target.name}`
+              : "Select a surviving Unit"}
         </Button>
       </div>
     </form>
@@ -1233,10 +1373,14 @@ const stateLabels: Record<string, string> = {
   assignmentType: "Assignment type",
   coverageRecordId: "Role Coverage record",
   coverageType: "Coverage type",
+  directChildUnitsMoved: "Direct child Units moved",
+  directPositionsMoved: "Direct Positions moved",
   displayName: "Display name",
   effectiveFrom: "Effective from",
   effectiveUntil: "Effective until",
   managerPositionStableKey: "Manager Position",
+  mergedIntoOrganizationUnitName: "Surviving Organization Unit",
+  mergedIntoOrganizationUnitStableKey: "Surviving Unit stable key",
   mandateRecordId: "Role mandate record",
   mandateType: "Mandate type",
   name: "Name",
@@ -1319,6 +1463,7 @@ function changeActionLabel(action: StructureChangeSummary["action"]) {
     establish_assignment: "Position Assignment established",
     establish_role_coverage: "Role Coverage established",
     establish_role_mandate: "Operational Role mandate established",
+    merge_unit: "Organization Unit merged",
     remove_from_current_structure: "Removed from current structure",
     replace_assignment: "Assignment replaced",
     replace_reporting_relationship: "Reporting relationship replaced",
@@ -1367,6 +1512,25 @@ export function StructureAdministrationPanel({
           </details>
         </Card>
       </div>
+      {entityType === "organization_unit" ? (
+        <Card className="mt-4 p-4 sm:p-5">
+          <details>
+            <summary className="cursor-pointer text-sm font-semibold text-[var(--text)]">
+              Merge into an existing Unit
+            </summary>
+            <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">
+              Use this when two Unit records describe the same organizational
+              grouping. The selected survivor keeps its stable identity. Direct
+              Positions and child Units move to it, while this source Unit is
+              retired with its identity, provenance, and history preserved.
+            </p>
+            <MergeOrganizationUnitForm
+              data={data}
+              unit={entity as OrganizationUnit}
+            />
+          </details>
+        </Card>
+      ) : null}
       {entityType === "position" ? (
         <>
           <AssignmentAdministration

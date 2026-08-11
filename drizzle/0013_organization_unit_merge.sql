@@ -1,0 +1,1 @@
+ALTER TYPE "public"."organization_structure_change_action" ADD VALUE 'merge_unit';
