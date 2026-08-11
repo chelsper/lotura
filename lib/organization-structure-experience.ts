@@ -4,6 +4,7 @@ import { requireWorkspaceAccess } from "./authentication";
 import { resolveOrganizationStructureAdministrationConfiguration } from "./organization-structure-administration-policy.mjs";
 import { buildOrganizationStructureData } from "./organization-structure-data.mjs";
 import { loadOrganizationStructure } from "./organization-structure-source";
+import { resolveProcessAcquisitionConfiguration } from "./process-acquisition-policy.mjs";
 import { resolveWorkspaceConfiguration } from "./workspace-configuration.mjs";
 import { resolveWorkspaceConfigurationOverrides } from "./workspace-configuration-policy.mjs";
 
@@ -14,6 +15,10 @@ export async function loadOrganizationStructureExperience() {
       process.env,
       runtimeAccess,
     );
+  const processAcquisition = resolveProcessAcquisitionConfiguration(
+    process.env,
+    runtimeAccess,
+  );
   const { asOf, operatingModel, source, structure } =
     await loadOrganizationStructure();
   const data = buildOrganizationStructureData(structure, operatingModel, asOf);
@@ -27,5 +32,13 @@ export async function loadOrganizationStructureExperience() {
       )
     : [];
 
-  return { administration, asOf, changes, configuration, data, source };
+  return {
+    administration,
+    asOf,
+    changes,
+    configuration,
+    data,
+    processAcquisition,
+    source,
+  };
 }

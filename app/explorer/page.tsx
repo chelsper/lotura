@@ -1,4 +1,5 @@
 import { connection } from "next/server";
+import Link from "next/link";
 
 import { loadWorkspaceExperience } from "@/lib/workspace-experience";
 
@@ -18,7 +19,7 @@ export default async function ExplorerPage({
   const initialProcessId = Array.isArray(query.process)
     ? query.process[0]
     : query.process;
-  const { asOf, configuration, data, source } =
+  const { asOf, configuration, data, processAcquisition, source } =
     await loadWorkspaceExperience();
 
   return (
@@ -43,6 +44,16 @@ export default async function ExplorerPage({
         ]}
         title="Explorer"
       />
+      {processAcquisition.enabled ? (
+        <div className="mt-5 flex justify-end">
+          <Link
+            className="inline-flex h-10 items-center justify-center rounded-[10px] border border-transparent bg-[var(--workspace-accent)] px-3.5 text-sm font-medium text-[var(--workspace-accent-foreground)] transition-colors hover:bg-[var(--workspace-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]"
+            href="/process-acquisition"
+          >
+            Add Process
+          </Link>
+        </div>
+      ) : null}
       <ProcessExplorer data={data} initialProcessId={initialProcessId} />
     </WorkspaceShell>
   );

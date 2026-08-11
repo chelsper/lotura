@@ -3,12 +3,17 @@ import "server-only";
 import { buildFlowAnalysis } from "./flow-analysis.mjs";
 import { requireWorkspaceAccess } from "./authentication";
 import { buildProcessExplorerData } from "./process-explorer-data";
+import { resolveProcessAcquisitionConfiguration } from "./process-acquisition-policy.mjs";
 import { loadOperatingModel } from "./process-explorer-source";
 import { resolveWorkspaceConfiguration } from "./workspace-configuration.mjs";
 import { resolveWorkspaceConfigurationOverrides } from "./workspace-configuration-policy.mjs";
 
 export async function loadWorkspaceExperience() {
-  await requireWorkspaceAccess();
+  const runtimeAccess = await requireWorkspaceAccess();
+  const processAcquisition = resolveProcessAcquisitionConfiguration(
+    process.env,
+    runtimeAccess,
+  );
   const { asOf, seed, source } = await loadOperatingModel();
   const data = buildProcessExplorerData(seed, asOf);
   const analysis = buildFlowAnalysis(seed, asOf);
@@ -17,5 +22,5 @@ export async function loadWorkspaceExperience() {
     overrides: resolveWorkspaceConfigurationOverrides(process.env),
   });
 
-  return { analysis, asOf, configuration, data, source };
+  return { analysis, asOf, configuration, data, processAcquisition, source };
 }

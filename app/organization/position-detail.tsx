@@ -40,11 +40,13 @@ export function PositionDetail({
   changes,
   data,
   position,
+  processAcquisitionEnabled,
 }: {
   administrationEnabled: boolean;
   changes: StructureChangeSummary[];
   data: OrganizationStructureData;
   position: OrganizationPosition;
+  processAcquisitionEnabled: boolean;
 }) {
   return (
     <div className="mx-auto max-w-6xl">
@@ -186,7 +188,17 @@ export function PositionDetail({
                   </div>
 
                   <div>
-                    <p className="text-xs font-medium text-[var(--text-tertiary)]">Connected Processes</p>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs font-medium text-[var(--text-tertiary)]">Connected Processes</p>
+                      {processAcquisitionEnabled ? (
+                        <Link
+                          className="rounded-lg border border-[var(--workspace-accent-border)] bg-[var(--workspace-accent-subtle)] px-2.5 py-1.5 text-xs font-medium text-[var(--workspace-accent)] transition-colors hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]"
+                          href={`/process-acquisition?position=${encodeURIComponent(position.id)}&role=${encodeURIComponent(mandate.role.id)}`}
+                        >
+                          Add Process
+                        </Link>
+                      ) : null}
+                    </div>
                     <div className="mt-3 space-y-2">
                       {mandate.processes.length > 0 ? (
                         mandate.processes.map((process) => (
