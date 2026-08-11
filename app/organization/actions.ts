@@ -5,8 +5,12 @@ import { redirect } from "next/navigation";
 
 import {
   correctPositionReportingRelationship,
+  endRoleCoverage,
+  endRoleMandate,
   endPositionAssignment,
   endPositionReportingRelationship,
+  establishRoleCoverage,
+  establishRoleMandate,
   establishPositionReportingRelationship,
   removeStructureEntity,
   replacePositionAssignment,
@@ -290,6 +294,119 @@ export async function replacePositionReportingRelationshipAction(
     positionStableKey,
     relationshipReason: textValue(formData, "relationshipReason") || null,
     reportingRecordKey: textValue(formData, "reportingRecordKey"),
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+  revalidatePosition(positionStableKey);
+  return { status: "success", message: result.message };
+}
+
+export async function establishRoleMandateAction(
+  _previousState: StructureActionState,
+  formData: FormData,
+): Promise<StructureActionState> {
+  const metadata = changeMetadata(formData);
+  const positionStableKey = textValue(formData, "positionStableKey");
+  const mandateType = textValue(formData, "mandateType");
+  if (
+    !metadata ||
+    !positionStableKey ||
+    !["primary", "shared"].includes(mandateType)
+  ) {
+    return {
+      status: "error",
+      message: "Review the Operational Role mandate and try again.",
+    };
+  }
+  const result = await establishRoleMandate({
+    ...metadata,
+    mandateType: mandateType as "primary" | "shared",
+    newRoleDescription: textValue(formData, "newRoleDescription") || null,
+    newRoleName: textValue(formData, "newRoleName") || null,
+    positionStableKey,
+    roleKey: textValue(formData, "roleKey") || null,
+    scope: textValue(formData, "scope") || null,
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+  revalidatePosition(positionStableKey);
+  return { status: "success", message: result.message };
+}
+
+export async function endRoleMandateAction(
+  _previousState: StructureActionState,
+  formData: FormData,
+): Promise<StructureActionState> {
+  const metadata = changeMetadata(formData);
+  const positionStableKey = textValue(formData, "positionStableKey");
+  if (!metadata || !positionStableKey) {
+    return {
+      status: "error",
+      message: "Review the Role mandate change and try again.",
+    };
+  }
+  const result = await endRoleMandate({
+    ...metadata,
+    mandateRecordKey: textValue(formData, "mandateRecordKey"),
+    positionStableKey,
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+  revalidatePosition(positionStableKey);
+  return { status: "success", message: result.message };
+}
+
+export async function establishRoleCoverageAction(
+  _previousState: StructureActionState,
+  formData: FormData,
+): Promise<StructureActionState> {
+  const metadata = changeMetadata(formData);
+  const positionStableKey = textValue(formData, "positionStableKey");
+  const coverageType = textValue(formData, "coverageType");
+  if (
+    !metadata ||
+    !positionStableKey ||
+    !["permanent", "interim", "acting", "delegated", "backup"].includes(
+      coverageType,
+    )
+  ) {
+    return {
+      status: "error",
+      message: "Review the Role Coverage details and try again.",
+    };
+  }
+  const result = await establishRoleCoverage({
+    ...metadata,
+    coverageReason: textValue(formData, "coverageReason") || null,
+    coverageType: coverageType as
+      | "permanent"
+      | "interim"
+      | "acting"
+      | "delegated"
+      | "backup",
+    mandateRecordKey: textValue(formData, "mandateRecordKey"),
+    personStableKey: textValue(formData, "personStableKey"),
+    positionStableKey,
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+  revalidatePosition(positionStableKey);
+  return { status: "success", message: result.message };
+}
+
+export async function endRoleCoverageAction(
+  _previousState: StructureActionState,
+  formData: FormData,
+): Promise<StructureActionState> {
+  const metadata = changeMetadata(formData);
+  const positionStableKey = textValue(formData, "positionStableKey");
+  if (!metadata || !positionStableKey) {
+    return {
+      status: "error",
+      message: "Review the Role Coverage change and try again.",
+    };
+  }
+  const result = await endRoleCoverage({
+    ...metadata,
+    coverageRecordKey: textValue(formData, "coverageRecordKey"),
+    mandateRecordKey: textValue(formData, "mandateRecordKey"),
+    positionStableKey,
   });
   if (!result.ok) return { status: "error", message: result.message };
   revalidatePosition(positionStableKey);

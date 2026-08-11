@@ -116,6 +116,10 @@ export const organizationStructureChangeAction = pgEnum(
     "correct_reporting_relationship",
     "establish_reporting_relationship",
     "replace_reporting_relationship",
+    "establish_role_mandate",
+    "end_role_mandate",
+    "establish_role_coverage",
+    "end_role_coverage",
   ],
 );
 

@@ -15,8 +15,12 @@ import type {
 
 import {
   correctPositionReportingRelationshipAction,
+  endRoleCoverageAction,
+  endRoleMandateAction,
   endPositionAssignmentAction,
   endPositionReportingRelationshipAction,
+  establishRoleCoverageAction,
+  establishRoleMandateAction,
   establishPositionReportingRelationshipAction,
   removeStructureEntityAction,
   replacePositionAssignmentAction,
@@ -806,19 +810,360 @@ function ReportingAdministration({
   );
 }
 
+function EstablishRoleMandateForm({
+  data,
+  position,
+}: {
+  data: OrganizationStructureData;
+  position: OrganizationPosition;
+}) {
+  const [state, action, pending] = useActionState(
+    establishRoleMandateAction,
+    initialStructureActionState,
+  );
+  const [roleKey, setRoleKey] = useState("");
+  const [mandateType, setMandateType] = useState("primary");
+  const currentRoleIds = new Set(position.mandates.map((item) => item.role.id));
+  const availableRoles = data.operationalRoles.filter(
+    (role) => role.status === "active" && !currentRoleIds.has(role.id),
+  );
+  return (
+    <form action={action} className="mt-3 grid gap-3 sm:grid-cols-2">
+      <PositionRelationshipIdentity position={position} />
+      <label className="block sm:col-span-2">
+        <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+          Operational Role
+        </span>
+        <Select
+          name="roleKey"
+          onChange={(event) => setRoleKey(event.target.value)}
+          required
+          value={roleKey}
+        >
+          <option value="">Select a durable responsibility</option>
+          {availableRoles.map((role) => (
+            <option key={role.id} value={role.id}>
+              {role.name}
+            </option>
+          ))}
+          <option value="create-new">Create a new Operational Role</option>
+        </Select>
+        <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
+          The Position title and reporting line are context only. They never
+          create or select an Operational Role automatically.
+        </span>
+      </label>
+      {roleKey === "create-new" ? (
+        <>
+          <label className="block sm:col-span-2">
+            <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+              New Operational Role name
+            </span>
+            <Input maxLength={255} name="newRoleName" required />
+          </label>
+          <label className="block sm:col-span-2">
+            <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+              Responsibility description, if established
+            </span>
+            <textarea
+              className="min-h-20 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none transition focus:border-[var(--accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
+              maxLength={2000}
+              name="newRoleDescription"
+            />
+          </label>
+        </>
+      ) : null}
+      <label className="block">
+        <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+          Mandate type
+        </span>
+        <Select
+          name="mandateType"
+          onChange={(event) => setMandateType(event.target.value)}
+          required
+          value={mandateType}
+        >
+          <option value="primary">Primary accountability</option>
+          <option value="shared">Shared responsibility</option>
+        </Select>
+      </label>
+      <label className="block">
+        <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+          {mandateType === "shared" ? "Shared scope" : "Narrower scope, if documented"}
+        </span>
+        <Input
+          maxLength={2000}
+          name="scope"
+          required={mandateType === "shared"}
+        />
+      </label>
+      <ChangeMetadataFields fixedKind="organizational_change" />
+      <ActionResult state={state} />
+      <div className="sm:col-span-2">
+        <Button disabled={pending || !roleKey} type="submit" variant="primary">
+          {pending ? "Establishing responsibility…" : "Establish Role mandate"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function EndRoleMandateForm({
+  mandate,
+  position,
+}: {
+  mandate: OrganizationPosition["mandates"][number];
+  position: OrganizationPosition;
+}) {
+  const [state, action, pending] = useActionState(
+    endRoleMandateAction,
+    initialStructureActionState,
+  );
+  return (
+    <form action={action} className="mt-3 grid gap-3 sm:grid-cols-2">
+      <input name="positionStableKey" type="hidden" value={position.id} />
+      <input name="mandateRecordKey" type="hidden" value={mandate.id} />
+      <input name="expectedRevision" type="hidden" value={mandate.revision} />
+      {mandate.coverage.length > 0 ? (
+        <Alert className="sm:col-span-2" tone="warning">
+          End all current Role Coverage first. Lotura will not erase or silently
+          end Person-level coverage when this mandate ends.
+        </Alert>
+      ) : null}
+      <ChangeMetadataFields fixedKind="organizational_change" />
+      <ActionResult state={state} />
+      <div className="sm:col-span-2">
+        <Button
+          disabled={pending || mandate.coverage.length > 0}
+          type="submit"
+          variant="destructive"
+        >
+          {pending ? "Ending mandate…" : "End Role mandate"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function EstablishRoleCoverageForm({
+  data,
+  mandate,
+  position,
+}: {
+  data: OrganizationStructureData;
+  mandate: OrganizationPosition["mandates"][number];
+  position: OrganizationPosition;
+}) {
+  const [state, action, pending] = useActionState(
+    establishRoleCoverageAction,
+    initialStructureActionState,
+  );
+  const [coverageType, setCoverageType] = useState("permanent");
+  return (
+    <form action={action} className="mt-3 grid gap-3 sm:grid-cols-2">
+      <input name="positionStableKey" type="hidden" value={position.id} />
+      <input name="mandateRecordKey" type="hidden" value={mandate.id} />
+      <input name="expectedRevision" type="hidden" value={mandate.revision} />
+      <label className="block sm:col-span-2">
+        <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+          Person providing coverage
+        </span>
+        <Select name="personStableKey" required>
+          <option value="">Select a Person explicitly</option>
+          {data.people
+            .filter((person) => person.status === "active")
+            .map((person) => (
+              <option key={person.id} value={person.id}>
+                {person.name}
+              </option>
+            ))}
+        </Select>
+        <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
+          Position occupancy is context only. Selecting a Person here records a
+          separate, explicit operational-coverage decision.
+        </span>
+      </label>
+      <label className="block">
+        <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+          Coverage type
+        </span>
+        <Select
+          name="coverageType"
+          onChange={(event) => setCoverageType(event.target.value)}
+          required
+          value={coverageType}
+        >
+          <option value="permanent">Permanent</option>
+          <option value="interim">Interim</option>
+          <option value="acting">Acting</option>
+          <option value="delegated">Delegated</option>
+          <option value="backup">Backup</option>
+        </Select>
+      </label>
+      <label className="block">
+        <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+          Coverage context{coverageType === "permanent" ? ", if documented" : ""}
+        </span>
+        <Input
+          maxLength={2000}
+          name="coverageReason"
+          required={coverageType !== "permanent"}
+        />
+      </label>
+      <ChangeMetadataFields fixedKind="organizational_change" />
+      <ActionResult state={state} />
+      <div className="sm:col-span-2">
+        <Button disabled={pending} type="submit" variant="primary">
+          {pending ? "Establishing coverage…" : "Establish Role Coverage"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function EndRoleCoverageForm({
+  coverage,
+  mandate,
+  position,
+}: {
+  coverage: OrganizationPosition["mandates"][number]["coverage"][number];
+  mandate: OrganizationPosition["mandates"][number];
+  position: OrganizationPosition;
+}) {
+  const [state, action, pending] = useActionState(
+    endRoleCoverageAction,
+    initialStructureActionState,
+  );
+  return (
+    <form action={action} className="mt-3 grid gap-3 sm:grid-cols-2">
+      <input name="positionStableKey" type="hidden" value={position.id} />
+      <input name="mandateRecordKey" type="hidden" value={mandate.id} />
+      <input name="coverageRecordKey" type="hidden" value={coverage.id} />
+      <input name="expectedRevision" type="hidden" value={coverage.revision} />
+      <ChangeMetadataFields fixedKind="organizational_change" />
+      <ActionResult state={state} />
+      <div className="sm:col-span-2">
+        <Button disabled={pending} type="submit" variant="destructive">
+          {pending ? "Ending coverage…" : "End Role Coverage"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function OperationalResponsibilityAdministration({
+  data,
+  position,
+}: {
+  data: OrganizationStructureData;
+  position: OrganizationPosition;
+}) {
+  return (
+    <Card className="mt-4 p-4 sm:p-5">
+      <h3 className="text-sm font-semibold text-[var(--text)]">
+        Operational responsibility maintenance
+      </h3>
+      <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
+        Establish a deliberate connection from this Position to a durable
+        Operational Role, then record Person-level Role Coverage only when it is
+        supported. Reporting relationships and Position titles never imply
+        either connection.
+      </p>
+      {position.mandates.length > 0 ? (
+        <div className="mt-4 space-y-3">
+          {position.mandates.map((mandate) => (
+            <div
+              className="rounded-[10px] border border-[var(--border)] p-3"
+              key={mandate.id}
+            >
+              <p className="text-xs font-semibold text-[var(--text)]">
+                {mandate.role.name} · {mandate.typeLabel}
+              </p>
+              <p className="mt-1 text-[11px] leading-5 text-[var(--text-tertiary)]">
+                {mandate.scope ? `Scope: ${mandate.scope}` : "No narrower scope is recorded."}
+              </p>
+              {mandate.coverage.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  {mandate.coverage.map((coverage) => (
+                    <details
+                      className="rounded-[10px] bg-[var(--surface-subtle)] p-3"
+                      key={coverage.id}
+                    >
+                      <summary className="cursor-pointer text-xs font-semibold text-[var(--text)]">
+                        {coverage.person.name} · {coverage.typeLabel} coverage
+                      </summary>
+                      <EndRoleCoverageForm
+                        coverage={coverage}
+                        mandate={mandate}
+                        position={position}
+                      />
+                    </details>
+                  ))}
+                </div>
+              ) : (
+                <Alert className="mt-3" tone="warning">
+                  No current Person-level Role Coverage is recorded.
+                </Alert>
+              )}
+              <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                <details className="rounded-[10px] bg-[var(--surface-subtle)] p-3">
+                  <summary className="cursor-pointer text-xs font-semibold text-[var(--text)]">
+                    Add explicit Role Coverage
+                  </summary>
+                  <EstablishRoleCoverageForm
+                    data={data}
+                    mandate={mandate}
+                    position={position}
+                  />
+                </details>
+                <details className="rounded-[10px] bg-[var(--surface-subtle)] p-3">
+                  <summary className="cursor-pointer text-xs font-semibold text-[var(--error)]">
+                    End Role mandate
+                  </summary>
+                  <EndRoleMandateForm mandate={mandate} position={position} />
+                </details>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <Alert className="mt-3" tone="warning">
+          No current Operational Role mandate is recorded for this Position.
+        </Alert>
+      )}
+      <details className="mt-4 rounded-[10px] bg-[var(--surface-subtle)] p-3" open={position.mandates.length === 0}>
+        <summary className="cursor-pointer text-xs font-semibold text-[var(--text)]">
+          Establish an Operational Role mandate
+        </summary>
+        <EstablishRoleMandateForm data={data} position={position} />
+      </details>
+    </Card>
+  );
+}
+
 const stateLabels: Record<string, string> = {
   assignmentType: "Assignment type",
+  coverageRecordId: "Role Coverage record",
+  coverageType: "Coverage type",
   displayName: "Display name",
   effectiveFrom: "Effective from",
   effectiveUntil: "Effective until",
   managerPositionStableKey: "Manager Position",
+  mandateRecordId: "Role mandate record",
+  mandateType: "Mandate type",
   name: "Name",
   organizationUnitId: "Organization Unit record",
+  operationalRoleCreated: "Operational Role created",
+  operationalRoleId: "Operational Role record",
+  operationalRoleName: "Operational Role",
   parentOrganizationUnitStableKey: "Parent Organization Unit",
   personStableKey: "Person stable key",
+  personName: "Person",
   primaryManager: "Primary manager Position",
   reason: "Recorded context",
   relationshipType: "Relationship type",
+  roleMandateRecordId: "Role mandate record",
+  scope: "Mandate scope",
   status: "Status",
   statusReason: "Status reason",
   title: "Title",
@@ -879,7 +1224,11 @@ function changeActionLabel(action: StructureChangeSummary["action"]) {
     correct_reporting_relationship: "Reporting relationship corrected",
     end_assignment: "Assignment ended",
     end_reporting_relationship: "Reporting relationship ended",
+    end_role_coverage: "Role Coverage ended",
+    end_role_mandate: "Operational Role mandate ended",
     establish_reporting_relationship: "Reporting relationship established",
+    establish_role_coverage: "Role Coverage established",
+    establish_role_mandate: "Operational Role mandate established",
     remove_from_current_structure: "Removed from current structure",
     replace_assignment: "Assignment replaced",
     replace_reporting_relationship: "Reporting relationship replaced",
@@ -935,6 +1284,10 @@ export function StructureAdministrationPanel({
             position={entity as OrganizationPosition}
           />
           <ReportingAdministration
+            data={data}
+            position={entity as OrganizationPosition}
+          />
+          <OperationalResponsibilityAdministration
             data={data}
             position={entity as OrganizationPosition}
           />
