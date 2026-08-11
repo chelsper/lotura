@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document is the authoritative register of Lotura’s major product and architecture decisions as of August 10, 2026. It records what was decided, why it was decided, alternatives considered, consequences, and ideas intentionally deferred.
+This document is the authoritative register of Lotura’s major product and architecture decisions as of August 11, 2026. It records what was decided, why it was decided, alternatives considered, consequences, and ideas intentionally deferred.
 
 It complements, rather than replaces:
 
@@ -12,7 +12,8 @@ It complements, rather than replaces:
 - [PROCESS_ACQUISITION.md](PROCESS_ACQUISITION.md), which defines future knowledge-entry paths;
 - [CONFLICT_DETECTION.md](CONFLICT_DETECTION.md), which defines how disagreement should be preserved and reconciled;
 - [RESTRUCTURING_INTELLIGENCE.md](RESTRUCTURING_INTELLIGENCE.md), which defines future scenario analysis;
-- [GOVERNANCE_AND_STEWARDSHIP.md](GOVERNANCE_AND_STEWARDSHIP.md), which defines governance dimensions, profiles, and stewardship direction; and
+- [GOVERNANCE_AND_STEWARDSHIP.md](GOVERNANCE_AND_STEWARDSHIP.md), which defines governance dimensions, profiles, and stewardship direction;
+- [docs/WORKSPACE_STUDIO.md](docs/WORKSPACE_STUDIO.md), which defines the governed digital-twin authoring experience and its first implementation boundary; and
 - [docs/domain-model.md](docs/domain-model.md), which describes future continuous-improvement concepts.
 
 This is a living decision log, not an implementation specification. Existing records should not be silently rewritten when direction changes. A later decision should mark an earlier decision **superseded**, explain why, and preserve the prior rationale.
@@ -78,6 +79,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-034 | Organization Structure review remains a transient evidence overlay before import | Accepted — implemented |
 | LAD-035 | Governance is multidimensional and Stewardship is distinct | Accepted — product direction |
 | LAD-036 | Operating-model authoring is administrative, draft-first, and historically traceable | Accepted — implementation authorized for Slice A |
+| LAD-037 | Workspace Studio is the governed authoring environment for the organizational digital twin | Accepted — product direction |
 
 ## Decision records
 
@@ -521,6 +523,99 @@ Process lifecycle status and knowledge/approval state remain distinct. A canonic
 
 The `operating_model_change_action` enum is intentionally limited to the three canonical actions implemented in Slice A: `create_draft`, `update_definition`, and `change_owner`. Later Step, System, Exception, and dependency actions must be introduced through reviewed forward-only enum expansion and corresponding privilege/history changes. They must not be overloaded into a Slice A action merely to avoid a migration.
 
+### LAD-037 — Workspace Studio is the governed authoring environment for the organizational digital twin
+
+**Status:** Accepted — product direction.
+
+**Context:** Lotura now has separate, safe capabilities for exploring
+Organization Structure, interpreting the operating model, maintaining
+canonical structure, acquiring a Draft Process, and authoring the first Process
+facts. Presenting those write capabilities as “Administration” understates the
+product and risks making the experience feel like a collection of settings and
+database maintenance forms. At the same time, combining them carelessly could
+create one overly broad credential, audit ledger, or authority profile.
+
+**Decision:** Workspace Studio is the governed authoring environment in which
+authorized people build and maintain Lotura's organizational digital twin. The
+digital twin is a living, evidence-based representation of structure,
+responsibility, work, technology, exceptions, dependencies, knowledge, and
+change. It is not automatically complete, institutionally approved, or
+real-time.
+
+Workspace Studio unifies the product experience, not the underlying authority.
+Organization Structure, operating-model authoring, future catalog maintenance,
+workspace appearance, governance, and Discovery retain explicitly reviewed
+permissions, dedicated server-only credential boundaries, organization scope,
+validation, stale-write protection, and domain-appropriate append-only
+history. Studio must not introduce a universal database credential or make
+Workspace Administrator equivalent to Process Owner, Steward, approver,
+manager, or analyst.
+
+Organization, Explorer, Process Detail, and FLOW remain understanding
+surfaces. Studio becomes the authorized maintenance surface. Read pages may
+link an authorized person to the corresponding Studio context, but should not
+remain mixed browse/edit experiences. Public fixture/demo workspaces expose no
+Studio navigation, routes, controls, or write configuration.
+
+The Studio information architecture is organized around Organization,
+Responsibilities, Processes, Technology, Knowledge, Governance, Discovery,
+and Activity. Technology is an umbrella whose first implemented entity remains
+System. Discovery is the long-term home for evidence intake, review,
+reconciliation, imports, and guided interviews. Activity is a read-only
+chronological projection over domain-specific ledgers and does not replace
+them or imply causal relationships between events.
+
+Workspace Health uses deterministic inventory facts and explainable review
+questions. It must not introduce composite health scores, risk grades,
+performance judgments, unsupported validation counts, or invented
+documentation-coverage percentages. A future relationship canvas is a focused
+comprehension surface, not a free-form diagrammer or canonical editing path.
+AI assistance may eventually appear contextually within Studio, but it remains
+subject to LAD-002, LAD-021, LAD-022, LAD-025, LAD-032, and separate approval.
+
+The first implementation slice is Organization Builder. It may add the Studio
+shell and audited creation of Organizational Units, Positions, People, and
+initial Position Assignments while reusing the existing Structure
+administration boundary. It does not authorize Operational Role creation,
+Process authoring expansion, System mutation, workspace-appearance
+persistence, governance writes, imports, AI, or the relationship canvas.
+
+**Why:** The organizational digital twin is the coherent product object Lotura
+has been building across structure, operating model, evidence, analysis, and
+history. A Studio metaphor communicates intentional construction and
+governance better than a settings-oriented Administration metaphor. Preserving
+domain boundaries beneath that unified experience keeps least privilege,
+history, and organizational truth understandable.
+
+**Alternatives considered:** Retain Administration as a settings-style area;
+leave editing scattered across read pages; create a single unrestricted
+Workspace Administrator database role; create one replacement global history
+table; ship empty Knowledge, Governance, Discovery, or Technology sections;
+call the product a real-time digital twin without real-time provenance; or
+begin with AI and a relationship canvas before trustworthy authoring exists.
+These were rejected because they understate the product, fragment the user
+journey, weaken security and traceability, advertise capabilities without
+evidence, overstate currency, or place interpretation ahead of a reliable
+model.
+
+**Affected decisions:** This decision follows LAD-001 through LAD-003,
+LAD-008, LAD-009, LAD-012, LAD-013, LAD-015, LAD-018, LAD-020 through LAD-029,
+and LAD-032 through LAD-036. It extends LAD-028's constrained configuration
+direction and LAD-036's authoring direction without superseding either. Any
+persisted workspace appearance, Operational Role/System stable identity,
+history expansion, new credential privilege, or schema change still requires
+its own reviewed implementation plan and approval.
+
+**Consequences and deferrals:** The approved product and Slice 1 boundaries are
+recorded in [docs/WORKSPACE_STUDIO.md](docs/WORKSPACE_STUDIO.md). Workspace
+Studio navigation, application routes, schema changes, migrations, database
+privileges, environment configuration, deployments, private-data changes, and
+JU enablement are not authorized by this product-direction decision alone.
+Relationship Canvas, Yesterday/Today/Tomorrow comparison, persisted Knowledge
+states, governance configuration, automated imports, and contextual AI remain
+intentionally deferred until their data, authority, temporal, evidence, and
+security semantics are approved.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -538,6 +633,8 @@ The following ideas are recorded so postponement is visible and deliberate.
 | Process version history | Snapshot boundary and related operating-model version semantics are unresolved | Temporal/version model and migration decision |
 | Continuous Improvement | Initiative lifecycle, affected Systems, measures, repeated observations, and sustainment need design | Improvement domain and evidence decision |
 | Restructuring scenarios | Hypothetical state, baseline, sensitive access, and approval boundaries are unresolved | Scenario model, authorization, and retention decision |
+| Relationship canvas | The comprehension direction is accepted, but graph scope, layout, accessibility, evidence language, and performance need validation after the core builders exist | Focused graph projection and interaction decision |
+| Yesterday / Today / Tomorrow comparison | Audit events alone cannot establish approved historical or proposed operating-model states | Version, effective-time, proposal, scenario, and comparison decision |
 | Tasks, comments, and notifications | Could turn Lotura into generic workflow/collaboration software | Product-purpose and lifecycle decision; no implementation by default |
 | Workflow execution | Lotura currently interprets work rather than executing it | Explicit product strategy, authorization, integration, and audit decision |
 | Shared caching and real-time updates | Snapshot consistency, invalidation, tenant isolation, and staleness semantics are undefined | Read-consistency and cache-isolation decision |
@@ -565,3 +662,7 @@ The following ideas are recorded so postponement is visible and deliberate.
 The code baseline includes the read-only Process Explorer and deterministic FLOW Analysis over the approved operating model, backed by either a fictional fixture or a server-only, Organization-scoped Neon snapshot. Generic temporary authentication, constrained deployment appearance, Organization Structure administration, Process Acquisition, and Operating Model Authoring Slice A are configuration-gated capabilities for authenticated private workspaces. Operating Model Authoring remains disabled by default and requires migration `0010` plus its dedicated least-privilege Process administration credential before it can be enabled.
 
 The public fixture/demo experience remains public, fictional, and read-only. A code or architecture decision does not authorize a migration, credential, environment change, deployment, or private-data import; each remains a separately approved operation.
+
+Workspace Studio is an accepted product direction, not an implemented route or
+permission boundary in this baseline. Existing read and maintenance experiences
+continue unchanged until an approved Studio implementation slice is completed.

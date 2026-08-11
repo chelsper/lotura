@@ -110,7 +110,27 @@ The product should remain general enough to learn from real organizations withou
 
 **Product test:** Does the capability strengthen a coherent operating model, or does it create an isolated workflow, document store, or customer-specific product branch?
 
-## 11. Governance is multidimensional
+## 11. The digital twin is built from evidence
+
+Lotura's organizational digital twin is a living representation of structure,
+responsibility, work, technology, exceptions, dependencies, knowledge, and
+change. It is not automatically complete, institutionally approved, or
+synchronized in real time merely because records exist in the product.
+
+Workspace Studio should make the organization feel buildable without turning
+administrative entry into unquestioned truth. Inventory counts describe the
+current documented model. Workspace Health asks reproducible questions rather
+than assigning a score. Activity shows recorded events without manufacturing
+causal relationships between them.
+
+The Studio unifies the authoring experience, not authority. Domain-specific
+permissions, server-only credentials, validation rules, and append-only
+histories remain explicit beneath the shared product surface.
+
+**Product test:** Can a user understand what the digital twin contains, what
+supports it, what remains uncertain, and who had authority to change it?
+
+## 12. Governance is multidimensional
 
 Organizational hierarchy, operational responsibility, visibility,
 contribution, approval, analysis, administration, and stewardship answer

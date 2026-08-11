@@ -8,6 +8,13 @@ Use plain language before implementation or database terminology. Capitalize nam
 | --- | --- | --- | --- |
 | Lotura | An organizational intelligence platform for understanding and safely evolving how work gets done. | “Open Lotura to review how service intake connects to eligibility.” | workflow app, SOP wiki, task manager |
 | Organization | The institution whose operating model is being viewed. | Northstar Service Collective | Workspace when it means the Organization; tenant in primary UI |
+| Organizational digital twin | A living, evidence-based representation of the Organization's structure, responsibility, work, technology, knowledge, relationships, and change. It is not automatically complete, approved, or real-time. | “Workspace Studio builds the Organization's digital twin.” | virtual organization, real-time twin when real-time evidence is absent, perfect copy |
+| Workspace Studio | The governed authoring environment where authorized people build and maintain the organizational digital twin. | “Open Workspace Studio to add a Position.” | Administration as the product metaphor, settings console, database editor |
+| Current documented model | The organization-scoped records represented in the visible snapshot, with their known limitations. | “The current documented model contains 27 Processes.” | complete organization, approved truth, live reality |
+| Workspace Health | An explainable set of deterministic facts and review questions about the current documented model, never a composite score. | “Workspace Health shows that one Process has no documented Owner Role.” | health score, risk grade, performance dashboard |
+| Activity | The chronological view of recorded structural and operating-model changes, retaining domain, actor, reason, effective time, and transaction time without implying causality. | “Activity shows when the Position was reassigned and when the Process owner changed.” | global history table, causal timeline, audit deletion log |
+| Technology | The Studio area for Systems and their explicit operating-model relationships. The label preserves room for later approved technology concepts without creating them prematurely. | “Open Technology to link the CRM to Gift Processing.” | Systems when naming the broader Studio area, integrations hub before integrations exist |
+| Discovery | The Studio direction for preserving and reviewing source evidence, resolving conflicts, acquiring Processes, and eventually conducting guided interviews. | “Discovery begins with reviewing the uploaded organizational source.” | import wizard when review and reconciliation are meant, AI-generated truth |
 | Organization overview | The orientation surface that explains the Organization as a connected operating model and recommends where to begin. | “Start with the Organization overview.” | dashboard, organization dashboard, operating-model page |
 | Organization Structure | The documented Units, Positions, Position Assignments, and reporting relationships that describe structural context at a visible time. | “Open Organization to follow the Client Services reporting branch.” | org chart when the broader structural context is meant; approved truth |
 | Organization Unit | A durable organizational grouping. Its hierarchy is shown only when a parent relationship is documented. | Client Services | department when the source does not establish that terminology; team inferred from reporting lines |
@@ -71,6 +78,13 @@ Use plain language before implementation or database terminology. Capitalize nam
 - Introduce the Organization before asking a first-time user to interpret individual Processes.
 - Define an operating model in plain language before using the term as shorthand.
 - Use **Explorer** for browsing and following local connections. Use **Process detail** for complete understanding of one Process.
+- Use **Workspace Studio** for authorized maintenance. Keep Organization,
+  Explorer, Process Detail, and FLOW as understanding surfaces rather than
+  mixed browse/edit screens.
+- Describe Studio inventory as the **current documented model**. Do not imply
+  that record counts measure completeness, quality, performance, or approval.
+- Use **Activity** for the combined chronological view while preserving each
+  event's underlying domain ledger and avoiding invented causal links.
 - Put Owner Role and current assignment together, while keeping their meanings distinct. Responsibilities remain; people change.
 - Show Systems, Exceptions, and Process dependencies before the Step sequence when explaining why Lotura is more than a Process library.
 - Keep What-if inside FLOW and always state that exploring a scenario changes and approves nothing.
