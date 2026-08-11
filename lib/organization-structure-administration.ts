@@ -8,7 +8,11 @@ import {
   type EnabledOrganizationStructureAdministrationConfiguration,
 } from "./organization-structure-administration-policy.mjs";
 
-export type StructureEntityType = "organization_unit" | "position" | "person";
+export type StructureEntityType =
+  | "organization_unit"
+  | "position"
+  | "person"
+  | "operational_role";
 export type StructureChangeKind = "correction" | "organizational_change";
 export type StructureChangeAction =
   | "update"
@@ -147,6 +151,16 @@ type EndRoleCoverageMutation = RoleMandateMutation & {
   coverageRecordKey: string;
 };
 
+type UpdateOperationalRoleMutation = ChangeMetadata & {
+  description?: string | null;
+  name: string;
+  stableKey: string;
+};
+
+type InactivateOperationalRoleMutation = ChangeMetadata & {
+  stableKey: string;
+};
+
 type DatabaseRow = Record<string, unknown>;
 
 function mutationClient(databaseUrl: string) {
@@ -177,6 +191,13 @@ function stateFor(entityType: StructureEntityType, row: DatabaseRow) {
       status: row.status,
       statusReason: row.status_reason,
       title: row.title,
+    };
+  }
+  if (entityType === "operational_role") {
+    return {
+      description: row.description,
+      name: row.name,
+      status: row.status,
     };
   }
   return {
@@ -252,6 +273,13 @@ function targetDescriptor(entityType: StructureEntityType) {
       auditColumn: "position_id",
       label: "Position",
       table: "positions",
+    } as const;
+  }
+  if (entityType === "operational_role") {
+    return {
+      auditColumn: "role_id",
+      label: "Operational Role",
+      table: "roles",
     } as const;
   }
   return {
@@ -2483,6 +2511,196 @@ function validateRoleMandateChange(
   return null;
 }
 
+export async function updateOperationalRole(
+  input: UpdateOperationalRoleMutation,
+): Promise<StructureMutationResult> {
+  const invalid = validateMetadata(input);
+  if (invalid) return invalid;
+  if (!validUuid(input.stableKey)) {
+    return { ok: false, code: "invalid", message: "The Role identifier is invalid." };
+  }
+  const name = input.name.trim();
+  const description = input.description?.trim() ?? "";
+  if (!name || name.length > 255 || description.length > 2000) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Enter a Role name of 255 characters or fewer and a description of 2,000 characters or fewer.",
+    };
+  }
+
+  let configuration: EnabledOrganizationStructureAdministrationConfiguration;
+  try {
+    configuration = await administrationAccess();
+  } catch {
+    return { ok: false, code: "unavailable", message: "Responsibility administration is unavailable." };
+  }
+  const sql = mutationClient(configuration.databaseUrl);
+  try {
+    const current = await currentTarget(sql, configuration, "operational_role", input.stableKey);
+    if (!current) {
+      return { ok: false, code: "not_found", message: "The active Operational Role was not found." };
+    }
+    if (!revisionsMatch(current, input.expectedRevision)) {
+      return {
+        ok: false,
+        code: "conflict",
+        message: "This Operational Role changed after the page loaded. Refresh before trying again.",
+      };
+    }
+    const beforeState = stateFor("operational_role", current);
+    const afterState = { description: description || null, name, status: "active" };
+    const rows = await atomicQuery(
+      sql,
+      `with changed as (
+         update roles
+         set name = $1, description = nullif($2, ''),
+           updated_at = date_trunc('milliseconds', transaction_timestamp())
+         where id = $3 and organization_id = $4 and stable_key = $5::uuid
+           and status = 'active'
+           and date_trunc('milliseconds', updated_at) = $6::timestamptz
+           and not exists (
+             select 1 from roles duplicate
+             where duplicate.organization_id = $4 and duplicate.id <> $3
+               and lower(trim(duplicate.name)) = lower(trim($1))
+           )
+         returning id
+       ),
+       ${auditCte(targetDescriptor("operational_role"), "operational_role", "update", 6)}
+       select
+         (select count(*)::int from changed) as changed_count,
+         (select count(*)::int from audit) as audit_count`,
+      [
+        name,
+        description,
+        current.id,
+        configuration.organizationId,
+        input.stableKey,
+        input.expectedRevision,
+        configuration.organizationId,
+        input.stableKey,
+        input.changeKind,
+        JSON.stringify(beforeState),
+        JSON.stringify(afterState),
+        input.reason.trim(),
+        input.effectiveAt.toISOString(),
+        configuration.actorIdentifier,
+      ],
+    );
+    if (!mutationAccepted(rows)) {
+      return {
+        ok: false,
+        code: "conflict",
+        message: "This Role, its name, or its revision changed. Refresh before trying again.",
+      };
+    }
+    return {
+      ok: true,
+      message: "Operational Role updated. Its immutable identity and prior state remain in history.",
+    };
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "The Operational Role could not be updated. No partial change was accepted.",
+    };
+  }
+}
+
+export async function inactivateOperationalRole(
+  input: InactivateOperationalRoleMutation,
+): Promise<StructureMutationResult> {
+  const invalid = validateMetadata(input);
+  if (invalid) return invalid;
+  if (!validUuid(input.stableKey)) {
+    return { ok: false, code: "invalid", message: "The Role identifier is invalid." };
+  }
+
+  let configuration: EnabledOrganizationStructureAdministrationConfiguration;
+  try {
+    configuration = await administrationAccess();
+  } catch {
+    return { ok: false, code: "unavailable", message: "Responsibility administration is unavailable." };
+  }
+  const sql = mutationClient(configuration.databaseUrl);
+  try {
+    const current = await currentTarget(sql, configuration, "operational_role", input.stableKey);
+    if (!current) {
+      return { ok: false, code: "not_found", message: "The active Operational Role was not found." };
+    }
+    if (!revisionsMatch(current, input.expectedRevision)) {
+      return {
+        ok: false,
+        code: "conflict",
+        message: "This Operational Role changed after the page loaded. Refresh before trying again.",
+      };
+    }
+    const beforeState = stateFor("operational_role", current);
+    const afterState = { ...beforeState, status: "inactive" };
+    const rows = await atomicQuery(
+      sql,
+      `with changed as (
+         update roles
+         set status = 'inactive',
+           updated_at = date_trunc('milliseconds', transaction_timestamp())
+         where id = $1 and organization_id = $2 and stable_key = $3::uuid
+           and status = 'active'
+           and date_trunc('milliseconds', updated_at) = $4::timestamptz
+           and not exists (select 1 from processes x where x.organization_id = $2 and x.owner_role_id = $1)
+           and not exists (select 1 from process_steps x where x.organization_id = $2 and x.responsible_role_id = $1)
+           and not exists (select 1 from exceptions x where x.organization_id = $2 and x.owner_role_id = $1)
+           and not exists (select 1 from systems x where x.organization_id = $2 and x.owner_role_id = $1)
+           and not exists (
+             select 1 from role_assignments x
+             where x.organization_id = $2 and x.role_id = $1
+               and x.status in ('scheduled', 'active')
+           )
+           and not exists (
+             select 1 from role_mandates x
+             where x.organization_id = $2 and x.role_id = $1
+               and x.status in ('scheduled', 'active')
+           )
+         returning id
+       ),
+       ${auditCte(targetDescriptor("operational_role"), "operational_role", "remove_from_current_structure", 4)}
+       select
+         (select count(*)::int from changed) as changed_count,
+         (select count(*)::int from audit) as audit_count`,
+      [
+        current.id,
+        configuration.organizationId,
+        input.stableKey,
+        input.expectedRevision,
+        configuration.organizationId,
+        input.stableKey,
+        input.changeKind,
+        JSON.stringify(beforeState),
+        JSON.stringify(afterState),
+        input.reason.trim(),
+        input.effectiveAt.toISOString(),
+        configuration.actorIdentifier,
+      ],
+    );
+    if (!mutationAccepted(rows)) {
+      return {
+        ok: false,
+        code: "blocked",
+        message: "This Role is still referenced by current or scheduled operating-model responsibility. End or reassign those dependencies before removing it from the current responsibility model.",
+      };
+    }
+    return {
+      ok: true,
+      message: "Operational Role removed from the current responsibility model. Its stable identity and history remain preserved.",
+    };
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "The Operational Role could not be inactivated. No partial change was accepted.",
+    };
+  }
+}
+
 export async function establishRoleMandate(
   input: EstablishRoleMandateMutation,
 ): Promise<StructureMutationResult> {
@@ -2610,7 +2828,7 @@ export async function establishRoleMandate(
              where existing_role.organization_id = changed.organization_id
                and lower(trim(existing_role.name)) = lower(trim($5::text))
            )
-           returning id, name
+           returning id, stable_key, name, description, status, updated_at
          ),
          mandate as (
            insert into role_mandates
@@ -2622,7 +2840,22 @@ export async function establishRoleMandate(
            from changed, created_role
            returning id
          ),
-         audit as (
+         role_audit as (
+           insert into organization_structure_changes
+             (organization_id, entity_type, target_stable_key, role_id,
+              change_kind, change_action, before_state, after_state, reason,
+              effective_at, actor_identifier)
+           select $2, 'operational_role', created_role.stable_key,
+             created_role.id, 'organizational_change', 'create', '{}'::jsonb,
+             jsonb_build_object(
+               'name', created_role.name,
+               'description', created_role.description,
+               'status', created_role.status
+             ), $10, $9::timestamptz, $13
+           from created_role, mandate
+           returning 1
+         ),
+         position_audit as (
            insert into organization_structure_changes
              (organization_id, entity_type, target_stable_key, position_id,
               change_kind, change_action, before_state, after_state, reason,
@@ -2632,14 +2865,16 @@ export async function establishRoleMandate(
              jsonb_set($12::jsonb, '{operationalRoleId}',
                to_jsonb('role:' || created_role.id::text)),
              $10, $9::timestamptz, $13
-           from changed, created_role, mandate
+           from changed, created_role, mandate, role_audit
            returning 1
          )
          select
            (select count(*)::int from changed) as changed_count,
            (select count(*)::int from created_role) as role_count,
            (select count(*)::int from mandate) as mandate_count,
-           (select count(*)::int from audit) as audit_count`,
+           (select count(*)::int from role_audit) as role_audit_count,
+           (select count(*)::int from position_audit) as audit_count,
+           (select stable_key::text from created_role limit 1) as stable_key`,
         [
           position.id,
           configuration.organizationId,
@@ -2659,7 +2894,8 @@ export async function establishRoleMandate(
       if (
         !mutationAccepted(rows) ||
         Number(rows[0]?.role_count ?? 0) !== 1 ||
-        Number(rows[0]?.mandate_count ?? 0) !== 1
+        Number(rows[0]?.mandate_count ?? 0) !== 1 ||
+        Number(rows[0]?.role_audit_count ?? 0) !== 1
       ) {
         return {
           ok: false,
@@ -2751,6 +2987,7 @@ export async function establishRoleMandate(
       message: creatingRole
         ? "Operational Role created and explicitly mandated to this Position. No responsibility was inferred from its title or reporting line."
         : "Operational Role mandate established. No responsibility was inferred from the Position title or reporting line.",
+      stableKey: creatingRole ? createdStableKey(rows) ?? undefined : undefined,
     };
   } catch (error) {
     const sqlState =

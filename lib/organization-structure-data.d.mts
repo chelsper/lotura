@@ -165,7 +165,12 @@ export type StructureMandate = {
   scope: string | null;
   reason: string | null;
   revision: string;
-  role: { id: string; name: string; status: "active" | "inactive" };
+  role: {
+    id: string;
+    stableKey: string | null;
+    name: string;
+    status: "active" | "inactive";
+  };
   coverage: Array<{
     id: string;
     type: RoleCoverageType;
@@ -269,9 +274,13 @@ export type OrganizationStructureData = {
   asOf: string;
   operationalRoles: Array<{
     id: string;
+    stableKey: string | null;
     name: string;
     description: string | null;
     status: "active" | "inactive";
+    revision: string | null;
+    processes: StructureProcess[];
+    systems: Array<{ id: string; name: string; usage: string }>;
   }>;
   snapshot: {
     id: string;

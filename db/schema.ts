@@ -127,7 +127,7 @@ export const organizationStructureChangeAction = pgEnum(
 
 export const organizationStructureChangeEntityType = pgEnum(
   "organization_structure_change_entity_type",
-  ["organization_unit", "position", "person"],
+  ["organization_unit", "position", "person", "operational_role"],
 );
 
 export const operatingModelChangeKind = pgEnum(
@@ -219,6 +219,7 @@ export const role = pgTable(
   {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
     name: varchar("name", { length: 255 }).notNull(),
     description: text("description"),
     status: activeInactiveStatus("status").default("active").notNull(),
@@ -242,6 +243,12 @@ export const role = pgTable(
     unique("roles_id_organization_id_unique").on(
       table.id,
       table.organizationId,
+    ),
+    unique("roles_stable_key_unique").on(table.stableKey),
+    unique("roles_id_org_stable_key_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
     ),
     index("roles_organization_id_status_idx").on(
       table.organizationId,
@@ -1376,6 +1383,7 @@ export const organizationStructureChange = pgTable(
     organizationUnitId: integer("organization_unit_id"),
     positionId: integer("position_id"),
     personId: integer("person_id"),
+    roleId: integer("role_id"),
     changeKind: organizationStructureChangeKind("change_kind").notNull(),
     changeAction:
       organizationStructureChangeAction("change_action").notNull(),
@@ -1417,12 +1425,17 @@ export const organizationStructureChange = pgTable(
       columns: [table.personId, table.organizationId, table.targetStableKey],
       foreignColumns: [person.id, person.organizationId, person.stableKey],
     }).onDelete("restrict"),
+    foreignKey({
+      name: "organization_structure_changes_role_org_fk",
+      columns: [table.roleId, table.organizationId, table.targetStableKey],
+      foreignColumns: [role.id, role.organizationId, role.stableKey],
+    }).onDelete("restrict"),
     unique("organization_structure_changes_stable_key_unique").on(
       table.stableKey,
     ),
     check(
       "organization_structure_changes_target_check",
-      sql`(${table.entityType} = 'organization_unit' and ${table.organizationUnitId} is not null and ${table.positionId} is null and ${table.personId} is null) or (${table.entityType} = 'position' and ${table.organizationUnitId} is null and ${table.positionId} is not null and ${table.personId} is null) or (${table.entityType} = 'person' and ${table.organizationUnitId} is null and ${table.positionId} is null and ${table.personId} is not null)`,
+      sql`(${table.entityType} = 'organization_unit' and ${table.organizationUnitId} is not null and ${table.positionId} is null and ${table.personId} is null and ${table.roleId} is null) or (${table.entityType} = 'position' and ${table.organizationUnitId} is null and ${table.positionId} is not null and ${table.personId} is null and ${table.roleId} is null) or (${table.entityType} = 'person' and ${table.organizationUnitId} is null and ${table.positionId} is null and ${table.personId} is not null and ${table.roleId} is null) or (${table.entityType} = 'operational_role' and ${table.organizationUnitId} is null and ${table.positionId} is null and ${table.personId} is null and ${table.roleId} is not null)`,
     ),
     check(
       "organization_structure_changes_reason_not_blank_check",
@@ -1460,6 +1473,10 @@ export const organizationStructureChange = pgTable(
     ),
     index("organization_structure_changes_person_created_idx").on(
       table.personId,
+      table.createdAt,
+    ),
+    index("organization_structure_changes_role_created_idx").on(
+      table.roleId,
       table.createdAt,
     ),
   ],

@@ -35,9 +35,11 @@ type SeedMembership = {
 
 type SeedRole = {
   key: string;
+  stableKey?: string;
   name: string;
   description?: string;
   status: ActiveInactiveStatus;
+  updatedAt?: string;
 };
 
 type SeedRoleAssignment = {
@@ -146,9 +148,11 @@ export type ProcessExplorerSeed = {
 
 export type ExplorerRole = {
   id: string;
+  stableKey: string | null;
   name: string;
   description: string | null;
   status: ActiveInactiveStatus;
+  revision: string | null;
   currentAssignee: {
     name: string;
     assignmentType: AssignmentType;
@@ -371,9 +375,11 @@ export function buildProcessExplorerData(
 
     return {
       id: role.key,
+      stableKey: role.stableKey ?? null,
       name: role.name,
       description: role.description ?? null,
       status: role.status,
+      revision: role.updatedAt ?? null,
       currentAssignee,
       currentCoverage: canonicalCoverageByRole
         ? (canonicalCoverageByRole.get(role.key) ?? [])
