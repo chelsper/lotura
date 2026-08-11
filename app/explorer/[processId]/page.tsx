@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { notFound } from "next/navigation";
 
+import { decodeProcessRouteId } from "@/lib/process-route.mjs";
 import { loadWorkspaceExperience } from "@/lib/workspace-experience";
 
 import { ProcessDetail } from "../../process-detail";
@@ -14,9 +15,12 @@ export default async function ProcessDetailPage({
   await connection();
 
   const { processId } = await params;
+  const decodedProcessId = decodeProcessRouteId(processId);
   const { asOf, configuration, data, source } =
     await loadWorkspaceExperience();
-  const process = data.processes.find((item) => item.id === processId);
+  const process = decodedProcessId
+    ? data.processes.find((item) => item.id === decodedProcessId)
+    : undefined;
 
   if (!process) {
     notFound();

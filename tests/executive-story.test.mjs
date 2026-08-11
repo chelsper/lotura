@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+import { decodeProcessRouteId } from "../lib/process-route.mjs";
+
 const root = new URL("../", import.meta.url);
 
 async function read(path) {
@@ -48,8 +50,18 @@ test("Process Detail resolves canonical IDs and fails closed for unknown IDs", a
   const page = await read("app/explorer/[processId]/page.tsx");
 
   assert.match(page, /params: Promise<\{ processId: string \}>/);
-  assert.match(page, /data\.processes\.find\(\(item\) => item\.id === processId\)/);
+  assert.match(page, /decodeProcessRouteId\(processId\)/);
+  assert.match(
+    page,
+    /data\.processes\.find\(\(item\) => item\.id === decodedProcessId\)/,
+  );
   assert.match(page, /if \(!process\) \{\s+notFound\(\);\s+\}/);
+});
+
+test("Process Detail decodes URL-safe Neon identifiers and rejects malformed paths", () => {
+  assert.equal(decodeProcessRouteId("process%3A1"), "process:1");
+  assert.equal(decodeProcessRouteId("process:1"), "process:1");
+  assert.equal(decodeProcessRouteId("process%ZZ1"), null);
 });
 
 test("legacy Explorer query links remain accepted while rendered links are canonical", async () => {
