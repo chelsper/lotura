@@ -16,7 +16,7 @@ export default async function ProcessDetailPage({
 
   const { processId } = await params;
   const decodedProcessId = decodeProcessRouteId(processId);
-  const { asOf, configuration, data, source } =
+  const { asOf, authoring, configuration, data, source } =
     await loadWorkspaceExperience();
   const process = decodedProcessId
     ? data.processes.find((item) => item.id === decodedProcessId)
@@ -33,7 +33,7 @@ export default async function ProcessDetailPage({
       configuration={configuration}
       source={source}
     >
-      <ProcessDetail process={process} />
+      <ProcessDetail authoringEnabled={authoring.enabled} process={process} />
     </WorkspaceShell>
   );
 }

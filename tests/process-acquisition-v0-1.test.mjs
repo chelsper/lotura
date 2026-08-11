@@ -122,10 +122,26 @@ test("Draft creation is authenticated, tenant-scoped, and insert-only", async ()
   assert.match(administration, /where organization_id = \$1/);
   assert.match(administration, /and status = 'active'/);
   assert.match(administration, /insert into processes/);
+  assert.match(administration, /insert into operating_model_changes/);
+  assert.match(administration, /from inserted/);
+  assert.match(administration, /configuration\.actorIdentifier/);
   assert.match(administration, /'draft'/);
   assert.match(administration, /isolationLevel: "Serializable"/);
   assert.doesNotMatch(administration, /update processes|delete from processes/i);
   assert.doesNotMatch(administration, /DATABASE_URL(?:_UNPOOLED)?/);
+});
+
+test("manual Draft creation requires an auditable reason", async () => {
+  const [form, action, administration] = await Promise.all([
+    read("app/process-acquisition/process-acquisition-form.tsx"),
+    read("app/process-acquisition/actions.ts"),
+    read("lib/process-acquisition-administration.ts"),
+  ]);
+  assert.match(form, /Reason for creating this Draft/);
+  assert.match(form, /name="reason"/);
+  assert.match(action, /reason: text\(formData, "reason"\)/);
+  assert.match(administration, /if \(!reason \|\| reason\.length > 2000\)/);
+  assert.match(administration, /history_count/);
 });
 
 test("duplicate Process names are rejected inside the insertion statement", async () => {

@@ -78,6 +78,20 @@ export function ProcessAcquisitionForm({
         </label>
       ) : null}
 
+      <label className="block">
+        <FieldLabel>Reason for creating this Draft</FieldLabel>
+        <textarea
+          className="min-h-24 w-full resize-y rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-6 text-[var(--text)] outline-none transition placeholder:text-[var(--text-tertiary)] hover:border-[var(--border-strong)] focus:border-[var(--workspace-accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
+          maxLength={2000}
+          name="reason"
+          placeholder="Why should this Draft Process be added to the operating model?"
+          required
+        />
+        <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
+          This reason becomes part of the append-only operating-model change history.
+        </span>
+      </label>
+
       {state.status === "error" ? <Alert tone="error">{state.message}</Alert> : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] pt-5">

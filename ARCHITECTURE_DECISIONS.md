@@ -77,6 +77,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-033 | Structure, responsibility mandates, and human coverage remain distinct | Accepted — product direction |
 | LAD-034 | Organization Structure review remains a transient evidence overlay before import | Accepted — implemented |
 | LAD-035 | Governance is multidimensional and Stewardship is distinct | Accepted — product direction |
+| LAD-036 | Operating-model authoring is administrative, draft-first, and historically traceable | Accepted — implementation authorized for Slice A |
 
 ## Decision records
 
@@ -492,6 +493,34 @@ Most contributors should suggest attributable updates rather than directly overw
 
 **Consequences and deferrals:** The private pilot may communicate governance with honest read-only sections that say Not assigned, Not configured, or Needs validation when no governance evidence exists. It must not invent Stewards or authority from JU titles, reporting lines, assignments, or Process ownership. The complete engine requires separate decisions for identity reconciliation, scoped policies, Steward identity and delegation, effective timing, proposal and approval records, committees, analytical permissions, notifications, audit, retention, and evidence access. This decision authorizes no schema, migration, credential, environment, database, deployment, or JU-specific change. [GOVERNANCE_AND_STEWARDSHIP.md](GOVERNANCE_AND_STEWARDSHIP.md) records the product boundary.
 
+### LAD-036 — Operating-model authoring is administrative, draft-first, and historically traceable
+
+**Status:** Accepted — implementation authorized for Slice A.
+
+**Context:** Lotura now has an authenticated private-workspace boundary, a dedicated Process-write credential, a draft-first manual acquisition path, and an append-only pattern for structural administration. The operating-model schema can store Process definition and ownership, but Processes do not have immutable cross-system identity, canonical Process changes are not audited, and the existing Process Acquisition capability is deliberately insert-only. Direct SQL or unaudited updates would make organizational responsibility easy to change without preserving who changed it, why, or what preceded it.
+
+**Decision:** Operating Model Authoring is a generic Workspace Administrator capability for an authenticated, single-Organization Neon workspace. Public fixture/demo workspaces remain read-only. Authoring is disabled by default and must use the dedicated server-only Process administration credential; it may not reuse or fall back to the read-only runtime, structural administration, owner, or migration credential.
+
+Every Process receives an immutable random UUID `stableKey` in addition to its existing database identity. Existing routes, fixture keys, dependencies, and external references continue using their current identifiers until a separate routing decision is reviewed. The first authoring slice permits an administrator to maintain Process name and purpose and to explicitly assign, change, or clear the Owner Operational Role under the existing draft ownership rule. Owner selection may display Position mandate and current RoleCoverage context, but Position, Person, title, reporting hierarchy, and coverage never infer Process ownership.
+
+Clearing the Owner Role is permitted only while a Process is a Draft. An active or archived Process represents work that is current or retained as an institutional record, so allowing it to become ownerless would knowingly weaken accountability and contradict the existing activation constraint. An administrator must return to an explicitly governed lifecycle transition before ownership can be unresolved; owner clearing is therefore product and governance behavior, not an incidental form restriction.
+
+Every successful canonical Process mutation and its `operating_model_changes` record occur atomically with compare-and-set revision protection. The ledger is append-only from both application privilege and database-trigger boundaries and records Organization, immutable Process identity, entity type, action, before and after state, change kind, reason, effective time, actor, and transaction time. This ledger explains changes; it is not an approved Process version and does not replace the future version lifecycle in LAD-023.
+
+The recorded actor is the authenticated Lotura application identity at the time of the change. It is deliberately not derived from or coupled to a Person, Position, Membership, Role Mandate, Role Coverage, or current organizational assignment. Future identity reconciliation may add separately governed references without rewriting historical actor evidence.
+
+Process lifecycle status and knowledge/approval state remain distinct. A canonical Process may remain visibly a Working draft after ownership is assigned. `draft`, `active`, and `archived` must not be presented as evidence of institutional approval. Detailed Known, Assumed, Unknown, Needs validation, and Conflicting observations states remain deferred under LAD-032.
+
+**Why:** Administrators need to maintain the connected operating model without exposing database concepts or weakening its trust boundary. Immutable Process identity, explicit responsibility selection, least-privilege writes, stale-write rejection, and atomic history provide a durable foundation that later Step, System, Exception, and dependency authoring can reuse. Keeping audit history separate from approved versions avoids manufacturing historical truth from administrative events.
+
+**Alternatives considered:** Update `owner_role_id` directly; reuse Organization Structure history; use the Process database ID as durable external identity; treat Position title or RoleCoverage as ownership; broaden the structural administrator credential; use application logs as history; or implement full Process versioning and approval now. These were rejected because they lose provenance, conflate domains, weaken least privilege, infer responsibility, or introduce lifecycle concepts beyond the approved milestone. A no-schema option cannot provide immutable Process identity and database-enforced append-only history.
+
+**Affected decisions:** This decision extends LAD-011 for authenticated private authoring while preserving the public read-only experience. It follows LAD-006 through LAD-010, LAD-015, LAD-018, LAD-020, LAD-021, LAD-023, LAD-026, LAD-029, LAD-032, LAD-033, and LAD-035. It does not supersede any prior decision.
+
+**Consequences and deferrals:** Slice A adds only Process identity, definition/ownership maintenance, Role mandate and coverage context, stale-write protection, and operating-model change history. Step, System, Exception, and dependency mutation remain later slices under this direction. System creation, hard deletion, Contributor and approval workflows, Stewardship assignment, field-level evidence, approved Process versions, AI interviews, and FLOW interpretation of RoleCoverage remain intentionally deferred. Process Detail may display current RoleCoverage while FLOW continues its Version 0.1 RoleAssignment interpretation; no duplicate legacy RoleAssignment may be manufactured to conceal that limitation.
+
+The `operating_model_change_action` enum is intentionally limited to the three canonical actions implemented in Slice A: `create_draft`, `update_definition`, and `change_owner`. Later Step, System, Exception, and dependency actions must be introduced through reviewed forward-only enum expansion and corresponding privilege/history changes. They must not be overloaded into a Slice A action merely to avoid a migration.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -533,6 +562,6 @@ The following ideas are recorded so postponement is visible and deliberate.
 
 ## Current implementation boundary
 
-The implemented baseline remains Version 0.1: a read-only Process Explorer and deterministic FLOW Analysis over the approved operating-model schema, backed by either a fictional fixture or a server-only, Organization-scoped Neon snapshot. Generic temporary authentication, constrained deployment appearance, and validation-only snapshot preparation are code readiness only; they do not authorize or create a private deployment.
+The code baseline includes the read-only Process Explorer and deterministic FLOW Analysis over the approved operating model, backed by either a fictional fixture or a server-only, Organization-scoped Neon snapshot. Generic temporary authentication, constrained deployment appearance, Organization Structure administration, Process Acquisition, and Operating Model Authoring Slice A are configuration-gated capabilities for authenticated private workspaces. Operating Model Authoring remains disabled by default and requires migration `0010` plus its dedicated least-privilege Process administration credential before it can be enabled.
 
-Creating this register does not approve or implement any deferred capability and does not change code, schema, migrations, databases, credentials, environments, deployments, or infrastructure.
+The public fixture/demo experience remains public, fictional, and read-only. A code or architecture decision does not authorize a migration, credential, environment change, deployment, or private-data import; each remains a separately approved operation.

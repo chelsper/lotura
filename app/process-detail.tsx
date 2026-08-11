@@ -302,7 +302,13 @@ function Steps({ process }: { process: ExplorerProcess }) {
   );
 }
 
-export function ProcessDetail({ process }: { process: ExplorerProcess }) {
+export function ProcessDetail({
+  authoringEnabled = false,
+  process,
+}: {
+  authoringEnabled?: boolean;
+  process: ExplorerProcess;
+}) {
   return (
     <div className="mx-auto max-w-6xl">
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-tertiary)]">
@@ -314,14 +320,24 @@ export function ProcessDetail({ process }: { process: ExplorerProcess }) {
       </nav>
 
       <header className="mt-5 border-b border-[var(--border)] pb-7 sm:pb-9">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge
-            dot
-            tone={process.status === "active" ? "success" : process.status === "draft" ? "warning" : "neutral"}
-          >
-            {process.status}
-          </Badge>
-          <Badge>Documented Process</Badge>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge
+              dot
+              tone={process.status === "active" ? "success" : process.status === "draft" ? "warning" : "neutral"}
+            >
+              {process.status}
+            </Badge>
+            <Badge>Documented Process</Badge>
+          </div>
+          {authoringEnabled ? (
+            <Link
+              className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[var(--workspace-accent-border)] bg-[var(--workspace-accent-subtle)] px-3 text-xs font-medium text-[var(--workspace-accent)] transition-colors hover:bg-[var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]"
+              href={`/explorer/${encodeURIComponent(process.id)}/maintain`}
+            >
+              Maintain Process
+            </Link>
+          ) : null}
         </div>
         <h1 className="mt-4 max-w-4xl text-[34px] font-semibold leading-tight tracking-[-0.05em] text-[var(--text)] sm:text-[44px]">
           {process.name}

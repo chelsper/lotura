@@ -1,0 +1,278 @@
+import "server-only";
+
+import { and, asc, desc, eq } from "drizzle-orm";
+
+import {
+  operatingModelChange,
+  person,
+  position,
+  process as processTable,
+  role,
+  roleCoverage,
+  roleMandate,
+} from "@/db/schema";
+
+export type OperatingModelChangeSummary = {
+  action: "create_draft" | "update_definition" | "change_owner";
+  actorIdentifier: string;
+  afterState: Record<string, unknown>;
+  beforeState: Record<string, unknown>;
+  changeKind: "correction" | "organizational_change";
+  createdAt: string;
+  effectiveAt: string;
+  id: string;
+  reason: string;
+};
+
+export type AuthoringRoleContext = {
+  id: string;
+  name: string;
+  description: string | null;
+  status: "active" | "inactive";
+  mandates: Array<{
+    id: string;
+    mandateType: "primary" | "shared";
+    position: {
+      id: string;
+      status: "active" | "inactive" | "retired";
+      title: string;
+    };
+    scope: string | null;
+    coverage: Array<{
+      id: string;
+      coverageType:
+        | "permanent"
+        | "interim"
+        | "acting"
+        | "delegated"
+        | "backup";
+      person: { id: string; name: string };
+    }>;
+  }>;
+};
+
+export type ProcessAuthoringContext = {
+  asOf: string;
+  history: OperatingModelChangeSummary[];
+  process: {
+    id: string;
+    stableKey: string;
+    name: string;
+    ownerRoleId: string | null;
+    purpose: string | null;
+    revision: string;
+    status: "draft" | "active" | "archived";
+  };
+  roles: AuthoringRoleContext[];
+};
+
+function processDatabaseId(value: string) {
+  const match = /^process:([1-9][0-9]*)$/.exec(value);
+  if (!match) return null;
+  const id = Number(match[1]);
+  return Number.isSafeInteger(id) ? id : null;
+}
+
+function currentAt(
+  record: {
+    effectiveFrom: Date;
+    effectiveUntil: Date | null;
+    status: string;
+  },
+  asOf: Date,
+) {
+  return (
+    record.status === "active" &&
+    record.effectiveFrom <= asOf &&
+    (!record.effectiveUntil || record.effectiveUntil > asOf)
+  );
+}
+
+export async function loadProcessAuthoringContext(
+  organizationId: number,
+  processKey: string,
+  snapshotAsOf: string,
+): Promise<ProcessAuthoringContext | null> {
+  const processId = processDatabaseId(processKey);
+  if (!processId) return null;
+  const asOf = new Date(snapshotAsOf);
+  if (!Number.isFinite(asOf.getTime())) {
+    throw new Error("Invalid Process authoring snapshot time.");
+  }
+  const { db } = await import("@/db");
+
+  const [processes, roles, positions, people, mandates, coverages, history] =
+    await db.batch([
+      db
+        .select({
+          id: processTable.id,
+          stableKey: processTable.stableKey,
+          name: processTable.name,
+          purpose: processTable.purpose,
+          ownerRoleId: processTable.ownerRoleId,
+          status: processTable.status,
+          updatedAt: processTable.updatedAt,
+        })
+        .from(processTable)
+        .where(
+          and(
+            eq(processTable.organizationId, organizationId),
+            eq(processTable.id, processId),
+          ),
+        )
+        .limit(1),
+      db
+        .select({
+          id: role.id,
+          name: role.name,
+          description: role.description,
+          status: role.status,
+        })
+        .from(role)
+        .where(eq(role.organizationId, organizationId))
+        .orderBy(asc(role.name), asc(role.id)),
+      db
+        .select({
+          id: position.id,
+          stableKey: position.stableKey,
+          title: position.title,
+          status: position.status,
+        })
+        .from(position)
+        .where(eq(position.organizationId, organizationId))
+        .orderBy(asc(position.title), asc(position.id)),
+      db
+        .select({
+          id: person.id,
+          stableKey: person.stableKey,
+          displayName: person.displayName,
+          status: person.status,
+        })
+        .from(person)
+        .where(eq(person.organizationId, organizationId))
+        .orderBy(asc(person.displayName), asc(person.id)),
+      db
+        .select({
+          id: roleMandate.id,
+          roleId: roleMandate.roleId,
+          positionId: roleMandate.positionId,
+          mandateType: roleMandate.mandateType,
+          scope: roleMandate.scope,
+          status: roleMandate.status,
+          effectiveFrom: roleMandate.effectiveFrom,
+          effectiveUntil: roleMandate.effectiveUntil,
+        })
+        .from(roleMandate)
+        .where(eq(roleMandate.organizationId, organizationId))
+        .orderBy(asc(roleMandate.roleId), asc(roleMandate.id)),
+      db
+        .select({
+          id: roleCoverage.id,
+          roleMandateId: roleCoverage.roleMandateId,
+          personId: roleCoverage.personId,
+          coverageType: roleCoverage.coverageType,
+          status: roleCoverage.status,
+          effectiveFrom: roleCoverage.effectiveFrom,
+          effectiveUntil: roleCoverage.effectiveUntil,
+        })
+        .from(roleCoverage)
+        .where(eq(roleCoverage.organizationId, organizationId))
+        .orderBy(asc(roleCoverage.roleMandateId), asc(roleCoverage.id)),
+      db
+        .select({
+          id: operatingModelChange.stableKey,
+          action: operatingModelChange.changeAction,
+          actorIdentifier: operatingModelChange.actorIdentifier,
+          beforeState: operatingModelChange.beforeState,
+          afterState: operatingModelChange.afterState,
+          changeKind: operatingModelChange.changeKind,
+          reason: operatingModelChange.reason,
+          effectiveAt: operatingModelChange.effectiveAt,
+          createdAt: operatingModelChange.createdAt,
+        })
+        .from(operatingModelChange)
+        .where(
+          and(
+            eq(operatingModelChange.organizationId, organizationId),
+            eq(operatingModelChange.processId, processId),
+          ),
+        )
+        .orderBy(desc(operatingModelChange.createdAt), desc(operatingModelChange.id)),
+    ] as const);
+
+  const currentProcess = processes[0];
+  if (!currentProcess) return null;
+
+  const positionsById = new Map(positions.map((item) => [item.id, item]));
+  const peopleById = new Map(people.map((item) => [item.id, item]));
+  const activeMandates = mandates.filter((item) => currentAt(item, asOf));
+  const activeCoverages = coverages.filter((item) => currentAt(item, asOf));
+
+  const roleContexts = roles.map<AuthoringRoleContext>((item) => ({
+      id: `role:${item.id}`,
+      name: item.name,
+      description: item.description,
+      status: item.status,
+      mandates: activeMandates
+        .filter((mandate) => mandate.roleId === item.id)
+        .flatMap((mandate) => {
+          const mandatePosition = positionsById.get(mandate.positionId);
+          if (!mandatePosition) return [];
+          return [
+            {
+              id: `mandate:${mandate.id}`,
+              mandateType: mandate.mandateType,
+              position: {
+                id: mandatePosition.stableKey,
+                status: mandatePosition.status,
+                title: mandatePosition.title,
+              },
+              scope: mandate.scope,
+              coverage: activeCoverages
+                .filter((coverage) => coverage.roleMandateId === mandate.id)
+                .flatMap((coverage) => {
+                  const coveredPerson = peopleById.get(coverage.personId);
+                  if (!coveredPerson || coveredPerson.status !== "active") return [];
+                  return [
+                    {
+                      id: `coverage:${coverage.id}`,
+                      coverageType: coverage.coverageType,
+                      person: {
+                        id: coveredPerson.stableKey,
+                        name: coveredPerson.displayName,
+                      },
+                    },
+                  ];
+                }),
+            },
+          ];
+        }),
+    }));
+
+  return {
+    asOf: snapshotAsOf,
+    process: {
+      id: `process:${currentProcess.id}`,
+      stableKey: currentProcess.stableKey,
+      name: currentProcess.name,
+      ownerRoleId: currentProcess.ownerRoleId
+        ? `role:${currentProcess.ownerRoleId}`
+        : null,
+      purpose: currentProcess.purpose,
+      revision: currentProcess.updatedAt.toISOString(),
+      status: currentProcess.status,
+    },
+    roles: roleContexts,
+    history: history.map((item) => ({
+      action: item.action,
+      actorIdentifier: item.actorIdentifier,
+      afterState: item.afterState as Record<string, unknown>,
+      beforeState: item.beforeState as Record<string, unknown>,
+      changeKind: item.changeKind,
+      createdAt: item.createdAt.toISOString(),
+      effectiveAt: item.effectiveAt.toISOString(),
+      id: item.id,
+      reason: item.reason,
+    })),
+  };
+}
