@@ -96,6 +96,14 @@ test("Organization Structure administration is explicit and disabled by default"
   assert.doesNotMatch(combined, /localStorage|sessionStorage|indexedDB|fetch\(/i);
 });
 
+test("administration history renders deterministic UTC timestamps during hydration", async () => {
+  const panel = await read("app/organization/structure-administration-panel.tsx");
+  assert.match(panel, /function formatAdministrativeTimestamp/);
+  assert.match(panel, /function formatAdministrativeDate/);
+  assert.match(panel, /timeZone: "UTC"/);
+  assert.doesNotMatch(panel, /\.toLocaleString\(\)|\.toLocaleDateString\(\)/);
+});
+
 test("organizational placement uses existing Unit identities instead of Unit renaming", async () => {
   const [panel, person] = await Promise.all([
     read("app/organization/structure-administration-panel.tsx"),
