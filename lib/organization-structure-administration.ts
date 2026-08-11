@@ -2039,12 +2039,13 @@ export async function establishRoleMandate(
          created_role as (
            insert into roles
              (organization_id, name, description, status)
-           select changed.organization_id, $5, nullif($6, ''), 'active'
+           select changed.organization_id, $5::text,
+             nullif($6::text, ''), 'active'
            from changed
            where not exists (
              select 1 from roles existing_role
              where existing_role.organization_id = changed.organization_id
-               and lower(trim(existing_role.name)) = lower(trim($5))
+               and lower(trim(existing_role.name)) = lower(trim($5::text))
            )
            returning id, name
          ),
