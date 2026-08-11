@@ -17,8 +17,10 @@ import {
   correctPositionReportingRelationshipAction,
   endPositionAssignmentAction,
   endPositionReportingRelationshipAction,
+  establishPositionReportingRelationshipAction,
   removeStructureEntityAction,
   replacePositionAssignmentAction,
+  replacePositionReportingRelationshipAction,
   updateStructureEntityAction,
 } from "./actions";
 import {
@@ -39,6 +41,41 @@ function entityLabel(entityType: StructureEntityType) {
     position: "Position",
     person: "Person",
   }[entityType];
+}
+
+function descendantUnitIds(
+  units: OrganizationStructureData["units"],
+  unitId: string,
+) {
+  const descendants = new Set([unitId]);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const unit of units) {
+      if (unit.parent && descendants.has(unit.parent.id) && !descendants.has(unit.id)) {
+        descendants.add(unit.id);
+        changed = true;
+      }
+    }
+  }
+  return descendants;
+}
+
+function positionOptionLabel(position: OrganizationPosition) {
+  const occupants = position.assignments.map((assignment) => assignment.person.name);
+  const structuralContext = position.unit?.name ?? "No Organization Unit";
+  return `${position.title} — ${structuralContext}${
+    occupants.length > 0 ? ` — ${occupants.join(", ")}` : " — no current occupant"
+  }`;
+}
+
+function reportingPositionLabel(
+  data: OrganizationStructureData,
+  positionId: string,
+  fallbackTitle: string,
+) {
+  const position = data.positions.find((candidate) => candidate.id === positionId);
+  return position ? positionOptionLabel(position) : fallbackTitle;
 }
 
 function ChangeMetadataFields({
@@ -113,6 +150,19 @@ function RelationshipIdentity({
   );
 }
 
+function PositionRelationshipIdentity({
+  position,
+}: {
+  position: OrganizationPosition;
+}) {
+  return (
+    <>
+      <input name="positionStableKey" type="hidden" value={position.id} />
+      <input name="expectedRevision" type="hidden" value={position.revision} />
+    </>
+  );
+}
+
 function ActionResult({ state }: { state: StructureActionState }) {
   return state.status !== "idle" ? (
     <Alert
@@ -168,6 +218,10 @@ function EditForm({
               unitName.trim().toLocaleLowerCase(),
         )
       : null;
+  const unavailableParentUnitIds =
+    entityType === "organization_unit"
+      ? descendantUnitIds(data.units, entity.id)
+      : new Set<string>();
   return (
     <form action={action} className="mt-4 grid gap-4 sm:grid-cols-2">
       <HiddenIdentity entity={entity} entityType={entityType} />
@@ -193,6 +247,32 @@ function EditForm({
               Another active Organization Unit already uses this name. To move someone, open their Position and select the existing Unit instead of renaming this record.
             </Alert>
           ) : null}
+          <label className="block sm:col-span-2">
+            <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+              Parent Unit / Reports within
+            </span>
+            <Select
+              defaultValue={(entity as OrganizationUnit).parent?.id ?? ""}
+              name="parentOrganizationUnitStableKey"
+            >
+              <option value="">No Parent Unit — root Unit</option>
+              {data.units
+                .filter(
+                  (unit) =>
+                    unit.status === "active" &&
+                    !unavailableParentUnitIds.has(unit.id),
+                )
+                .map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.name}
+                    {unit.parent ? ` — within ${unit.parent.name}` : " — root Unit"}
+                  </option>
+                ))}
+            </Select>
+            <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
+              This records Unit hierarchy only. It does not create a manager relationship or assign Process ownership. Descendant Units are excluded; the database rechecks cycles before commit.
+            </span>
+          </label>
         </>
       ) : null}
       {entityType === "position" ? (
@@ -455,7 +535,7 @@ function CorrectReportingForm({
             )
             .map((candidate) => (
               <option key={candidate.id} value={candidate.id}>
-                {candidate.title}
+                {positionOptionLabel(candidate)}
               </option>
             ))}
         </Select>
@@ -489,6 +569,114 @@ function CorrectReportingForm({
       <div className="sm:col-span-2">
         <Button disabled={pending} type="submit" variant="primary">
           {pending ? "Checking hierarchy…" : "Save reporting correction"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function EstablishReportingForm({
+  data,
+  position,
+}: {
+  data: OrganizationStructureData;
+  position: OrganizationPosition;
+}) {
+  const [state, action, pending] = useActionState(
+    establishPositionReportingRelationshipAction,
+    initialStructureActionState,
+  );
+  const managerPositions = data.positions.filter(
+    (candidate) =>
+      candidate.status === "active" && candidate.id !== position.id,
+  );
+  return (
+    <form action={action} className="mt-3 grid gap-3 sm:grid-cols-2">
+      <PositionRelationshipIdentity position={position} />
+      <label className="block sm:col-span-2">
+        <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+          Primary manager Position
+        </span>
+        <Select name="managerPositionStableKey" required>
+          <option value="">Select a manager Position</option>
+          {managerPositions.map((candidate) => (
+            <option key={candidate.id} value={candidate.id}>
+              {positionOptionLabel(candidate)}
+            </option>
+          ))}
+        </Select>
+        <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
+          The relationship belongs to the two Positions. Current occupants are shown only to help identify the correct structural seats.
+        </span>
+      </label>
+      <label className="block sm:col-span-2">
+        <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+          Reporting context, if documented
+        </span>
+        <Input maxLength={2000} name="relationshipReason" />
+      </label>
+      <ChangeMetadataFields fixedKind="organizational_change" />
+      <ActionResult state={state} />
+      <div className="sm:col-span-2">
+        <Button disabled={pending} type="submit" variant="primary">
+          {pending ? "Checking hierarchy…" : "Establish primary manager"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function ReplaceReportingForm({
+  data,
+  position,
+  relationship,
+}: {
+  data: OrganizationStructureData;
+  position: OrganizationPosition;
+  relationship: NonNullable<OrganizationPosition["primaryManager"]>;
+}) {
+  const [state, action, pending] = useActionState(
+    replacePositionReportingRelationshipAction,
+    initialStructureActionState,
+  );
+  const managerPositions = data.positions.filter(
+    (candidate) =>
+      candidate.status === "active" &&
+      candidate.id !== position.id &&
+      candidate.id !== relationship.position.id,
+  );
+  return (
+    <form action={action} className="mt-3 grid gap-3 sm:grid-cols-2">
+      <RelationshipIdentity
+        expectedRevision={relationship.revision}
+        name="reportingRecordKey"
+        positionStableKey={position.id}
+        recordKey={relationship.id}
+      />
+      <label className="block sm:col-span-2">
+        <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+          Replacement manager Position
+        </span>
+        <Select name="managerPositionStableKey" required>
+          <option value="">Select a different manager Position</option>
+          {managerPositions.map((candidate) => (
+            <option key={candidate.id} value={candidate.id}>
+              {positionOptionLabel(candidate)}
+            </option>
+          ))}
+        </Select>
+      </label>
+      <label className="block sm:col-span-2">
+        <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
+          Reporting context, if documented
+        </span>
+        <Input maxLength={2000} name="relationshipReason" />
+      </label>
+      <ChangeMetadataFields fixedKind="organizational_change" />
+      <ActionResult state={state} />
+      <div className="sm:col-span-2">
+        <Button disabled={pending} type="submit" variant="primary">
+          {pending ? "Replacing manager…" : "Replace primary manager"}
         </Button>
       </div>
     </form>
@@ -542,9 +730,10 @@ function ReportingAdministration({
         Reporting-relationship maintenance
       </h3>
       <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
-        Correct a source record without inventing Process responsibility, or
-        end a relationship when the organization changes. Cycle safeguards run
-        again before commit.
+        Reporting is maintained between Positions, never directly between
+        People. Establish, replace, correct, or end a relationship without
+        inventing Process responsibility. Cycle safeguards run again before
+        commit.
       </p>
       {managerRelationships.length > 0 ? (
         <div className="mt-4 space-y-3">
@@ -554,9 +743,26 @@ function ReportingAdministration({
               key={relationship.id}
             >
               <p className="text-xs font-semibold text-[var(--text)]">
-                {relationship.typeLabel}: {relationship.position.title}
+                {relationship.typeLabel}:{" "}
+                {reportingPositionLabel(
+                  data,
+                  relationship.position.id,
+                  relationship.position.title,
+                )}
               </p>
-              <div className="mt-3 grid gap-3 lg:grid-cols-2">
+              <div className="mt-3 grid gap-3 lg:grid-cols-3">
+                {relationship.type === "primary" ? (
+                  <details className="rounded-[10px] bg-[var(--surface-subtle)] p-3">
+                    <summary className="cursor-pointer text-xs font-semibold text-[var(--text)]">
+                      Replace manager
+                    </summary>
+                    <ReplaceReportingForm
+                      data={data}
+                      position={position}
+                      relationship={relationship}
+                    />
+                  </details>
+                ) : null}
                 <details className="rounded-[10px] bg-[var(--surface-subtle)] p-3">
                   <summary className="cursor-pointer text-xs font-semibold text-[var(--text)]">
                     Correct relationship
@@ -582,10 +788,20 @@ function ReportingAdministration({
         </div>
       ) : (
         <p className="mt-3 text-xs text-[var(--text-tertiary)]">
-          No current manager relationship is available to maintain from this
-          Position.
+          No current reporting relationships are recorded from this Position.
         </p>
       )}
+      {!position.primaryManager ? (
+        <details className="mt-4 rounded-[10px] bg-[var(--surface-subtle)] p-3" open>
+          <summary className="cursor-pointer text-xs font-semibold text-[var(--text)]">
+            Establish a primary manager Position
+          </summary>
+          <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
+            No current primary manager is recorded for this Position. Establishing one is an explicit organizational decision, not an inference from Unit hierarchy or a Person’s name.
+          </p>
+          <EstablishReportingForm data={data} position={position} />
+        </details>
+      ) : null}
     </Card>
   );
 }
@@ -598,7 +814,9 @@ const stateLabels: Record<string, string> = {
   managerPositionStableKey: "Manager Position",
   name: "Name",
   organizationUnitId: "Organization Unit record",
+  parentOrganizationUnitStableKey: "Parent Organization Unit",
   personStableKey: "Person stable key",
+  primaryManager: "Primary manager Position",
   reason: "Recorded context",
   relationshipType: "Relationship type",
   status: "Status",
@@ -661,8 +879,10 @@ function changeActionLabel(action: StructureChangeSummary["action"]) {
     correct_reporting_relationship: "Reporting relationship corrected",
     end_assignment: "Assignment ended",
     end_reporting_relationship: "Reporting relationship ended",
+    establish_reporting_relationship: "Reporting relationship established",
     remove_from_current_structure: "Removed from current structure",
     replace_assignment: "Assignment replaced",
+    replace_reporting_relationship: "Reporting relationship replaced",
     update: "Record updated",
   }[action];
 }

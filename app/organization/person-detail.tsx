@@ -63,6 +63,9 @@ export function PersonDetail({
         <Card className="p-4 sm:p-5">
           <p className="text-xs font-medium text-[var(--text-tertiary)]">Current structural occupancy</p>
           <h2 className="mt-1 text-lg font-semibold text-[var(--text)]">Position Assignments</h2>
+          <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
+            A Person may occupy more than one Position. Organization Unit and reporting relationships are maintained separately on each Position.
+          </p>
           <div className="mt-4 space-y-3">
             {person.assignments.length > 0 ? (
               person.assignments.map((assignment) => (

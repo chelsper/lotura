@@ -57,6 +57,13 @@
       "when": 1786376958840,
       "tag": "0007_organization_structure_administration",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786411064957,
+      "tag": "0008_organization_structure_relationship_administration",
+      "breakpoints": true
     }
   ]
 }

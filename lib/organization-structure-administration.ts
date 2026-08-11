@@ -16,7 +16,9 @@ export type StructureChangeAction =
   | "end_assignment"
   | "replace_assignment"
   | "end_reporting_relationship"
-  | "correct_reporting_relationship";
+  | "correct_reporting_relationship"
+  | "establish_reporting_relationship"
+  | "replace_reporting_relationship";
 
 export type StructureChangeSummary = {
   action: StructureChangeAction;
@@ -56,6 +58,7 @@ type UpdateMutation = CommonMutation & {
   displayName?: string;
   name?: string;
   organizationUnitStableKey?: string | null;
+  parentOrganizationUnitStableKey?: string | null;
   title?: string;
 };
 
@@ -79,6 +82,17 @@ type CorrectReportingMutation = ReportingMutation & {
   relationshipType: "primary" | "dotted_line" | "functional";
 };
 
+type EstablishReportingMutation = ChangeMetadata & {
+  managerPositionStableKey: string;
+  positionStableKey: string;
+  relationshipReason?: string | null;
+};
+
+type ReplaceReportingMutation = ReportingMutation & {
+  managerPositionStableKey: string;
+  relationshipReason?: string | null;
+};
+
 type DatabaseRow = Record<string, unknown>;
 
 function mutationClient(databaseUrl: string) {
@@ -96,7 +110,8 @@ function stateFor(entityType: StructureEntityType, row: DatabaseRow) {
       effectiveUntil: row.effective_until,
       isProvisional: row.is_provisional,
       name: row.name,
-      parentOrganizationUnitId: row.parent_organization_unit_id,
+      parentOrganizationUnitStableKey:
+        row.parent_organization_unit_stable_key ?? null,
       status: row.status,
       statusReason: row.status_reason,
     };
@@ -236,6 +251,21 @@ async function currentTarget(
   stableKey: string,
 ) {
   const descriptor = targetDescriptor(entityType);
+  if (entityType === "organization_unit") {
+    const rows = (await sql.query(
+      `select unit.*,
+         parent.stable_key as parent_organization_unit_stable_key
+       from organization_units unit
+       left join organization_units parent
+         on parent.id = unit.parent_organization_unit_id
+         and parent.organization_id = unit.organization_id
+       where unit.organization_id = $1 and unit.stable_key = $2::uuid
+         and unit.status = 'active'
+       limit 1`,
+      [configuration.organizationId, stableKey],
+    )) as DatabaseRow[];
+    return rows[0] as DatabaseRow | undefined;
+  }
   const rows = (await sql.query(
     `select * from ${descriptor.table}
      where organization_id = $1 and stable_key = $2::uuid and status = 'active'
@@ -267,6 +297,23 @@ async function unitIdForStableKey(
     [configuration.organizationId, stableKey],
   )) as DatabaseRow[];
   return rows[0]?.id;
+}
+
+async function positionForStableKey(
+  sql: MutationClient,
+  configuration: EnabledOrganizationStructureAdministrationConfiguration,
+  stableKey: string,
+) {
+  if (!validUuid(stableKey)) return undefined;
+  const rows = (await sql.query(
+    `select id, stable_key, effective_from, updated_at
+     from positions
+     where organization_id = $1 and stable_key = $2::uuid
+       and status = 'active'
+     limit 1`,
+    [configuration.organizationId, stableKey],
+  )) as DatabaseRow[];
+  return rows[0];
 }
 
 async function atomicQuery(
@@ -365,21 +412,56 @@ export async function updateStructureEntity(
             "Enter an Organization Unit name of 255 characters or fewer.",
         };
       }
-      if (name === target.name) {
+      const parentOrganizationUnitStableKey =
+        input.parentOrganizationUnitStableKey === undefined
+          ? (target.parent_organization_unit_stable_key as string | null)
+          : input.parentOrganizationUnitStableKey;
+      const parentOrganizationUnitId = await unitIdForStableKey(
+        sql,
+        configuration,
+        parentOrganizationUnitStableKey ?? null,
+      );
+      if (parentOrganizationUnitId === undefined) {
         return {
           ok: false,
           code: "invalid",
-          message: "Change the Organization Unit name before saving.",
+          message: "The selected parent Organization Unit is unavailable.",
         };
       }
-      afterState = { ...beforeState, name };
+      if (parentOrganizationUnitId === target.id) {
+        return {
+          ok: false,
+          code: "invalid",
+          message: "An Organization Unit cannot be its own parent.",
+        };
+      }
+      if (
+        name === target.name &&
+        (parentOrganizationUnitId ?? null) ===
+          (target.parent_organization_unit_id ?? null)
+      ) {
+        return {
+          ok: false,
+          code: "invalid",
+          message:
+            "Change the Organization Unit name or parent Unit before saving.",
+        };
+      }
+      afterState = {
+        ...beforeState,
+        name,
+        parentOrganizationUnitStableKey:
+          parentOrganizationUnitStableKey ?? null,
+      };
       changedSql = `update organization_units
-        set name = $1, updated_at = transaction_timestamp()
-        where id = $2 and organization_id = $3
-          and stable_key = $4::uuid and updated_at = $5::timestamptz
+        set name = $1, parent_organization_unit_id = $2,
+          updated_at = transaction_timestamp()
+        where id = $3 and organization_id = $4
+          and stable_key = $5::uuid and updated_at = $6::timestamptz
         returning id`;
       changedValues = [
         name,
+        parentOrganizationUnitId,
         target.id,
         configuration.organizationId,
         input.stableKey,
@@ -801,7 +883,7 @@ export async function endPositionAssignment(
          where id = $2 and organization_id = $3 and position_id = $4
            and updated_at = $5::timestamptz
            and status in ('scheduled', 'active')
-         returning id
+         returning position_id as id
        ),
        ${auditCte(
          targetDescriptor("position"),
@@ -1037,6 +1119,351 @@ async function reportingContext(
   return rows[0];
 }
 
+function validateReportingRelationshipChange(
+  input: EstablishReportingMutation | ReplaceReportingMutation,
+): StructureMutationResult | null {
+  const invalid = validateMetadata(input);
+  if (invalid) return invalid;
+  if (input.changeKind !== "organizational_change") {
+    return {
+      ok: false,
+      code: "invalid",
+      message:
+        "Establishing or replacing a reporting relationship must be classified as an organizational change.",
+    };
+  }
+  if (!validUuid(input.positionStableKey)) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "The subordinate Position identifier is invalid.",
+    };
+  }
+  if (!validUuid(input.managerPositionStableKey)) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Select an available manager Position.",
+    };
+  }
+  if ((input.relationshipReason?.trim().length ?? 0) > 2000) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Enter reporting context of 2,000 characters or fewer.",
+    };
+  }
+  return null;
+}
+
+export async function establishPositionReportingRelationship(
+  input: EstablishReportingMutation,
+): Promise<StructureMutationResult> {
+  const invalid = validateReportingRelationshipChange(input);
+  if (invalid) return invalid;
+
+  let configuration: EnabledOrganizationStructureAdministrationConfiguration;
+  try {
+    configuration = await administrationAccess();
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Structure administration is unavailable.",
+    };
+  }
+
+  const sql = mutationClient(configuration.databaseUrl);
+  try {
+    const [position, manager] = await Promise.all([
+      positionForStableKey(sql, configuration, input.positionStableKey),
+      positionForStableKey(
+        sql,
+        configuration,
+        input.managerPositionStableKey,
+      ),
+    ]);
+    if (!position) {
+      return {
+        ok: false,
+        code: "not_found",
+        message: "The subordinate Position was not found in this organization.",
+      };
+    }
+    if (!revisionsMatch(position, input.expectedRevision)) {
+      return {
+        ok: false,
+        code: "conflict",
+        message:
+          "This Position changed after the page loaded. Refresh before trying again.",
+      };
+    }
+    if (!manager || manager.id === position.id) {
+      return {
+        ok: false,
+        code: "invalid",
+        message: "The selected manager Position is unavailable.",
+      };
+    }
+    if (
+      input.effectiveAt < new Date(String(position.effective_from)) ||
+      input.effectiveAt < new Date(String(manager.effective_from))
+    ) {
+      return {
+        ok: false,
+        code: "invalid",
+        message:
+          "The relationship cannot begin before either Position became effective.",
+      };
+    }
+
+    const relationshipReason = input.relationshipReason?.trim() || null;
+    const beforeState = { primaryManager: null };
+    const afterState = {
+      effectiveFrom: input.effectiveAt.toISOString(),
+      effectiveUntil: null,
+      managerPositionStableKey: input.managerPositionStableKey,
+      reason: relationshipReason,
+      relationshipType: "primary",
+      status: "active",
+    };
+    const rows = await atomicQuery(
+      sql,
+      `with changed as (
+         update positions
+         set updated_at = transaction_timestamp()
+         where id = $1 and organization_id = $2
+           and stable_key = $3::uuid and updated_at = $4::timestamptz
+           and status = 'active'
+           and not exists (
+             select 1 from position_reporting_relationships current_relation
+             where current_relation.organization_id = $2
+               and current_relation.subordinate_position_id = $1
+               and current_relation.relationship_type = 'primary'
+               and current_relation.status in ('scheduled', 'active')
+           )
+         returning id, organization_id
+       ),
+       relationship as (
+         insert into position_reporting_relationships
+           (organization_id, subordinate_position_id, manager_position_id,
+            relationship_type, status, effective_from, reason)
+         select changed.organization_id, changed.id, $5,
+           'primary', 'active', $6::timestamptz, $7
+         from changed
+         returning id
+       ),
+       audit as (
+         insert into organization_structure_changes
+           (organization_id, entity_type, target_stable_key, position_id,
+            change_kind, change_action, before_state, after_state, reason,
+            effective_at, actor_identifier)
+         select $2, 'position', $3::uuid, changed.id,
+           'organizational_change', 'establish_reporting_relationship',
+           $8::jsonb, $9::jsonb, $10, $6::timestamptz, $11
+         from changed, relationship
+         returning 1
+       )
+       select
+         (select count(*)::int from changed) as changed_count,
+         (select count(*)::int from relationship) as relationship_count,
+         (select count(*)::int from audit) as audit_count`,
+      [
+        position.id,
+        configuration.organizationId,
+        input.positionStableKey,
+        input.expectedRevision,
+        manager.id,
+        input.effectiveAt.toISOString(),
+        relationshipReason,
+        JSON.stringify(beforeState),
+        JSON.stringify(afterState),
+        input.reason.trim(),
+        configuration.actorIdentifier,
+      ],
+    );
+    if (
+      !mutationAccepted(rows) ||
+      Number(rows[0]?.relationship_count ?? 0) !== 1
+    ) {
+      return {
+        ok: false,
+        code: "conflict",
+        message:
+          "This Position or its primary manager relationship changed. Refresh before trying again.",
+      };
+    }
+    return {
+      ok: true,
+      message:
+        "Primary manager relationship established. The decision and its effective date were recorded in history.",
+    };
+  } catch {
+    return {
+      ok: false,
+      code: "blocked",
+      message:
+        "The manager relationship was rejected. Review cycle, manager, and current-record constraints; no partial change was accepted.",
+    };
+  }
+}
+
+export async function replacePositionReportingRelationship(
+  input: ReplaceReportingMutation,
+): Promise<StructureMutationResult> {
+  const invalid = validateReportingRelationshipChange(input);
+  if (invalid) return invalid;
+
+  let configuration: EnabledOrganizationStructureAdministrationConfiguration;
+  try {
+    configuration = await administrationAccess();
+  } catch {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Structure administration is unavailable.",
+    };
+  }
+
+  const sql = mutationClient(configuration.databaseUrl);
+  try {
+    const relationship = await reportingContext(
+      sql,
+      configuration,
+      input.positionStableKey,
+      input.reportingRecordKey,
+    );
+    if (!relationship || relationship.relationship_type !== "primary") {
+      return {
+        ok: false,
+        code: "not_found",
+        message: "The current primary manager relationship was not found.",
+      };
+    }
+    if (!revisionsMatch(relationship, input.expectedRevision)) {
+      return {
+        ok: false,
+        code: "conflict",
+        message:
+          "This reporting relationship changed after the page loaded. Refresh before trying again.",
+      };
+    }
+    const manager = await positionForStableKey(
+      sql,
+      configuration,
+      input.managerPositionStableKey,
+    );
+    if (
+      !manager ||
+      manager.id === relationship.subordinate_position_id ||
+      manager.id === relationship.manager_position_id
+    ) {
+      return {
+        ok: false,
+        code: "invalid",
+        message: "Select a different available manager Position.",
+      };
+    }
+    if (
+      input.effectiveAt <= new Date(String(relationship.effective_from)) ||
+      input.effectiveAt < new Date(String(manager.effective_from))
+    ) {
+      return {
+        ok: false,
+        code: "invalid",
+        message:
+          "The replacement date must follow the current relationship and cannot precede the new manager Position.",
+      };
+    }
+
+    const relationshipReason = input.relationshipReason?.trim() || null;
+    const beforeState = reportingState(relationship);
+    const afterState = {
+      effectiveFrom: input.effectiveAt.toISOString(),
+      effectiveUntil: null,
+      managerPositionStableKey: input.managerPositionStableKey,
+      reason: relationshipReason,
+      relationshipType: "primary",
+      status: "active",
+    };
+    const rows = await atomicQuery(
+      sql,
+      `with changed as (
+         update position_reporting_relationships
+         set status = 'ended', effective_until = $1::timestamptz,
+           updated_at = transaction_timestamp()
+         where id = $2 and organization_id = $3
+           and subordinate_position_id = $4
+           and relationship_type = 'primary'
+           and updated_at = $5::timestamptz
+           and status in ('scheduled', 'active')
+         returning subordinate_position_id as id, organization_id
+       ),
+       replacement as (
+         insert into position_reporting_relationships
+           (organization_id, subordinate_position_id, manager_position_id,
+            relationship_type, status, effective_from, reason)
+         select changed.organization_id, changed.id, $6,
+           'primary', 'active', $1::timestamptz, $7
+         from changed
+         returning id
+       ),
+       audit as (
+         insert into organization_structure_changes
+           (organization_id, entity_type, target_stable_key, position_id,
+            change_kind, change_action, before_state, after_state, reason,
+            effective_at, actor_identifier)
+         select $3, 'position', $8::uuid, changed.id,
+           'organizational_change', 'replace_reporting_relationship',
+           $9::jsonb, $10::jsonb, $11, $1::timestamptz, $12
+         from changed, replacement
+         returning 1
+       )
+       select
+         (select count(*)::int from changed) as changed_count,
+         (select count(*)::int from replacement) as replacement_count,
+         (select count(*)::int from audit) as audit_count`,
+      [
+        input.effectiveAt.toISOString(),
+        relationship.id,
+        configuration.organizationId,
+        relationship.subordinate_position_id,
+        input.expectedRevision,
+        manager.id,
+        relationshipReason,
+        input.positionStableKey,
+        JSON.stringify(beforeState),
+        JSON.stringify(afterState),
+        input.reason.trim(),
+        configuration.actorIdentifier,
+      ],
+    );
+    if (
+      !mutationAccepted(rows) ||
+      Number(rows[0]?.replacement_count ?? 0) !== 1
+    ) {
+      return {
+        ok: false,
+        code: "conflict",
+        message:
+          "This reporting relationship changed after the page loaded. Refresh before trying again.",
+      };
+    }
+    return {
+      ok: true,
+      message:
+        "Primary manager relationship replaced. The prior relationship was ended and both states remain explainable in history.",
+    };
+  } catch {
+    return {
+      ok: false,
+      code: "blocked",
+      message:
+        "The manager replacement was rejected. Review cycle, manager, and current-record constraints; no partial change was accepted.",
+    };
+  }
+}
+
 export async function endPositionReportingRelationship(
   input: ReportingMutation,
 ): Promise<StructureMutationResult> {
@@ -1099,7 +1526,7 @@ export async function endPositionReportingRelationship(
            and subordinate_position_id = $4
            and updated_at = $5::timestamptz
            and status in ('scheduled', 'active')
-         returning id
+         returning subordinate_position_id as id
        ),
        ${auditCte(
          targetDescriptor("position"),
@@ -1246,7 +1673,7 @@ export async function correctPositionReportingRelationship(
            and subordinate_position_id = $6
            and updated_at = $7::timestamptz
            and status in ('scheduled', 'active')
-         returning id
+         returning subordinate_position_id as id
        ),
        ${auditCte(
          targetDescriptor("position"),
