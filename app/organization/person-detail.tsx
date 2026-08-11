@@ -79,6 +79,11 @@ export function PersonDetail({
                     <Badge tone={["acting", "interim"].includes(assignment.type) ? "warning" : "neutral"}>{assignment.typeLabel}</Badge>
                   </div>
                   <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">{period(assignment.effectiveFrom, assignment.effectiveUntil)}</p>
+                  <p className="mt-2 text-xs font-medium text-[var(--workspace-accent)]">
+                    {administrationEnabled
+                      ? "Open this Position to change its Organization Unit →"
+                      : "View Position →"}
+                  </p>
                 </Link>
               ))
             ) : (

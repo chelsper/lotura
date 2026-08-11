@@ -96,6 +96,21 @@ test("Organization Structure administration is explicit and disabled by default"
   assert.doesNotMatch(combined, /localStorage|sessionStorage|indexedDB|fetch\(/i);
 });
 
+test("organizational placement uses existing Unit identities instead of Unit renaming", async () => {
+  const [panel, person] = await Promise.all([
+    read("app/organization/structure-administration-panel.tsx"),
+    read("app/organization/person-detail.tsx"),
+  ]);
+  assert.match(panel, /Move this Position to an Organization Unit/);
+  assert.match(panel, /name="organizationUnitStableKey"/);
+  assert.match(panel, /Choose an existing Unit by its stable identity/);
+  assert.match(panel, /Rename this Organization Unit/);
+  assert.match(panel, /It does not move a Person or Position/);
+  assert.match(panel, /Another active Organization Unit already uses this name/);
+  assert.match(panel, /onChange=\{\(event\) => setUnitName\(event\.target\.value\)\}/);
+  assert.match(person, /Open this Position to change its Organization Unit/);
+});
+
 test("structure mutations are server-only, access-checked, scoped, and never hard-delete", async () => {
   const [actions, administration, policy, proxy] = await Promise.all([
     read("app/organization/actions.ts"),
