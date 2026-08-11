@@ -73,6 +73,11 @@ test("all mutable structural records use compare-and-set revisions", async () =>
     administration,
     /(?<!milliseconds', )updated_at = \$\d+::timestamptz/,
   );
+  assert.match(administration, /row\.updated_at instanceof Date/);
+  assert.doesNotMatch(
+    administration,
+    /const updatedAt = new Date\(String\(row\.updated_at\)\)/,
+  );
 });
 
 test("assignment and reporting maintenance preserve history rather than hard-delete", async () => {

@@ -334,10 +334,15 @@ async function currentTarget(
 }
 
 function revisionsMatch(row: DatabaseRow, expectedRevision: string) {
-  const updatedAt = new Date(String(row.updated_at));
+  const updatedAt =
+    row.updated_at instanceof Date
+      ? row.updated_at
+      : new Date(String(row.updated_at));
+  const expected = new Date(expectedRevision);
   return (
     Number.isFinite(updatedAt.getTime()) &&
-    updatedAt.toISOString() === new Date(expectedRevision).toISOString()
+    Number.isFinite(expected.getTime()) &&
+    updatedAt.toISOString() === expected.toISOString()
   );
 }
 
