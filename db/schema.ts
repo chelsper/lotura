@@ -138,7 +138,7 @@ export const operatingModelChangeKind = pgEnum(
 
 export const operatingModelChangeEntityType = pgEnum(
   "operating_model_change_entity_type",
-  ["process", "process_step"],
+  ["process", "process_step", "system", "process_system", "exception"],
 );
 
 export const operatingModelChangeAction = pgEnum(
@@ -151,6 +151,15 @@ export const operatingModelChangeAction = pgEnum(
     "update_step",
     "reorder_steps",
     "change_step_responsibility",
+    "create_system",
+    "update_system",
+    "deactivate_system",
+    "link_system",
+    "update_system_usage",
+    "unlink_system",
+    "create_exception",
+    "update_exception",
+    "deactivate_exception",
   ],
 );
 
@@ -430,10 +439,14 @@ export const operatingModelChange = pgTable(
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     organizationId: integer("organization_id").notNull(),
     stableKey: uuid("stable_key").defaultRandom().notNull(),
-    processId: integer("process_id").notNull(),
-    processStableKey: uuid("process_stable_key").notNull(),
+    processId: integer("process_id"),
+    processStableKey: uuid("process_stable_key"),
     processStepId: integer("process_step_id"),
     processStepStableKey: uuid("process_step_stable_key"),
+    systemId: integer("system_id"),
+    systemStableKey: uuid("system_stable_key"),
+    exceptionId: integer("exception_id"),
+    exceptionStableKey: uuid("exception_stable_key"),
     entityType: operatingModelChangeEntityType("entity_type").notNull(),
     targetReference: varchar("target_reference", { length: 255 }).notNull(),
     changeKind: operatingModelChangeKind("change_kind").notNull(),
@@ -476,6 +489,30 @@ export const operatingModelChange = pgTable(
         processStep.stableKey,
       ],
     }).onDelete("restrict"),
+    foreignKey({
+      name: "operating_model_changes_system_org_stable_fk",
+      columns: [
+        table.systemId,
+        table.organizationId,
+        table.systemStableKey,
+      ],
+      foreignColumns: [system.id, system.organizationId, system.stableKey],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "operating_model_changes_exception_org_stable_fk",
+      columns: [
+        table.exceptionId,
+        table.processId,
+        table.organizationId,
+        table.exceptionStableKey,
+      ],
+      foreignColumns: [
+        exception.id,
+        exception.processId,
+        exception.organizationId,
+        exception.stableKey,
+      ],
+    }).onDelete("restrict"),
     unique("operating_model_changes_stable_key_unique").on(
       table.stableKey,
     ),
@@ -501,7 +538,7 @@ export const operatingModelChange = pgTable(
     ),
     check(
       "operating_model_changes_target_shape_check",
-      sql`(${table.entityType} = 'process' and ${table.processStepId} is null and ${table.processStepStableKey} is null) or (${table.entityType} = 'process_step' and ${table.processStepId} is not null and ${table.processStepStableKey} is not null)`,
+      sql`(${table.entityType} = 'process' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null) or (${table.entityType} = 'process_step' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is not null and ${table.processStepStableKey} is not null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null) or (${table.entityType} = 'system' and ${table.processId} is null and ${table.processStableKey} is null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is not null and ${table.systemStableKey} is not null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null) or (${table.entityType} = 'process_system' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is not null and ${table.systemStableKey} is not null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null) or (${table.entityType} = 'exception' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is not null and ${table.exceptionStableKey} is not null)`,
     ),
     index("operating_model_changes_org_created_idx").on(
       table.organizationId,
@@ -517,6 +554,16 @@ export const operatingModelChange = pgTable(
       table.processStepStableKey,
       table.createdAt,
     ),
+    index("operating_model_changes_system_created_idx").on(
+      table.organizationId,
+      table.systemStableKey,
+      table.createdAt,
+    ),
+    index("operating_model_changes_exception_created_idx").on(
+      table.organizationId,
+      table.exceptionStableKey,
+      table.createdAt,
+    ),
   ],
 );
 
@@ -525,6 +572,7 @@ export const exception = pgTable(
   {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
     processId: integer("process_id").notNull(),
     processStepId: integer("process_step_id"),
     name: varchar("name", { length: 255 }).notNull(),
@@ -558,6 +606,13 @@ export const exception = pgTable(
         processStep.organizationId,
       ],
     }).onDelete("restrict"),
+    unique("exceptions_stable_key_unique").on(table.stableKey),
+    unique("exceptions_id_process_org_stable_unique").on(
+      table.id,
+      table.processId,
+      table.organizationId,
+      table.stableKey,
+    ),
     foreignKey({
       name: "exceptions_owner_role_organization_fk",
       columns: [table.ownerRoleId, table.organizationId],
@@ -590,6 +645,7 @@ export const system = pgTable(
   {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
     name: varchar("name", { length: 255 }).notNull(),
     description: text("description"),
     systemType: systemType("system_type").notNull(),
@@ -622,6 +678,16 @@ export const system = pgTable(
       table.id,
       table.organizationId,
     ),
+    unique("systems_stable_key_unique").on(table.stableKey),
+    unique("systems_id_org_stable_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+    ),
+    check(
+      "systems_name_not_blank_check",
+      sql`char_length(trim(${table.name})) > 0`,
+    ),
     index("systems_owner_role_id_idx").on(table.ownerRoleId),
     index("systems_organization_id_status_idx").on(
       table.organizationId,
@@ -653,6 +719,10 @@ export const processSystem = pgTable(
       columns: [table.systemId, table.organizationId],
       foreignColumns: [system.id, system.organizationId],
     }).onDelete("restrict"),
+    check(
+      "process_systems_usage_not_blank_check",
+      sql`char_length(trim(${table.usage})) > 0`,
+    ),
     index("process_systems_system_id_idx").on(table.systemId),
     index("process_systems_organization_id_idx").on(table.organizationId),
   ],

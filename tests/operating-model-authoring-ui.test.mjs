@@ -15,7 +15,7 @@ test("Process Detail exposes Maintain Process only through enabled server policy
   assert.match(route, /authoring\.enabled/);
 });
 
-test("Step Builder maintains definition, ownership, ordered Steps, and explicit responsibility", async () => {
+test("Process Builder maintains Steps, Systems, and legitimate Exceptions within reviewed boundaries", async () => {
   const workspace = await read("app/process-authoring/process-authoring-workspace.tsx");
   assert.match(workspace, /Name and purpose/);
   assert.match(workspace, /Owner Operational Role/);
@@ -24,8 +24,11 @@ test("Step Builder maintains definition, ownership, ordered Steps, and explicit 
   assert.match(workspace, /Add a Step/);
   assert.match(workspace, /Inherited from Process Owner/);
   assert.match(workspace, /Unclear responsibility/);
-  assert.match(workspace, /Systems, Exceptions, and dependencies/);
-  assert.doesNotMatch(workspace, /linkSystem|addException|addDependency|Remove Step/);
+  assert.match(workspace, /Systems used/);
+  assert.match(workspace, /Link an existing System/);
+  assert.match(workspace, /Add an Exception/);
+  assert.match(workspace, /Process dependencies remain read-only/);
+  assert.doesNotMatch(workspace, /addDependency|Remove Step/);
 });
 
 test("governance and history use honest non-approval language", async () => {

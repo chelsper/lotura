@@ -93,5 +93,6 @@ test("the least-privilege contract excludes unrelated writes and immutable-histo
   assert.match(documentation, /GRANT INSERT \([\s\S]+ON operating_model_changes/);
   assert.match(documentation, /No `UPDATE` or `DELETE` on `operating_model_changes`/);
   assert.match(documentation, /No `DELETE` or `TRUNCATE` on Process Steps/);
-  assert.match(documentation, /No mutation privileges on Systems, Exceptions, dependencies/);
+  assert.match(documentation, /System, Exception, and Process-System privileges are limited/);
+  assert.match(documentation, /No mutation privileges on Process dependencies/);
 });

@@ -36,7 +36,7 @@ export default async function WorkspaceStudioPage() {
       source={source}
     >
       <WorkspacePageHeader
-        description="Build and govern the connected representation of how this organization is structured and how it operates. Start with Organization Builder; additional Studio areas will arrive in deliberate slices."
+        description="Build and govern the connected representation of how this organization is structured, how responsibility is allocated, how work operates, and which technology supports it."
         eyebrow={
           <>
             <LayersIcon className="size-3.5" />
@@ -79,7 +79,7 @@ export default async function WorkspaceStudioPage() {
             {[
               { icon: RoleIcon, title: "Responsibilities", description: "Create and maintain Operational Roles, Position mandates, and explicit human coverage.", href: "/studio/responsibilities" },
               { icon: LayersIcon, title: "Processes", description: "Find, start, and maintain Draft Processes through the existing authoring boundary.", href: "/studio/processes" },
-              { icon: SystemIcon, title: "Technology", description: "Systems and the work that depends on them. Technology Builder remains intentionally deferred." },
+              { icon: SystemIcon, title: "Technology", description: "Maintain canonical Systems and review the Processes that explicitly document their use.", href: "/studio/technology" },
               { icon: LayersIcon, title: "Activity", description: "A future read-only timeline across existing append-only ledgers, without implying causality." },
             ].map((area) => {
               const Icon = area.icon;

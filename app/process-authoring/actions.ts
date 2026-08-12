@@ -11,6 +11,14 @@ import {
   updateProcessDefinition,
   updateProcessStep,
 } from "@/lib/operating-model-administration";
+import {
+  createException,
+  deactivateException,
+  linkSystemToProcess,
+  unlinkSystemFromProcess,
+  updateException,
+  updateProcessSystemUsage,
+} from "@/lib/technology-exceptions-administration";
 
 import type { ProcessAuthoringActionState } from "./action-state";
 
@@ -56,6 +64,7 @@ function revalidateProcess(processKey: string) {
   revalidatePath(`/explorer/${encoded}/maintain`);
   revalidatePath("/studio/processes");
   revalidatePath(`/studio/processes/${encoded}`);
+  revalidatePath("/studio/technology");
   revalidatePath("/organization");
 }
 
@@ -178,6 +187,134 @@ export async function reorderProcessStepAction(
     direction: direction as "earlier" | "later",
     expectedStepRevision: text(formData, "expectedStepRevision"),
     stepStableKey: text(formData, "stepStableKey"),
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+
+  revalidateProcess(common.processKey);
+  return { status: "success", message: result.message };
+}
+
+export async function linkProcessSystemAction(
+  _previousState: ProcessAuthoringActionState,
+  formData: FormData,
+): Promise<ProcessAuthoringActionState> {
+  const common = commonInput(formData);
+  if (!common) {
+    return { status: "error", message: "Review the System relationship and try again." };
+  }
+  const result = await linkSystemToProcess({
+    ...common,
+    systemStableKey: text(formData, "systemStableKey"),
+    usage: text(formData, "usage"),
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+
+  revalidateProcess(common.processKey);
+  revalidatePath(`/studio/technology/systems/${text(formData, "systemStableKey")}`);
+  return { status: "success", message: result.message };
+}
+
+export async function updateProcessSystemUsageAction(
+  _previousState: ProcessAuthoringActionState,
+  formData: FormData,
+): Promise<ProcessAuthoringActionState> {
+  const common = commonInput(formData);
+  if (!common) {
+    return { status: "error", message: "Review the System usage and try again." };
+  }
+  const systemStableKey = text(formData, "systemStableKey");
+  const result = await updateProcessSystemUsage({
+    ...common,
+    systemStableKey,
+    usage: text(formData, "usage"),
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+
+  revalidateProcess(common.processKey);
+  revalidatePath(`/studio/technology/systems/${systemStableKey}`);
+  return { status: "success", message: result.message };
+}
+
+export async function unlinkProcessSystemAction(
+  _previousState: ProcessAuthoringActionState,
+  formData: FormData,
+): Promise<ProcessAuthoringActionState> {
+  const common = commonInput(formData);
+  if (!common) {
+    return { status: "error", message: "Review the System relationship and try again." };
+  }
+  const systemStableKey = text(formData, "systemStableKey");
+  const result = await unlinkSystemFromProcess({
+    ...common,
+    systemStableKey,
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+
+  revalidateProcess(common.processKey);
+  revalidatePath(`/studio/technology/systems/${systemStableKey}`);
+  return { status: "success", message: result.message };
+}
+
+function exceptionDefinition(formData: FormData) {
+  return {
+    condition: text(formData, "condition"),
+    name: text(formData, "name"),
+    ownerRoleKey: text(formData, "ownerRoleKey") || null,
+    response: text(formData, "response"),
+    stepStableKey: text(formData, "stepStableKey") || null,
+  };
+}
+
+export async function createExceptionAction(
+  _previousState: ProcessAuthoringActionState,
+  formData: FormData,
+): Promise<ProcessAuthoringActionState> {
+  const common = commonInput(formData);
+  if (!common) {
+    return { status: "error", message: "Review the Exception details and try again." };
+  }
+  const result = await createException({
+    ...common,
+    ...exceptionDefinition(formData),
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+
+  revalidateProcess(common.processKey);
+  return { status: "success", message: result.message };
+}
+
+export async function updateExceptionAction(
+  _previousState: ProcessAuthoringActionState,
+  formData: FormData,
+): Promise<ProcessAuthoringActionState> {
+  const common = commonInput(formData);
+  if (!common) {
+    return { status: "error", message: "Review the Exception details and try again." };
+  }
+  const result = await updateException({
+    ...common,
+    ...exceptionDefinition(formData),
+    exceptionStableKey: text(formData, "exceptionStableKey"),
+    expectedExceptionRevision: text(formData, "expectedExceptionRevision"),
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+
+  revalidateProcess(common.processKey);
+  return { status: "success", message: result.message };
+}
+
+export async function deactivateExceptionAction(
+  _previousState: ProcessAuthoringActionState,
+  formData: FormData,
+): Promise<ProcessAuthoringActionState> {
+  const common = commonInput(formData);
+  if (!common) {
+    return { status: "error", message: "Review the Exception change and try again." };
+  }
+  const result = await deactivateException({
+    ...common,
+    exceptionStableKey: text(formData, "exceptionStableKey"),
+    expectedExceptionRevision: text(formData, "expectedExceptionRevision"),
   });
   if (!result.ok) return { status: "error", message: result.message };
 

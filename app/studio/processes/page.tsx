@@ -45,7 +45,7 @@ export default async function ProcessBuilderPage() {
       />
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
-          Select a Process to maintain its definition, Owner Role, ordered Steps, and explicit or inherited Step responsibility. Systems, Exceptions, and dependencies remain read-only.
+          Select a Process to maintain its definition, Owner Role, ordered Steps, explicit or inherited Step responsibility, documented Systems, and legitimate alternate-path Exceptions. Dependencies remain read-only.
         </p>
         {processAcquisition.enabled ? (
           <Link className={actionClass} href="/process-acquisition">Add Process</Link>
