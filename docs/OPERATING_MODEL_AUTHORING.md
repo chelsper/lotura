@@ -4,7 +4,7 @@
 
 Operating Model Authoring lets an authenticated Workspace Administrator maintain the canonical operating model without exposing database records as the product metaphor. It is generic shared-code capability, disabled by default, and unavailable to the public fictional demo.
 
-Slice A covers only immutable Process identity, Process name and purpose, explicit Owner Operational Role assignment, Position-mandate and current RoleCoverage context, stale-write protection, and append-only change history. Steps, Systems, Exceptions, and dependencies remain read-only until their later approved slices.
+Slice A covers immutable Process identity, Process name and purpose, explicit Owner Operational Role assignment, Position-mandate and current RoleCoverage context, stale-write protection, and append-only change history. Step Builder v0.1 adds immutable Step identity, ordered Step creation and maintenance, explicit responsible Operational Role assignment, and Step-targeted append-only history. Systems, Exceptions, and dependencies remain read-only until their later approved slices.
 
 ## Truth boundaries
 
@@ -17,7 +17,9 @@ Slice A covers only immutable Process identity, Process name and purpose, explic
 - Clearing an Owner Role is permitted only for a Draft. Active and archived Processes must retain accountable ownership; this is an explicit product and governance rule backed by the existing database constraint.
 - The history actor is the authenticated Lotura application identity at the time of change. It is not inferred from or coupled to Person, Position, Membership, Role Mandate, Role Coverage, or current organizational assignment.
 
-The `operating_model_change_action` enum is deliberately Slice-A-limited to `create_draft`, `update_definition`, and `change_owner`. Later Step, System, Exception, and dependency actions will require reviewed forward-only enum expansion and matching least-privilege/history updates. Current action names must not be overloaded to represent future entity changes.
+Migration `0014` expands `operating_model_change_action` with the explicit Step actions `create_step`, `update_step`, `reorder_steps`, and `change_step_responsibility`, and expands the target vocabulary with `process_step`. System, Exception, and dependency actions still require reviewed forward-only expansion. Current action names must not be overloaded to represent different entity changes.
+
+Step removal is intentionally unavailable. The current schema has no Step retirement lifecycle, and scoped Exceptions may depend on a Step. A later lifecycle decision must define retirement, restoration, dependency handling, and version-history consequences before any destructive action is introduced.
 
 ## Runtime boundary
 
@@ -30,7 +32,7 @@ Authoring requires all of the following:
 
 Configuration fails closed. The Process administration credential may not reuse `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, or `LOTURA_STRUCTURE_ADMIN_DATABASE_URL`, and no credential may reach client JavaScript.
 
-## Slice A privilege contract
+## Process-admin privilege contract
 
 The Process administration role requires only:
 
@@ -38,7 +40,7 @@ The Process administration role requires only:
 GRANT CONNECT ON DATABASE <database_name> TO <process_admin_role>;
 GRANT USAGE ON SCHEMA public TO <process_admin_role>;
 
-GRANT SELECT ON TABLE roles, processes, operating_model_changes
+GRANT SELECT ON TABLE roles, processes, process_steps, operating_model_changes
 TO <process_admin_role>;
 
 GRANT INSERT (
@@ -59,7 +61,26 @@ GRANT UPDATE (
 GRANT INSERT (
   organization_id,
   process_id,
+  position,
+  title,
+  instructions,
+  responsible_role_id
+) ON process_steps TO <process_admin_role>;
+
+GRANT UPDATE (
+  position,
+  title,
+  instructions,
+  responsible_role_id,
+  updated_at
+) ON process_steps TO <process_admin_role>;
+
+GRANT INSERT (
+  organization_id,
+  process_id,
   process_stable_key,
+  process_step_id,
+  process_step_stable_key,
   entity_type,
   target_reference,
   change_kind,
@@ -72,6 +93,7 @@ GRANT INSERT (
 ) ON operating_model_changes TO <process_admin_role>;
 
 GRANT USAGE ON SEQUENCE processes_id_seq,
+  process_steps_id_seq,
   operating_model_changes_id_seq
 TO <process_admin_role>;
 ```
@@ -83,12 +105,13 @@ Explicit denials and omissions:
 - No `UPDATE` or `DELETE` on `operating_model_changes`.
 - No `DELETE` or `TRUNCATE` on `processes`.
 - No mutation privilege on Roles or Organization Structure.
-- No privileges on Process Steps, Systems, Exceptions, dependencies, or their relationship tables.
+- No `DELETE` or `TRUNCATE` on Process Steps.
+- No mutation privileges on Systems, Exceptions, dependencies, or their relationship tables.
 - No schema creation, migration, database creation, or role-management privilege.
 
 ## Mutation contract
 
-Every action revalidates access and configuration, derives Organization and actor from trusted server state, re-reads Process and Role targets inside a serializable transaction, and compares the submitted revision with the canonical `updated_at`. A stale revision, inactive or cross-Organization Role, invalid ownership clear, duplicate name, or history failure leaves the Process unchanged.
+Every action revalidates access and configuration, derives Organization and actor from trusted server state, re-reads Process, Step, and Role targets inside a serializable transaction, and compares the submitted revisions with canonical `updated_at` values. A stale revision, inactive or cross-Organization Role, invalid ownership clear, invalid reorder, duplicate name, or history failure leaves the Process unchanged.
 
 The canonical update and history insertion use one SQL statement. The history table also has a trigger that rejects UPDATE and DELETE, while a separate trigger rejects Process stable-key changes.
 
@@ -100,7 +123,8 @@ Process Detail remains the default read experience. An enabled private workspace
 - Process name and purpose maintenance;
 - explicit Owner Operational Role selection or draft-only clearing;
 - Position mandate and current RoleCoverage evidence for the selected Role;
-- read-only previews of Steps, Systems, Exceptions, and dependencies;
+- ordered Step creation and maintenance with explicit or inherited responsibility;
+- read-only previews of Systems, Exceptions, and dependencies;
 - honest governance labels; and
 - append-only Process change history.
 

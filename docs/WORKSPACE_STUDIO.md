@@ -107,12 +107,18 @@ becoming disconnected record-management routes. Existing `/organization`
 routes remain canonical read routes and may link an authorized user to the
 matching Studio stable-key route.
 
+### Implemented Process Builder routes
+
+- `/studio/processes` — search and review the documented Process inventory;
+- `/studio/processes/[processId]` — maintain Process definition, ownership,
+  ordered Steps, and explicit Step responsibility through the reviewed
+  operating-model authoring boundary.
+
 ### Reserved product destinations
 
 The following routes are reserved conceptually but should not ship until their
 corresponding slice provides useful current capability:
 
-- `/studio/processes`;
 - `/studio/technology`;
 - `/studio/knowledge`;
 - `/studio/governance`;
@@ -269,6 +275,13 @@ workflow, and FLOW calculation changes remain deferred.
 Bring the approved Process Acquisition and Operating Model Authoring direction
 into Studio, including later reviewed actions for Steps, responsible Roles,
 Systems, Exceptions, and dependencies.
+
+The Process Builder foundation provides Studio inventory and Process
+definition/ownership maintenance. Step Builder v0.1 follows LAD-040: Steps
+receive immutable identity and may be added, edited, reordered one position at
+a time, and assigned an explicit responsible Operational Role. A null Step
+Role continues to inherit responsibility from the Process Owner. Step removal,
+Systems, Exceptions, and dependencies remain later reviewed slices.
 
 ### Slice 4 — Technology Builder
 

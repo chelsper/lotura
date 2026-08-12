@@ -138,12 +138,20 @@ export const operatingModelChangeKind = pgEnum(
 
 export const operatingModelChangeEntityType = pgEnum(
   "operating_model_change_entity_type",
-  ["process"],
+  ["process", "process_step"],
 );
 
 export const operatingModelChangeAction = pgEnum(
   "operating_model_change_action",
-  ["create_draft", "update_definition", "change_owner"],
+  [
+    "create_draft",
+    "update_definition",
+    "change_owner",
+    "create_step",
+    "update_step",
+    "reorder_steps",
+    "change_step_responsibility",
+  ],
 );
 
 export const organization = pgTable("organizations", {
@@ -361,81 +369,12 @@ export const process = pgTable(
   ],
 );
 
-export const operatingModelChange = pgTable(
-  "operating_model_changes",
-  {
-    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    organizationId: integer("organization_id").notNull(),
-    stableKey: uuid("stable_key").defaultRandom().notNull(),
-    processId: integer("process_id").notNull(),
-    processStableKey: uuid("process_stable_key").notNull(),
-    entityType: operatingModelChangeEntityType("entity_type").notNull(),
-    targetReference: varchar("target_reference", { length: 255 }).notNull(),
-    changeKind: operatingModelChangeKind("change_kind").notNull(),
-    changeAction: operatingModelChangeAction("change_action").notNull(),
-    beforeState: jsonb("before_state").notNull(),
-    afterState: jsonb("after_state").notNull(),
-    reason: text("reason").notNull(),
-    effectiveAt: timestamp("effective_at", { withTimezone: true }).notNull(),
-    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-  },
-  (table) => [
-    foreignKey({
-      name: "operating_model_changes_process_org_stable_fk",
-      columns: [
-        table.processId,
-        table.organizationId,
-        table.processStableKey,
-      ],
-      foreignColumns: [
-        process.id,
-        process.organizationId,
-        process.stableKey,
-      ],
-    }).onDelete("restrict"),
-    unique("operating_model_changes_stable_key_unique").on(
-      table.stableKey,
-    ),
-    check(
-      "operating_model_changes_target_not_blank_check",
-      sql`char_length(trim(${table.targetReference})) > 0`,
-    ),
-    check(
-      "operating_model_changes_reason_not_blank_check",
-      sql`char_length(trim(${table.reason})) > 0`,
-    ),
-    check(
-      "operating_model_changes_actor_not_blank_check",
-      sql`char_length(trim(${table.actorIdentifier})) > 0`,
-    ),
-    check(
-      "operating_model_changes_json_objects_check",
-      sql`jsonb_typeof(${table.beforeState}) = 'object' and jsonb_typeof(${table.afterState}) = 'object'`,
-    ),
-    check(
-      "operating_model_changes_effective_at_check",
-      sql`${table.effectiveAt} <= ${table.createdAt}`,
-    ),
-    index("operating_model_changes_org_created_idx").on(
-      table.organizationId,
-      table.createdAt,
-    ),
-    index("operating_model_changes_process_created_idx").on(
-      table.organizationId,
-      table.processStableKey,
-      table.createdAt,
-    ),
-  ],
-);
-
 export const processStep = pgTable(
   "process_steps",
   {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
     processId: integer("process_id").notNull(),
     position: integer("position").notNull(),
     title: varchar("title", { length: 255 }).notNull(),
@@ -468,12 +407,115 @@ export const processStep = pgTable(
       table.processId,
       table.organizationId,
     ),
+    unique("process_steps_stable_key_unique").on(table.stableKey),
+    unique("process_steps_id_process_org_stable_unique").on(
+      table.id,
+      table.processId,
+      table.organizationId,
+      table.stableKey,
+    ),
     check(
       "process_steps_position_positive_check",
       sql`${table.position} >= 1`,
     ),
     index("process_steps_responsible_role_id_idx").on(
       table.responsibleRoleId,
+    ),
+  ],
+);
+
+export const operatingModelChange = pgTable(
+  "operating_model_changes",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    processId: integer("process_id").notNull(),
+    processStableKey: uuid("process_stable_key").notNull(),
+    processStepId: integer("process_step_id"),
+    processStepStableKey: uuid("process_step_stable_key"),
+    entityType: operatingModelChangeEntityType("entity_type").notNull(),
+    targetReference: varchar("target_reference", { length: 255 }).notNull(),
+    changeKind: operatingModelChangeKind("change_kind").notNull(),
+    changeAction: operatingModelChangeAction("change_action").notNull(),
+    beforeState: jsonb("before_state").notNull(),
+    afterState: jsonb("after_state").notNull(),
+    reason: text("reason").notNull(),
+    effectiveAt: timestamp("effective_at", { withTimezone: true }).notNull(),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "operating_model_changes_process_org_stable_fk",
+      columns: [
+        table.processId,
+        table.organizationId,
+        table.processStableKey,
+      ],
+      foreignColumns: [
+        process.id,
+        process.organizationId,
+        process.stableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "operating_model_changes_step_org_stable_fk",
+      columns: [
+        table.processStepId,
+        table.processId,
+        table.organizationId,
+        table.processStepStableKey,
+      ],
+      foreignColumns: [
+        processStep.id,
+        processStep.processId,
+        processStep.organizationId,
+        processStep.stableKey,
+      ],
+    }).onDelete("restrict"),
+    unique("operating_model_changes_stable_key_unique").on(
+      table.stableKey,
+    ),
+    check(
+      "operating_model_changes_target_not_blank_check",
+      sql`char_length(trim(${table.targetReference})) > 0`,
+    ),
+    check(
+      "operating_model_changes_reason_not_blank_check",
+      sql`char_length(trim(${table.reason})) > 0`,
+    ),
+    check(
+      "operating_model_changes_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    check(
+      "operating_model_changes_json_objects_check",
+      sql`jsonb_typeof(${table.beforeState}) = 'object' and jsonb_typeof(${table.afterState}) = 'object'`,
+    ),
+    check(
+      "operating_model_changes_effective_at_check",
+      sql`${table.effectiveAt} <= ${table.createdAt}`,
+    ),
+    check(
+      "operating_model_changes_target_shape_check",
+      sql`(${table.entityType} = 'process' and ${table.processStepId} is null and ${table.processStepStableKey} is null) or (${table.entityType} = 'process_step' and ${table.processStepId} is not null and ${table.processStepStableKey} is not null)`,
+    ),
+    index("operating_model_changes_org_created_idx").on(
+      table.organizationId,
+      table.createdAt,
+    ),
+    index("operating_model_changes_process_created_idx").on(
+      table.organizationId,
+      table.processStableKey,
+      table.createdAt,
+    ),
+    index("operating_model_changes_step_created_idx").on(
+      table.organizationId,
+      table.processStepStableKey,
+      table.createdAt,
     ),
   ],
 );
