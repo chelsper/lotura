@@ -3,14 +3,17 @@ import "server-only";
 import { and, asc, desc, eq } from "drizzle-orm";
 
 import {
+  exception,
   operatingModelChange,
   person,
   position,
   process as processTable,
   processStep,
+  processSystem,
   role,
   roleCoverage,
   roleMandate,
+  system,
 } from "@/db/schema";
 
 export type OperatingModelChangeSummary = {
@@ -21,7 +24,16 @@ export type OperatingModelChangeSummary = {
     | "create_step"
     | "update_step"
     | "reorder_steps"
-    | "change_step_responsibility";
+    | "change_step_responsibility"
+    | "create_system"
+    | "update_system"
+    | "deactivate_system"
+    | "link_system"
+    | "update_system_usage"
+    | "unlink_system"
+    | "create_exception"
+    | "update_exception"
+    | "deactivate_exception";
   actorIdentifier: string;
   afterState: Record<string, unknown>;
   beforeState: Record<string, unknown>;
@@ -72,6 +84,33 @@ export type ProcessAuthoringContext = {
     status: "draft" | "active" | "archived";
   };
   roles: AuthoringRoleContext[];
+  systems: Array<{
+    description: string | null;
+    id: string;
+    name: string;
+    stableKey: string;
+    status: "active" | "inactive";
+    systemType: "software" | "external_service" | "manual_record" | "other";
+  }>;
+  systemLinks: Array<{
+    id: string;
+    name: string;
+    stableKey: string;
+    status: "active" | "inactive";
+    systemType: "software" | "external_service" | "manual_record" | "other";
+    usage: string;
+  }>;
+  exceptions: Array<{
+    condition: string;
+    id: string;
+    name: string;
+    ownerRoleId: string | null;
+    processStepStableKey: string | null;
+    response: string;
+    revision: string;
+    stableKey: string;
+    status: "active" | "inactive";
+  }>;
   steps: Array<{
     id: string;
     stableKey: string;
@@ -118,7 +157,19 @@ export async function loadProcessAuthoringContext(
   }
   const { db } = await import("@/db");
 
-  const [processes, steps, roles, positions, people, mandates, coverages, history] =
+  const [
+    processes,
+    steps,
+    roles,
+    positions,
+    people,
+    mandates,
+    coverages,
+    systems,
+    systemLinks,
+    exceptions,
+    history,
+  ] =
     await db.batch([
       db
         .select({
@@ -215,6 +266,62 @@ export async function loadProcessAuthoringContext(
         .orderBy(asc(roleCoverage.roleMandateId), asc(roleCoverage.id)),
       db
         .select({
+          description: system.description,
+          id: system.id,
+          name: system.name,
+          stableKey: system.stableKey,
+          status: system.status,
+          systemType: system.systemType,
+        })
+        .from(system)
+        .where(eq(system.organizationId, organizationId))
+        .orderBy(asc(system.name), asc(system.id)),
+      db
+        .select({
+          id: system.id,
+          name: system.name,
+          stableKey: system.stableKey,
+          status: system.status,
+          systemType: system.systemType,
+          usage: processSystem.usage,
+        })
+        .from(processSystem)
+        .innerJoin(
+          system,
+          and(
+            eq(system.id, processSystem.systemId),
+            eq(system.organizationId, processSystem.organizationId),
+          ),
+        )
+        .where(
+          and(
+            eq(processSystem.organizationId, organizationId),
+            eq(processSystem.processId, processId),
+          ),
+        )
+        .orderBy(asc(system.name), asc(system.id)),
+      db
+        .select({
+          condition: exception.condition,
+          id: exception.id,
+          name: exception.name,
+          ownerRoleId: exception.ownerRoleId,
+          processStepId: exception.processStepId,
+          response: exception.response,
+          stableKey: exception.stableKey,
+          status: exception.status,
+          updatedAt: exception.updatedAt,
+        })
+        .from(exception)
+        .where(
+          and(
+            eq(exception.organizationId, organizationId),
+            eq(exception.processId, processId),
+          ),
+        )
+        .orderBy(asc(exception.name), asc(exception.id)),
+      db
+        .select({
           id: operatingModelChange.stableKey,
           action: operatingModelChange.changeAction,
           actorIdentifier: operatingModelChange.actorIdentifier,
@@ -242,6 +349,9 @@ export async function loadProcessAuthoringContext(
   const peopleById = new Map(people.map((item) => [item.id, item]));
   const activeMandates = mandates.filter((item) => currentAt(item, asOf));
   const activeCoverages = coverages.filter((item) => currentAt(item, asOf));
+  const stepStableKeyById = new Map(
+    steps.map((item) => [item.id, item.stableKey]),
+  );
 
   const roleContexts = roles.map<AuthoringRoleContext>((item) => ({
       id: `role:${item.id}`,
@@ -298,6 +408,35 @@ export async function loadProcessAuthoringContext(
       status: currentProcess.status,
     },
     roles: roleContexts,
+    systems: systems.map((item) => ({
+      description: item.description,
+      id: `system:${item.id}`,
+      name: item.name,
+      stableKey: item.stableKey,
+      status: item.status,
+      systemType: item.systemType,
+    })),
+    systemLinks: systemLinks.map((item) => ({
+      id: `system:${item.id}`,
+      name: item.name,
+      stableKey: item.stableKey,
+      status: item.status,
+      systemType: item.systemType,
+      usage: item.usage,
+    })),
+    exceptions: exceptions.map((item) => ({
+      condition: item.condition,
+      id: `exception:${item.id}`,
+      name: item.name,
+      ownerRoleId: item.ownerRoleId ? `role:${item.ownerRoleId}` : null,
+      processStepStableKey: item.processStepId
+        ? (stepStableKeyById.get(item.processStepId) ?? null)
+        : null,
+      response: item.response,
+      revision: item.updatedAt.toISOString(),
+      stableKey: item.stableKey,
+      status: item.status,
+    })),
     steps: steps.map((item) => ({
       id: `step:${item.id}`,
       stableKey: item.stableKey,

@@ -121,7 +121,8 @@ test("the Process-admin privilege delta is Step-specific and remains least-privi
   assert.match(documentation, /GRANT INSERT \([\s\S]+\) ON process_steps/);
   assert.match(documentation, /GRANT UPDATE \([\s\S]+\) ON process_steps/);
   assert.match(documentation, /No `DELETE` or `TRUNCATE` on Process Steps/);
-  assert.match(documentation, /No mutation privileges on Systems, Exceptions, dependencies/);
+  assert.match(documentation, /System, Exception, and Process-System privileges are limited/);
+  assert.match(documentation, /No mutation privileges on Process dependencies/);
   assert.match(documentation, /No `UPDATE` or `DELETE` on `operating_model_changes`/);
 });
 

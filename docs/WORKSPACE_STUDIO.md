@@ -114,12 +114,27 @@ matching Studio stable-key route.
   ordered Steps, and explicit Step responsibility through the reviewed
   operating-model authoring boundary.
 
+### Technology & Exceptions Builder routes
+
+- `/studio/technology` — search and review the current System catalog and the
+  Processes that explicitly use each System;
+- `/studio/technology/new` — add one canonical System without implying
+  criticality or operational approval; and
+- `/studio/technology/systems/[stableKey]` — maintain System definition,
+  explicit Owner Role, lifecycle, connected Processes, and append-only
+  operating-model history.
+
+Systems used and legitimate alternate-path Exceptions remain contextual parts
+of `/studio/processes/[processId]`. Process-System links use existing canonical
+Systems and a required plain-language usage description. Unlinking removes the
+current relationship without deleting the System. Exception creation,
+maintenance, and deactivation preserve immutable identity and history.
+
 ### Reserved product destinations
 
 The following routes are reserved conceptually but should not ship until their
 corresponding slice provides useful current capability:
 
-- `/studio/technology`;
 - `/studio/knowledge`;
 - `/studio/governance`;
 - `/studio/discovery`; and
@@ -273,21 +288,25 @@ workflow, and FLOW calculation changes remain deferred.
 ### Slice 3 — Process Builder
 
 Bring the approved Process Acquisition and Operating Model Authoring direction
-into Studio, including later reviewed actions for Steps, responsible Roles,
-Systems, Exceptions, and dependencies.
+into Studio through separately reviewed actions for Steps, responsible Roles,
+Systems, and Exceptions. Process dependencies remain a later slice.
 
 The Process Builder foundation provides Studio inventory and Process
 definition/ownership maintenance. Step Builder v0.1 follows LAD-040: Steps
 receive immutable identity and may be added, edited, reordered one position at
 a time, and assigned an explicit responsible Operational Role. A null Step
 Role continues to inherit responsibility from the Process Owner. Step removal,
-Systems, Exceptions, and dependencies remain later reviewed slices.
+Process dependencies, Step retirement, and approved Process versions remain
+later reviewed slices. Technology & Exceptions Builder v0.1 completes the
+approved System catalog, Process-System usage, and alternate-path Exception
+portion of this direction under LAD-041.
 
 ### Slice 4 — Technology Builder
 
 Create and maintain Systems and their explicit Process relationships. A System
 link does not imply criticality, ownership, or operational dependency beyond
-the relationship actually recorded.
+the relationship actually recorded. Version 0.1 implements Systems only;
+integrations, APIs, AI services, and document repositories remain deferred.
 
 ### Slice 5 — Studio synthesis
 

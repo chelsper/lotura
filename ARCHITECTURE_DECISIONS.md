@@ -83,6 +83,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-038 | Operational Roles have immutable identity and first-class responsibility history | Accepted — implementation authorized for Responsibility Builder v0.1 |
 | LAD-039 | Duplicate Organization Units merge into one surviving identity without erasing evidence | Accepted — implementation authorized for Organization Unit Merge v0.1 |
 | LAD-040 | Process Steps have immutable identity and explicit authoring history | Accepted — implementation authorized for Step Builder v0.1 |
+| LAD-041 | Technology and Exceptions use immutable identity and explicit operating-model history | Accepted — implementation authorized for Technology & Exceptions Builder v0.1 |
 
 ## Decision records
 
@@ -830,6 +831,92 @@ field-level evidence, approved Process versions, System/Exception/dependency
 authoring, Contributor proposals, approvals, and FLOW changes remain
 intentionally deferred.
 
+### LAD-041 — Technology and Exceptions use immutable identity and explicit operating-model history
+
+**Status:** Accepted — implementation authorized for Technology & Exceptions
+Builder v0.1.
+
+**Context:** Workspace Studio can maintain Process definition, ownership, and
+ordered Steps, while Systems, Process-System usage, and Exceptions remain
+read-only. The existing `systems` and `exceptions` tables have only internal
+integer identity. The operating-model change ledger can target Processes and
+Steps but cannot represent a standalone System change, a Process-System
+relationship change, or an Exception change without overloading earlier
+actions or hiding the actual target in unstructured JSON.
+
+**Decision:** Every System and Exception receives an immutable, randomly
+generated Lotura UUID `stableKey`. Names, URLs, types, Process names, Step
+positions, source rows, external identifiers, and organization-specific values
+never generate this identity. Existing internal integer IDs and Explorer
+projections remain unchanged.
+
+Technology is the durable Workspace Studio area; System is its only entity in
+Version 0.1. An authenticated Workspace Administrator may create and update a
+System, explicitly select an Owner Operational Role, and deactivate a System
+only when no current Process-System relationship depends on it. Deactivation
+preserves canonical identity and history and does not imply failure,
+criticality, or institutional retirement beyond the recorded lifecycle fact.
+
+A Process may link an existing active System with a required plain-language
+usage description, update that usage, or unlink the current relationship.
+Unlinking removes only the current association; it does not delete the System
+or its append-only history. The relationship is identified by the immutable
+Process and System pair rather than a manufactured standalone record.
+
+An authenticated Workspace Administrator may add and update a legitimate
+alternate-path Exception, optionally scope it to an existing Step in the same
+Process, optionally select an existing Owner Operational Role, and deactivate
+it from the current Process. An Exception is not a generic error, complaint,
+improvement idea, or unverified observation. Deactivation preserves the
+Exception identity and history.
+
+The existing `operating_model_changes` ledger expands through explicit System,
+Process-System, and Exception targets and forward-only action vocabulary. A
+standalone System history event has no Process target. A Process-System event
+retains both Process and System identity. An Exception event retains its
+Process and Exception identity. Database checks and same-Organization foreign
+keys enforce those target shapes. Existing Process and Step history remains
+unchanged and append-only.
+
+Every mutation revalidates private Workspace Administrator access, derives
+Organization and actor identity from trusted server configuration, re-reads
+all Process, Step, Role, System, Exception, and relationship dependencies
+inside a serializable transaction, uses deterministic stale-write protection,
+and records canonical change and history atomically. The reviewed Process
+administration credential receives only the new table, column, sequence, and
+history-insert privileges required by this slice. Runtime access remains
+SELECT-only and public/demo mode cannot initialize or invoke authoring.
+
+**Why:** Systems, Exceptions, and their explicit relationships are first-class
+parts of the organizational digital twin under LAD-007. They must become a
+trustworthy canonical destination for future human and AI-assisted Discovery
+without turning mutable names into identity, erasing relationship history, or
+weakening organization and credential boundaries.
+
+**Alternatives considered:** Use integer IDs as public identity; identify
+Systems by name; identify Exceptions by wording or Step position; record all
+changes as Process definition updates; create a separate unrestricted Studio
+credential; hard-delete unlinked Systems or inactive Exceptions; infer System
+criticality from a Process link; or introduce integrations, APIs, AI services,
+documents, evidence states, and Process versions in the same migration. These
+were rejected because they weaken identity, history, least privilege, product
+language, or the bounded Studio Completion sequence.
+
+**Affected decisions:** This decision follows LAD-002, LAD-003, LAD-006
+through LAD-010, LAD-015, LAD-018, LAD-020, LAD-021, LAD-023, LAD-025,
+LAD-026, LAD-029, LAD-032, LAD-035 through LAD-037, and LAD-040. It extends
+Workspace Studio and operating-model authoring without superseding any prior
+decision.
+
+**Consequences and deferrals:** Migration `0015` adds System and Exception
+stable identity, immutable-key triggers, history targets and explicit actions,
+the required relationship-usage validation, tenant-safe foreign keys, and
+supporting indexes. Process dependencies, generic Process creation,
+RoleCoverage authoring, reactivation, hard deletion, Step retirement,
+field-level evidence, approved Process versions, Contributor proposals,
+governance approval, Discovery observations, integrations, broader Technology
+entities, AI, and FLOW changes remain intentionally deferred.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -878,9 +965,10 @@ The code baseline includes the read-only Process Explorer and deterministic FLOW
 The public fixture/demo experience remains public, fictional, and read-only. A code or architecture decision does not authorize a migration, credential, environment change, deployment, or private-data import; each remains a separately approved operation.
 
 Workspace Studio now provides Organization Builder, Responsibility Builder,
-and the Process Builder foundation through the existing domain-specific
-permission and history boundaries. Step Builder is the next separately
-authorized Process slice under LAD-040. Technology, Knowledge, Governance,
-Discovery, Activity synthesis, relationship canvas, and AI expansion remain
-separately reviewed slices rather than implied capabilities of the Studio
-shell.
+Process definition and ownership, Step Builder, and the implementation-ready
+Technology & Exceptions Builder through the existing domain-specific permission
+and history boundaries. Migration `0015` and its least-privilege rollout remain
+separately controlled from the code decision. Process dependencies, generic
+Process creation, Knowledge, Governance, Discovery, Activity synthesis,
+relationship canvas, and AI expansion remain separately reviewed slices rather
+than implied capabilities of the Studio shell.

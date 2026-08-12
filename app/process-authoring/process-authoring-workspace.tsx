@@ -13,9 +13,15 @@ import { Alert, Badge, Button, Card, FieldLabel, Input, Select } from "../ui/pri
 import {
   changeProcessStepResponsibilityAction,
   changeProcessOwnerAction,
+  createExceptionAction,
   createProcessStepAction,
+  deactivateExceptionAction,
+  linkProcessSystemAction,
   reorderProcessStepAction,
+  unlinkProcessSystemAction,
+  updateExceptionAction,
   updateProcessDefinitionAction,
+  updateProcessSystemUsageAction,
   updateProcessStepAction,
 } from "./actions";
 import { initialProcessAuthoringActionState } from "./action-state";
@@ -28,6 +34,15 @@ const actionLabels: Record<OperatingModelChangeSummary["action"], string> = {
   update_step: "Step wording updated",
   reorder_steps: "Step order updated",
   change_step_responsibility: "Step responsibility changed",
+  create_system: "System added",
+  update_system: "System updated",
+  deactivate_system: "System deactivated",
+  link_system: "System linked",
+  update_system_usage: "System usage updated",
+  unlink_system: "System unlinked",
+  create_exception: "Exception added",
+  update_exception: "Exception updated",
+  deactivate_exception: "Exception deactivated",
 };
 
 function utcDate(value: string) {
@@ -518,6 +533,200 @@ function StepsWorkspace({ context, today }: { context: ProcessAuthoringContext; 
   );
 }
 
+function LinkSystemForm({ context, today }: { context: ProcessAuthoringContext; today: string }) {
+  const [state, action, pending] = useActionState(
+    linkProcessSystemAction,
+    initialProcessAuthoringActionState,
+  );
+  const linkedKeys = new Set(context.systemLinks.map((item) => item.stableKey));
+  const availableSystems = context.systems.filter(
+    (item) => item.status === "active" && !linkedKeys.has(item.stableKey),
+  );
+
+  return (
+    <form action={action} className="space-y-4">
+      <HiddenIdentity context={context} />
+      <label className="block">
+        <FieldLabel>Existing System</FieldLabel>
+        <Select defaultValue="" disabled={availableSystems.length === 0} name="systemStableKey" required>
+          <option disabled value="">Select a System</option>
+          {availableSystems.map((item) => (
+            <option key={item.stableKey} value={item.stableKey}>{item.name}</option>
+          ))}
+        </Select>
+      </label>
+      <label className="block">
+        <FieldLabel>How this Process uses the System</FieldLabel>
+        <textarea
+          className="min-h-20 w-full resize-y rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-6 text-[var(--text)] outline-none transition placeholder:text-[var(--text-tertiary)] focus:border-[var(--workspace-accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
+          maxLength={5000}
+          name="usage"
+          placeholder="Describe the documented use without implying criticality."
+          required
+        />
+      </label>
+      <ChangeFields today={today} />
+      <label className="block">
+        <FieldLabel>Reason</FieldLabel>
+        <Input maxLength={2000} name="reason" placeholder="Why should this relationship be recorded?" required />
+      </label>
+      {availableSystems.length === 0 ? (
+        <Alert>Every active System is already linked. Add another canonical System from Technology if needed.</Alert>
+      ) : null}
+      {state.status !== "idle" ? <Alert tone={state.status === "success" ? "success" : "error"}>{state.message}</Alert> : null}
+      <div className="flex justify-end">
+        <Button disabled={pending || availableSystems.length === 0} type="submit" variant="primary">
+          {pending ? "Linking…" : "Link System"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function SystemRelationshipEditor({
+  context,
+  relationship,
+  today,
+}: {
+  context: ProcessAuthoringContext;
+  relationship: ProcessAuthoringContext["systemLinks"][number];
+  today: string;
+}) {
+  const [updateState, updateAction, updatePending] = useActionState(
+    updateProcessSystemUsageAction,
+    initialProcessAuthoringActionState,
+  );
+  const [unlinkState, unlinkAction, unlinkPending] = useActionState(
+    unlinkProcessSystemAction,
+    initialProcessAuthoringActionState,
+  );
+
+  return (
+    <Card className="p-4 sm:p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-semibold text-[var(--text)]">{relationship.name}</h3>
+            <Badge tone={relationship.status === "active" ? "success" : "neutral"}>{relationship.status}</Badge>
+          </div>
+          <p className="mt-1 text-xs text-[var(--text-tertiary)]">{relationship.systemType.replaceAll("_", " ")}</p>
+        </div>
+        <Link className="text-xs font-medium text-[var(--workspace-accent)] hover:underline" href={`/studio/technology/systems/${relationship.stableKey}`}>View System</Link>
+      </div>
+      <form action={updateAction} className="mt-4 space-y-4">
+        <HiddenIdentity context={context} />
+        <input name="systemStableKey" type="hidden" value={relationship.stableKey} />
+        <label className="block">
+          <FieldLabel>Documented use</FieldLabel>
+          <textarea
+            className="min-h-20 w-full resize-y rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-6 text-[var(--text)] outline-none transition focus:border-[var(--workspace-accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
+            defaultValue={relationship.usage}
+            maxLength={5000}
+            name="usage"
+            required
+          />
+        </label>
+        <ChangeFields today={today} />
+        <label className="block"><FieldLabel>Reason</FieldLabel><Input maxLength={2000} name="reason" placeholder="Why is the documented use changing?" required /></label>
+        {updateState.status !== "idle" ? <Alert tone={updateState.status === "success" ? "success" : "error"}>{updateState.message}</Alert> : null}
+        <div className="flex justify-end"><Button disabled={updatePending} size="sm" type="submit" variant="primary">{updatePending ? "Saving…" : "Save usage"}</Button></div>
+      </form>
+      <details className="mt-4 border-t border-[var(--border)] pt-4">
+        <summary className="cursor-pointer text-xs font-medium text-[var(--error)]">Unlink from current Process</summary>
+        <form action={unlinkAction} className="mt-4 space-y-4">
+          <HiddenIdentity context={context} />
+          <input name="systemStableKey" type="hidden" value={relationship.stableKey} />
+          <input name="changeKind" type="hidden" value="organizational_change" />
+          <label className="block"><FieldLabel>Effective date</FieldLabel><Input defaultValue={today} max={today} name="effectiveDate" required type="date" /></label>
+          <label className="block"><FieldLabel>Reason</FieldLabel><Input maxLength={2000} name="reason" placeholder="Why is this relationship no longer current?" required /></label>
+          <p className="text-xs leading-5 text-[var(--text-tertiary)]">This removes only the current Process-System relationship. The System and append-only history remain.</p>
+          {unlinkState.status !== "idle" ? <Alert tone={unlinkState.status === "success" ? "success" : "error"}>{unlinkState.message}</Alert> : null}
+          <Button disabled={unlinkPending} size="sm" type="submit" variant="destructive">{unlinkPending ? "Unlinking…" : "Unlink System"}</Button>
+        </form>
+      </details>
+    </Card>
+  );
+}
+
+function SystemsWorkspace({ context, today }: { context: ProcessAuthoringContext; today: string }) {
+  return (
+    <section className="mt-7 space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium text-[var(--text-tertiary)]">Technology</p>
+          <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">Systems used</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">Link canonical Systems and state how the work uses them. A link documents reach; it does not establish criticality, performance, or risk.</p>
+        </div>
+        <Link className="text-sm font-medium text-[var(--workspace-accent)] hover:underline" href="/studio/technology">Open Technology</Link>
+      </div>
+      <Card className="p-4 sm:p-6"><details><summary className="cursor-pointer text-sm font-semibold text-[var(--workspace-accent)]">Link an existing System</summary><div className="mt-5 border-t border-[var(--border)] pt-5"><LinkSystemForm context={context} today={today} /></div></details></Card>
+      {context.systemLinks.length > 0 ? (
+        <div className="grid gap-4 lg:grid-cols-2">{context.systemLinks.map((item) => <SystemRelationshipEditor context={context} key={item.stableKey} relationship={item} today={today} />)}</div>
+      ) : <Alert>No Systems are linked to this Process. This may be accurate or may need validation.</Alert>}
+    </section>
+  );
+}
+
+function ExceptionFields({ context, current }: { context: ProcessAuthoringContext; current?: ProcessAuthoringContext["exceptions"][number] }) {
+  return (
+    <>
+      <label className="block"><FieldLabel>Exception name</FieldLabel><Input defaultValue={current?.name ?? ""} maxLength={255} name="name" placeholder="Name the legitimate alternate path" required /></label>
+      <label className="block"><FieldLabel>When it applies</FieldLabel><textarea className="min-h-20 w-full resize-y rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-6 text-[var(--text)] outline-none transition focus:border-[var(--workspace-accent)] focus:ring-3 focus:ring-[var(--focus-soft)]" defaultValue={current?.condition ?? ""} maxLength={5000} name="condition" required /></label>
+      <label className="block"><FieldLabel>Alternate response</FieldLabel><textarea className="min-h-20 w-full resize-y rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-6 text-[var(--text)] outline-none transition focus:border-[var(--workspace-accent)] focus:ring-3 focus:ring-[var(--focus-soft)]" defaultValue={current?.response ?? ""} maxLength={5000} name="response" required /></label>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="block"><FieldLabel>Scope</FieldLabel><Select defaultValue={current?.processStepStableKey ?? ""} name="stepStableKey"><option value="">Process-wide</option>{context.steps.map((step) => <option key={step.stableKey} value={step.stableKey}>Step {step.position}: {step.title}</option>)}</Select></label>
+        <label className="block"><FieldLabel>Owner Operational Role</FieldLabel><Select defaultValue={current?.ownerRoleId ?? ""} name="ownerRoleKey"><option value="">Not assigned</option><RoleOptions context={context} /></Select></label>
+      </div>
+    </>
+  );
+}
+
+function AddExceptionForm({ context, today }: { context: ProcessAuthoringContext; today: string }) {
+  const [state, action, pending] = useActionState(createExceptionAction, initialProcessAuthoringActionState);
+  return (
+    <form action={action} className="space-y-4">
+      <HiddenIdentity context={context} />
+      <ExceptionFields context={context} />
+      <ChangeFields today={today} />
+      <label className="block"><FieldLabel>Reason</FieldLabel><Input maxLength={2000} name="reason" placeholder="Why should this alternate path be documented?" required /></label>
+      {state.status !== "idle" ? <Alert tone={state.status === "success" ? "success" : "error"}>{state.message}</Alert> : null}
+      <div className="flex justify-end"><Button disabled={pending} type="submit" variant="primary">{pending ? "Adding…" : "Add Exception"}</Button></div>
+    </form>
+  );
+}
+
+function ExceptionEditor({ context, exception, today }: { context: ProcessAuthoringContext; exception: ProcessAuthoringContext["exceptions"][number]; today: string }) {
+  const [updateState, updateAction, updatePending] = useActionState(updateExceptionAction, initialProcessAuthoringActionState);
+  const [deactivateState, deactivateAction, deactivatePending] = useActionState(deactivateExceptionAction, initialProcessAuthoringActionState);
+  const scopedStep = context.steps.find((step) => step.stableKey === exception.processStepStableKey);
+  const ownerRole = context.roles.find((role) => role.id === exception.ownerRoleId);
+  return (
+    <Card className={`p-4 sm:p-5 ${exception.status !== "active" ? "opacity-70" : ""}`}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-semibold text-[var(--text)]">{exception.name}</h3><Badge tone={exception.status === "active" ? "warning" : "neutral"}>{exception.status}</Badge></div><p className="mt-1 text-xs text-[var(--text-tertiary)]">{scopedStep ? `Step ${scopedStep.position}: ${scopedStep.title}` : "Process-wide"} · Owner Role: {ownerRole?.name ?? "Not assigned"}</p></div>
+      </div>
+      <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]"><span className="font-medium text-[var(--text)]">When:</span> {exception.condition}</p>
+      <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]"><span className="font-medium text-[var(--text)]">Alternate response:</span> {exception.response}</p>
+      {exception.status === "active" ? (
+        <>
+          <details className="mt-4 border-t border-[var(--border)] pt-4"><summary className="cursor-pointer text-xs font-medium text-[var(--workspace-accent)]">Edit Exception</summary><form action={updateAction} className="mt-4 space-y-4"><HiddenIdentity context={context} /><input name="exceptionStableKey" type="hidden" value={exception.stableKey} /><input name="expectedExceptionRevision" type="hidden" value={exception.revision} /><ExceptionFields context={context} current={exception} /><ChangeFields today={today} /><label className="block"><FieldLabel>Reason</FieldLabel><Input maxLength={2000} name="reason" placeholder="Why is this alternate path changing?" required /></label>{updateState.status !== "idle" ? <Alert tone={updateState.status === "success" ? "success" : "error"}>{updateState.message}</Alert> : null}<div className="flex justify-end"><Button disabled={updatePending} size="sm" type="submit" variant="primary">{updatePending ? "Saving…" : "Save Exception"}</Button></div></form></details>
+          <details className="mt-4 border-t border-[var(--border)] pt-4"><summary className="cursor-pointer text-xs font-medium text-[var(--error)]">Remove from current draft</summary><form action={deactivateAction} className="mt-4 space-y-4"><HiddenIdentity context={context} /><input name="exceptionStableKey" type="hidden" value={exception.stableKey} /><input name="expectedExceptionRevision" type="hidden" value={exception.revision} /><input name="changeKind" type="hidden" value="organizational_change" /><label className="block"><FieldLabel>Effective date</FieldLabel><Input defaultValue={today} max={today} name="effectiveDate" required type="date" /></label><label className="block"><FieldLabel>Reason</FieldLabel><Input maxLength={2000} name="reason" placeholder="Why is this alternate path no longer current?" required /></label><p className="text-xs leading-5 text-[var(--text-tertiary)]">This deactivates the Exception without erasing its identity or history.</p>{deactivateState.status !== "idle" ? <Alert tone={deactivateState.status === "success" ? "success" : "error"}>{deactivateState.message}</Alert> : null}<Button disabled={deactivatePending} size="sm" type="submit" variant="destructive">{deactivatePending ? "Removing…" : "Remove from current draft"}</Button></form></details>
+        </>
+      ) : <p className="mt-4 border-t border-[var(--border)] pt-3 text-xs text-[var(--text-tertiary)]">This Exception is preserved in history and is not part of the current draft.</p>}
+    </Card>
+  );
+}
+
+function ExceptionsWorkspace({ context, today }: { context: ProcessAuthoringContext; today: string }) {
+  return (
+    <section className="mt-7 space-y-5">
+      <div><p className="text-xs font-medium text-[var(--text-tertiary)]">Alternate paths</p><h2 className="mt-1 text-xl font-semibold text-[var(--text)]">Exceptions</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">Document legitimate alternate paths, not every error or unresolved problem. Uncertain observations should remain identified as needing validation.</p></div>
+      <Card className="p-4 sm:p-6"><details><summary className="cursor-pointer text-sm font-semibold text-[var(--workspace-accent)]">Add an Exception</summary><div className="mt-5 border-t border-[var(--border)] pt-5"><AddExceptionForm context={context} today={today} /></div></details></Card>
+      {context.exceptions.length > 0 ? <div className="grid gap-4 lg:grid-cols-2">{context.exceptions.map((item) => <ExceptionEditor context={context} exception={item} key={item.stableKey} today={today} />)}</div> : <Alert>No Exceptions are documented. That may be accurate or may need validation.</Alert>}
+    </section>
+  );
+}
+
 export function ProcessAuthoringWorkspace({
   context,
   surface = "explorer",
@@ -585,13 +794,10 @@ export function ProcessAuthoringWorkspace({
       </div>
 
       <StepsWorkspace context={context} today={today} />
+      <SystemsWorkspace context={context} today={today} />
+      <ExceptionsWorkspace context={context} today={today} />
 
-      <Card className="mt-5 p-4 sm:p-6">
-        <p className="text-xs font-medium text-[var(--text-tertiary)]">Connected context</p>
-        <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">Systems, Exceptions, and dependencies</h2>
-        <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">These relationships remain visible on Process Detail and read-only until their separately reviewed Builder slices.</p>
-        <Link className="mt-4 inline-flex text-sm font-medium text-[var(--workspace-accent)] hover:underline" href={processHref}>View complete Process Detail</Link>
-      </Card>
+      <Alert className="mt-7">Process dependencies remain read-only in this slice. They are never inferred from shared Systems, Units, Roles, or reporting relationships.</Alert>
 
       <Card className="mt-5 p-4 sm:p-6">
         <p className="text-xs font-medium text-[var(--text-tertiary)]">Governance</p>
