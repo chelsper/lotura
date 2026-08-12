@@ -25,7 +25,7 @@ export default async function ProcessAcquisitionPage({
   const query = await searchParams;
   const positionId = first(query.position);
   const roleId = first(query.role);
-  const { asOf, configuration, data, processAcquisition, source } =
+  const { asOf, configuration, data, discovery, processAcquisition, source } =
     await loadOrganizationStructureExperience();
 
   if (!processAcquisition.enabled) notFound();
@@ -73,16 +73,20 @@ export default async function ProcessAcquisitionPage({
       ) : null}
 
       <div className="mt-6 grid gap-4 md:grid-cols-3">
-        <Card className="p-4 sm:p-5">
-          <Badge tone="accent">Next milestone</Badge>
+        <Card className={discovery.enabled ? "border-[var(--workspace-accent-border)] p-4 sm:p-5" : "p-4 sm:p-5"}>
+          <Badge tone={discovery.enabled ? "success" : "accent"}>{discovery.enabled ? "Available now" : "Not configured"}</Badge>
           <h2 className="mt-4 text-lg font-semibold text-[var(--text)]">Interview me</h2>
           <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
             Describe what actually happens and let Lotura ask follow-up
             questions while preserving uncertainty and disagreement.
           </p>
-          <p className="mt-4 text-xs font-medium text-[var(--text-tertiary)]">
-            Available after the fictional interview prototype is reviewed.
-          </p>
+          {discovery.enabled ? (
+            <Link className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-[var(--workspace-accent)] hover:underline" href="/studio/discovery">
+              Begin discovery <ArrowIcon className="size-3.5" />
+            </Link>
+          ) : (
+            <p className="mt-4 text-xs font-medium text-[var(--text-tertiary)]">Guided Discovery is not configured for this workspace.</p>
+          )}
         </Card>
 
         <Card className="border-[var(--workspace-accent-border)] p-4 sm:p-5">
