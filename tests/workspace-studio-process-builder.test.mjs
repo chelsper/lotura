@@ -72,7 +72,11 @@ test("Step Builder remains bounded while Technology and Exceptions use their sep
   assert.doesNotMatch(actions, /addDependency|removeProcessStep/);
   assert.match(schema, /processStepStableKey/);
   assert.doesNotMatch(schema, /retire_step/);
-  assert.equal(JSON.parse(journal).entries.at(-1).tag, "0015_workspace_studio_technology_exceptions");
+  assert.ok(
+    JSON.parse(journal).entries.some(
+      (entry) => entry.tag === "0015_workspace_studio_technology_exceptions",
+    ),
+  );
 });
 
 test("Process mutations revalidate both Explorer and Studio views", async () => {

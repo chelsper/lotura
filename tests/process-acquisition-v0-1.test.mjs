@@ -91,7 +91,7 @@ test("the acquisition route exposes only the approved manual boundary", async ()
   ]);
   assert.match(page, /How would you like to document this Process\?/);
   assert.match(page, /Interview me/);
-  assert.match(page, /Next milestone/);
+  assert.match(page, /Guided Discovery is not configured/);
   assert.match(page, /Upload existing documentation/);
   assert.match(page, /Future/);
   assert.match(page, /Start from scratch/);

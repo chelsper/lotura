@@ -163,6 +163,38 @@ export const operatingModelChangeAction = pgEnum(
   ],
 );
 
+export const discoverySessionStatus = pgEnum("discovery_session_status", [
+  "in_progress",
+  "paused",
+  "ready_for_review",
+  "closed",
+]);
+
+export const discoveryObservationState = pgEnum(
+  "discovery_observation_state",
+  [
+    "known",
+    "assumed",
+    "unknown",
+    "needs_validation",
+    "conflicting_observation",
+  ],
+);
+
+export const discoveryObservationTopic = pgEnum(
+  "discovery_observation_topic",
+  [
+    "purpose",
+    "boundary",
+    "participants_responsibility",
+    "sequence",
+    "systems",
+    "exceptions",
+    "dependencies_handoffs",
+    "unresolved_questions",
+  ],
+);
+
 export const organization = pgTable("organizations", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -374,6 +406,172 @@ export const process = pgTable(
     index("processes_organization_id_status_idx").on(
       table.organizationId,
       table.status,
+    ),
+  ],
+);
+
+export const discoverySession = pgTable(
+  "discovery_sessions",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    processId: integer("process_id").notNull(),
+    processStableKey: uuid("process_stable_key").notNull(),
+    scopeStatement: text("scope_statement").notNull(),
+    status: discoverySessionStatus("status").default("in_progress").notNull(),
+    currentQuestionKey: varchar("current_question_key", { length: 64 })
+      .notNull(),
+    revision: integer("revision").default(1).notNull(),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_sessions_process_org_stable_fk",
+      columns: [
+        table.processId,
+        table.organizationId,
+        table.processStableKey,
+      ],
+      foreignColumns: [
+        process.id,
+        process.organizationId,
+        process.stableKey,
+      ],
+    }).onDelete("restrict"),
+    unique("discovery_sessions_stable_key_unique").on(table.stableKey),
+    unique("discovery_sessions_id_org_stable_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+    ),
+    check(
+      "discovery_sessions_scope_not_blank_check",
+      sql`char_length(trim(${table.scopeStatement})) > 0`,
+    ),
+    check(
+      "discovery_sessions_question_not_blank_check",
+      sql`char_length(trim(${table.currentQuestionKey})) > 0`,
+    ),
+    check(
+      "discovery_sessions_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    check(
+      "discovery_sessions_revision_positive_check",
+      sql`${table.revision} >= 1`,
+    ),
+    index("discovery_sessions_org_status_updated_idx").on(
+      table.organizationId,
+      table.status,
+      table.updatedAt,
+    ),
+    index("discovery_sessions_process_updated_idx").on(
+      table.organizationId,
+      table.processStableKey,
+      table.updatedAt,
+    ),
+  ],
+);
+
+export const discoveryObservation = pgTable(
+  "discovery_observations",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    sessionId: integer("session_id").notNull(),
+    sessionStableKey: uuid("session_stable_key").notNull(),
+    sequence: integer("sequence").notNull(),
+    promptKey: varchar("prompt_key", { length: 64 }).notNull(),
+    promptText: text("prompt_text").notNull(),
+    topic: discoveryObservationTopic("topic").notNull(),
+    responseText: text("response_text"),
+    epistemicState: discoveryObservationState("epistemic_state").notNull(),
+    supersedesObservationStableKey: uuid(
+      "supersedes_observation_stable_key",
+    ),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_observations_session_org_stable_fk",
+      columns: [
+        table.sessionId,
+        table.organizationId,
+        table.sessionStableKey,
+      ],
+      foreignColumns: [
+        discoverySession.id,
+        discoverySession.organizationId,
+        discoverySession.stableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_observations_supersedes_session_fk",
+      columns: [
+        table.supersedesObservationStableKey,
+        table.sessionId,
+        table.organizationId,
+      ],
+      foreignColumns: [
+        table.stableKey,
+        table.sessionId,
+        table.organizationId,
+      ],
+    }).onDelete("restrict"),
+    unique("discovery_observations_stable_key_unique").on(table.stableKey),
+    unique("discovery_observations_key_session_org_unique").on(
+      table.stableKey,
+      table.sessionId,
+      table.organizationId,
+    ),
+    unique("discovery_observations_session_sequence_unique").on(
+      table.sessionId,
+      table.sequence,
+    ),
+    check(
+      "discovery_observations_sequence_positive_check",
+      sql`${table.sequence} >= 1`,
+    ),
+    check(
+      "discovery_observations_prompt_key_not_blank_check",
+      sql`char_length(trim(${table.promptKey})) > 0`,
+    ),
+    check(
+      "discovery_observations_prompt_text_not_blank_check",
+      sql`char_length(trim(${table.promptText})) > 0`,
+    ),
+    check(
+      "discovery_observations_response_state_check",
+      sql`(${table.epistemicState} = 'unknown' and (${table.responseText} is null or char_length(trim(${table.responseText})) > 0)) or (${table.epistemicState} <> 'unknown' and ${table.responseText} is not null and char_length(trim(${table.responseText})) > 0)`,
+    ),
+    check(
+      "discovery_observations_supersedes_distinct_check",
+      sql`${table.supersedesObservationStableKey} is null or ${table.supersedesObservationStableKey} <> ${table.stableKey}`,
+    ),
+    check(
+      "discovery_observations_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    index("discovery_observations_session_sequence_idx").on(
+      table.organizationId,
+      table.sessionStableKey,
+      table.sequence,
+    ),
+    index("discovery_observations_org_state_idx").on(
+      table.organizationId,
+      table.epistemicState,
+      table.createdAt,
     ),
   ],
 );

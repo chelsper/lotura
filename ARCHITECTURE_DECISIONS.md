@@ -917,6 +917,110 @@ field-level evidence, approved Process versions, Contributor proposals,
 governance approval, Discovery observations, integrations, broader Technology
 entities, AI, and FLOW changes remain intentionally deferred.
 
+### LAD-042 — Guided interviews preserve immutable source observations before canonical change
+
+**Status:** Accepted — implementation authorized for Guided Interview
+Foundation v0.1.
+
+**Context:** Process Acquisition can create a deliberately incomplete Draft
+Process, and Workspace Studio can maintain reviewed canonical Process facts.
+Lotura does not yet have a governed place to pause and resume an interview,
+preserve each answer as source evidence, distinguish uncertainty, or review
+what was discovered without changing the operating model. Adding an AI model
+before that boundary exists would encourage generated structure to impersonate
+organizational truth.
+
+**Decision:** The first Process Discovery implementation is a manual, guided,
+self-interview for an authenticated Workspace Administrator about one existing
+Process. A new Process must first begin as a Draft shell through the existing
+Process Acquisition boundary. Starting from a Role, Position, or Person may
+provide navigation context, but it may not create ownership, responsibility,
+participant identity, or canonical Process facts by inference.
+
+A `discovery_session` is an Organization-scoped, immutable-keyed container for
+one interview scope. It references one existing Process and records the
+authenticated Lotura actor who opened it, a plain-language scope statement,
+the current question, a compare-and-set revision, and a lifecycle of **In
+progress**, **Paused**, **Ready for review**, or **Closed**. These states govern
+capture progress only. They do not mean approved, reconciled, published, or
+current organizational truth.
+
+A `discovery_observation` is one attributable answer or explicit unknown
+captured within the session. It records an immutable random UUID, the exact
+prompt key and prompt wording shown, a bounded topic, the response when one is
+available, one epistemic state—**Known**, **Assumed**, **Unknown**, **Needs
+validation**, or **Conflicting observation**—the authenticated Lotura actor,
+sequence, and transaction time. A correction appends a new observation that
+explicitly supersedes an earlier observation in the same Organization and
+session; the earlier evidence is never overwritten. Application privileges do
+not permit observation `UPDATE` or `DELETE`.
+
+The initial question catalogue is application-versioned and covers Process
+purpose and boundary, participants and responsibility, ordered work, Systems,
+Exceptions, dependencies and handoffs, and unresolved questions. Prompt
+wording is stored with each observation so later catalogue changes do not
+rewrite what the participant was asked. The interview can be paused after any
+saved answer and resumed at the recorded question. Draft text that has not
+been submitted remains browser-local and may be lost; Lotura must state this
+clearly.
+
+The review screen presents the original observations, classifications,
+supersession chain, and unresolved questions. It does not update Process,
+Step, Role, System, Exception, dependency, mandate, coverage, structure, FLOW,
+or `operating_model_changes`. A future proposed-change package,
+reconciliation, approval, and Process version workflow will consume reviewed
+observations through a separate decision rather than silently converting this
+session into canonical data.
+
+Every session mutation and observation append revalidates authenticated
+private-workspace access, derives Organization and actor identity on the
+server, rejects cross-Organization Process or observation references, and uses
+a dedicated server-only Discovery credential that cannot fall back to the
+runtime, structural-admin, Process-admin, owner, or migration credential.
+Public/demo mode cannot initialize Discovery or render its routes. The
+Discovery role receives only the narrow session and observation privileges
+needed by this slice; normal operating-model access remains read-only.
+
+The first slice is restricted to sanitized operational knowledge. The UI must
+warn participants not to enter constituent, donor, student, prospect, gift,
+wealth, HR, credential, password, connection-string, or other sensitive record
+data. No interview content is sent to an AI provider. Live institutional
+enablement, retention, export, deletion, multi-user access, or AI processing
+requires a separate environment and governance approval.
+
+**Why:** A trustworthy AI interviewer needs a durable evidence destination
+before it needs a model. Immutable observations, honest uncertainty,
+pause/resume state, and human review make discovery useful immediately while
+preserving the principle that an incomplete answer is more valuable than a
+polished but inaccurate one.
+
+**Alternatives considered:** Generate a complete Process directly from a
+chat; store interview answers in Process purpose or change-history JSON; use
+browser-only state; overwrite earlier answers; identify the participant from a
+Person, Position, or Role; create a generic evidence table for every future
+source; or implement AI, conflict resolution, and approval together. These
+were rejected because they lose provenance, prevent reliable resume, conflate
+application identity with organizational identity, create premature
+abstraction, or exceed the current governance and privacy boundary.
+
+**Affected decisions:** This decision follows LAD-002, LAD-003, LAD-008
+through LAD-010, LAD-015, LAD-018, LAD-020 through LAD-023, LAD-025, LAD-026,
+LAD-029, LAD-032, LAD-035 through LAD-037, LAD-040, and LAD-041. It advances
+the manual guided-interview portion of LAD-021 and LAD-032 without superseding
+them. It does not authorize AI processing or relax LAD-025.
+
+**Consequences and deferrals:** After approval, a forward-only migration may
+add only the session and observation tables, their lifecycle and epistemic
+enums, immutable random identity, same-Organization safeguards, append-only
+observation protection, revision checks, and supporting indexes. The first UI
+may add `/studio/discovery`, a one-question-at-a-time interview, pause/resume,
+and evidence review for an existing Process. Multiple participants, interviews
+conducted on behalf of another Person, consent records, Contributor access,
+artifacts/uploads, generic sources, AI prompts and model provenance, automated
+follow-up selection, conflict detection, reconciliation, approval, proposed
+change packages, Process versions, export, retention automation, and deletion
+remain intentionally deferred.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -925,8 +1029,8 @@ The following ideas are recorded so postponement is visible and deliberate.
 | --- | --- | --- |
 | Full authentication and authorization | A replaceable temporary provider now prepares one private administrator; durable deployment protection and enterprise identity remain unresolved | SSO, multiple identities, provisioning, recovery, roles/permissions, audit, and access review |
 | Governance and Stewardship engine | Dimensions, profiles, and Stewardship direction are accepted, but scope, delegation, effective timing, proposals, approval routing, and policy enforcement are unresolved | Governance domain, authorization, workflow, audit, retention, and identity decisions |
-| Observations and provenance | Source, contributor, scope, privacy, timing, authority, and retention are not yet represented | Observation lifecycle and evidence-access decision |
-| Guided interviews and AI interviewing | Requires consent, approved scope, attribution, disclosure, and review | Acquisition, participant privacy, AI provenance, and authorization decisions |
+| Broader observations and provenance | LAD-042 proposes a bounded guided self-interview observation model; documents, external sources, multi-participant evidence, retention automation, and generalized provenance remain unresolved | Source/artifact lifecycle, evidence access, privacy, retention, and reconciliation decision |
+| AI interviewing | Manual guided self-interviews are bounded by LAD-042; AI requires consent, approved scope, disclosure, model provenance, evaluation, data-use controls, and human review | AI interview, participant privacy, provider, retention, evaluation, and authorization decisions |
 | Uploads, imports, Visio/PDF/flowchart parsing | Requires malware handling, source permissions, artifact retention, provenance, and conflict treatment | Artifact architecture, storage, security, and extraction decision |
 | Whiteboard and collaborative capture | Draft contribution, authorship, reconciliation, and conversion to structured knowledge are undefined | Collaboration, observation, and approval decision |
 | Conflict detection and consensus | Conflicts need identity, scope, lifecycle, privacy, and human resolution | Conflict and reconciliation schema decision |
@@ -971,4 +1075,7 @@ and history boundaries. Migration `0015` and its least-privilege rollout remain
 separately controlled from the code decision. Process dependencies, generic
 Process creation, Knowledge, Governance, Discovery, Activity synthesis,
 relationship canvas, and AI expansion remain separately reviewed slices rather
-than implied capabilities of the Studio shell.
+than implied capabilities of the Studio shell. Guided Interview Foundation v0.1
+adds configuration-gated, administrator-led Discovery sessions and immutable
+source observations for existing Processes. It does not reconcile or write
+canonical Process facts, use AI, or authorize enablement in any environment.

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { requireWorkspaceAccess } from "./authentication";
+import { resolveDiscoveryConfiguration } from "./discovery-policy.mjs";
 import { resolveOrganizationStructureAdministrationConfiguration } from "./organization-structure-administration-policy.mjs";
 import { buildOrganizationStructureData } from "./organization-structure-data.mjs";
 import { loadOrganizationStructure } from "./organization-structure-source";
@@ -19,6 +20,7 @@ export async function loadOrganizationStructureExperience() {
     process.env,
     runtimeAccess,
   );
+  const discovery = resolveDiscoveryConfiguration(process.env, runtimeAccess);
   const { asOf, operatingModel, source, structure } =
     await loadOrganizationStructure();
   const data = buildOrganizationStructureData(structure, operatingModel, asOf);
@@ -38,6 +40,7 @@ export async function loadOrganizationStructureExperience() {
     changes,
     configuration,
     data,
+    discovery,
     processAcquisition,
     source,
   };
@@ -58,6 +61,7 @@ export async function loadWorkspaceStudioExperience() {
     process.env,
     runtimeAccess,
   );
+  const discovery = resolveDiscoveryConfiguration(process.env, runtimeAccess);
   const { asOf, operatingModel, source, structure } =
     await loadOrganizationStructure();
   const data = buildOrganizationStructureData(structure, operatingModel, asOf);
@@ -76,6 +80,7 @@ export async function loadWorkspaceStudioExperience() {
     changes,
     configuration,
     data,
+    discovery,
     enabled: true as const,
     processAcquisition,
     source,

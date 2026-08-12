@@ -2,6 +2,7 @@ import "server-only";
 
 import { buildFlowAnalysis } from "./flow-analysis.mjs";
 import { requireWorkspaceAccess } from "./authentication";
+import { resolveDiscoveryConfiguration } from "./discovery-policy.mjs";
 import { resolveOperatingModelAuthoringConfiguration } from "./operating-model-authoring-policy.mjs";
 import { buildProcessExplorerData } from "./process-explorer-data";
 import { resolveProcessAcquisitionConfiguration } from "./process-acquisition-policy.mjs";
@@ -19,6 +20,7 @@ export async function loadWorkspaceExperience() {
     process.env,
     runtimeAccess,
   );
+  const discovery = resolveDiscoveryConfiguration(process.env, runtimeAccess);
   const { asOf, seed, source } = await loadOperatingModel();
   const data = buildProcessExplorerData(seed, asOf);
   const analysis = buildFlowAnalysis(seed, asOf);
@@ -33,6 +35,7 @@ export async function loadWorkspaceExperience() {
     authoring,
     configuration,
     data,
+    discovery,
     processAcquisition,
     source,
   };
