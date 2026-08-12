@@ -11,8 +11,12 @@ import type {
 
 import { Alert, Badge, Button, Card, FieldLabel, Input, Select } from "../ui/primitives";
 import {
+  changeProcessStepResponsibilityAction,
   changeProcessOwnerAction,
+  createProcessStepAction,
+  reorderProcessStepAction,
   updateProcessDefinitionAction,
+  updateProcessStepAction,
 } from "./actions";
 import { initialProcessAuthoringActionState } from "./action-state";
 
@@ -20,6 +24,10 @@ const actionLabels: Record<OperatingModelChangeSummary["action"], string> = {
   create_draft: "Draft created",
   update_definition: "Definition updated",
   change_owner: "Owner Role changed",
+  create_step: "Step added",
+  update_step: "Step wording updated",
+  reorder_steps: "Step order updated",
+  change_step_responsibility: "Step responsibility changed",
 };
 
 function utcDate(value: string) {
@@ -73,6 +81,22 @@ function HiddenIdentity({ context }: { context: ProcessAuthoringContext }) {
       <input name="processKey" type="hidden" value={context.process.id} />
       <input name="processStableKey" type="hidden" value={context.process.stableKey} />
       <input name="expectedRevision" type="hidden" value={context.process.revision} />
+    </>
+  );
+}
+
+function HiddenStepIdentity({
+  context,
+  step,
+}: {
+  context: ProcessAuthoringContext;
+  step: ProcessAuthoringContext["steps"][number];
+}) {
+  return (
+    <>
+      <HiddenIdentity context={context} />
+      <input name="stepStableKey" type="hidden" value={step.stableKey} />
+      <input name="expectedStepRevision" type="hidden" value={step.revision} />
     </>
   );
 }
@@ -227,6 +251,273 @@ function OwnerForm({ context, today }: { context: ProcessAuthoringContext; today
   );
 }
 
+function RoleOptions({ context }: { context: ProcessAuthoringContext }) {
+  return context.roles.map((role) => (
+    <option disabled={role.status !== "active"} key={role.id} value={role.id}>
+      {role.name}{role.status !== "active" ? " — inactive" : ""}
+    </option>
+  ));
+}
+
+function StepResponsibilitySummary({
+  context,
+  responsibleRoleId,
+}: {
+  context: ProcessAuthoringContext;
+  responsibleRoleId: string | null;
+}) {
+  const explicitRole = context.roles.find((role) => role.id === responsibleRoleId);
+  const ownerRole = context.roles.find((role) => role.id === context.process.ownerRoleId);
+  if (explicitRole) {
+    return (
+      <p className="text-xs text-[var(--text-secondary)]">
+        Responsible Role: <span className="font-medium text-[var(--text)]">{explicitRole.name}</span> · Explicit responsibility
+      </p>
+    );
+  }
+  if (ownerRole) {
+    return (
+      <p className="text-xs text-[var(--text-secondary)]">
+        Responsible Role: <span className="font-medium text-[var(--text)]">{ownerRole.name}</span> · Inherited from Process Owner
+      </p>
+    );
+  }
+  return (
+    <p className="text-xs font-medium text-[var(--warning)]">
+      Unclear responsibility — no explicit Responsible Role or Process Owner is documented.
+    </p>
+  );
+}
+
+function AddStepForm({ context, today }: { context: ProcessAuthoringContext; today: string }) {
+  const [state, action, pending] = useActionState(
+    createProcessStepAction,
+    initialProcessAuthoringActionState,
+  );
+  return (
+    <form action={action} className="space-y-5">
+      <HiddenIdentity context={context} />
+      <label className="block">
+        <FieldLabel>Step title</FieldLabel>
+        <Input maxLength={255} name="title" placeholder="Describe one clear unit of work" required />
+      </label>
+      <label className="block">
+        <FieldLabel>Instructions</FieldLabel>
+        <textarea
+          className="min-h-24 w-full resize-y rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-6 text-[var(--text)] outline-none transition placeholder:text-[var(--text-tertiary)] hover:border-[var(--border-strong)] focus:border-[var(--workspace-accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
+          maxLength={5000}
+          name="instructions"
+          placeholder="What happens in this Step?"
+        />
+      </label>
+      <label className="block">
+        <FieldLabel>Responsible Operational Role</FieldLabel>
+        <Select defaultValue="" name="responsibleRoleKey">
+          <option value="">Inherit from Process Owner</option>
+          <RoleOptions context={context} />
+        </Select>
+        <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
+          {context.process.ownerRoleId
+            ? "A blank selection inherits responsibility from the Process Owner. It does not mean nobody is responsible."
+            : "A blank selection remains unclear until a Process Owner is documented."}
+        </span>
+      </label>
+      <ChangeFields today={today} />
+      <label className="block">
+        <FieldLabel>Reason</FieldLabel>
+        <textarea
+          className="min-h-20 w-full resize-y rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-6 text-[var(--text)] outline-none transition placeholder:text-[var(--text-tertiary)] hover:border-[var(--border-strong)] focus:border-[var(--workspace-accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
+          maxLength={2000}
+          name="reason"
+          placeholder="Why is this Step being added?"
+          required
+        />
+      </label>
+      {state.status !== "idle" ? (
+        <Alert tone={state.status === "success" ? "success" : "error"}>{state.message}</Alert>
+      ) : null}
+      <div className="flex justify-end">
+        <Button disabled={pending} type="submit" variant="primary">
+          {pending ? "Adding…" : "Add Step"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function StepDefinitionForm({
+  context,
+  step,
+  today,
+}: {
+  context: ProcessAuthoringContext;
+  step: ProcessAuthoringContext["steps"][number];
+  today: string;
+}) {
+  const [state, action, pending] = useActionState(
+    updateProcessStepAction,
+    initialProcessAuthoringActionState,
+  );
+  return (
+    <form action={action} className="space-y-4">
+      <HiddenStepIdentity context={context} step={step} />
+      <label className="block">
+        <FieldLabel>Step title</FieldLabel>
+        <Input defaultValue={step.title} maxLength={255} name="title" required />
+      </label>
+      <label className="block">
+        <FieldLabel>Instructions</FieldLabel>
+        <textarea
+          className="min-h-24 w-full resize-y rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-6 text-[var(--text)] outline-none transition focus:border-[var(--workspace-accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
+          defaultValue={step.instructions}
+          maxLength={5000}
+          name="instructions"
+        />
+      </label>
+      <ChangeFields today={today} />
+      <label className="block">
+        <FieldLabel>Reason</FieldLabel>
+        <Input maxLength={2000} name="reason" placeholder="Why is this wording changing?" required />
+      </label>
+      {state.status !== "idle" ? <Alert tone={state.status === "success" ? "success" : "error"}>{state.message}</Alert> : null}
+      <div className="flex justify-end">
+        <Button disabled={pending} size="sm" type="submit" variant="primary">{pending ? "Saving…" : "Save wording"}</Button>
+      </div>
+    </form>
+  );
+}
+
+function StepResponsibilityForm({
+  context,
+  step,
+  today,
+}: {
+  context: ProcessAuthoringContext;
+  step: ProcessAuthoringContext["steps"][number];
+  today: string;
+}) {
+  const [state, action, pending] = useActionState(
+    changeProcessStepResponsibilityAction,
+    initialProcessAuthoringActionState,
+  );
+  return (
+    <form action={action} className="space-y-4">
+      <HiddenStepIdentity context={context} step={step} />
+      <label className="block">
+        <FieldLabel>Responsible Operational Role</FieldLabel>
+        <Select defaultValue={step.responsibleRoleId ?? ""} name="responsibleRoleKey">
+          <option value="">Inherit from Process Owner</option>
+          <RoleOptions context={context} />
+        </Select>
+        <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
+          Responsibility is assigned only to an Operational Role. Person, Position, coverage, and reporting context are not inferred.
+        </span>
+      </label>
+      <ChangeFields today={today} />
+      <label className="block">
+        <FieldLabel>Reason</FieldLabel>
+        <Input maxLength={2000} name="reason" placeholder="Why is responsibility changing?" required />
+      </label>
+      {state.status !== "idle" ? <Alert tone={state.status === "success" ? "success" : "error"}>{state.message}</Alert> : null}
+      <div className="flex justify-end">
+        <Button disabled={pending} size="sm" type="submit" variant="primary">{pending ? "Saving…" : "Save responsibility"}</Button>
+      </div>
+    </form>
+  );
+}
+
+function StepReorderForm({
+  context,
+  index,
+  step,
+  today,
+}: {
+  context: ProcessAuthoringContext;
+  index: number;
+  step: ProcessAuthoringContext["steps"][number];
+  today: string;
+}) {
+  const [state, action, pending] = useActionState(
+    reorderProcessStepAction,
+    initialProcessAuthoringActionState,
+  );
+  return (
+    <form action={action} className="space-y-4">
+      <HiddenStepIdentity context={context} step={step} />
+      <ChangeFields today={today} />
+      <label className="block">
+        <FieldLabel>Reason</FieldLabel>
+        <Input maxLength={2000} name="reason" placeholder="Why should this Step move?" required />
+      </label>
+      {state.status !== "idle" ? <Alert tone={state.status === "success" ? "success" : "error"}>{state.message}</Alert> : null}
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button disabled={pending || index === 0} name="direction" size="sm" type="submit" value="earlier">Move earlier</Button>
+        <Button disabled={pending || index === context.steps.length - 1} name="direction" size="sm" type="submit" value="later">Move later</Button>
+      </div>
+    </form>
+  );
+}
+
+function StepsWorkspace({ context, today }: { context: ProcessAuthoringContext; today: string }) {
+  return (
+    <section className="space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium text-[var(--text-tertiary)]">How the work happens</p>
+          <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">Ordered Steps</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
+            Maintain the documented sequence and assign responsibility only where it has been validated.
+          </p>
+        </div>
+        <Badge>{context.steps.length} documented {context.steps.length === 1 ? "Step" : "Steps"}</Badge>
+      </div>
+
+      <Card className="p-4 sm:p-6">
+        <details>
+          <summary className="cursor-pointer text-sm font-semibold text-[var(--workspace-accent)]">Add a Step</summary>
+          <div className="mt-5 border-t border-[var(--border)] pt-5"><AddStepForm context={context} today={today} /></div>
+        </details>
+      </Card>
+
+      {context.steps.length > 0 ? (
+        <div className="space-y-3">
+          {context.steps.map((step, index) => (
+            <Card className="p-4 sm:p-5" key={step.stableKey}>
+              <div className="flex items-start gap-3">
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-xs font-semibold text-[var(--workspace-accent)]">{step.position}</span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-semibold text-[var(--text)]">{step.title}</h3>
+                  <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-[var(--text-secondary)]">{step.instructions || "No instructions documented."}</p>
+                  <div className="mt-3"><StepResponsibilitySummary context={context} responsibleRoleId={step.responsibleRoleId} /></div>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3 border-t border-[var(--border)] pt-4 lg:grid-cols-3">
+                <details className="rounded-[10px] border border-[var(--border)] p-3">
+                  <summary className="cursor-pointer text-xs font-medium text-[var(--text)]">Edit wording</summary>
+                  <div className="mt-4"><StepDefinitionForm context={context} step={step} today={today} /></div>
+                </details>
+                <details className="rounded-[10px] border border-[var(--border)] p-3">
+                  <summary className="cursor-pointer text-xs font-medium text-[var(--text)]">Set responsibility</summary>
+                  <div className="mt-4"><StepResponsibilityForm context={context} step={step} today={today} /></div>
+                </details>
+                <details className="rounded-[10px] border border-[var(--border)] p-3">
+                  <summary className="cursor-pointer text-xs font-medium text-[var(--text)]">Change order</summary>
+                  <div className="mt-4"><StepReorderForm context={context} index={index} step={step} today={today} /></div>
+                </details>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Alert tone="warning">No Steps are documented yet. Add the first Step without implying that the Process is complete or approved.</Alert>
+      )}
+      <Alert>
+        Step removal is not available in this slice. Existing Steps and any scoped Exceptions remain preserved until a governed retirement lifecycle is approved.
+      </Alert>
+    </section>
+  );
+}
+
 export function ProcessAuthoringWorkspace({
   context,
   surface = "explorer",
@@ -293,10 +584,12 @@ export function ProcessAuthoringWorkspace({
         </Card>
       </div>
 
-      <Card className="p-4 sm:p-6">
-        <p className="text-xs font-medium text-[var(--text-tertiary)]">How the work happens</p>
-        <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">Current read-only context</h2>
-        <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">Steps, responsible Roles, Systems, Exceptions, and Process dependencies remain visible on Process Detail. Their authoring controls are intentionally deferred to later slices.</p>
+      <StepsWorkspace context={context} today={today} />
+
+      <Card className="mt-5 p-4 sm:p-6">
+        <p className="text-xs font-medium text-[var(--text-tertiary)]">Connected context</p>
+        <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">Systems, Exceptions, and dependencies</h2>
+        <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">These relationships remain visible on Process Detail and read-only until their separately reviewed Builder slices.</p>
         <Link className="mt-4 inline-flex text-sm font-medium text-[var(--workspace-accent)] hover:underline" href={processHref}>View complete Process Detail</Link>
       </Card>
 
@@ -341,7 +634,7 @@ export function ProcessAuthoringWorkspace({
             ))}
           </div>
         ) : (
-          <Alert>No Slice A change history exists for this Process yet. Earlier canonical records were not given synthetic history.</Alert>
+          <Alert>No authoring change history exists for this Process yet. Earlier canonical records were not given synthetic history.</Alert>
         )}
       </section>
     </div>

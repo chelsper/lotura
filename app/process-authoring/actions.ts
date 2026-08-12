@@ -3,9 +3,13 @@
 import { revalidatePath } from "next/cache";
 
 import {
+  changeProcessStepResponsibility,
   changeProcessOwner,
+  createProcessStep,
+  reorderProcessStep,
   type OperatingModelChangeKind,
   updateProcessDefinition,
+  updateProcessStep,
 } from "@/lib/operating-model-administration";
 
 import type { ProcessAuthoringActionState } from "./action-state";
@@ -88,6 +92,92 @@ export async function changeProcessOwnerAction(
     ...common,
     ownerConfirmed: text(formData, "ownerConfirmed") === "yes",
     ownerRoleKey: text(formData, "ownerRoleKey") || null,
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+
+  revalidateProcess(common.processKey);
+  return { status: "success", message: result.message };
+}
+
+export async function createProcessStepAction(
+  _previousState: ProcessAuthoringActionState,
+  formData: FormData,
+): Promise<ProcessAuthoringActionState> {
+  const common = commonInput(formData);
+  if (!common) {
+    return { status: "error", message: "Review the Step details and try again." };
+  }
+
+  const result = await createProcessStep({
+    ...common,
+    instructions: text(formData, "instructions"),
+    responsibleRoleKey: text(formData, "responsibleRoleKey") || null,
+    title: text(formData, "title"),
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+
+  revalidateProcess(common.processKey);
+  return { status: "success", message: result.message };
+}
+
+export async function updateProcessStepAction(
+  _previousState: ProcessAuthoringActionState,
+  formData: FormData,
+): Promise<ProcessAuthoringActionState> {
+  const common = commonInput(formData);
+  if (!common) {
+    return { status: "error", message: "Review the Step wording and try again." };
+  }
+
+  const result = await updateProcessStep({
+    ...common,
+    expectedStepRevision: text(formData, "expectedStepRevision"),
+    instructions: text(formData, "instructions"),
+    stepStableKey: text(formData, "stepStableKey"),
+    title: text(formData, "title"),
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+
+  revalidateProcess(common.processKey);
+  return { status: "success", message: result.message };
+}
+
+export async function changeProcessStepResponsibilityAction(
+  _previousState: ProcessAuthoringActionState,
+  formData: FormData,
+): Promise<ProcessAuthoringActionState> {
+  const common = commonInput(formData);
+  if (!common) {
+    return { status: "error", message: "Review the responsibility change and try again." };
+  }
+
+  const result = await changeProcessStepResponsibility({
+    ...common,
+    expectedStepRevision: text(formData, "expectedStepRevision"),
+    responsibleRoleKey: text(formData, "responsibleRoleKey") || null,
+    stepStableKey: text(formData, "stepStableKey"),
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+
+  revalidateProcess(common.processKey);
+  return { status: "success", message: result.message };
+}
+
+export async function reorderProcessStepAction(
+  _previousState: ProcessAuthoringActionState,
+  formData: FormData,
+): Promise<ProcessAuthoringActionState> {
+  const common = commonInput(formData);
+  const direction = text(formData, "direction");
+  if (!common || !["earlier", "later"].includes(direction)) {
+    return { status: "error", message: "Review the Step order change and try again." };
+  }
+
+  const result = await reorderProcessStep({
+    ...common,
+    direction: direction as "earlier" | "later",
+    expectedStepRevision: text(formData, "expectedStepRevision"),
+    stepStableKey: text(formData, "stepStableKey"),
   });
   if (!result.ok) return { status: "error", message: result.message };
 

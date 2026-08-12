@@ -7,13 +7,21 @@ import {
   person,
   position,
   process as processTable,
+  processStep,
   role,
   roleCoverage,
   roleMandate,
 } from "@/db/schema";
 
 export type OperatingModelChangeSummary = {
-  action: "create_draft" | "update_definition" | "change_owner";
+  action:
+    | "create_draft"
+    | "update_definition"
+    | "change_owner"
+    | "create_step"
+    | "update_step"
+    | "reorder_steps"
+    | "change_step_responsibility";
   actorIdentifier: string;
   afterState: Record<string, unknown>;
   beforeState: Record<string, unknown>;
@@ -64,6 +72,15 @@ export type ProcessAuthoringContext = {
     status: "draft" | "active" | "archived";
   };
   roles: AuthoringRoleContext[];
+  steps: Array<{
+    id: string;
+    stableKey: string;
+    instructions: string;
+    position: number;
+    responsibleRoleId: string | null;
+    revision: string;
+    title: string;
+  }>;
 };
 
 function processDatabaseId(value: string) {
@@ -101,7 +118,7 @@ export async function loadProcessAuthoringContext(
   }
   const { db } = await import("@/db");
 
-  const [processes, roles, positions, people, mandates, coverages, history] =
+  const [processes, steps, roles, positions, people, mandates, coverages, history] =
     await db.batch([
       db
         .select({
@@ -121,6 +138,24 @@ export async function loadProcessAuthoringContext(
           ),
         )
         .limit(1),
+      db
+        .select({
+          id: processStep.id,
+          stableKey: processStep.stableKey,
+          instructions: processStep.instructions,
+          position: processStep.position,
+          responsibleRoleId: processStep.responsibleRoleId,
+          title: processStep.title,
+          updatedAt: processStep.updatedAt,
+        })
+        .from(processStep)
+        .where(
+          and(
+            eq(processStep.organizationId, organizationId),
+            eq(processStep.processId, processId),
+          ),
+        )
+        .orderBy(asc(processStep.position), asc(processStep.id)),
       db
         .select({
           id: role.id,
@@ -263,6 +298,17 @@ export async function loadProcessAuthoringContext(
       status: currentProcess.status,
     },
     roles: roleContexts,
+    steps: steps.map((item) => ({
+      id: `step:${item.id}`,
+      stableKey: item.stableKey,
+      instructions: item.instructions,
+      position: item.position,
+      responsibleRoleId: item.responsibleRoleId
+        ? `role:${item.responsibleRoleId}`
+        : null,
+      revision: item.updatedAt.toISOString(),
+      title: item.title,
+    })),
     history: history.map((item) => ({
       action: item.action,
       actorIdentifier: item.actorIdentifier,

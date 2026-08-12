@@ -82,6 +82,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-037 | Workspace Studio is the governed authoring environment for the organizational digital twin | Accepted — product direction |
 | LAD-038 | Operational Roles have immutable identity and first-class responsibility history | Accepted — implementation authorized for Responsibility Builder v0.1 |
 | LAD-039 | Duplicate Organization Units merge into one surviving identity without erasing evidence | Accepted — implementation authorized for Organization Unit Merge v0.1 |
+| LAD-040 | Process Steps have immutable identity and explicit authoring history | Accepted — implementation authorized for Step Builder v0.1 |
 
 ## Decision records
 
@@ -748,6 +749,87 @@ required. Cross-Organization merges, automatic fuzzy duplicate detection,
 bulk merge suggestions, merge reversal, and source-evidence reconciliation
 remain deferred.
 
+### LAD-040 — Process Steps have immutable identity and explicit authoring history
+
+**Status:** Accepted — implementation authorized for Step Builder v0.1.
+
+**Context:** Operating Model Authoring Slice A established immutable Process
+identity, explicit Owner Role maintenance, and append-only Process history.
+Workspace Studio now provides the Process Builder destination, but ordered
+Steps and their responsible Operational Roles remain read-only. The existing
+`process_steps` table has only an internal integer identity, while the
+operating-model history vocabulary is deliberately limited to Slice A Process
+actions. Reusing those actions or recording a mutable position as Step
+identity would make later corrections and reordering difficult to explain.
+
+**Decision:** Every Process Step receives an immutable, random Lotura UUID
+`stableKey` in addition to its existing database identity. Step title,
+instructions, order, Process, responsible Role, source row, and position never
+generate that identity. Existing Explorer and Process Detail routes and
+projections remain unchanged.
+
+An authenticated Workspace Administrator may add a Step, update its title and
+instructions, move it one position earlier or later, and explicitly assign or
+clear its responsible Operational Role. A null responsible Role retains the
+LAD-006 meaning: responsibility is inherited from the Process Owner. If the
+Process has no Owner Role, the interface presents responsibility as unclear;
+it does not infer responsibility from a Person, Position, title, RoleMandate,
+RoleCoverage, reporting relationship, or execution history.
+
+Step authoring uses explicit `create_step`, `update_step`,
+`reorder_steps`, and `change_step_responsibility` history actions and a
+`process_step` history target. History retains tenant-safe references to both
+the immutable Process and Step identities. Every canonical Step mutation,
+aggregate Process revision update, and append-only history insertion occurs
+atomically in one serializable transaction. Reordering records the before and
+after position of both affected Steps and uses deferred enforcement of the
+existing per-Process position uniqueness constraint so a valid swap does not
+create a false transient collision.
+
+Step removal is not part of v0.1. The current model has no Step retirement
+lifecycle, and a Step may scope an Exception. Hard deletion or hiding a Step
+would risk erasing current knowledge and requires a separate lifecycle,
+dependency, versioning, and restoration decision.
+
+Step Builder reuses the dedicated Process administration credential with only
+the reviewed column-level Step privileges. It does not broaden the Structure
+administrator, runtime role, owner credential, public demo, or any other
+operating-model entity write boundary. The authenticated Lotura actor remains
+independent of Person, Position, Membership, mandate, coverage, or reporting
+context.
+
+**Why:** Ordered work and responsibility are part of the organizational
+digital twin, but useful authoring must not trade away identity, provenance,
+tenant isolation, or the established responsibility semantics. Durable Step
+identity lets Lotura distinguish editing, reordering, and future lifecycle
+changes without treating wording or sequence as identity.
+
+**Alternatives considered:** Use the Step integer ID as durable identity;
+identify Steps by position or title; overload `update_definition`; store Step
+changes only in Process-level JSON; allow hard deletion; add full Process
+versioning first; or infer responsibility from current Position coverage.
+These were rejected because they expose storage identity, make reorder or
+rename ambiguous, weaken history vocabulary, erase knowledge, introduce a
+larger unapproved lifecycle, or conflate human context with responsibility. A
+UI-only alternative cannot provide immutable identity, Step-targeted history,
+or the required privilege boundary.
+
+**Affected decisions:** This decision follows LAD-003, LAD-006 through
+LAD-010, LAD-015, LAD-018, LAD-020, LAD-023, LAD-026, LAD-029, LAD-032,
+LAD-033, LAD-035, and LAD-036. It extends LAD-037's Process Builder direction
+without superseding any prior decision. It does not change FLOW calculations
+or the meaning of inherited responsibility.
+
+**Consequences and deferrals:** Migration `0014` adds Step stable identity,
+Step-targeted history references and vocabulary, the immutable-key trigger,
+supporting constraints and indexes, and the minimum deferrable ordering
+constraint needed for atomic adjacent swaps. No new domain table, environment
+variable, credential, package, fixture, or public capability is introduced.
+Step retirement/removal, bulk reorder, branching or conditional Step graphs,
+field-level evidence, approved Process versions, System/Exception/dependency
+authoring, Contributor proposals, approvals, and FLOW changes remain
+intentionally deferred.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -795,8 +877,10 @@ The code baseline includes the read-only Process Explorer and deterministic FLOW
 
 The public fixture/demo experience remains public, fictional, and read-only. A code or architecture decision does not authorize a migration, credential, environment change, deployment, or private-data import; each remains a separately approved operation.
 
-Workspace Studio now provides Organization Builder and Responsibility Builder
-through the existing domain-specific permission and history boundaries. Process,
-Technology, Knowledge, Governance, Discovery, Activity synthesis, relationship
-canvas, and AI expansion remain separately reviewed slices rather than implied
-capabilities of the Studio shell.
+Workspace Studio now provides Organization Builder, Responsibility Builder,
+and the Process Builder foundation through the existing domain-specific
+permission and history boundaries. Step Builder is the next separately
+authorized Process slice under LAD-040. Technology, Knowledge, Governance,
+Discovery, Activity synthesis, relationship canvas, and AI expansion remain
+separately reviewed slices rather than implied capabilities of the Studio
+shell.

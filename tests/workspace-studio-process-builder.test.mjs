@@ -26,7 +26,8 @@ test("Process Builder is a maintenance inventory rather than a second Explorer",
   ]);
   assert.match(list, /title="Process Builder"/);
   assert.match(list, /Canonical existence does not establish institutional approval/);
-  assert.match(list, /Steps and other operating-model relationships remain read-only in this slice/);
+  assert.match(list, /ordered Steps, and explicit or inherited Step responsibility/);
+  assert.match(list, /Systems, Exceptions, and dependencies remain read-only/);
   assert.match(browser, /Search by Process, purpose, or Owner Role/);
   assert.match(browser, /Owner needs validation/);
   assert.match(browser, /href={`\/studio\/processes\/\$\{encodeURIComponent\(process\.id\)\}`}/);
@@ -46,7 +47,7 @@ test("Process Detail now enters Studio while the legacy maintain route stays ava
   assert.match(workspace, /View complete Process Detail/);
 });
 
-test("the Process Builder foundation adds no new canonical mutation capability", async () => {
+test("Step Builder expands only the approved canonical mutation capability", async () => {
   const [administration, actions, schema, journal] = await Promise.all([
     read("lib/operating-model-administration.ts"),
     read("app/process-authoring/actions.ts"),
@@ -55,11 +56,20 @@ test("the Process Builder foundation adds no new canonical mutation capability",
   ]);
   assert.deepEqual(
     [...administration.matchAll(/export async function (\w+)/g)].map((match) => match[1]),
-    ["updateProcessDefinition", "changeProcessOwner"],
+    [
+      "updateProcessDefinition",
+      "changeProcessOwner",
+      "createProcessStep",
+      "updateProcessStep",
+      "changeProcessStepResponsibility",
+      "reorderProcessStep",
+    ],
   );
-  assert.doesNotMatch(actions, /addStep|linkSystem|addException|addDependency/);
-  assert.doesNotMatch(schema, /process_step_stable_key|retire_step/);
-  assert.equal(JSON.parse(journal).entries.at(-1).tag, "0013_organization_unit_merge");
+  assert.match(actions, /createProcessStepAction/);
+  assert.doesNotMatch(actions, /linkSystem|addException|addDependency|removeProcessStep/);
+  assert.match(schema, /processStepStableKey/);
+  assert.doesNotMatch(schema, /retire_step/);
+  assert.equal(JSON.parse(journal).entries.at(-1).tag, "0014_workspace_studio_step_builder");
 });
 
 test("Process mutations revalidate both Explorer and Studio views", async () => {

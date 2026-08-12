@@ -26,10 +26,12 @@ test("canonical changes and history insertions are one serializable operation", 
   assert.doesNotMatch(administration, /(?:update|delete from) operating_model_changes/i);
 });
 
-test("definition and ownership changes use deterministic stale-write protection", async () => {
+test("Process and Step changes use deterministic stale-write protection", async () => {
   const administration = await read("lib/operating-model-administration.ts");
   const comparisons = administration.match(/date_trunc\('milliseconds', target\.updated_at\) = \$\d+::timestamptz/g) ?? [];
-  assert.equal(comparisons.length, 2);
+  assert.ok(comparisons.length >= 2);
+  assert.match(administration, /expectedStepRevision/);
+  assert.match(administration, /date_trunc\('milliseconds', step\.updated_at\) = \$\d+::timestamptz/g);
   assert.match(administration, /updated_at = date_trunc\('milliseconds', transaction_timestamp\(\)\)/g);
   assert.match(administration, /This Process changed after the page loaded/);
 });
@@ -44,7 +46,11 @@ test("ownership is explicit, same-organization, active-Role only, and clearable 
   assert.match(administration, /current\.status = 'draft'/);
   assert.match(workspace, /never inferred from a Person, Position title, or reporting line/);
   assert.match(workspace, /Position and person details provide current context only/);
-  assert.doesNotMatch(administration, /role_mandates|role_coverages|positions|people/);
+  const ownerMutation = administration.slice(
+    administration.indexOf("export async function changeProcessOwner"),
+    administration.indexOf("export async function createProcessStep"),
+  );
+  assert.doesNotMatch(ownerMutation, /role_mandates|role_coverages|positions|people/);
 });
 
 test("the Maintain route requires authoritative access and fails closed", async () => {
@@ -68,7 +74,7 @@ test("the authoring projection is organization-scoped, read-only, and excludes l
     read("lib/operating-model-authoring-data.ts"),
     read("app/explorer/[processId]/maintain/page.tsx"),
   ]);
-  for (const table of ["processTable", "role", "position", "person", "roleMandate", "roleCoverage", "operatingModelChange"]) {
+  for (const table of ["processTable", "processStep", "role", "position", "person", "roleMandate", "roleCoverage", "operatingModelChange"]) {
     assert.match(data, new RegExp(`eq\\(${table}\\.organizationId, organizationId\\)`));
   }
   assert.doesNotMatch(data, /insert\(|update\(|delete\(|roleAssignment/);
@@ -86,5 +92,6 @@ test("the least-privilege contract excludes unrelated writes and immutable-histo
   assert.match(documentation, /GRANT UPDATE \([\s\S]+name,[\s\S]+purpose,[\s\S]+owner_role_id,[\s\S]+updated_at[\s\S]+\) ON processes/);
   assert.match(documentation, /GRANT INSERT \([\s\S]+ON operating_model_changes/);
   assert.match(documentation, /No `UPDATE` or `DELETE` on `operating_model_changes`/);
-  assert.match(documentation, /No privileges on Process Steps, Systems, Exceptions, dependencies/);
+  assert.match(documentation, /No `DELETE` or `TRUNCATE` on Process Steps/);
+  assert.match(documentation, /No mutation privileges on Systems, Exceptions, dependencies/);
 });
