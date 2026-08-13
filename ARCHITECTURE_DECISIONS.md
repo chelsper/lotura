@@ -86,6 +86,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-041 | Technology and Exceptions use immutable identity and explicit operating-model history | Accepted — implementation authorized for Technology & Exceptions Builder v0.1 |
 | LAD-042 | Guided interviews preserve immutable source observations before canonical change | Accepted — implementation authorized for Guided Interview Foundation v0.1 |
 | LAD-043 | Deterministic Discovery review signals prompt human review without interpreting truth | Accepted — implementation authorized for Discovery Review Signals v0.1 |
+| LAD-044 | Discovery comparison shows current documentation beside interview notes without proposing change | Accepted — implementation authorized for Discovery Reconciliation Preview v0.1 |
 
 ## Decision records
 
@@ -1084,6 +1085,64 @@ environment change. Claim-level evidence identity, accepted divergence,
 cross-session comparison, source authority, reconciliation, approval,
 AI-generated follow-ups, and persisted review disposition remain deferred and
 require a later decision.
+
+### LAD-044 — Discovery comparison shows current documentation beside interview notes without proposing change
+
+**Status:** Accepted — implementation authorized for Discovery Reconciliation
+Preview v0.1.
+
+**Context:** A completed interview now preserves source observations and
+deliberate uncertainty, but a reviewer cannot yet see those answers beside the
+Process that Lotura currently documents. Jumping directly from free text to a
+structured update would silently interpret evidence and blur the boundary
+between what someone said, what Lotura proposes, and what the organization has
+accepted. The first real interview also demonstrated that precise internal
+terms such as “canonical” and “sanitized working draft” make ordinary product
+tasks harder to understand.
+
+**Decision:** A Ready for review Discovery session may expose an
+Organization-scoped, read-only comparison page. It groups active interview
+observations by the existing bounded topics and displays their exact text,
+certainty label, and source link beside the currently documented Process
+purpose, ownership, Steps, Systems, Exceptions, and explicit dependencies.
+Superseded observations remain available on the interview record but do not
+appear as current comparison notes.
+
+The comparison performs no free-text parsing, record matching, conflict
+resolution, proposed change selection, approval, canonical mutation, or AI
+processing. Areas not represented in the current Process schema—such as
+dedicated start/end boundaries and detailed uncertainty—must be described as
+not currently represented rather than inferred from adjacent fields.
+
+Product screens translate precise internal model terms into conversational
+language. The interface uses “Current documented Process,” “Interview notes,”
+“Still needs review,” and “No changes have been made.” Internal architecture,
+schema, audit, and security documentation may retain terms such as canonical,
+epistemic state, immutable evidence, and sanitization boundary when that
+precision is required.
+
+The route must require authoritative private-workspace access before loading
+Discovery or Process data, derive Organization scope from the server, and fail
+closed for a missing, cross-Organization, or not-ready session. It adds no
+server action or mutation capability.
+
+**Why:** A side-by-side view gives a reviewer the information needed to think
+carefully about a future update without asking the software to interpret the
+organization. Conversational language makes the trust boundary clearer because
+people can understand what is documented, what came from the interview, and
+whether anything changed.
+
+**Affected decisions:** This decision follows and narrowly extends LAD-021,
+LAD-025, LAD-029, LAD-032, LAD-037, LAD-042, and LAD-043. It does not authorize
+the proposed-change, reconciliation-state, approval, Process-version, or AI
+capabilities deferred by LAD-042.
+
+**Consequences and deferrals:** Discovery Reconciliation Preview v0.1 requires
+no schema, migration, database privilege, credential, environment variable,
+canonical write, or new dependency. Persisted reconciliation decisions,
+structured proposals, automatic mappings, approval, canonical application,
+Process versions, multi-participant comparison, and AI assistance remain
+deferred and require a later decision.
 
 ## Intentionally deferred ideas register
 

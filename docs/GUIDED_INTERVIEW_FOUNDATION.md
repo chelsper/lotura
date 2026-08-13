@@ -63,6 +63,20 @@ The correction form copies the active observation text and evidence state by
 default. This reduces accidental context loss while preserving LAD-042's rule
 that every submitted correction is a new append-only observation.
 
+## Side-by-side review
+
+Under LAD-044, a session that is Ready for review can compare the current
+documented Process with the active interview notes. The page groups exact
+answers by purpose, boundaries, responsibility, Steps, Systems, Exceptions,
+dependencies, and unresolved knowledge. Every answer retains its certainty
+label and links back to the interview record.
+
+The comparison does not parse free text, match records, choose changes, create
+a proposal, approve information, or update the Process. Superseded answers
+remain visible in the interview history but are not presented as current notes.
+The interface uses conversational language; precise internal model terms remain
+in technical documentation where they are necessary.
+
 ## Knowledge states
 
 - **Known** — the participant represents the observation as current fact.

@@ -134,7 +134,7 @@ export async function createDiscoverySession(input: {
     }
     return {
       ok: true,
-      message: "Interview started. No canonical Process facts were changed.",
+      message: "Interview started. No Process information was changed.",
       sessionId: String(row.session_id),
     };
   } catch (error) {
@@ -260,7 +260,7 @@ export async function answerDiscoveryQuestion(input: {
       ok: true,
       message: nextQuestionKey === DISCOVERY_REVIEW_KEY
         ? "Observation preserved. The interview is ready for review."
-        : "Observation preserved. No canonical Process facts were changed.",
+        : "Answer saved. No Process information was changed.",
       sessionId: input.sessionId,
     };
   } catch (error) {
