@@ -34,6 +34,22 @@ const STATES = new Set<DiscoveryEpistemicState>([
   "conflicting_observation",
 ]);
 
+function logDiscoveryDatabaseFailure(operation: string, error: unknown) {
+  const details = typeof error === "object" && error !== null
+    ? error as Record<string, unknown>
+    : {};
+  const safeValue = (value: unknown) =>
+    typeof value === "string" && value.length > 0 ? value : undefined;
+
+  console.error("[guided-discovery] database operation failed", {
+    code: safeValue(details.code),
+    constraint: safeValue(details.constraint),
+    operation,
+    routine: safeValue(details.routine),
+    table: safeValue(details.table),
+  });
+}
+
 function processIdFromKey(value: string) {
   const match = /^process:([1-9][0-9]*)$/.exec(value);
   if (!match) return null;
@@ -121,7 +137,8 @@ export async function createDiscoverySession(input: {
       message: "Interview started. No canonical Process facts were changed.",
       sessionId: String(row.session_id),
     };
-  } catch {
+  } catch (error) {
+    logDiscoveryDatabaseFailure("create_session", error);
     return {
       ok: false,
       code: "unavailable",
@@ -245,7 +262,8 @@ export async function answerDiscoveryQuestion(input: {
         : "Observation preserved. No canonical Process facts were changed.",
       sessionId: input.sessionId,
     };
-  } catch {
+  } catch (error) {
+    logDiscoveryDatabaseFailure("append_observation", error);
     return {
       ok: false,
       code: "unavailable",
@@ -297,7 +315,8 @@ export async function setDiscoverySessionPaused(input: {
       message: input.paused ? "Interview paused." : "Interview resumed.",
       sessionId: input.sessionId,
     };
-  } catch {
+  } catch (error) {
+    logDiscoveryDatabaseFailure(input.paused ? "pause_session" : "resume_session", error);
     return { ok: false, code: "unavailable", message: "The interview state could not be changed safely." };
   }
 }
@@ -396,7 +415,8 @@ export async function appendDiscoveryCorrection(input: {
       message: "Correction appended. The prior observation remains in the record.",
       sessionId: input.sessionId,
     };
-  } catch {
+  } catch (error) {
+    logDiscoveryDatabaseFailure("append_correction", error);
     return {
       ok: false,
       code: "unavailable",
