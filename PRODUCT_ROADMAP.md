@@ -65,7 +65,10 @@ This is the current dependency-ordered sequence of meaningful product
 milestones:
 
 1. **Structured Proposed Changes** — a human maps selected evidence to explicit
-   proposed Process changes without changing the Process.
+   proposed Process changes without changing the Process. Slice 1 provides the
+   typed mapping foundation for Process purpose, Owner Operational Role, and
+   unresolved questions; later slices add the remaining operating-model
+   targets before this milestone is complete.
 2. **Proposal Review & Governance** — accountable people review, validate, and
    approve or reject proposed items within explicit scope.
 3. **Process Versions & Atomic Application** — an approved proposal produces a

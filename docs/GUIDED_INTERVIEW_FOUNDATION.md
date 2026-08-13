@@ -205,15 +205,66 @@ GRANT INSERT (
 ) ON discovery_proposal_decisions TO <discovery_role>;
 GRANT USAGE ON SEQUENCE discovery_proposals_id_seq,
   discovery_proposal_decisions_id_seq TO <discovery_role>;
+
+-- Added only when Structured Proposed Changes v0.1, Slice 1 is enabled:
+GRANT SELECT ON TABLE roles, discovery_proposal_mappings,
+  discovery_mapping_items, discovery_mapping_sources TO <discovery_role>;
+GRANT INSERT (
+  organization_id, proposal_id, proposal_stable_key, session_id,
+  session_stable_key, process_id, process_stable_key, actor_identifier
+) ON discovery_proposal_mappings TO <discovery_role>;
+GRANT UPDATE (
+  status, revision, ready_at, ready_by_actor, updated_at
+) ON discovery_proposal_mappings TO <discovery_role>;
+GRANT INSERT (
+  organization_id, mapping_id, mapping_stable_key, item_stable_key,
+  item_sequence, state, action, owner_role_id, owner_role_stable_key,
+  before_state, proposed_state, rationale, actor_identifier
+) ON discovery_mapping_items TO <discovery_role>;
+GRANT INSERT (
+  organization_id, mapping_id, mapping_stable_key, item_revision_id,
+  item_revision_stable_key, session_id, session_stable_key,
+  observation_stable_key
+) ON discovery_mapping_sources TO <discovery_role>;
+GRANT USAGE ON SEQUENCE discovery_proposal_mappings_id_seq,
+  discovery_mapping_items_id_seq, discovery_mapping_sources_id_seq
+  TO <discovery_role>;
 ```
 
-The normal runtime role may receive `SELECT` on the two Discovery tables for
-server-rendered reads. It remains unable to insert, update, or delete.
+The normal runtime role may receive `SELECT` on the two Discovery tables added
+by Discovery Proposed Update v0.1 and, after Slice 1, on the three structured-
+mapping tables for server-rendered reads. It remains unable to insert, update,
+or delete.
 
 The Discovery role receives no write privilege on Process, Step, Role, System,
 Exception, dependency, Organization Structure, `operating_model_changes`, or
 any unrelated table. It receives no schema, database, role, migration,
 `TRUNCATE`, observation `UPDATE`, or observation `DELETE` privilege.
+
+## Structured proposed changes — Slice 1
+
+Under LAD-049, a finished proposed-update basis can be turned into explicit
+human-authored proposal items. Slice 1 supports only:
+
+- a proposed update to the Process purpose;
+- a proposed assignment, replacement, or Draft-compatible clearing of the
+  Owner Operational Role; and
+- an unresolved question that intentionally preserves evidence without
+  pretending it is a Process field change.
+
+Each proposal item cites one or more exact interview answers that were selected
+for use in the proposed update. Revisions, withdrawal, and restoration append
+new item records. Earlier item revisions and their evidence links cannot be
+updated or deleted. The selected Role must be an existing active Operational
+Role in the same Organization; it is never inferred from Person, Position,
+title, reporting hierarchy, RoleMandate, or RoleCoverage.
+
+A mapping can become **Ready for proposal review** only when every included
+answer supports an active item or an unresolved question, no competing purpose
+or Owner Role proposals remain, referenced Roles are still active, and the
+documented Process still matches the snapshot saved when review began. This
+state does not approve or apply the proposal. No row is written to `processes`,
+`operating_model_changes`, or any other documented operating-model table.
 
 ## Integrity behavior
 
@@ -235,13 +286,15 @@ any unrelated table. It receives no schema, database, role, migration,
 
 Multiple participants, interviewing on behalf of another Person, Contributor
 access, consent records, uploads, source artifacts, AI, dynamic follow-up
-selection, governed conflict detection, structured field matching, approval,
-application to the Process, Process versioning, proposal withdrawal or
-rebasing, export, retention automation, and deletion require later decisions.
+selection, governed conflict detection, Step, responsibility, System,
+Exception, and dependency mappings, approval, application to the Process,
+Process versioning, completed-package withdrawal or rebasing, export, retention
+automation, and deletion require later decisions.
 Refresh-safe server persistence exists for submitted observations and proposal
 choices; unsent form text remains browser-local and may be lost.
 
-The immediate next lifecycle capability is manual structured proposed-change
-mapping. Human approval and atomic application to a versioned Process remain a
-later, separate boundary. AI may not suggest or automate this path until the
-manual mapping, approval, and version-application semantics are proven.
+Slice 1 begins manual structured proposed-change mapping. Later slices add the
+remaining operating-model targets. Human approval and atomic application to a
+versioned Process remain later, separate boundaries. AI may not suggest or
+automate this path until the manual mapping, approval, and version-application
+semantics are proven.

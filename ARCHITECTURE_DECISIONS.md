@@ -91,6 +91,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-046 | The Organizational Knowledge Lifecycle preserves evidence, interpretation, proposal, approval, and the operating model as separate layers | Accepted — product direction |
 | LAD-047 | Process Family membership, Process composition, and Process dependency are distinct relationships | Accepted — product direction |
 | LAD-048 | Reference Model differences create review questions, not automatic conclusions | Accepted — product direction |
+| LAD-049 | Structured proposed changes are typed human mappings, not approval or Process mutation | Accepted — implementation authorized for Structured Proposed Changes v0.1, Slice 1 |
 
 ## Decision records
 
@@ -1376,6 +1377,97 @@ versioning, attachment rules, comparison snapshots, governance, retention, and
 compliance policy remain deferred. This decision authorizes no content intake,
 schema, migration, AI comparison, environment, or data change.
 
+### LAD-049 — Structured proposed changes are typed human mappings, not approval or Process mutation
+
+**Status:** Accepted — implementation authorized for Structured Proposed
+Changes v0.1, Slice 1.
+
+**Context:** LAD-045 preserves a finished proposed-update basis: exact interview
+observations, their current human treatments, and a frozen snapshot of the
+documented Process. It intentionally does not turn free text into Process
+fields. LAD-046 requires the next manual lifecycle boundary to remain separate
+from approval, Process versioning, and application. A durable intermediate
+model is therefore required before an administrator can responsibly propose
+specific changes.
+
+**Decision:** A finished `discovery_proposal` may have one separate,
+Organization-scoped structured-mapping workspace. The workspace has immutable
+proposal, interview, and Process context; a database-generated random UUID; a
+compare-and-set revision; and a lifecycle of **Draft** or **Ready for proposal
+review**. Ready for proposal review does not mean approved, applied, published,
+or current documentation.
+
+Structured proposal items are human-authored, typed review units. Each logical
+item has a stable proposal identity and append-only revisions. A revision
+records an explicit action, the relevant current documented state, the proposed
+state, a rationale, the authenticated Lotura actor, and transaction time.
+Withdrawing or restoring an item appends another revision; it never updates or
+deletes prior item history. Immutable source links identify the exact current
+interview observations supporting each item.
+
+Slice 1 supports only:
+
+- proposing an update to Process purpose;
+- proposing assignment, replacement, or Draft-compatible clearing of the
+  Process Owner Operational Role; and
+- preserving selected evidence as an unresolved question that requires later
+  information rather than pretending it is a Process change.
+
+Operational Role targets must already exist and be active in the same
+Organization. Owner Role is never inferred from Person, Position, title,
+RoleMandate, RoleCoverage, or reporting hierarchy. The proposed before and
+after states are typed snapshots, not executable generic JSON patches. Every
+current observation selected for use in the proposal must either support at
+least one current structured item or be explicitly preserved as unresolved
+before the mapping workspace can become ready.
+
+Readiness rechecks the current documented Process fingerprint against the
+frozen LAD-045 snapshot. If documentation changed after comparison began, the
+mapping remains readable but cannot silently become ready. Rebase,
+supersession, and withdrawal of a completed package require later decisions.
+
+The mapping workspace remains inside the existing server-only Discovery write
+boundary. Every mutation reauthorizes authenticated private-workspace access,
+derives Organization and actor identity on the server, validates same-
+Organization proposal, observation, Process, and Role references, uses
+serializable transactions and compare-and-set protection, and returns only
+bounded user-facing results. The Discovery role may receive only the additional
+mapping-table privileges required by this slice. It receives no Process, Role,
+operating-model history, structure, schema, or administration mutation
+privilege. Public/demo mode cannot render or invoke the capability.
+
+**Why:** Human-authored structured mappings make the proposed change explicit
+without treating evidence as approved documentation. Append-only revisions and
+exact evidence links preserve how an interpretation evolved, while the frozen
+Process comparison point and stale-documentation block prevent a proposal from
+silently overwriting later work.
+
+**Alternatives considered:** Store mappings as free text; add proposed fields
+directly to observations; mutate the finished LAD-045 package; write directly
+to `processes`; reuse `operating_model_changes`; allow arbitrary JSON Patch;
+infer an Owner Role; or combine mapping, approval, versioning, and application
+in one action. These were rejected because they blur lifecycle layers, weaken
+tenant and target integrity, erase interpretation history, or grant authority
+that this slice does not possess.
+
+**Affected decisions:** This decision follows and narrowly extends LAD-001,
+LAD-002, LAD-015, LAD-016, LAD-018, LAD-021 through LAD-026, LAD-029, LAD-032,
+LAD-035 through LAD-037, and LAD-042 through LAD-046. It does not supersede
+them. It does not change the structural or comparison concepts preserved by
+LAD-047 and LAD-048.
+
+**Consequences and deferrals:** After approval, forward-only migration `0018`
+may add only the structured-mapping status, action, and item-state enums; one
+mapping workspace table; append-only item revisions; immutable source links;
+same-Organization composite safeguards; lifecycle, identity, target-shape, and
+immutability checks; and supporting indexes. The runtime role may receive
+SELECT on the three new tables. The Discovery role may receive only reviewed
+SELECT, INSERT, limited mapping lifecycle UPDATE, and sequence privileges.
+Steps, Step responsibility, Systems, Exceptions, dependencies, proposal
+governance, approval, Process versions, application, `operating_model_changes`,
+AI suggestions, rebasing, and environment rollout remain separately approved
+work.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -1389,7 +1481,7 @@ The following ideas are recorded so postponement is visible and deliberate.
 | Uploads, imports, Visio/PDF/flowchart parsing | Requires malware handling, source permissions, artifact retention, provenance, and conflict treatment | Artifact architecture, storage, security, and extraction decision |
 | Whiteboard and collaborative capture | Draft contribution, authorship, reconciliation, and conversion to structured knowledge are undefined | Collaboration, observation, and approval decision |
 | Conflict detection and consensus | Conflicts need identity, scope, lifecycle, privacy, and human resolution | Conflict and reconciliation schema decision |
-| Structured proposal application and approval workflow | LAD-045 now preserves a human-reviewed proposed-update basis, but it does not produce field mappings or authority to change the Process | Structured mapping, approval authority, Process write/versioning, effective time, and supersession decision |
+| Structured proposal application and approval workflow | LAD-049 authorizes only Slice 1 purpose, Owner Role, and unresolved mappings; it grants no approval or authority to change the Process | Remaining structured targets, approval authority, Process write/versioning, effective time, and supersession decision |
 | Process version history | Snapshot boundary and related operating-model version semantics are unresolved | Temporal/version model and migration decision |
 | Knowledge Gaps | Explainable gaps are product direction under LAD-046, but persistence is not justified until assignment, governance, or resolution history requires it | Derived projection rules first; later lifecycle, ownership, and history decision if persistence is needed |
 | Process Families and reusable subprocesses | LAD-047 preserves explicit family membership and distinct composition semantics, but authorizes no schema or inheritance | Family identity, membership cardinality, effective dating, governance, composition, comparison, and migration decision |
@@ -1445,8 +1537,9 @@ use AI, or authorize enablement in any environment. Migrations `0016` and
 `0017`, credential privilege changes, and environment rollout remain separately
 controlled operations.
 
-LAD-046 through LAD-048 add product-direction boundaries only. The next product
-implementation decision is manual structured proposed-change mapping. Process
-Families, Reference Models, AI assistance, Job Drift, operating-model drift,
-and Continuous Improvement remain later milestones and have no current schema
-authorization.
+LAD-046 through LAD-048 add product-direction boundaries only. LAD-049
+authorizes the first manual structured proposed-change slice while preserving
+later target mappings, governance, approval, Process versions, and application
+as separate decisions. Process Families, Reference Models, AI assistance, Job
+Drift, operating-model drift, and Continuous Improvement remain later
+milestones and have no current schema authorization.

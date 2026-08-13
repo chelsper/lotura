@@ -12,6 +12,13 @@ import {
   setDiscoverySessionPaused,
   type DiscoveryEpistemicState,
 } from "@/lib/discovery-administration";
+import {
+  changeDiscoveryMappingItemState,
+  fingerprintDocumentedProcessSnapshot,
+  finishDiscoveryProposalMapping,
+  saveDiscoveryMappingItem,
+} from "@/lib/discovery-mapping-administration";
+import type { DiscoveryMappingAction } from "@/lib/discovery-mapping-model.mjs";
 import { buildDocumentedProcessSnapshot } from "@/lib/discovery-proposal-model.mjs";
 import type { DiscoveryProposalDisposition } from "@/lib/discovery-proposal-model.mjs";
 import { loadWorkspaceExperience } from "@/lib/workspace-experience";
@@ -33,6 +40,10 @@ function revision(formData: FormData) {
 
 function proposalDisposition(formData: FormData) {
   return text(formData, "disposition") as DiscoveryProposalDisposition;
+}
+
+function mappingAction(formData: FormData) {
+  return text(formData, "mappingAction") as DiscoveryMappingAction;
 }
 
 export async function startDiscoverySessionAction(
@@ -147,4 +158,100 @@ export async function finishDiscoveryProposalAction(
   revalidatePath(`/studio/discovery/interviews/${sessionId}`);
   revalidatePath(`/studio/discovery/interviews/${sessionId}/reconcile`);
   redirect(`/studio/discovery/interviews/${sessionId}/reconcile`);
+}
+
+export async function saveDiscoveryMappingItemAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const sessionId = text(formData, "sessionId");
+  const experience = await loadWorkspaceExperience();
+  if (!experience.discovery.enabled) {
+    return { message: "Guided Discovery is not enabled.", status: "error" };
+  }
+  const { loadDiscoveryProposal, loadDiscoverySession } = await import(
+    "@/lib/discovery-data"
+  );
+  const [session, proposal] = await Promise.all([
+    loadDiscoverySession(experience.discovery.organizationId, sessionId),
+    loadDiscoveryProposal(experience.discovery.organizationId, sessionId),
+  ]);
+  const process = session
+    ? experience.data.processes.find((item) => item.id === session.processId)
+    : null;
+  if (!session || !proposal || proposal.status !== "ready_for_review" || !process) {
+    return {
+      message: "The finished proposed update or documented Process is no longer available.",
+      status: "error",
+    };
+  }
+  const result = await saveDiscoveryMappingItem({
+    action: mappingAction(formData),
+    currentProcessFingerprint: fingerprintDocumentedProcessSnapshot(
+      buildDocumentedProcessSnapshot(process),
+    ),
+    expectedMappingRevision: Number(text(formData, "expectedMappingRevision")),
+    itemId: text(formData, "itemId"),
+    observationIds: formData.getAll("observationId").filter(
+      (value): value is string => typeof value === "string",
+    ),
+    ownerRoleId: text(formData, "ownerRoleId"),
+    proposedPurpose: text(formData, "proposedPurpose"),
+    rationale: text(formData, "rationale"),
+    sessionId,
+    unresolvedQuestion: text(formData, "unresolvedQuestion"),
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  revalidatePath(`/studio/discovery/interviews/${sessionId}/map`);
+  redirect(`/studio/discovery/interviews/${sessionId}/map`);
+}
+
+export async function changeDiscoveryMappingItemStateAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const sessionId = text(formData, "sessionId");
+  const result = await changeDiscoveryMappingItemState({
+    expectedMappingRevision: Number(text(formData, "expectedMappingRevision")),
+    itemId: text(formData, "itemId"),
+    rationale: text(formData, "rationale"),
+    sessionId,
+    state: text(formData, "itemState") as "active" | "withdrawn",
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  revalidatePath(`/studio/discovery/interviews/${sessionId}/map`);
+  redirect(`/studio/discovery/interviews/${sessionId}/map`);
+}
+
+export async function finishDiscoveryProposalMappingAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const sessionId = text(formData, "sessionId");
+  const experience = await loadWorkspaceExperience();
+  if (!experience.discovery.enabled) {
+    return { message: "Guided Discovery is not enabled.", status: "error" };
+  }
+  const { loadDiscoverySession } = await import("@/lib/discovery-data");
+  const session = await loadDiscoverySession(
+    experience.discovery.organizationId,
+    sessionId,
+  );
+  const process = session
+    ? experience.data.processes.find((item) => item.id === session.processId)
+    : null;
+  if (!session || !process) {
+    return { message: "The documented Process is no longer available.", status: "error" };
+  }
+  const result = await finishDiscoveryProposalMapping({
+    currentProcessFingerprint: fingerprintDocumentedProcessSnapshot(
+      buildDocumentedProcessSnapshot(process),
+    ),
+    expectedMappingRevision: Number(text(formData, "expectedMappingRevision")),
+    sessionId,
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  revalidatePath(`/studio/discovery/interviews/${sessionId}`);
+  revalidatePath(`/studio/discovery/interviews/${sessionId}/map`);
+  redirect(`/studio/discovery/interviews/${sessionId}/map`);
 }
