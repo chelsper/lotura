@@ -130,6 +130,21 @@ Systems and a required plain-language usage description. Unlinking removes the
 current relationship without deleting the System. Exception creation,
 maintenance, and deactivation preserve immutable identity and history.
 
+### Implemented Discovery routes
+
+- `/studio/discovery` — start and resume guided interviews for an existing
+  Process;
+- `/studio/discovery/interviews/[sessionId]` — answer questions, preserve
+  uncertainty, append corrections, and review the saved interview; and
+- `/studio/discovery/interviews/[sessionId]/reconcile` — compare current
+  documented Process information with active interview notes without proposing
+  or saving changes.
+
+Discovery uses conversational product language. Technical terms such as
+canonical record, epistemic state, and reconciliation package remain available
+to architecture and audit boundaries but are not required vocabulary for a
+participant describing their work.
+
 ### Reserved product destinations
 
 The following routes are reserved conceptually but should not ship until their
@@ -137,7 +152,6 @@ corresponding slice provides useful current capability:
 
 - `/studio/knowledge`;
 - `/studio/governance`;
-- `/studio/discovery`; and
 - `/studio/activity`.
 
 Existing bookmarked maintenance and acquisition routes should remain

@@ -110,10 +110,18 @@ export default async function DiscoveryInterviewPage({
       ) : (
         <section className="mt-6">
           <div className="mb-5">
-            <Badge tone="warning">Ready for review</Badge>
-            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.035em] text-[var(--text)]">Review the observations—not a proposed Process</h2>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <Badge tone="warning">Ready for review</Badge>
+              <Link
+                className="inline-flex h-9 items-center justify-center rounded-[9px] bg-[var(--workspace-accent)] px-3 text-xs font-medium text-[var(--workspace-accent-foreground)] hover:bg-[var(--workspace-accent-hover)]"
+                href={`/studio/discovery/interviews/${session.id}/reconcile`}
+              >
+                Compare with current Process
+              </Link>
+            </div>
+            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.035em] text-[var(--text)]">Review your interview answers</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
-              These responses remain source evidence. Nothing here has updated, approved, activated, or completed the canonical Process. A later reconciliation step is still required.
+              These are your saved notes about how the work happens. They have not changed or approved the documented Process. Comparing them with the current Process is the next step.
             </p>
           </div>
           <Card className="mb-5 p-5 sm:p-6">

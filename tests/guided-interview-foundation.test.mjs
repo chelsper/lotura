@@ -154,16 +154,16 @@ test("observation capture explicitly types every reused SQL parameter", async ()
   assert.match(administration, /\$11::varchar\(64\)/);
 });
 
-test("the UI states the evidence, privacy, and no-canonical-write boundary", async () => {
+test("the UI states the evidence, privacy, and no-Process-write boundary in conversational language", async () => {
   const [catalog, interview, answer] = await Promise.all([
     read("app/studio/discovery/page.tsx"),
     read("app/studio/discovery/interviews/[sessionId]/page.tsx"),
     read("app/studio/discovery/discovery-answer-form.tsx"),
   ]);
-  assert.match(catalog, /evidence, not approved organizational truth/);
-  assert.match(catalog, /does not use AI or write canonical Process facts/);
-  assert.match(interview, /Review the observations—not a proposed Process/);
-  assert.match(interview, /Nothing here has updated, approved, activated, or completed/);
+  assert.match(catalog, /Interview answers are notes about how work happens/);
+  assert.match(catalog, /does not use AI or change the documented Process/);
+  assert.match(interview, /Review your interview answers/);
+  assert.match(interview, /They have not changed or approved the documented Process/);
   assert.match(answer, /sanitized operational knowledge only/i);
   assert.match(answer, /Conflicting observation/);
   assert.match(answer, /Unknown/);

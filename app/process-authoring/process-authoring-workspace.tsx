@@ -767,7 +767,7 @@ export function ProcessAuthoringWorkspace({
         </div>
         <h1 className="mt-4 text-[34px] font-semibold tracking-[-0.05em] text-[var(--text)] sm:text-[44px]">Maintain Process</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
-          Maintain the current canonical Process definition and ownership without treating its existence as institutional approval.
+          Maintain the current documented Process without treating it as formally approved.
         </p>
         {context.process.status === "draft" ? (
           <Alert className="mt-5" tone="warning">Working draft. This Process may remain incomplete, unresolved, or in need of validation.</Alert>

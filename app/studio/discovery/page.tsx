@@ -55,7 +55,7 @@ export default async function DiscoveryPage({
       />
 
       <Alert className="mt-5" tone="warning">
-        Discovery records are evidence, not approved organizational truth. Interview observations do not update the canonical Process until a future human review and reconciliation capability explicitly does so.
+        Interview answers are notes about how work happens. They do not change the documented Process until a person reviews and approves an update.
       </Alert>
 
       <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
@@ -63,7 +63,7 @@ export default async function DiscoveryPage({
           <p className="text-xs font-medium text-[var(--text-tertiary)]">Start with an existing Process</p>
           <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">Interview yourself about how the work happens</h2>
           <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-            This first foundation is manual and administrator-led. It preserves source observations for review; it does not use AI or write canonical Process facts.
+            This first version is manual and administrator-led. It saves each answer for review; it does not use AI or change the documented Process.
           </p>
           <div className="mt-5">
             <DiscoveryStartForm initialProcessId={initialProcessId} processes={processes} />

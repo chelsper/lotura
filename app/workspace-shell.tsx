@@ -297,9 +297,9 @@ export async function WorkspaceShell({
           ) : null}
           <p className="mt-3 text-[11px] font-medium leading-4 text-[var(--text-tertiary)]">
             {activeView === "studio"
-              ? "Workspace Administrator — accepted changes are saved with append-only history."
+              ? "Workspace Administrator — saved changes keep their history."
               : studioEnabled
-                ? "Browse view — maintain canonical records in Workspace Studio."
+                ? "Browse view — make changes in Workspace Studio."
                 : "Explore only — nothing you do here changes data."}
           </p>
           <WorkspaceSessionControl />

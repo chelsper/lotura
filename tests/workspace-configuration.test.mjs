@@ -88,8 +88,8 @@ test("workspace appearance accepts constrained generic overrides", () => {
     ),
     true,
   );
-  assert.equal(configuration.knowledgeState.label, "Sanitized working draft");
-  assert.match(configuration.knowledgeState.description, /Human sanitization review remains required/);
+  assert.equal(configuration.knowledgeState.label, "Working draft");
+  assert.match(configuration.knowledgeState.description, /check it for sensitive information/);
 });
 
 test("workspace environment policy rejects unsafe or ambiguous presentation values", () => {

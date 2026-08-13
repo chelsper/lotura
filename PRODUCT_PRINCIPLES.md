@@ -169,6 +169,18 @@ Gaps are valuable organizational knowledge. Lotura should help people document r
 
 **Product test:** Can a contributor pause with unresolved questions intact and later resume from the same evidence without being forced to imply certainty?
 
+## Conversational language at the product surface
+
+People should not need to learn Lotura's architecture vocabulary to describe
+their work. Product screens should say what is documented now, what someone
+said, what still needs review, and whether anything changed. Terms such as
+canonical record, epistemic state, immutable evidence, and sanitization
+boundary belong in technical, audit, and governance contexts when their
+precision matters—not as the default language of everyday tasks.
+
+**Product test:** Can an ordinary participant understand the next action and
+its consequence without learning the database or governance model first?
+
 ## Evidence language
 
 Lotura should use consistent language when interpreting the operating model:
