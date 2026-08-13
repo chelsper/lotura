@@ -84,6 +84,8 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-039 | Duplicate Organization Units merge into one surviving identity without erasing evidence | Accepted — implementation authorized for Organization Unit Merge v0.1 |
 | LAD-040 | Process Steps have immutable identity and explicit authoring history | Accepted — implementation authorized for Step Builder v0.1 |
 | LAD-041 | Technology and Exceptions use immutable identity and explicit operating-model history | Accepted — implementation authorized for Technology & Exceptions Builder v0.1 |
+| LAD-042 | Guided interviews preserve immutable source observations before canonical change | Accepted — implementation authorized for Guided Interview Foundation v0.1 |
+| LAD-043 | Deterministic Discovery review signals prompt human review without interpreting truth | Accepted — implementation authorized for Discovery Review Signals v0.1 |
 
 ## Decision records
 
@@ -1020,6 +1022,57 @@ artifacts/uploads, generic sources, AI prompts and model provenance, automated
 follow-up selection, conflict detection, reconciliation, approval, proposed
 change packages, Process versions, export, retention automation, and deletion
 remain intentionally deferred.
+
+### LAD-043 — Deterministic Discovery review signals prompt human review without interpreting truth
+
+**Status:** Accepted — implementation authorized for Discovery Review Signals
+v0.1.
+
+**Context:** The first real Guided Discovery review demonstrated that a
+participant can honestly select one evidence state for an answer that contains
+several claims, use definitive wording after an earlier boundary was marked
+unresolved, or append a correction that changes classification while
+unintentionally omitting the original substance. Requiring the reviewer to
+discover every such pattern manually weakens Discovery through documentation.
+Automatically choosing a corrected state or rewritten answer would be worse:
+the software would be manufacturing organizational interpretation.
+
+**Decision:** A completed Guided Discovery session may show deterministic
+**Things to review** generated at read time from the session's active and
+superseded observations. Version 0.1 signals are limited to explainable
+patterns: explicit uncertainty language under a Known classification, several
+claims sharing one observation state, differing start/end boundary states, and
+a correction that may not carry substantive context forward. Each signal names
+the affected observations and explains why review is suggested.
+
+Signals are prompts, not persisted findings, conflict determinations, risk
+measures, completeness scores, evidence reclassification, reconciliation, or
+canonical change. The analyzer uses no AI and no external service. It must not
+rewrite observation text, silently change an epistemic state, select a winner,
+establish truth, or update the Process. Human review remains required even when
+no signal appears.
+
+The correction form begins with the active observation's text and evidence
+state so changing one classification does not accidentally discard substance.
+Submitting still appends a new immutable observation under LAD-042; it never
+updates or deletes evidence.
+
+**Why:** Lotura should help organizations notice uncertainty created through
+documentation while preserving accountable interpretation. Explainable prompts
+provide immediate value without pretending that simple text rules understand
+the organization.
+
+**Affected decisions:** This decision follows and narrowly extends LAD-021,
+LAD-029, LAD-032, and LAD-042. It does not authorize the conflict lifecycle,
+reconciliation schema, proposed-change packages, canonical approval, or AI
+capabilities deferred by LAD-042.
+
+**Consequences and deferrals:** Discovery Review Signals v0.1 requires no
+schema, migration, credential, database privilege, canonical write, or
+environment change. Claim-level evidence identity, accepted divergence,
+cross-session comparison, source authority, reconciliation, approval,
+AI-generated follow-ups, and persisted review disposition remain deferred and
+require a later decision.
 
 ## Intentionally deferred ideas register
 
