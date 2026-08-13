@@ -98,7 +98,7 @@ export function SystemWorkspace({
         </div>
         <h1 className="mt-3 text-[32px] font-semibold tracking-[-0.045em] text-[var(--text)]">{context.name}</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
-          Maintain the canonical System and review the Processes that explicitly document its use. Connectivity does not prove criticality or risk.
+          Maintain this System and review the Processes that explicitly document its use. A connection does not prove criticality or risk.
         </p>
       </header>
 

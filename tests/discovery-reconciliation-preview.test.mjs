@@ -83,7 +83,7 @@ test("the comparison route authorizes before reads and exposes no write path", a
   assert.match(route, /Current documented Process/);
   assert.match(route, /Interview notes/);
   assert.match(route, /No update proposed/);
-  assert.doesNotMatch(route, /canonical Process/);
+  assert.doesNotMatch(route, /canonical/i);
   assert.doesNotMatch(route, /server action|<form|action=/i);
   assert.doesNotMatch(route, /administration|insert into|update processes|delete from/i);
   assert.match(decisions, /LAD-044 — Discovery comparison/);

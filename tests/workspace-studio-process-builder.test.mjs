@@ -25,7 +25,7 @@ test("Process Builder is a maintenance inventory rather than a second Explorer",
     read("app/studio/processes/process-builder-browser.tsx"),
   ]);
   assert.match(list, /title="Process Builder"/);
-  assert.match(list, /Canonical existence does not establish institutional approval/);
+  assert.match(list, /Being documented does not mean a Process has been institutionally approved/);
   assert.match(list, /ordered Steps, explicit or inherited Step responsibility/);
   assert.match(list, /documented Systems, and legitimate alternate-path Exceptions/);
   assert.match(list, /Dependencies remain read-only/);

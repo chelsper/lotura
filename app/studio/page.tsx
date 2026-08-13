@@ -79,7 +79,7 @@ export default async function WorkspaceStudioPage() {
             {[
               { icon: RoleIcon, title: "Responsibilities", description: "Create and maintain Operational Roles, Position mandates, and explicit human coverage.", href: "/studio/responsibilities" },
               { icon: LayersIcon, title: "Processes", description: "Find, start, and maintain Draft Processes through the existing authoring boundary.", href: "/studio/processes" },
-              { icon: SystemIcon, title: "Technology", description: "Maintain canonical Systems and review the Processes that explicitly document their use.", href: "/studio/technology" },
+              { icon: SystemIcon, title: "Technology", description: "Maintain Systems and review the Processes that explicitly document their use.", href: "/studio/technology" },
               { icon: LayersIcon, title: "Discovery", description: "Document current work through guided questions while preserving uncertainty as source observations.", href: experience.discovery.enabled ? "/studio/discovery" : undefined },
               { icon: LayersIcon, title: "Activity", description: "A future read-only timeline across existing append-only ledgers, without implying causality." },
             ].map((area) => {

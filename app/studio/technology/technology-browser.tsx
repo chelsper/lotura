@@ -87,7 +87,7 @@ export function TechnologyBrowser({
         ) : (
           <div className="p-8 text-center">
             <p className="text-sm font-medium text-[var(--text)]">No Systems match this search.</p>
-            <p className="mt-1 text-xs text-[var(--text-tertiary)]">Clear the search or add a canonical System.</p>
+            <p className="mt-1 text-xs text-[var(--text-tertiary)]">Clear the search or add a System.</p>
           </div>
         )}
       </Card>

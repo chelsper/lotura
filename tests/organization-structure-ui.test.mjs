@@ -91,7 +91,7 @@ test("Organization Structure administration is explicit and disabled by default"
   const combined = sources.join("\n");
   assert.match(combined, /LOTURA_STRUCTURE_ADMIN_MODE \|\| "disabled"/);
   assert.match(combined, /administrationEnabled \?/);
-  assert.match(combined, /do not modify the source workbook or its import ledger/i);
+  assert.match(combined, /do not modify the source workbook or its import record/i);
   assert.match(combined, /Remove from current structure/);
   assert.doesNotMatch(combined, /localStorage|sessionStorage|indexedDB|fetch\(/i);
 });

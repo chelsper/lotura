@@ -37,7 +37,7 @@ test("governance and history use honest non-approval language", async () => {
   assert.match(workspace, /Not configured/);
   assert.match(workspace, /Needs validation/);
   assert.match(workspace, /do not establish Process ownership/);
-  assert.match(workspace, /not (?:approved )?Process version history/);
+  assert.match(workspace, /not an approved version history for the Process/);
 });
 
 test("Process stable keys do not replace existing canonical route IDs", async () => {

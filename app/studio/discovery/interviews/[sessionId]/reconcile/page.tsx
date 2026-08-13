@@ -18,7 +18,7 @@ const stateLabels = {
   unknown: "Unknown",
 };
 
-function EmptyCanonical({ children }: { children: ReactNode }) {
+function EmptyDocumentedInfo({ children }: { children: ReactNode }) {
   return (
     <div className="rounded-[10px] border border-dashed border-[var(--border)] bg-[var(--surface-subtle)] p-4 text-sm leading-6 text-[var(--text-secondary)]">
       {children}
@@ -26,7 +26,7 @@ function EmptyCanonical({ children }: { children: ReactNode }) {
   );
 }
 
-function CanonicalProcessSection({
+function CurrentProcessSection({
   process,
   section,
 }: {
@@ -53,7 +53,7 @@ function CanonicalProcessSection({
   }
 
   if (section === "boundaries") {
-    return <EmptyCanonical>The current Process does not have separate fields for its start and end. Existing Step and purpose text has not been used as a substitute.</EmptyCanonical>;
+    return <EmptyDocumentedInfo>The current Process does not have separate fields for its start and end. Existing Step and purpose text has not been used as a substitute.</EmptyDocumentedInfo>;
   }
 
   if (section === "responsibility") {
@@ -94,7 +94,7 @@ function CanonicalProcessSection({
           </li>
         ))}
       </ol>
-    ) : <EmptyCanonical>No Steps are documented in the current Process.</EmptyCanonical>;
+    ) : <EmptyDocumentedInfo>No Steps are documented in the current Process.</EmptyDocumentedInfo>;
   }
 
   if (section === "systems") {
@@ -107,7 +107,7 @@ function CanonicalProcessSection({
           </li>
         ))}
       </ul>
-    ) : <EmptyCanonical>No Systems are linked to the current Process.</EmptyCanonical>;
+    ) : <EmptyDocumentedInfo>No Systems are linked to the current Process.</EmptyDocumentedInfo>;
   }
 
   if (section === "exceptions") {
@@ -121,7 +121,7 @@ function CanonicalProcessSection({
           </li>
         ))}
       </ul>
-    ) : <EmptyCanonical>No active Exceptions are documented.</EmptyCanonical>;
+    ) : <EmptyDocumentedInfo>No active Exceptions are documented.</EmptyDocumentedInfo>;
   }
 
   if (section === "dependencies") {
@@ -141,10 +141,10 @@ function CanonicalProcessSection({
           </li>
         ))}
       </ul>
-    ) : <EmptyCanonical>No explicit Process dependencies are documented.</EmptyCanonical>;
+    ) : <EmptyDocumentedInfo>No explicit Process dependencies are documented.</EmptyDocumentedInfo>;
   }
 
-  return <EmptyCanonical>The current Process does not store detailed uncertainty or validation notes. They remain with the interview until you are ready to review a proposed update.</EmptyCanonical>;
+  return <EmptyDocumentedInfo>The current Process does not store detailed uncertainty or validation notes. They remain with the interview until you are ready to review a proposed update.</EmptyDocumentedInfo>;
 }
 
 export default async function DiscoveryReconciliationPreviewPage({
@@ -182,7 +182,7 @@ export default async function DiscoveryReconciliationPreviewPage({
         eyebrow={<>Discovery · Side-by-side review</>}
         stats={[
           { label: "Active observations", value: evidenceCount },
-          { label: "Canonical Steps", value: process.steps.length },
+          { label: "Documented Steps", value: process.steps.length },
         ]}
         title={process.name}
       />
@@ -230,7 +230,7 @@ export default async function DiscoveryReconciliationPreviewPage({
             <div className="grid xl:grid-cols-2">
               <div className="border-b border-[var(--border)] p-5 sm:p-6 xl:border-b-0 xl:border-r">
                 <p className="mb-4 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">Current documented Process</p>
-                <CanonicalProcessSection process={process} section={section.key} />
+                <CurrentProcessSection process={process} section={section.key} />
               </div>
               <div className="p-5 sm:p-6">
                 <p className="mb-4 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">Current interview notes</p>
@@ -249,7 +249,7 @@ export default async function DiscoveryReconciliationPreviewPage({
                       </article>
                     ))}
                   </div>
-                ) : <EmptyCanonical>No current interview answer covers this area.</EmptyCanonical>}
+                ) : <EmptyDocumentedInfo>No current interview answer covers this area.</EmptyDocumentedInfo>}
               </div>
             </div>
           </section>

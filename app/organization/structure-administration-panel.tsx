@@ -1453,7 +1453,7 @@ function StateComparison({ change }: { change: StructureChangeSummary }) {
 
 function changeActionLabel(action: StructureChangeSummary["action"]) {
   return {
-    create: "Canonical record created",
+    create: "Record created",
     correct_reporting_relationship: "Reporting relationship corrected",
     end_assignment: "Assignment ended",
     end_reporting_relationship: "Reporting relationship ended",
@@ -1493,7 +1493,7 @@ export function StructureAdministrationPanel({
         Maintain the current structural record
       </h2>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
-        Edits change the canonical current structure. They do not modify the source workbook or its import ledger. Every accepted change records its reason, effective date, actor, and before/after canonical state.
+        Edits change the current documented structure. They do not modify the source workbook or its import record. Every accepted change records its reason, effective date, administrator, and the information before and after the change.
       </p>
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <Card className="p-4 sm:p-5">
@@ -1570,7 +1570,7 @@ export function StructureAdministrationPanel({
             ))}
           </ol>
         ) : (
-          <p className="mt-3 text-xs text-[var(--text-tertiary)]">No canonical changes have been recorded for this stable identity.</p>
+          <p className="mt-3 text-xs text-[var(--text-tertiary)]">No saved changes have been recorded for this item.</p>
         )}
       </Card>
     </section>

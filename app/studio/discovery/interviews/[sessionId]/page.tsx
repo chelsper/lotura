@@ -86,7 +86,7 @@ export default async function DiscoveryInterviewPage({
       </div>
 
       <Alert className="mt-5" tone="warning">
-        Sanitized operational knowledge only. Do not include donor, student, prospect, gift, wealth, HR, password, credential, or connection-string information.
+        Describe how the work happens without including sensitive records. Do not include donor, student, prospect, gift, wealth, HR, password, credential, or connection-string information.
       </Alert>
 
       {session.status === "paused" ? (
