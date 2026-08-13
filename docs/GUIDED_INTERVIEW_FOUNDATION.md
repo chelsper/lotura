@@ -41,9 +41,13 @@ When a session is ready for review, Lotura may surface explainable **Things to
 review** under LAD-043. Version 0.1 looks only for bounded patterns such as:
 
 - Known observations containing explicit uncertainty language;
-- Known answers with several claims that may not share one evidence state; and
 - Known corrections that may have omitted substantive context from the prior
   record.
+
+Selecting Known confirms the complete answer. Multiple steps, items, or
+before/after statements do not require a second confirmation. If the
+participant knows that parts have different certainty, they can preserve that
+distinction in a correction or during later reconciliation.
 
 Assumed, Unknown, Needs validation, and Conflicting observation are deliberate
 review decisions. They remain available to later reconciliation and do not
