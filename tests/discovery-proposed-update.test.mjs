@@ -174,6 +174,10 @@ test("the review UX keeps interview evidence, human choices, readiness, and appr
   assert.match(interview, /View proposed update/);
   assert.match(interview, /these interview answers can no longer be corrected in place/);
   assert.match(route, /It has not been approved or applied/);
+  assert.match(route, /Review complete — no changes proposed/);
+  assert.match(route, /Nothing will move into structured proposed-change review/);
+  assert.match(route, /Items left for later remain available for future validation/);
+  assert.match(route, /proposalFinishedWithoutChanges/);
   assert.match(route, /You do not need to append a correction first/);
   assert.match(route, /choose Leave for later/);
   assert.match(route, /No correction is required/);

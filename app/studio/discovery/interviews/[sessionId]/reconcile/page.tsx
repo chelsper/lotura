@@ -250,6 +250,7 @@ export default async function DiscoveryReconciliationPreviewPage({
     .filter((decision): decision is DiscoveryProposalDecisionRecord => Boolean(decision));
   const readiness = discoveryProposalReadiness(activeObservationIds, decisions);
   const proposalFinished = proposal?.status === "ready_for_review";
+  const proposalFinishedWithoutChanges = proposalFinished && readiness.included === 0;
 
   return (
     <WorkspaceShell
@@ -279,8 +280,10 @@ export default async function DiscoveryReconciliationPreviewPage({
       </div>
 
       <Alert className="mt-5" tone={proposalFinished ? "success" : "warning"}>
-        {proposalFinished
-          ? "Proposed update ready for review. It has not been approved or applied, and the documented Process has not changed."
+        {proposalFinishedWithoutChanges
+          ? "Review complete — no changes proposed. The documented Process has not changed, and anything left for later remains available for future validation."
+          : proposalFinished
+            ? "Proposed update ready for review. It has not been approved or applied, and the documented Process has not changed."
           : "Choose how each interview answer should be treated. You do not need to append a correction first. If another person or department must validate an answer, choose Leave for later. Saving a choice records review work only; it does not change the documented Process."}
       </Alert>
       {proposalFinished && readiness.included > 0 ? (
@@ -389,10 +392,16 @@ export default async function DiscoveryReconciliationPreviewPage({
       </div>
 
       <section className="mt-7 border-t border-[var(--border)] pt-7">
-        <p className="text-xs font-medium text-[var(--text-tertiary)]">Proposed update</p>
-        <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">Review your choices</h2>
+        <p className="text-xs font-medium text-[var(--text-tertiary)]">
+          {proposalFinishedWithoutChanges ? "Review outcome" : "Proposed update"}
+        </p>
+        <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">
+          {proposalFinishedWithoutChanges ? "No changes proposed" : "Review your choices"}
+        </h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
-          This summary records the exact interview notes you selected. It does not turn free text into Steps, Roles, Systems, Exceptions, or dependencies. Those structured changes require a later review.
+          {proposalFinishedWithoutChanges
+            ? "Every interview answer was kept as documented or left for later. Nothing will move into structured proposed-change review."
+            : "This summary records the exact interview notes you selected. It does not turn free text into Steps, Roles, Systems, Exceptions, or dependencies. Those structured changes require a later review."}
         </p>
         <div className="mt-5">
           <ProposalChoiceSummary
@@ -404,14 +413,18 @@ export default async function DiscoveryReconciliationPreviewPage({
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
               <p className="text-sm font-semibold text-[var(--text)]">
-                {proposalFinished
-                  ? "Ready for the next review"
+                {proposalFinishedWithoutChanges
+                  ? "Review complete — no changes proposed"
+                  : proposalFinished
+                    ? "Ready for the next review"
                   : readiness.remaining === 0
                     ? "All interview answers have a choice"
                     : `${readiness.remaining} ${readiness.remaining === 1 ? "answer" : "answers"} still need a choice`}
               </p>
               <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-                Finishing this proposed update does not approve or apply it.
+                {proposalFinishedWithoutChanges
+                  ? "No structured-change review is needed. Items left for later remain available for future validation."
+                  : "Finishing this proposed update does not approve or apply it."}
               </p>
             </div>
             {!proposalFinished ? (
@@ -420,7 +433,11 @@ export default async function DiscoveryReconciliationPreviewPage({
                 expectedProposalRevision={proposal?.revision ?? 0}
                 sessionId={session.id}
               />
-            ) : <Badge tone="success">Ready for review</Badge>}
+            ) : (
+              <Badge tone="success">
+                {proposalFinishedWithoutChanges ? "Review complete" : "Ready for review"}
+              </Badge>
+            )}
           </div>
         </Card>
       </section>
