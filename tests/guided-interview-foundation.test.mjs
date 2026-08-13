@@ -132,6 +132,17 @@ test("Discovery mutations authenticate, derive tenant and actor, and never mutat
   assert.doesNotMatch(administration, /DATABASE_URL(?:_UNPOOLED)?/);
 });
 
+test("Discovery database diagnostics exclude interview text and raw errors", async () => {
+  const administration = await read("lib/discovery-administration.ts");
+  assert.match(administration, /logDiscoveryDatabaseFailure/);
+  assert.match(administration, /code: safeValue\(details\.code\)/);
+  assert.match(administration, /constraint: safeValue\(details\.constraint\)/);
+  assert.match(administration, /operation,/);
+  assert.doesNotMatch(administration, /message: safeValue\(details\.message\)/);
+  assert.doesNotMatch(administration, /stack: safeValue\(details\.stack\)/);
+  assert.doesNotMatch(administration, /responseText.*console\.error/s);
+});
+
 test("the UI states the evidence, privacy, and no-canonical-write boundary", async () => {
   const [catalog, interview, answer] = await Promise.all([
     read("app/studio/discovery/page.tsx"),
