@@ -6,6 +6,7 @@ import {
   DISCOVERY_QUESTIONS,
   getDiscoveryQuestion,
 } from "@/lib/discovery-questions.mjs";
+import { analyzeDiscoveryReview } from "@/lib/discovery-review-signals.mjs";
 import { loadWorkspaceExperience } from "@/lib/workspace-experience";
 
 import { Alert, Badge, Button, Card } from "../../../../ui/primitives";
@@ -47,6 +48,9 @@ export default async function DiscoveryInterviewPage({
   const progress = question
     ? DISCOVERY_QUESTIONS.findIndex((item) => item.key === question.key) + 1
     : DISCOVERY_QUESTIONS.length;
+  const reviewSignals = session.status === "ready_for_review"
+    ? analyzeDiscoveryReview(session.observations)
+    : [];
 
   return (
     <WorkspaceShell
@@ -112,9 +116,45 @@ export default async function DiscoveryInterviewPage({
               These responses remain source evidence. Nothing here has updated, approved, activated, or completed the canonical Process. A later reconciliation step is still required.
             </p>
           </div>
+          <Card className="mb-5 p-5 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <Badge tone={reviewSignals.length > 0 ? "warning" : "neutral"}>
+                  {reviewSignals.length} review {reviewSignals.length === 1 ? "question" : "questions"}
+                </Badge>
+                <h3 className="mt-3 text-lg font-semibold text-[var(--text)]">Things to review</h3>
+              </div>
+              <span className="text-xs text-[var(--text-tertiary)]">Deterministic review · No AI</span>
+            </div>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
+              Lotura looks for explainable wording, classification, boundary, and correction patterns. These are review prompts—not findings, truth, or automatic reclassification. Nothing is changed unless you append a correction.
+            </p>
+            {reviewSignals.length > 0 ? (
+              <div className="mt-5 space-y-3">
+                {reviewSignals.map((signal) => (
+                  <div className="rounded-[10px] border border-[var(--border)] bg-[var(--surface-subtle)] p-4" key={signal.id}>
+                    <p className="text-sm font-semibold text-[var(--text)]">{signal.title}</p>
+                    <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">{signal.detail}</p>
+                    <div className="mt-2 flex flex-wrap gap-3">
+                      {signal.observationIds.map((observationId) => {
+                        const observation = session.observations.find((item) => item.id === observationId);
+                        return observation ? (
+                          <a className="text-xs font-medium text-[var(--workspace-accent)]" href={`#observation-${observationId}`} key={observationId}>
+                            Observation {observation.sequence}
+                          </a>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-4 text-sm text-[var(--text-secondary)]">No deterministic review questions were detected. Human review is still required.</p>
+            )}
+          </Card>
           <div className="space-y-4">
             {session.observations.map((observation) => (
-              <Card className={superseded.has(observation.id) ? "p-4 opacity-60 sm:p-5" : "p-4 sm:p-5"} key={observation.id}>
+              <Card className={superseded.has(observation.id) ? "scroll-mt-5 p-4 opacity-60 sm:p-5" : "scroll-mt-5 p-4 sm:p-5"} id={`observation-${observation.id}`} key={observation.id}>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <Badge tone={observation.epistemicState === "known" ? "neutral" : "warning"}>{stateLabels[observation.epistemicState]}</Badge>
                   <span className="text-[11px] text-[var(--text-tertiary)]">Observation {observation.sequence}{superseded.has(observation.id) ? " · superseded" : ""}</span>
@@ -127,7 +167,13 @@ export default async function DiscoveryInterviewPage({
                 {!superseded.has(observation.id) ? (
                   <details className="mt-4">
                     <summary className="cursor-pointer text-xs font-medium text-[var(--workspace-accent)]">Append a correction</summary>
-                    <DiscoveryCorrectionForm observationId={observation.id} revision={session.revision} sessionId={session.id} />
+                    <DiscoveryCorrectionForm
+                      currentEpistemicState={observation.epistemicState}
+                      currentResponseText={observation.responseText}
+                      observationId={observation.id}
+                      revision={session.revision}
+                      sessionId={session.id}
+                    />
                   </details>
                 ) : null}
               </Card>

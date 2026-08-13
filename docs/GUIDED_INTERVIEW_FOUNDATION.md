@@ -35,6 +35,25 @@ The initial question catalog is `guided-interview-v1` and covers:
 Each saved observation records the exact prompt shown. Later prompt changes
 therefore cannot rewrite the source context.
 
+## Deterministic review signals
+
+When a session is ready for review, Lotura may surface explainable **Things to
+review** under LAD-043. Version 0.1 looks only for bounded patterns such as:
+
+- Known observations containing explicit uncertainty language;
+- answers with several claims that may not share one evidence state;
+- different evidence states for the start and end boundaries; and
+- corrections that may have omitted substantive context from the prior record.
+
+These signals are computed at read time. They are not stored findings, quality
+scores, truth determinations, conflict resolution, or AI interpretations. A
+signal never changes evidence or the canonical Process. No signal does not mean
+the evidence is complete or correct; human review remains required.
+
+The correction form copies the active observation text and evidence state by
+default. This reduces accidental context loss while preserving LAD-042's rule
+that every submitted correction is a new append-only observation.
+
 ## Knowledge states
 
 - **Known** — the participant represents the observation as current fact.
@@ -131,8 +150,8 @@ any unrelated table. It receives no schema, database, role, migration,
 
 Multiple participants, interviewing on behalf of another Person, Contributor
 access, consent records, uploads, source artifacts, AI, dynamic follow-up
-selection, conflict detection, reconciliation, proposed-change packages,
-approval, canonical Process versioning, export, retention automation, and
-deletion require later decisions. Refresh-safe server persistence exists for
-submitted observations; unsent form text remains browser-local and may be
+selection, governed conflict detection, reconciliation, proposed-change
+packages, approval, canonical Process versioning, export, retention automation,
+and deletion require later decisions. Refresh-safe server persistence exists
+for submitted observations; unsent form text remains browser-local and may be
 lost.
