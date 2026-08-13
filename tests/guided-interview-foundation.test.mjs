@@ -143,6 +143,17 @@ test("Discovery database diagnostics exclude interview text and raw errors", asy
   assert.doesNotMatch(administration, /responseText.*console\.error/s);
 });
 
+test("observation capture explicitly types every reused SQL parameter", async () => {
+  const administration = await read("lib/discovery-administration.ts");
+  assert.match(administration, /organization_id = \$1::integer/);
+  assert.match(administration, /actor_identifier = \$3::varchar\(128\)/);
+  assert.match(administration, /revision = \$4::integer/);
+  assert.match(administration, /current_question_key = \$5::varchar\(64\)/);
+  assert.match(administration, /\$8::text, \$9::discovery_observation_state/);
+  assert.match(administration, /current_question_key = \$10::varchar\(64\)/);
+  assert.match(administration, /\$11::varchar\(64\)/);
+});
+
 test("the UI states the evidence, privacy, and no-canonical-write boundary", async () => {
   const [catalog, interview, answer] = await Promise.all([
     read("app/studio/discovery/page.tsx"),

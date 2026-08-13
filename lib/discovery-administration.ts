@@ -190,17 +190,17 @@ export async function answerDiscoveryQuestion(input: {
       `with selected_session as materialized (
          select id, organization_id, stable_key
          from discovery_sessions
-         where organization_id = $1
+         where organization_id = $1::integer
            and stable_key = $2::uuid
-           and actor_identifier = $3
-           and revision = $4
+           and actor_identifier = $3::varchar(128)
+           and revision = $4::integer
            and status = 'in_progress'
-           and current_question_key = $5
+           and current_question_key = $5::varchar(64)
          for update
        ), next_sequence as (
          select coalesce(max(sequence), 0) + 1 as value
          from discovery_observations
-         where organization_id = $1 and session_stable_key = $2::uuid
+         where organization_id = $1::integer and session_stable_key = $2::uuid
        ), inserted as (
          insert into discovery_observations (
            organization_id, session_id, session_stable_key, sequence,
@@ -209,14 +209,15 @@ export async function answerDiscoveryQuestion(input: {
          )
          select selected_session.organization_id, selected_session.id,
            selected_session.stable_key, next_sequence.value,
-           $5, $6, $7::discovery_observation_topic, $8,
-           $9::discovery_observation_state, $3
+           $5::varchar(64), $6::text, $7::discovery_observation_topic,
+           $8::text, $9::discovery_observation_state, $3::varchar(128)
          from selected_session cross join next_sequence
          returning 1
        ), advanced as (
          update discovery_sessions
-         set current_question_key = $10,
-           status = case when $10 = $11 then 'ready_for_review'::discovery_session_status
+         set current_question_key = $10::varchar(64),
+           status = case when $10::varchar(64) = $11::varchar(64)
+             then 'ready_for_review'::discovery_session_status
              else 'in_progress'::discovery_session_status end,
            revision = revision + 1,
            updated_at = transaction_timestamp()
