@@ -40,7 +40,8 @@ test("Known uncertainty language becomes a review question, not a reclassificati
   const [signal] = analyzeDiscoveryReview(input);
   assert.equal(signal.kind, "certainty_language_mismatch");
   assert.equal(input[0].epistemicState, "known");
-  assert.match(signal.detail, /Lotura has not changed it/);
+  assert.match(signal.detail, /Lotura has not changed either one/);
+  assert.equal(signal.title, "Check the certainty label");
 });
 
 test("correction chains retain history and surface possible context loss", () => {
@@ -50,6 +51,21 @@ test("correction chains retain history and surface possible context loss", () =>
   ];
   assert.deepEqual(activeDiscoveryObservations(input).map((item) => item.id), ["correction"]);
   assert.equal(analyzeDiscoveryReview(input)[0].kind, "correction_context_loss");
+  assert.match(analyzeDiscoveryReview(input)[0].detail, /append a correction that keeps that detail/);
+});
+
+test("multi-part guidance explains the detected structure and gives a clear choice", () => {
+  const [signal] = analyzeDiscoveryReview([
+    observation({
+      promptKey: "sequence",
+      responseText: "1. Receive the item. 2. Review it. 3. Record it. 4. Send it.",
+    }),
+  ]);
+  assert.equal(signal.title, "Check whether every part is confirmed");
+  assert.match(signal.detail, /4 numbered steps/);
+  assert.match(signal.detail, /entire answer is currently marked Known/);
+  assert.match(signal.detail, /If that label is accurate for every part, no change is needed/);
+  assert.match(signal.detail, /identifies which parts need validation/);
 });
 
 test("substantive corrections and honest uncertainty do not create false certainty signals", () => {
@@ -78,6 +94,7 @@ test("the review UI is presentation-only and corrections preserve active content
   assert.match(page, /Things to review/);
   assert.match(page, /Deterministic review · No AI/);
   assert.match(page, /review prompts—not findings, truth, or automatic reclassification/);
+  assert.match(page, /Review Observation/);
   assert.match(form, /defaultValue=\{currentResponseText \|\| ""\}/);
   assert.match(form, /useState\(currentEpistemicState\)/);
   assert.match(decisions, /LAD-043 — Deterministic Discovery review signals/);

@@ -140,7 +140,7 @@ export default async function DiscoveryInterviewPage({
                         const observation = session.observations.find((item) => item.id === observationId);
                         return observation ? (
                           <a className="text-xs font-medium text-[var(--workspace-accent)]" href={`#observation-${observationId}`} key={observationId}>
-                            Observation {observation.sequence}
+                            Review Observation {observation.sequence}
                           </a>
                         ) : null;
                       })}
