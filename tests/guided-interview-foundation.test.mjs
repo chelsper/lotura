@@ -164,7 +164,7 @@ test("the UI states the evidence, privacy, and no-Process-write boundary in conv
   assert.match(catalog, /does not use AI or change the documented Process/);
   assert.match(interview, /Review your interview answers/);
   assert.match(interview, /They have not changed or approved the documented Process/);
-  assert.match(answer, /sanitized operational knowledge only/i);
+  assert.match(answer, /describe how the work happens without including sensitive records/i);
   assert.match(answer, /Conflicting observation/);
   assert.match(answer, /Unknown/);
   assert.doesNotMatch(catalog, /^import .*discovery-data/m);

@@ -56,7 +56,7 @@ export function StudioCreatePage({
       </header>
 
       <Alert className="mt-6" tone="warning">
-        Canonical existence does not establish institutional approval. Review possible duplicates and record the reason and effective date honestly.
+        Adding a record does not establish institutional approval. Review possible duplicates and record the reason and effective date honestly.
       </Alert>
       <Card className="mt-5 p-4 sm:p-6">
         <StructureCreateForm

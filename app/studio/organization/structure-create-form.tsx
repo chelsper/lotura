@@ -57,7 +57,7 @@ function CreationMetadataFields({
           maxLength={2000}
           name="reason"
           onChange={(event) => setReason(event.target.value)}
-          placeholder="Explain why this canonical record is being added."
+          placeholder="Explain why this record is being added."
           required
           value={reason}
         />
@@ -231,7 +231,7 @@ export function StructureCreateForm({
                 type="checkbox"
                 value="confirmed"
               />
-              Create a distinct canonical record after reviewing this possible duplicate.
+              Create a separate record after reviewing this possible duplicate.
             </label>
           </div>
         </Alert>

@@ -34,7 +34,7 @@ export default async function ProcessBuilderPage() {
   return (
     <WorkspaceShell activeView="studio" asOf={asOf} configuration={configuration} source={source}>
       <WorkspacePageHeader
-        description="Build and maintain the documented Processes that connect responsibility, work, technology, exceptions, and dependencies. Canonical existence does not establish institutional approval."
+        description="Build and maintain the documented Processes that connect responsibility, work, technology, exceptions, and dependencies. Being documented does not mean a Process has been institutionally approved."
         eyebrow={<><LayersIcon className="size-3.5" />Workspace Studio</>}
         stats={[
           { label: "Processes", value: processes.length },

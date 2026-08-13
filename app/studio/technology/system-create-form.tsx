@@ -34,12 +34,12 @@ export function SystemCreateForm({
         <p className="text-xs font-medium text-[var(--workspace-accent)]">Technology Builder</p>
         <h1 className="mt-2 text-[32px] font-semibold tracking-[-0.045em] text-[var(--text)]">Add System</h1>
         <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-          Add one canonical technology record. Its existence does not establish criticality, institutional approval, or a Process relationship.
+          Add a System to the Technology catalog. Adding it does not establish criticality, institutional approval, or a Process relationship.
         </p>
       </header>
 
       <Alert className="mt-6" tone="warning">
-        Search the Technology catalog before adding a System. Similar names may describe the same canonical technology.
+        Search the Technology catalog before adding a System. Similar names may describe the same technology.
       </Alert>
 
       <Card className="mt-5 p-5 sm:p-6">
@@ -103,7 +103,7 @@ export function SystemCreateForm({
               className="min-h-24 w-full resize-y rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-6 text-[var(--text)] outline-none transition placeholder:text-[var(--text-tertiary)] hover:border-[var(--border-strong)] focus:border-[var(--workspace-accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
               maxLength={2000}
               name="reason"
-              placeholder="Why is this System being added to the canonical model?"
+              placeholder="Why is this System being added?"
               required
             />
           </label>

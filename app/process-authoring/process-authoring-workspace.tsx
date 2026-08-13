@@ -571,7 +571,7 @@ function LinkSystemForm({ context, today }: { context: ProcessAuthoringContext; 
         <Input maxLength={2000} name="reason" placeholder="Why should this relationship be recorded?" required />
       </label>
       {availableSystems.length === 0 ? (
-        <Alert>Every active System is already linked. Add another canonical System from Technology if needed.</Alert>
+        <Alert>Every active System is already linked. Add another System from Technology if needed.</Alert>
       ) : null}
       {state.status !== "idle" ? <Alert tone={state.status === "success" ? "success" : "error"}>{state.message}</Alert> : null}
       <div className="flex justify-end">
@@ -655,7 +655,7 @@ function SystemsWorkspace({ context, today }: { context: ProcessAuthoringContext
         <div>
           <p className="text-xs font-medium text-[var(--text-tertiary)]">Technology</p>
           <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">Systems used</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">Link canonical Systems and state how the work uses them. A link documents reach; it does not establish criticality, performance, or risk.</p>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">Link existing Systems and state how the work uses them. A link documents reach; it does not establish criticality, performance, or risk.</p>
         </div>
         <Link className="text-sm font-medium text-[var(--workspace-accent)] hover:underline" href="/studio/technology">Open Technology</Link>
       </div>
@@ -814,7 +814,7 @@ export function ProcessAuthoringWorkspace({
         <div className="mb-4">
           <p className="text-xs font-medium text-[var(--text-tertiary)]">Append-only record</p>
           <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">Process change history</h2>
-          <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">This audit history explains canonical changes. It is not approved Process version history.</p>
+          <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">This history explains saved changes. It is not an approved version history for the Process.</p>
         </div>
         {context.history.length > 0 ? (
           <div className="space-y-3">
@@ -840,7 +840,7 @@ export function ProcessAuthoringWorkspace({
             ))}
           </div>
         ) : (
-          <Alert>No authoring change history exists for this Process yet. Earlier canonical records were not given synthetic history.</Alert>
+          <Alert>No authoring change history exists for this Process yet. Lotura did not create artificial history for information that existed before change tracking began.</Alert>
         )}
       </section>
     </div>

@@ -137,9 +137,9 @@ export function StudioStructureDetail({
       ) : null}
 
       <Card className="mt-6 p-4 sm:p-5">
-        <p className="text-xs font-medium text-[var(--text-tertiary)]">Canonical maintenance boundary</p>
+        <p className="text-xs font-medium text-[var(--text-tertiary)]">How changes are recorded</p>
         <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-          Source evidence remains unchanged. Accepted maintenance updates the current canonical structure and appends a history event in the same transaction.
+          Imported source information remains unchanged. Every saved update changes the current documented structure and adds a history entry at the same time.
         </p>
       </Card>
 

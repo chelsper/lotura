@@ -54,7 +54,7 @@ export function DiscoveryAnswerForm({
         />
       </label>
       <Alert tone="warning">
-        Do not include donor, student, prospect, gift, wealth, HR, password, credential, or connection-string information. Record sanitized operational knowledge only.
+        Describe how the work happens without including sensitive records. Do not include donor, student, prospect, gift, wealth, HR, password, credential, or connection-string information.
       </Alert>
       <p className="text-xs leading-5 text-[var(--text-tertiary)]">
         Your response is saved only after you select Preserve and continue. Unsubmitted text may be lost if you leave or refresh this page.

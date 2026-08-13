@@ -83,7 +83,7 @@ test("public and browse surfaces never expose canonical mutation controls", asyn
     assert.match(source, /Maintain in Workspace Studio/);
   }
   assert.match(studioDetail, /StructureAdministrationPanel/);
-  assert.match(studioDetail, /Source evidence remains unchanged/);
+  assert.match(studioDetail, /Imported source information remains unchanged/);
 });
 
 test("creation uses database-generated stable keys and atomic append-only history", async () => {
