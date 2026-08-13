@@ -281,7 +281,7 @@ export default async function DiscoveryReconciliationPreviewPage({
       <Alert className="mt-5" tone={proposalFinished ? "success" : "warning"}>
         {proposalFinished
           ? "Proposed update ready for review. It has not been approved or applied, and the documented Process has not changed."
-          : "Choose how each interview answer should be treated. Saving a choice records review work only; it does not change the documented Process."}
+          : "Choose how each interview answer should be treated. You do not need to append a correction first. If another person or department must validate an answer, choose Leave for later. Saving a choice records review work only; it does not change the documented Process."}
       </Alert>
 
       <Card className="mt-5 p-5 sm:p-6">
@@ -345,6 +345,11 @@ export default async function DiscoveryReconciliationPreviewPage({
                         </div>
                         <p className="mt-3 text-xs font-medium text-[var(--text-tertiary)]">{observation.promptText}</p>
                         <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--text-secondary)]">{observation.responseText || "No response supplied; the answer is explicitly unknown."}</p>
+                        {observation.epistemicState !== "known" ? (
+                          <p className="mt-3 rounded-[8px] bg-[var(--warning-soft)] px-3 py-2 text-xs leading-5 text-[var(--warning)]">
+                            This answer is already marked {stateLabels[observation.epistemicState]}. No correction is required. Choose Leave for later when validation or clarification must come from someone else.
+                          </p>
+                        ) : null}
                         {currentDecisions.get(observation.id)?.reviewNote ? (
                           <p className="mt-3 rounded-[8px] bg-[var(--surface-subtle)] px-3 py-2 text-xs leading-5 text-[var(--text-secondary)]">
                             Review note: {currentDecisions.get(observation.id)!.reviewNote}

@@ -51,6 +51,12 @@ export default async function DiscoveryInterviewPage({
   const reviewSignals = session.status === "ready_for_review"
     ? analyzeDiscoveryReview(session.observations)
     : [];
+  const nextStepLabel = proposal?.status === "ready_for_review"
+    ? "View proposed update"
+    : proposal
+      ? "Continue proposed update"
+      : "Review and prepare an update";
+  const nextStepHref = `/studio/discovery/interviews/${session.id}/reconcile`;
 
   return (
     <WorkspaceShell
@@ -114,19 +120,18 @@ export default async function DiscoveryInterviewPage({
               <Badge tone="warning">Ready for review</Badge>
               <Link
                 className="inline-flex h-9 items-center justify-center rounded-[9px] bg-[var(--workspace-accent)] px-3 text-xs font-medium text-[var(--workspace-accent-foreground)] hover:bg-[var(--workspace-accent-hover)]"
-                href={`/studio/discovery/interviews/${session.id}/reconcile`}
+                href={nextStepHref}
               >
-                {proposal?.status === "ready_for_review"
-                  ? "View proposed update"
-                  : proposal
-                    ? "Continue proposed update"
-                    : "Review and prepare an update"}
+                {nextStepLabel}
               </Link>
             </div>
             <h2 className="mt-3 text-2xl font-semibold tracking-[-0.035em] text-[var(--text)]">Review your interview answers</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
               These are your saved notes about how the work happens. They have not changed or approved the documented Process. Comparing them with the current Process is the next step.
             </p>
+            <Alert className="mt-4" tone="success">
+              You do not need to resolve or rewrite answers marked Assumed, Unknown, Needs validation, or Conflicting observation. They move forward with that label so the right people can review them later. Change an answer only when its wording or label is wrong.
+            </Alert>
             {proposal?.status === "ready_for_review" ? (
               <Alert className="mt-4" tone="success">
                 The proposed update is finished and preserved for its next review. To protect that review record, these interview answers can no longer be corrected in place.
@@ -166,7 +171,9 @@ export default async function DiscoveryInterviewPage({
                 ))}
               </div>
             ) : (
-              <p className="mt-4 text-sm text-[var(--text-secondary)]">No deterministic review questions were detected. Human review is still required.</p>
+              <p className="mt-4 text-sm text-[var(--text-secondary)]">
+                No immediate review questions were detected. No correction is required before the next step; unresolved answers keep their current labels.
+              </p>
             )}
           </Card>
           <div className="space-y-4">
@@ -181,9 +188,14 @@ export default async function DiscoveryInterviewPage({
                 {observation.supersedesObservationId ? (
                   <p className="mt-3 text-xs text-[var(--text-tertiary)]">This observation corrects an earlier record without erasing it.</p>
                 ) : null}
+                {!superseded.has(observation.id) && observation.epistemicState !== "known" ? (
+                  <p className="mt-3 text-xs leading-5 text-[var(--text-tertiary)]">
+                    No correction is required. This answer will move forward as {stateLabels[observation.epistemicState]} for later review.
+                  </p>
+                ) : null}
                 {!superseded.has(observation.id) && proposal?.status !== "ready_for_review" ? (
                   <details className="mt-4">
-                    <summary className="cursor-pointer text-xs font-medium text-[var(--workspace-accent)]">Append a correction</summary>
+                    <summary className="cursor-pointer text-xs font-medium text-[var(--workspace-accent)]">Change this answer or label (optional)</summary>
                     <DiscoveryCorrectionForm
                       currentEpistemicState={observation.epistemicState}
                       currentResponseText={observation.responseText}
@@ -196,6 +208,20 @@ export default async function DiscoveryInterviewPage({
               </Card>
             ))}
           </div>
+          <Card className="mt-5 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div>
+              <h3 className="text-lg font-semibold text-[var(--text)]">Ready for the next step</h3>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
+                Unresolved answers can move forward unchanged. The next step records how each answer should be treated without changing or approving the documented Process.
+              </p>
+            </div>
+            <Link
+              className="inline-flex h-10 shrink-0 items-center justify-center rounded-[9px] bg-[var(--workspace-accent)] px-4 text-sm font-medium text-[var(--workspace-accent-foreground)] hover:bg-[var(--workspace-accent-hover)]"
+              href={nextStepHref}
+            >
+              {nextStepLabel}
+            </Link>
+          </Card>
         </section>
       )}
     </WorkspaceShell>
