@@ -123,9 +123,16 @@ test("the review UI is presentation-only and corrections preserve active content
   assert.match(page, /Deterministic review · No AI/);
   assert.match(page, /review prompts—not findings, truth, or automatic reclassification/);
   assert.match(page, /Review Observation/);
+  assert.match(page, /You do not need to resolve or rewrite answers marked Assumed, Unknown, Needs validation, or Conflicting observation/);
+  assert.match(page, /No correction is required before the next step/);
+  assert.match(page, /No correction is required\. This answer will move forward as/);
+  assert.match(page, /Change this answer or label \(optional\)/);
+  assert.match(page, /Ready for the next step/);
+  assert.match(page, /Unresolved answers can move forward unchanged/);
   assert.match(form, /defaultValue=\{currentResponseText \|\| ""\}/);
   assert.match(form, /useState\(currentEpistemicState\)/);
   assert.match(decisions, /LAD-043 — Deterministic Discovery review signals/);
   assert.match(documentation, /computed at read time/);
+  assert.match(documentation, /appending a correction is optional/);
   assert.doesNotMatch(page, /correctDiscoveryObservationAction/);
 });

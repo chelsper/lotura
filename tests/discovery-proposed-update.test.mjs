@@ -174,6 +174,9 @@ test("the review UX keeps interview evidence, human choices, readiness, and appr
   assert.match(interview, /View proposed update/);
   assert.match(interview, /these interview answers can no longer be corrected in place/);
   assert.match(route, /It has not been approved or applied/);
+  assert.match(route, /You do not need to append a correction first/);
+  assert.match(route, /choose Leave for later/);
+  assert.match(route, /No correction is required/);
   assert.match(route, /does not turn free text into Steps, Roles, Systems, Exceptions, or dependencies/);
   assert.match(route, /Earlier choices remain in history/);
   assert.doesNotMatch(`${controls}\n${route}`, /canonical|sanitized working draft/i);

@@ -53,6 +53,10 @@ Assumed, Unknown, Needs validation, and Conflicting observation are deliberate
 review decisions. They remain available to later reconciliation and do not
 generate another immediate review prompt merely because the answer has several
 parts, boundary labels differ, or a correction changed the classification.
+The interview review page must say plainly that these answers can move forward
+unchanged and that appending a correction is optional. Validation by another
+team or authoritative source belongs in later review; it is not a prerequisite
+for continuing from the interview into the proposed-update step.
 
 These signals are computed at read time. They are not stored findings, quality
 scores, truth determinations, conflict resolution, or AI interpretations. A
