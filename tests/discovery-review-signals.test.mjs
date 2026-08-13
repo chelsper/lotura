@@ -31,7 +31,7 @@ test("review signals inspect active evidence without changing observations", () 
   assert.deepEqual(input, before);
   assert.deepEqual(
     signals.map((signal) => signal.kind).sort(),
-    ["boundary_state_difference", "mixed_claims"],
+    ["mixed_claims"],
   );
 });
 
@@ -47,11 +47,38 @@ test("Known uncertainty language becomes a review question, not a reclassificati
 test("correction chains retain history and surface possible context loss", () => {
   const input = [
     observation({ id: "original", responseText: "Fictional Scanner records the image and Fictional Ledger records the entry." }),
-    observation({ id: "correction", supersedesObservationId: "original", epistemicState: "needs_validation", responseText: "Changed from Known to Needs validation." }),
+    observation({ id: "correction", supersedesObservationId: "original", responseText: "Same answer." }),
   ];
   assert.deepEqual(activeDiscoveryObservations(input).map((item) => item.id), ["correction"]);
   assert.equal(analyzeDiscoveryReview(input)[0].kind, "correction_context_loss");
   assert.match(analyzeDiscoveryReview(input)[0].detail, /append a correction that keeps that detail/);
+});
+
+test("deliberate non-Known labels move forward without another immediate review prompt", () => {
+  const input = [
+    observation({
+      id: "start",
+      promptKey: "boundary_start",
+      epistemicState: "needs_validation",
+      responseText: "The exact start needs validation.",
+    }),
+    observation({ id: "end", promptKey: "boundary_end", responseText: "The work is complete after review." }),
+    observation({
+      id: "assumed-sequence",
+      epistemicState: "assumed",
+      promptKey: "sequence",
+      responseText: "1. Receive the item. 2. Review it. 3. Record it.",
+    }),
+    observation({ id: "prior", responseText: "A detailed fictional description." }),
+    observation({
+      id: "needs-validation-correction",
+      epistemicState: "needs_validation",
+      responseText: "Changed to Needs validation.",
+      supersedesObservationId: "prior",
+    }),
+  ];
+
+  assert.deepEqual(analyzeDiscoveryReview(input), []);
 });
 
 test("multi-part guidance explains the detected structure and gives a clear choice", () => {
