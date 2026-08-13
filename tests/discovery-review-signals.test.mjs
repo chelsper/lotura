@@ -31,7 +31,7 @@ test("review signals inspect active evidence without changing observations", () 
   assert.deepEqual(input, before);
   assert.deepEqual(
     signals.map((signal) => signal.kind).sort(),
-    ["mixed_claims"],
+    [],
   );
 });
 
@@ -81,18 +81,19 @@ test("deliberate non-Known labels move forward without another immediate review 
   assert.deepEqual(analyzeDiscoveryReview(input), []);
 });
 
-test("multi-part guidance explains the detected structure and gives a clear choice", () => {
-  const [signal] = analyzeDiscoveryReview([
+test("Known confirms a multi-part answer without requiring duplicate review", () => {
+  const signals = analyzeDiscoveryReview([
     observation({
       promptKey: "sequence",
       responseText: "1. Receive the item. 2. Review it. 3. Record it. 4. Send it.",
     }),
+    observation({
+      id: "dependencies",
+      promptKey: "dependencies",
+      responseText: "Before: Fictional Intake prepares the work. After: Fictional Reporting receives it.",
+    }),
   ]);
-  assert.equal(signal.title, "Check whether every part is confirmed");
-  assert.match(signal.detail, /4 numbered steps/);
-  assert.match(signal.detail, /entire answer is currently marked Known/);
-  assert.match(signal.detail, /If that label is accurate for every part, no change is needed/);
-  assert.match(signal.detail, /identifies which parts need validation/);
+  assert.deepEqual(signals, []);
 });
 
 test("substantive corrections and honest uncertainty do not create false certainty signals", () => {

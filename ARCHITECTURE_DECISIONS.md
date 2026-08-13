@@ -1029,9 +1029,8 @@ remain intentionally deferred.
 v0.1.
 
 **Context:** The first real Guided Discovery review demonstrated that a
-participant can honestly select one evidence state for an answer that contains
-several claims, use definitive wording after an earlier boundary was marked
-unresolved, or append a correction that changes classification while
+participant can use definitive wording while explicitly stating uncertainty,
+or append a correction that changes classification while
 unintentionally omitting the original substance. Requiring the reviewer to
 discover every such pattern manually weakens Discovery through documentation.
 Automatically choosing a corrected state or rewritten answer would be worse:
@@ -1040,10 +1039,15 @@ the software would be manufacturing organizational interpretation.
 **Decision:** A completed Guided Discovery session may show deterministic
 **Things to review** generated at read time from the session's active and
 superseded observations. Version 0.1 signals are limited to explainable
-patterns under a **Known** classification: explicit uncertainty language,
-several claims sharing one classification, and a correction that may not carry
-substantive context forward. Each signal names the affected observations and
-explains why review is suggested.
+patterns under a **Known** classification: explicit uncertainty language and a
+correction that may not carry substantive context forward. Each signal names
+the affected observations and explains why review is suggested.
+
+Selecting Known is the participant's confirmation of the complete answer. An
+answer does not create another prompt merely because it contains several
+steps, items, dependencies, or other claims. Claim-level evidence remains a
+future reconciliation capability; the interview must not require the
+participant to confirm the same classification twice.
 
 An observation already classified as Assumed, Unknown, Needs validation, or
 Conflicting observation does not create another immediate review prompt merely
