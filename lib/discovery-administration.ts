@@ -1,6 +1,7 @@
 import "server-only";
 
 import { neon } from "@neondatabase/serverless";
+import { createHash } from "node:crypto";
 
 import { requireWorkspaceAccess } from "./authentication";
 import { resolveDiscoveryConfiguration } from "./discovery-policy.mjs";
@@ -10,6 +11,11 @@ import {
   getDiscoveryQuestion,
   getNextDiscoveryQuestionKey,
 } from "./discovery-questions.mjs";
+import {
+  DISCOVERY_PROPOSAL_DISPOSITIONS,
+  type DiscoveryProposalDisposition,
+  type DocumentedProcessSnapshot,
+} from "./discovery-proposal-model.mjs";
 
 export type DiscoveryEpistemicState =
   | "known"
@@ -33,6 +39,10 @@ const STATES = new Set<DiscoveryEpistemicState>([
   "needs_validation",
   "conflicting_observation",
 ]);
+
+const PROPOSAL_DISPOSITIONS = new Set<DiscoveryProposalDisposition>(
+  DISCOVERY_PROPOSAL_DISPOSITIONS,
+);
 
 function logDiscoveryDatabaseFailure(operation: string, error: unknown) {
   const details = typeof error === "object" && error !== null
@@ -344,14 +354,22 @@ export async function appendDiscoveryCorrection(input: {
   }
   try {
     const rows = await context.sql.query(
-      `with selected_session as materialized (
-         select id, organization_id, stable_key
-         from discovery_sessions
-         where organization_id = $1
-           and stable_key = $2::uuid
-           and actor_identifier = $3
-           and revision = $4
-           and status = 'ready_for_review'
+       `with selected_session as materialized (
+         select session.id, session.organization_id, session.stable_key
+         from discovery_sessions session
+         where session.organization_id = $1
+           and session.stable_key = $2::uuid
+           and session.actor_identifier = $3
+           and session.revision = $4
+           and session.status = 'ready_for_review'
+           and not exists (
+             select 1
+             from discovery_proposals proposal
+             where proposal.organization_id = session.organization_id
+               and proposal.session_id = session.id
+               and proposal.session_stable_key = session.stable_key
+               and proposal.status = 'ready_for_review'
+           )
          for update
        ), prior as (
          select observation.*
@@ -409,7 +427,11 @@ export async function appendDiscoveryCorrection(input: {
       !row || Number(row.prior_count) !== 1 ||
       Number(row.inserted_count) !== 1 || Number(row.advanced_count) !== 1
     ) {
-      return { ok: false, code: "conflict", message: "Reload before correcting this observation." };
+      return {
+        ok: false,
+        code: "conflict",
+        message: "Reload before correcting this answer. A finished proposed update cannot be silently changed.",
+      };
     }
     return {
       ok: true,
@@ -422,6 +444,363 @@ export async function appendDiscoveryCorrection(input: {
       ok: false,
       code: "unavailable",
       message: "Lotura could not append the correction safely. No partial change was retained.",
+    };
+  }
+}
+
+function proposalSnapshot(input: DocumentedProcessSnapshot) {
+  const serialized = JSON.stringify(input);
+  if (serialized.length < 2 || serialized.length > 500000) return null;
+  return {
+    fingerprint: createHash("sha256").update(serialized).digest("hex"),
+    serialized,
+  };
+}
+
+export async function saveDiscoveryProposalDecision(input: {
+  disposition: DiscoveryProposalDisposition;
+  documentedProcessSnapshot: DocumentedProcessSnapshot;
+  expectedProposalRevision: number;
+  observationId: string;
+  reviewNote: string;
+  sessionId: string;
+}): Promise<DiscoveryMutationResult> {
+  const reviewNote = input.reviewNote.trim();
+  const snapshot = proposalSnapshot(input.documentedProcessSnapshot);
+  if (
+    !validUuid(input.sessionId) ||
+    !validUuid(input.observationId) ||
+    !Number.isSafeInteger(input.expectedProposalRevision) ||
+    input.expectedProposalRevision < 0 ||
+    !PROPOSAL_DISPOSITIONS.has(input.disposition) ||
+    reviewNote.length > 2000 ||
+    !snapshot
+  ) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Review the proposed-update choice and try again.",
+    };
+  }
+  const context = await discoveryWriteContext();
+  if (!context) {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Guided Discovery is not enabled.",
+    };
+  }
+
+  try {
+    if (input.expectedProposalRevision === 0) {
+      const rows = await context.sql.query(
+        `with selected_observation as materialized (
+           select session.id as session_id,
+             session.organization_id,
+             session.stable_key as session_stable_key,
+             session.process_id,
+             session.process_stable_key,
+             observation.stable_key as observation_stable_key
+           from discovery_sessions session
+           join discovery_observations observation
+             on observation.session_id = session.id
+            and observation.organization_id = session.organization_id
+            and observation.session_stable_key = session.stable_key
+           where session.organization_id = $1::integer
+             and session.stable_key = $2::uuid
+             and session.status = 'ready_for_review'
+             and observation.stable_key = $3::uuid
+             and not exists (
+               select 1
+               from discovery_observations later
+               where later.organization_id = observation.organization_id
+                 and later.session_id = observation.session_id
+                 and later.supersedes_observation_stable_key = observation.stable_key
+             )
+         ), inserted_proposal as (
+           insert into discovery_proposals (
+             organization_id, session_id, session_stable_key, process_id,
+             process_stable_key, documented_process_snapshot,
+             documented_process_fingerprint, actor_identifier
+           )
+           select organization_id, session_id, session_stable_key, process_id,
+             process_stable_key, $4::jsonb, $5::varchar(64), $6::varchar(128)
+           from selected_observation
+           on conflict (session_id) do nothing
+           returning id, organization_id, stable_key, session_id,
+             session_stable_key
+         ), inserted_decision as (
+           insert into discovery_proposal_decisions (
+             organization_id, proposal_id, proposal_stable_key, session_id,
+             session_stable_key, observation_stable_key, decision_sequence,
+             disposition, review_note, actor_identifier
+           )
+           select proposal.organization_id, proposal.id, proposal.stable_key,
+             proposal.session_id, proposal.session_stable_key,
+             selected_observation.observation_stable_key, 1,
+             $7::discovery_proposal_disposition, $8::text, $6::varchar(128)
+           from inserted_proposal proposal
+           join selected_observation
+             on selected_observation.session_id = proposal.session_id
+            and selected_observation.organization_id = proposal.organization_id
+            and selected_observation.session_stable_key = proposal.session_stable_key
+           returning 1
+         )
+         select
+           (select count(*)::int from selected_observation) as observation_count,
+           (select count(*)::int from inserted_proposal) as proposal_count,
+           (select count(*)::int from inserted_decision) as decision_count`,
+        [
+          context.configuration.organizationId,
+          input.sessionId,
+          input.observationId,
+          snapshot.serialized,
+          snapshot.fingerprint,
+          context.configuration.actorIdentifier,
+          input.disposition,
+          reviewNote || null,
+        ],
+      );
+      const row = rows[0];
+      if (
+        !row ||
+        Number(row.observation_count) !== 1 ||
+        Number(row.proposal_count) !== 1 ||
+        Number(row.decision_count) !== 1
+      ) {
+        return {
+          ok: false,
+          code: "conflict",
+          message: "This proposed update changed after the page loaded. Reload before continuing.",
+        };
+      }
+    } else {
+      const rows = await context.sql.query(
+        `with selected_proposal as materialized (
+           select proposal.id, proposal.organization_id, proposal.stable_key,
+             proposal.session_id, proposal.session_stable_key
+           from discovery_proposals proposal
+           join discovery_sessions session
+             on session.id = proposal.session_id
+            and session.organization_id = proposal.organization_id
+            and session.stable_key = proposal.session_stable_key
+            and session.process_id = proposal.process_id
+            and session.process_stable_key = proposal.process_stable_key
+           where proposal.organization_id = $1::integer
+             and proposal.session_stable_key = $2::uuid
+             and proposal.revision = $3::integer
+             and proposal.status = 'draft'
+             and session.status = 'ready_for_review'
+           for update of proposal
+         ), selected_observation as (
+           select observation.stable_key
+           from discovery_observations observation
+           join selected_proposal proposal
+             on proposal.session_id = observation.session_id
+            and proposal.organization_id = observation.organization_id
+            and proposal.session_stable_key = observation.session_stable_key
+           where observation.stable_key = $4::uuid
+             and not exists (
+               select 1
+               from discovery_observations later
+               where later.organization_id = observation.organization_id
+                 and later.session_id = observation.session_id
+                 and later.supersedes_observation_stable_key = observation.stable_key
+             )
+         ), next_sequence as (
+           select coalesce(max(decision.decision_sequence), 0) + 1 as value
+           from discovery_proposal_decisions decision
+           join selected_proposal proposal
+             on proposal.id = decision.proposal_id
+            and proposal.organization_id = decision.organization_id
+            and proposal.stable_key = decision.proposal_stable_key
+           where decision.observation_stable_key = $4::uuid
+         ), inserted_decision as (
+           insert into discovery_proposal_decisions (
+             organization_id, proposal_id, proposal_stable_key, session_id,
+             session_stable_key, observation_stable_key, decision_sequence,
+             disposition, review_note, actor_identifier
+           )
+           select proposal.organization_id, proposal.id, proposal.stable_key,
+             proposal.session_id, proposal.session_stable_key,
+             observation.stable_key, next_sequence.value,
+             $5::discovery_proposal_disposition, $6::text, $7::varchar(128)
+           from selected_proposal proposal
+           cross join selected_observation observation
+           cross join next_sequence
+           returning 1
+         ), advanced as (
+           update discovery_proposals
+           set revision = revision + 1,
+             updated_at = transaction_timestamp()
+           where id = (select id from selected_proposal)
+             and exists (select 1 from inserted_decision)
+           returning 1
+         )
+         select
+           (select count(*)::int from selected_observation) as observation_count,
+           (select count(*)::int from inserted_decision) as decision_count,
+           (select count(*)::int from advanced) as advanced_count`,
+        [
+          context.configuration.organizationId,
+          input.sessionId,
+          input.expectedProposalRevision,
+          input.observationId,
+          input.disposition,
+          reviewNote || null,
+          context.configuration.actorIdentifier,
+        ],
+      );
+      const row = rows[0];
+      if (
+        !row ||
+        Number(row.observation_count) !== 1 ||
+        Number(row.decision_count) !== 1 ||
+        Number(row.advanced_count) !== 1
+      ) {
+        return {
+          ok: false,
+          code: "conflict",
+          message: "This proposed update changed after the page loaded. Reload before continuing.",
+        };
+      }
+    }
+    return {
+      ok: true,
+      message: "Choice saved. The documented Process has not changed.",
+      sessionId: input.sessionId,
+    };
+  } catch (error) {
+    logDiscoveryDatabaseFailure("save_proposal_decision", error);
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Lotura could not save this choice safely. No partial change was retained.",
+    };
+  }
+}
+
+export async function finishDiscoveryProposal(input: {
+  expectedProposalRevision: number;
+  sessionId: string;
+}): Promise<DiscoveryMutationResult> {
+  if (
+    !validUuid(input.sessionId) ||
+    !Number.isSafeInteger(input.expectedProposalRevision) ||
+    input.expectedProposalRevision < 1
+  ) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "The proposed-update reference is invalid.",
+    };
+  }
+  const context = await discoveryWriteContext();
+  if (!context) {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Guided Discovery is not enabled.",
+    };
+  }
+
+  try {
+    const rows = await context.sql.query(
+      `with selected_proposal as materialized (
+         select proposal.id, proposal.organization_id, proposal.stable_key,
+           proposal.session_id, proposal.session_stable_key
+         from discovery_proposals proposal
+         join discovery_sessions session
+           on session.id = proposal.session_id
+          and session.organization_id = proposal.organization_id
+          and session.stable_key = proposal.session_stable_key
+         where proposal.organization_id = $1::integer
+           and proposal.session_stable_key = $2::uuid
+           and proposal.revision = $3::integer
+           and proposal.status = 'draft'
+           and session.status = 'ready_for_review'
+         for update of proposal
+       ), active_observations as (
+         select observation.stable_key
+         from discovery_observations observation
+         join selected_proposal proposal
+           on proposal.session_id = observation.session_id
+          and proposal.organization_id = observation.organization_id
+          and proposal.session_stable_key = observation.session_stable_key
+         where not exists (
+           select 1
+           from discovery_observations later
+           where later.organization_id = observation.organization_id
+             and later.session_id = observation.session_id
+             and later.supersedes_observation_stable_key = observation.stable_key
+         )
+       ), current_decisions as (
+         select distinct on (decision.observation_stable_key)
+           decision.observation_stable_key
+         from discovery_proposal_decisions decision
+         join selected_proposal proposal
+           on proposal.id = decision.proposal_id
+          and proposal.organization_id = decision.organization_id
+          and proposal.stable_key = decision.proposal_stable_key
+         join active_observations observation
+           on observation.stable_key = decision.observation_stable_key
+         order by decision.observation_stable_key,
+           decision.decision_sequence desc
+       ), summary as (
+         select
+           (select count(*)::int from active_observations) as observation_count,
+           (select count(*)::int from current_decisions) as decision_count
+       ), advanced as (
+         update discovery_proposals
+         set status = 'ready_for_review',
+           revision = revision + 1,
+           ready_at = transaction_timestamp(),
+           ready_by_actor = $4::varchar(128),
+           updated_at = transaction_timestamp()
+         where id = (select id from selected_proposal)
+           and (select observation_count from summary) > 0
+           and (select observation_count from summary) =
+             (select decision_count from summary)
+         returning 1
+       )
+       select summary.observation_count, summary.decision_count,
+         (select count(*)::int from advanced) as advanced_count
+       from summary`,
+      [
+        context.configuration.organizationId,
+        input.sessionId,
+        input.expectedProposalRevision,
+        context.configuration.actorIdentifier,
+      ],
+    );
+    const row = rows[0];
+    if (!row || Number(row.advanced_count) !== 1) {
+      const missing = row
+        ? Number(row.observation_count) - Number(row.decision_count)
+        : 0;
+      return missing > 0
+        ? {
+            ok: false,
+            code: "invalid",
+            message: `Choose how to treat the remaining ${missing} interview ${missing === 1 ? "answer" : "answers"} before finishing.`,
+          }
+        : {
+            ok: false,
+            code: "conflict",
+            message: "This proposed update changed after the page loaded. Reload before finishing.",
+          };
+    }
+    return {
+      ok: true,
+      message: "Proposed update is ready for review. The documented Process has not changed.",
+      sessionId: input.sessionId,
+    };
+  } catch (error) {
+    logDiscoveryDatabaseFailure("finish_proposal", error);
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Lotura could not finish the proposed update safely. No partial change was retained.",
     };
   }
 }

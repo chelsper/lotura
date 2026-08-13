@@ -195,6 +195,16 @@ export const discoveryObservationTopic = pgEnum(
   ],
 );
 
+export const discoveryProposalStatus = pgEnum("discovery_proposal_status", [
+  "draft",
+  "ready_for_review",
+]);
+
+export const discoveryProposalDisposition = pgEnum(
+  "discovery_proposal_disposition",
+  ["use_in_proposal", "keep_documented", "leave_for_later"],
+);
+
 export const organization = pgTable("organizations", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -451,6 +461,13 @@ export const discoverySession = pgTable(
       table.organizationId,
       table.stableKey,
     ),
+    unique("discovery_sessions_identity_process_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.processId,
+      table.processStableKey,
+    ),
     check(
       "discovery_sessions_scope_not_blank_check",
       sql`char_length(trim(${table.scopeStatement})) > 0`,
@@ -572,6 +589,170 @@ export const discoveryObservation = pgTable(
       table.organizationId,
       table.epistemicState,
       table.createdAt,
+    ),
+  ],
+);
+
+export const discoveryProposal = pgTable(
+  "discovery_proposals",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    sessionId: integer("session_id").notNull(),
+    sessionStableKey: uuid("session_stable_key").notNull(),
+    processId: integer("process_id").notNull(),
+    processStableKey: uuid("process_stable_key").notNull(),
+    documentedProcessSnapshot: jsonb("documented_process_snapshot").notNull(),
+    documentedProcessFingerprint: varchar("documented_process_fingerprint", {
+      length: 64,
+    }).notNull(),
+    status: discoveryProposalStatus("status").default("draft").notNull(),
+    revision: integer("revision").default(1).notNull(),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    readyAt: timestamp("ready_at", { withTimezone: true }),
+    readyByActor: varchar("ready_by_actor", { length: 128 }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_proposals_session_process_fk",
+      columns: [
+        table.sessionId,
+        table.organizationId,
+        table.sessionStableKey,
+        table.processId,
+        table.processStableKey,
+      ],
+      foreignColumns: [
+        discoverySession.id,
+        discoverySession.organizationId,
+        discoverySession.stableKey,
+        discoverySession.processId,
+        discoverySession.processStableKey,
+      ],
+    }).onDelete("restrict"),
+    unique("discovery_proposals_stable_key_unique").on(table.stableKey),
+    unique("discovery_proposals_session_unique").on(table.sessionId),
+    unique("discovery_proposals_identity_session_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.sessionId,
+      table.sessionStableKey,
+    ),
+    check(
+      "discovery_proposals_snapshot_object_check",
+      sql`jsonb_typeof(${table.documentedProcessSnapshot}) = 'object'`,
+    ),
+    check(
+      "discovery_proposals_fingerprint_check",
+      sql`${table.documentedProcessFingerprint} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "discovery_proposals_revision_positive_check",
+      sql`${table.revision} >= 1`,
+    ),
+    check(
+      "discovery_proposals_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    check(
+      "discovery_proposals_ready_state_check",
+      sql`(${table.status} = 'draft' and ${table.readyAt} is null and ${table.readyByActor} is null) or (${table.status} = 'ready_for_review' and ${table.readyAt} is not null and ${table.readyByActor} is not null and char_length(trim(${table.readyByActor})) > 0)`,
+    ),
+    index("discovery_proposals_org_status_updated_idx").on(
+      table.organizationId,
+      table.status,
+      table.updatedAt,
+    ),
+  ],
+);
+
+export const discoveryProposalDecision = pgTable(
+  "discovery_proposal_decisions",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    proposalId: integer("proposal_id").notNull(),
+    proposalStableKey: uuid("proposal_stable_key").notNull(),
+    sessionId: integer("session_id").notNull(),
+    sessionStableKey: uuid("session_stable_key").notNull(),
+    observationStableKey: uuid("observation_stable_key").notNull(),
+    decisionSequence: integer("decision_sequence").notNull(),
+    disposition: discoveryProposalDisposition("disposition").notNull(),
+    reviewNote: text("review_note"),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_proposal_decisions_proposal_fk",
+      columns: [
+        table.proposalId,
+        table.organizationId,
+        table.proposalStableKey,
+        table.sessionId,
+        table.sessionStableKey,
+      ],
+      foreignColumns: [
+        discoveryProposal.id,
+        discoveryProposal.organizationId,
+        discoveryProposal.stableKey,
+        discoveryProposal.sessionId,
+        discoveryProposal.sessionStableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_proposal_decisions_observation_fk",
+      columns: [
+        table.observationStableKey,
+        table.sessionId,
+        table.organizationId,
+      ],
+      foreignColumns: [
+        discoveryObservation.stableKey,
+        discoveryObservation.sessionId,
+        discoveryObservation.organizationId,
+      ],
+    }).onDelete("restrict"),
+    unique("discovery_proposal_decisions_stable_key_unique").on(
+      table.stableKey,
+    ),
+    unique("discovery_proposal_decisions_observation_sequence_unique").on(
+      table.proposalId,
+      table.observationStableKey,
+      table.decisionSequence,
+    ),
+    check(
+      "discovery_proposal_decisions_sequence_positive_check",
+      sql`${table.decisionSequence} >= 1`,
+    ),
+    check(
+      "discovery_proposal_decisions_note_not_blank_check",
+      sql`${table.reviewNote} is null or char_length(trim(${table.reviewNote})) > 0`,
+    ),
+    check(
+      "discovery_proposal_decisions_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    index("discovery_proposal_decisions_proposal_created_idx").on(
+      table.organizationId,
+      table.proposalStableKey,
+      table.createdAt,
+    ),
+    index("discovery_proposal_decisions_observation_idx").on(
+      table.organizationId,
+      table.observationStableKey,
+      table.decisionSequence,
     ),
   ],
 );
