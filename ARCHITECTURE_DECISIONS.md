@@ -1040,10 +1040,17 @@ the software would be manufacturing organizational interpretation.
 **Decision:** A completed Guided Discovery session may show deterministic
 **Things to review** generated at read time from the session's active and
 superseded observations. Version 0.1 signals are limited to explainable
-patterns: explicit uncertainty language under a Known classification, several
-claims sharing one observation state, differing start/end boundary states, and
-a correction that may not carry substantive context forward. Each signal names
-the affected observations and explains why review is suggested.
+patterns under a **Known** classification: explicit uncertainty language,
+several claims sharing one classification, and a correction that may not carry
+substantive context forward. Each signal names the affected observations and
+explains why review is suggested.
+
+An observation already classified as Assumed, Unknown, Needs validation, or
+Conflicting observation does not create another immediate review prompt merely
+because it contains several claims, differs from another boundary label, or is
+a correction. That classification is an intentional preservation of
+uncertainty for later reconciliation. The review panel must respect it rather
+than sending the participant back through the same decision.
 
 Signals are prompts, not persisted findings, conflict determinations, risk
 measures, completeness scores, evidence reclassification, reconciliation, or
