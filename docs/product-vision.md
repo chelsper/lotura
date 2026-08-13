@@ -2,6 +2,16 @@
 
 Lotura is intended to model how an organization actually operates: its processes, roles, ownership, systems, dependencies, exceptions, and institutional knowledge. It should not become only an SOP repository or internal wiki.
 
+Lotura is the operating system for organizational knowledge. Continuous
+improvement is the later loop in a broader Organizational Knowledge Lifecycle:
+**Observe → Interview → Evidence → Review → Reconcile → Proposed Change →
+Approval → Operating Model → Continuous Improvement → Observe Again**.
+
+The lifecycle describes how knowledge earns trust. Process Families, Reference
+Models, Job Descriptions, and drift instead structure or compare that
+knowledge. The two dimensions remain separate, and difference is evidence—not
+automatically error.
+
 ## Continuous improvement is part of the operating model
 
 An operating model is incomplete if it records only the current definition of work. Lotura must also help an organization identify friction, decide what to change, and determine whether that change produced a durable improvement.

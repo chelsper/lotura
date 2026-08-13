@@ -1,5 +1,15 @@
 # Guided Interview Foundation v0.1
 
+Guided interviews are one entry point into Lotura's broader Organizational
+Knowledge Lifecycle:
+
+**Observe → Interview → Evidence → Review → Reconcile → Proposed Change →
+Approval → Operating Model → Continuous Improvement → Observe Again**
+
+The interview is not the operating model. It preserves participant statements
+as evidence so accountable people can review and reconcile them before any
+documented Process changes.
+
 Guided Discovery is the first evidence-capture layer for Process Discovery. It
 lets an authenticated Workspace Administrator describe one existing Process
 through a bounded, application-versioned interview and then review the
@@ -230,3 +240,8 @@ application to the Process, Process versioning, proposal withdrawal or
 rebasing, export, retention automation, and deletion require later decisions.
 Refresh-safe server persistence exists for submitted observations and proposal
 choices; unsent form text remains browser-local and may be lost.
+
+The immediate next lifecycle capability is manual structured proposed-change
+mapping. Human approval and atomic application to a versioned Process remain a
+later, separate boundary. AI may not suggest or automate this path until the
+manual mapping, approval, and version-application semantics are proven.

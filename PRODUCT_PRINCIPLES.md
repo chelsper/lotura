@@ -153,6 +153,46 @@ audited administrative capability and must never erase evidence or history.
 **Product test:** Can the product explain separately why someone may view,
 contribute, approve, analyze, administer, or steward this knowledge?
 
+## 13. The operating model is the trusted destination
+
+Discovery, interviews, observations, AI assistance, Reference Models,
+comparison, governance, and improvement exist to strengthen the operating
+model—not silently replace it. Evidence, interpretation, proposed change,
+approval, current documented knowledge, and actual organizational reality must
+remain distinguishable.
+
+Complete the manual path from evidence to an approved, versioned
+operating-model change before asking AI to suggest or automate any part of that
+path.
+
+**Product test:** Can Lotura show exactly where knowledge sits in the lifecycle
+and prevent assistance from acquiring authority it has not been granted?
+
+## 14. Knowledge lifecycle and operating-model structure are distinct
+
+The Organizational Knowledge Lifecycle describes how knowledge moves from
+observation to trusted documentation and later review. Process Families,
+Reference Models, Job Descriptions, and drift describe how that knowledge is
+grouped or compared. Neither dimension should be forced into the data model of
+the other merely for implementation convenience.
+
+A Process may belong to a broader family without inheriting the family's
+Steps, Roles, Systems, Exceptions, governance, or conclusions unless that
+inheritance is separately defined and approved.
+
+**Product test:** Does the design preserve the difference between how knowledge
+earns trust and how operating-model knowledge is related or compared?
+
+## 15. Difference is evidence, not automatically error
+
+Participant disagreement, deviation from a Reference Model, Process drift, Job
+Drift, and organizational restructuring are evidence for review. They do not
+by themselves prove failure, noncompliance, poor performance, or a required
+change.
+
+**Product test:** Does Lotura ask an accountable question about the difference
+before presenting a judgment?
+
 ## Discovery through documentation
 
 **Discovery is an expected outcome of documentation.**

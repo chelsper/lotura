@@ -5,6 +5,11 @@
 Workspace Studio is where an organization builds, governs, and continuously
 improves its digital twin.
 
+It is also the central working environment for Lotura's Organizational
+Knowledge Lifecycle: **Observe → Interview → Evidence → Review → Reconcile →
+Proposed Change → Approval → Operating Model → Continuous Improvement →
+Observe Again**. Studio does not collapse those stages into one edit action.
+
 Lotura's organizational digital twin is a living, evidence-based model of how
 the organization is structured, how work happens, who holds responsibility,
 which technology supports it, what exceptions and dependencies exist, and how
@@ -68,10 +73,21 @@ Workspace Studio grows under one coherent product umbrella:
 - **Activity** — a chronological, read-only projection of the existing
   append-only change ledgers. Activity does not replace those ledgers or imply
   causality between events.
+- **Reference Models** — selected internal and external comparison bases for
+  Processes and Process Families. This area remains hidden until attachment and
+  evidence-based comparison provide useful capability.
+- **Improvement** — the governed loop from evidence and approved change through
+  implementation, measurement, and sustainment. It remains hidden until that
+  lifecycle exists.
 
 The Studio should not ship empty destinations merely to advertise future
 scope. A destination enters navigation when it provides an honest, useful
 experience with current data.
+
+Knowledge lifecycle and operating-model structure remain distinct inside
+Studio. Discovery and Governance move knowledge toward trusted documentation;
+Organization, Responsibilities, Processes, Process Families, and Technology
+structure the model; Reference Models, Job Descriptions, and drift compare it.
 
 ## Proposed route map
 

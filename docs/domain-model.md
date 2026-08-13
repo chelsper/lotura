@@ -6,6 +6,82 @@ Version 0.1 establishes the minimum operating model around organizations, people
 
 Continuous improvement is a first-class future domain capability, but it is not part of the Version 0.1 database schema. The entities below are design commitments at the conceptual level, not finalized tables or migration specifications.
 
+## Two architectural dimensions
+
+Lotura separates the **Organizational Knowledge Lifecycle** from the structure
+of the operating model.
+
+The lifecycle preserves how knowledge moves through observation, interview,
+evidence, review, reconciliation, proposed change, approval, the operating
+model, improvement, and renewed observation. Process Families, Reference
+Models, Job Descriptions, and drift instead describe how knowledge is grouped,
+related, or compared. A lifecycle state must not be encoded as a structural
+relationship, and a structural relationship must not establish approval.
+
+## Near-term future entity
+
+### StructuredProposedChange
+
+The immediate future capability is a durable, human-authored mapping from a
+reviewed proposed-update package to an explicit possible operating-model
+change. It should retain its Organization and Process scope, source
+observations, target identity where one exists, documented before-state,
+proposed after-state, action, reason, unresolved questions, author, and review
+history.
+
+It remains a proposal. It does not update the Process, establish approval, or
+become a Process version until separately governed application occurs.
+
+## Preserved future structural and comparison concepts
+
+### ProcessFamily and ProcessFamilyMembership
+
+`ProcessFamily` is a durable grouping such as Gift Processing.
+`ProcessFamilyMembership` explicitly associates a Process with a family. The
+association is not an upstream/downstream dependency and does not imply that
+the family is an executable Process.
+
+A Process may belong to a broader family without inheriting the family's
+Steps, Roles, Systems, Exceptions, governance, or conclusions unless that
+inheritance is separately defined and approved. The initial family capability
+should not implement inheritance.
+
+Reusable subprocess composition is also distinct. If future evidence supports
+it, a typed `ProcessCompositionRelationship` should be designed separately
+rather than overloading family membership or the existing Process dependency
+model.
+
+### ReferenceModel and ReferenceModelVersion
+
+`ReferenceModel` represents an internal or external comparison basis, including
+an industry framework, professional guidance, internal enterprise standard,
+vendor recommendation, or prior approved Process version.
+`ReferenceModelVersion` preserves the exact edition, timing, provenance, and
+use constraints of that reference.
+
+Reference applicability should use explicit Process and Process Family
+associations rather than a generic unbounded polymorphic attachment. A
+difference between a reference and documented or observed practice creates a
+review question, not an automatic quality or compliance conclusion.
+
+### JobDescription and Job Drift
+
+A future effective-dated `JobDescription` belongs to a Position and may be
+compared with Role Mandates, Process ownership, Step responsibility, Systems,
+documented work, and observations. It does not create those relationships.
+Job Drift is a human-review classification over differences, not a conclusion
+that either the description or current practice is wrong.
+
+### Knowledge Gaps
+
+Knowledge Gaps should begin as explainable projections over evidence and the
+operating model: missing validated ownership, unclear Step responsibility,
+conflicting observations, unresolved boundaries, undocumented dependencies,
+Reference Model differences, and similar questions. A durable Knowledge Gap
+entity is justified only when assignment, lifecycle, governance, or resolution
+history cannot be represented by the underlying records. No aggregate health
+or confidence score is implied.
+
 ## Separate historical records
 
 Lotura will eventually need two independent kinds of history:
