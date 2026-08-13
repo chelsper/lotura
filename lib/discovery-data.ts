@@ -5,9 +5,16 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import {
   discoveryObservation,
+  discoveryProposal,
+  discoveryProposalDecision,
   discoverySession,
   process as processTable,
 } from "@/db/schema";
+
+import type {
+  DiscoveryProposalDisposition,
+  DocumentedProcessSnapshot,
+} from "./discovery-proposal-model.mjs";
 
 export type DiscoverySessionSummary = {
   actorIdentifier: string;
@@ -51,6 +58,30 @@ export type DiscoveryObservationRecord = {
 
 export type DiscoverySessionDetail = DiscoverySessionSummary & {
   observations: DiscoveryObservationRecord[];
+};
+
+export type DiscoveryProposalDecisionRecord = {
+  actorIdentifier: string;
+  createdAt: string;
+  decisionSequence: number;
+  disposition: DiscoveryProposalDisposition;
+  id: string;
+  observationId: string;
+  reviewNote: string | null;
+};
+
+export type DiscoveryProposalRecord = {
+  actorIdentifier: string;
+  createdAt: string;
+  decisions: DiscoveryProposalDecisionRecord[];
+  documentedProcessFingerprint: string;
+  documentedProcessSnapshot: DocumentedProcessSnapshot;
+  id: string;
+  readyAt: string | null;
+  readyByActor: string | null;
+  revision: number;
+  status: "draft" | "ready_for_review";
+  updatedAt: string;
 };
 
 export async function loadDiscoverySessions(
@@ -174,5 +205,70 @@ export async function loadDiscoverySession(
     })),
     processId: `process:${session.processId}`,
     updatedAt: session.updatedAt.toISOString(),
+  };
+}
+
+export async function loadDiscoveryProposal(
+  organizationId: number,
+  sessionStableKey: string,
+): Promise<DiscoveryProposalRecord | null> {
+  const proposals = await db
+    .select({
+      actorIdentifier: discoveryProposal.actorIdentifier,
+      createdAt: discoveryProposal.createdAt,
+      documentedProcessFingerprint:
+        discoveryProposal.documentedProcessFingerprint,
+      documentedProcessSnapshot: discoveryProposal.documentedProcessSnapshot,
+      id: discoveryProposal.stableKey,
+      readyAt: discoveryProposal.readyAt,
+      readyByActor: discoveryProposal.readyByActor,
+      revision: discoveryProposal.revision,
+      status: discoveryProposal.status,
+      updatedAt: discoveryProposal.updatedAt,
+    })
+    .from(discoveryProposal)
+    .where(
+      and(
+        eq(discoveryProposal.organizationId, organizationId),
+        eq(discoveryProposal.sessionStableKey, sessionStableKey),
+      ),
+    )
+    .limit(1);
+  const proposal = proposals[0];
+  if (!proposal) return null;
+
+  const decisions = await db
+    .select({
+      actorIdentifier: discoveryProposalDecision.actorIdentifier,
+      createdAt: discoveryProposalDecision.createdAt,
+      decisionSequence: discoveryProposalDecision.decisionSequence,
+      disposition: discoveryProposalDecision.disposition,
+      id: discoveryProposalDecision.stableKey,
+      observationId: discoveryProposalDecision.observationStableKey,
+      reviewNote: discoveryProposalDecision.reviewNote,
+    })
+    .from(discoveryProposalDecision)
+    .where(
+      and(
+        eq(discoveryProposalDecision.organizationId, organizationId),
+        eq(discoveryProposalDecision.proposalStableKey, proposal.id),
+      ),
+    )
+    .orderBy(
+      asc(discoveryProposalDecision.createdAt),
+      asc(discoveryProposalDecision.id),
+    );
+
+  return {
+    ...proposal,
+    createdAt: proposal.createdAt.toISOString(),
+    decisions: decisions.map((decision) => ({
+      ...decision,
+      createdAt: decision.createdAt.toISOString(),
+    })),
+    documentedProcessSnapshot:
+      proposal.documentedProcessSnapshot as DocumentedProcessSnapshot,
+    readyAt: proposal.readyAt?.toISOString() ?? null,
+    updatedAt: proposal.updatedAt.toISOString(),
   };
 }

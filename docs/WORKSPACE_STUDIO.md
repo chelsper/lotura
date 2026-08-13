@@ -136,9 +136,10 @@ maintenance, and deactivation preserve immutable identity and history.
   Process;
 - `/studio/discovery/interviews/[sessionId]` — answer questions, preserve
   uncertainty, append corrections, and review the saved interview; and
-- `/studio/discovery/interviews/[sessionId]/reconcile` — compare current
-  documented Process information with active interview notes without proposing
-  or saving changes.
+- `/studio/discovery/interviews/[sessionId]/reconcile` — compare documented
+  Process information with active interview notes, record append-only human
+  choices, and finish a proposed update for later review without approving or
+  changing the Process.
 
 Discovery uses conversational product language. Technical terms such as
 canonical record, epistemic state, and reconciliation package remain available

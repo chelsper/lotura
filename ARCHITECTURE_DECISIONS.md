@@ -87,6 +87,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-042 | Guided interviews preserve immutable source observations before canonical change | Accepted — implementation authorized for Guided Interview Foundation v0.1 |
 | LAD-043 | Deterministic Discovery review signals prompt human review without interpreting truth | Accepted — implementation authorized for Discovery Review Signals v0.1 |
 | LAD-044 | Discovery comparison shows current documentation beside interview notes without proposing change | Accepted — implementation authorized for Discovery Reconciliation Preview v0.1 |
+| LAD-045 | Human reconciliation creates a proposed-update package without changing the documented Process | Accepted — implementation authorized for Discovery Proposed Update v0.1 |
 
 ## Decision records
 
@@ -1144,6 +1145,84 @@ structured proposals, automatic mappings, approval, canonical application,
 Process versions, multi-participant comparison, and AI assistance remain
 deferred and require a later decision.
 
+### LAD-045 — Human reconciliation creates a proposed-update package without changing the documented Process
+
+**Status:** Accepted — implementation authorized for Discovery Proposed Update
+v0.1.
+
+**Context:** LAD-044 lets a Workspace Administrator compare current Process
+documentation with exact interview notes, but it intentionally cannot remember
+how each note should be treated. Browser-only choices would disappear, while
+writing choices directly into the Process would collapse interview evidence,
+human interpretation, approval, and current documentation into one unsafe
+action. A future AI assistant also needs a governed proposal destination rather
+than permission to edit the operating model.
+
+**Decision:** A Ready for review Discovery session may have one
+Organization-scoped `discovery_proposal`. It records an immutable random UUID,
+the exact session and Process context, a JSON snapshot and SHA-256 fingerprint
+of the documented Process when proposal work first begins, the authenticated
+Lotura actor, a compare-and-set revision, and a lifecycle of **Draft** or
+**Ready for review**. Ready for review means only that every current interview
+observation has a recorded treatment. It does not mean approved, accepted,
+published, applied, or current organizational truth.
+
+For each current observation, an administrator may choose **Use in proposed
+update**, **Keep what is documented**, or **Leave for later**. Each submitted
+choice is an append-only `discovery_proposal_decision` tied to the exact
+observation, session, proposal, Process, and Organization. Changing a choice
+appends a later sequence for that observation; it never overwrites or deletes
+the earlier decision. An optional review note may explain the interpretation.
+The authenticated Lotura actor and transaction time are recorded independently
+of Person, Position, Membership, Role, or coverage.
+
+The proposal page shows the frozen Process snapshot beside the exact interview
+text and the current human treatment. It may summarize which notes are included,
+which current documentation is retained, and which questions remain for later.
+It must not parse free text, manufacture field-level changes, infer Roles,
+Systems, Steps, Exceptions, or dependencies, claim a structured after-state,
+or write to the Process. Areas that need structured matching must say so.
+
+The proposal and its decisions remain inside the existing server-only Discovery
+write boundary. Every mutation reauthorizes authenticated private-workspace
+access, derives Organization and actor identity on the server, rejects
+cross-Organization or superseded observations, and uses compare-and-set
+protection. The existing dedicated Discovery credential may receive only the
+additional proposal-table privileges required by this slice. Public/demo mode
+cannot render or invoke the capability.
+
+**Why:** Human dispositions turn interview notes into an accountable proposed
+update basis without pretending that free text is already structured Process
+data. The same package can later receive human-authored or AI-assisted field
+mappings while preserving the person’s choices and a hard approval boundary.
+
+**Alternatives considered:** Keep choices only in browser memory; edit the
+Process directly from the comparison; store choices on observations; overwrite
+the latest choice; ask an AI model to produce the after-state immediately; or
+build approval, Process versioning, and application in the same slice. These
+were rejected because they lose durable review work, mutate source evidence,
+erase decision history, overstate interpretation, or exceed the approved
+governance boundary.
+
+**Affected decisions:** This decision follows and narrowly extends LAD-021,
+LAD-025, LAD-029, LAD-032, LAD-037, and LAD-042 through LAD-044. It advances
+persisted human reconciliation and the proposed-change package deferred by
+LAD-042 and LAD-044. It does not supersede them and does not authorize AI,
+structured field mappings, approval, Process mutation, Process versions, or
+multi-participant reconciliation.
+
+**Consequences and deferrals:** After approval, forward-only migration `0017`
+may add only the proposal status and disposition enums, `discovery_proposals`,
+`discovery_proposal_decisions`, same-Organization composite safeguards,
+append-only decision protection, proposal lifecycle and revision checks,
+supporting indexes, and the session composite prerequisite required by those
+foreign keys. No existing Process, observation, or history row is rewritten.
+The runtime role may receive SELECT on the two new tables; the Discovery role
+may receive only the reviewed SELECT, INSERT, proposal lifecycle UPDATE, and
+sequence privileges. Application of a proposal, structured target mappings,
+approval authority, Process version history, proposal withdrawal/rebasing,
+cross-session reconciliation, and AI assistance remain deferred.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -1157,7 +1236,7 @@ The following ideas are recorded so postponement is visible and deliberate.
 | Uploads, imports, Visio/PDF/flowchart parsing | Requires malware handling, source permissions, artifact retention, provenance, and conflict treatment | Artifact architecture, storage, security, and extraction decision |
 | Whiteboard and collaborative capture | Draft contribution, authorship, reconciliation, and conversion to structured knowledge are undefined | Collaboration, observation, and approval decision |
 | Conflict detection and consensus | Conflicts need identity, scope, lifecycle, privacy, and human resolution | Conflict and reconciliation schema decision |
-| Editing and approval workflow | Mutation must distinguish draft, proposal, consensus, approval, effective time, and supersession | Write architecture, authorization, audit, and versioning decision |
+| Structured proposal application and approval workflow | LAD-045 now preserves a human-reviewed proposed-update basis, but it does not produce field mappings or authority to change the Process | Structured mapping, approval authority, Process write/versioning, effective time, and supersession decision |
 | Process version history | Snapshot boundary and related operating-model version semantics are unresolved | Temporal/version model and migration decision |
 | Continuous Improvement | Initiative lifecycle, affected Systems, measures, repeated observations, and sustainment need design | Improvement domain and evidence decision |
 | Restructuring scenarios | Hypothetical state, baseline, sensitive access, and approval boundaries are unresolved | Scenario model, authorization, and retention decision |
@@ -1200,5 +1279,9 @@ Process creation, Knowledge, Governance, Discovery, Activity synthesis,
 relationship canvas, and AI expansion remain separately reviewed slices rather
 than implied capabilities of the Studio shell. Guided Interview Foundation v0.1
 adds configuration-gated, administrator-led Discovery sessions and immutable
-source observations for existing Processes. It does not reconcile or write
-canonical Process facts, use AI, or authorize enablement in any environment.
+source observations for existing Processes. Discovery Proposed Update v0.1
+adds append-only human choices and a frozen comparison snapshot, but it does
+not produce structured field changes, approve information, write Process facts,
+use AI, or authorize enablement in any environment. Migrations `0016` and
+`0017`, credential privilege changes, and environment rollout remain separately
+controlled operations.

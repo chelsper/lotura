@@ -11,7 +11,7 @@ It does not use AI. It does not update the Process.
 
 The experience preserves three distinct concepts:
 
-1. **Canonical Draft Process** — the existing operating-model record that
+1. **Documented draft Process** — the existing operating-model record that
    provides context for the interview.
 2. **Discovery session** — the resumable scope and progress of one interview.
 3. **Discovery observation** — one attributable answer or explicit unknown.
@@ -71,11 +71,40 @@ answers by purpose, boundaries, responsibility, Steps, Systems, Exceptions,
 dependencies, and unresolved knowledge. Every answer retains its certainty
 label and links back to the interview record.
 
-The comparison does not parse free text, match records, choose changes, create
-a proposal, approve information, or update the Process. Superseded answers
-remain visible in the interview history but are not presented as current notes.
-The interface uses conversational language; precise internal model terms remain
-in technical documentation where they are necessary.
+The comparison does not parse free text, match records, approve information, or
+update the Process. A human may record how each exact answer should be treated
+in a proposed update, but that choice is not a structured field mapping or an
+approval. Superseded answers remain visible in the interview history but are
+not presented as current notes. The interface uses conversational language;
+precise internal model terms remain in technical documentation where necessary.
+
+## Proposed update package
+
+Under LAD-045, a Workspace Administrator can record how each current interview
+answer should be treated:
+
+- **Use in proposed update** — carry the exact answer into the proposed-update
+  basis for later structured review.
+- **Keep what is documented** — retain the current documented information for
+  this point.
+- **Leave for later** — preserve the answer and its uncertainty without placing
+  it in the current proposed update.
+
+Choices are append-only. Changing a choice records a new decision instead of
+erasing the earlier one. The package also freezes the documented Process
+snapshot used for the comparison. Finishing the package means only that every
+current interview answer has a treatment and the package is ready for another
+review. It does not approve or change the Process.
+
+While a package is Draft, a new append-only interview correction can be
+reviewed and given its own treatment. Once the package is Ready for review,
+the source observations and proposal choices are frozen together. Changing
+that source later requires the separately deferred withdrawal/rebase workflow;
+it cannot silently make a completed review stale.
+
+Free text is not silently converted into structured Steps, Roles, Systems,
+Exceptions, or dependencies. The package identifies the exact notes selected
+for later work and says when structured matching is still required.
 
 ## Knowledge states
 
@@ -143,6 +172,25 @@ GRANT INSERT (
 ) ON discovery_observations TO <discovery_role>;
 GRANT USAGE ON SEQUENCE discovery_sessions_id_seq,
   discovery_observations_id_seq TO <discovery_role>;
+
+-- Added only when Discovery Proposed Update v0.1 is enabled:
+GRANT SELECT ON TABLE discovery_proposals, discovery_proposal_decisions
+  TO <discovery_role>;
+GRANT INSERT (
+  organization_id, session_id, session_stable_key, process_id,
+  process_stable_key, documented_process_snapshot,
+  documented_process_fingerprint, actor_identifier
+) ON discovery_proposals TO <discovery_role>;
+GRANT UPDATE (
+  status, revision, ready_at, ready_by_actor, updated_at
+) ON discovery_proposals TO <discovery_role>;
+GRANT INSERT (
+  organization_id, proposal_id, proposal_stable_key, session_id,
+  session_stable_key, observation_stable_key, decision_sequence,
+  disposition, review_note, actor_identifier
+) ON discovery_proposal_decisions TO <discovery_role>;
+GRANT USAGE ON SEQUENCE discovery_proposals_id_seq,
+  discovery_proposal_decisions_id_seq TO <discovery_role>;
 ```
 
 The normal runtime role may receive `SELECT` on the two Discovery tables for
@@ -173,8 +221,8 @@ any unrelated table. It receives no schema, database, role, migration,
 
 Multiple participants, interviewing on behalf of another Person, Contributor
 access, consent records, uploads, source artifacts, AI, dynamic follow-up
-selection, governed conflict detection, reconciliation, proposed-change
-packages, approval, canonical Process versioning, export, retention automation,
-and deletion require later decisions. Refresh-safe server persistence exists
-for submitted observations; unsent form text remains browser-local and may be
-lost.
+selection, governed conflict detection, structured field matching, approval,
+application to the Process, Process versioning, proposal withdrawal or
+rebasing, export, retention automation, and deletion require later decisions.
+Refresh-safe server persistence exists for submitted observations and proposal
+choices; unsent form text remains browser-local and may be lost.

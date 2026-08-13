@@ -32,11 +32,11 @@ export default async function DiscoveryInterviewPage({
   const { sessionId } = await params;
   const experience = await loadWorkspaceExperience();
   if (!experience.discovery.enabled) notFound();
-  const { loadDiscoverySession } = await import("@/lib/discovery-data");
-  const session = await loadDiscoverySession(
-    experience.discovery.organizationId,
-    sessionId,
-  );
+  const { loadDiscoveryProposal, loadDiscoverySession } = await import("@/lib/discovery-data");
+  const [session, proposal] = await Promise.all([
+    loadDiscoverySession(experience.discovery.organizationId, sessionId),
+    loadDiscoveryProposal(experience.discovery.organizationId, sessionId),
+  ]);
   if (!session) notFound();
 
   const question = getDiscoveryQuestion(session.currentQuestionKey);
@@ -116,13 +116,22 @@ export default async function DiscoveryInterviewPage({
                 className="inline-flex h-9 items-center justify-center rounded-[9px] bg-[var(--workspace-accent)] px-3 text-xs font-medium text-[var(--workspace-accent-foreground)] hover:bg-[var(--workspace-accent-hover)]"
                 href={`/studio/discovery/interviews/${session.id}/reconcile`}
               >
-                Compare with current Process
+                {proposal?.status === "ready_for_review"
+                  ? "View proposed update"
+                  : proposal
+                    ? "Continue proposed update"
+                    : "Review and prepare an update"}
               </Link>
             </div>
             <h2 className="mt-3 text-2xl font-semibold tracking-[-0.035em] text-[var(--text)]">Review your interview answers</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
               These are your saved notes about how the work happens. They have not changed or approved the documented Process. Comparing them with the current Process is the next step.
             </p>
+            {proposal?.status === "ready_for_review" ? (
+              <Alert className="mt-4" tone="success">
+                The proposed update is finished and preserved for its next review. To protect that review record, these interview answers can no longer be corrected in place.
+              </Alert>
+            ) : null}
           </div>
           <Card className="mb-5 p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -172,7 +181,7 @@ export default async function DiscoveryInterviewPage({
                 {observation.supersedesObservationId ? (
                   <p className="mt-3 text-xs text-[var(--text-tertiary)]">This observation corrects an earlier record without erasing it.</p>
                 ) : null}
-                {!superseded.has(observation.id) ? (
+                {!superseded.has(observation.id) && proposal?.status !== "ready_for_review" ? (
                   <details className="mt-4">
                     <summary className="cursor-pointer text-xs font-medium text-[var(--workspace-accent)]">Append a correction</summary>
                     <DiscoveryCorrectionForm

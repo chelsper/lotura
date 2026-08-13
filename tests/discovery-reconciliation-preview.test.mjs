@@ -66,7 +66,7 @@ test("reconciliation preview groups exact active interview notes without interpr
   assert.equal(sections.length, 8);
 });
 
-test("the comparison route authorizes before reads and exposes no write path", async () => {
+test("the comparison route authorizes before reads and preserves the proposal boundary", async () => {
   const [route, interview, decisions, guidance] = await Promise.all([
     read("app/studio/discovery/interviews/[sessionId]/reconcile/page.tsx"),
     read("app/studio/discovery/interviews/[sessionId]/page.tsx"),
@@ -78,16 +78,15 @@ test("the comparison route authorizes before reads and exposes no write path", a
   assert.match(route, /if \(!experience\.discovery\.enabled\) notFound\(\)/);
   assert.match(route, /session\.status !== "ready_for_review"/);
   assert.match(route, /experience\.data\.processes\.find/);
-  assert.match(interview, /Compare with current Process/);
-  assert.match(route, /Side-by-side review only/);
+  assert.match(interview, /Review and prepare an update/);
   assert.match(route, /Current documented Process/);
   assert.match(route, /Interview notes/);
-  assert.match(route, /No update proposed/);
+  assert.match(route, /Saving a choice records review work only/);
+  assert.match(route, /does not approve or apply it/);
   assert.doesNotMatch(route, /canonical/i);
-  assert.doesNotMatch(route, /server action|<form|action=/i);
   assert.doesNotMatch(route, /administration|insert into|update processes|delete from/i);
   assert.match(decisions, /LAD-044 — Discovery comparison/);
-  assert.match(guidance, /does not parse free text, match records, choose changes/);
+  assert.match(guidance, /Free text is not silently converted into structured Steps/);
 });
 
 test("working-draft presentation uses conversational language without weakening the internal state key", async () => {
