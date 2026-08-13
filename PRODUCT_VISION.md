@@ -8,6 +8,12 @@ This document records the enduring product direction and architecture principles
 
 Lotura is an organizational intelligence platform that helps organizations discover, document, understand, improve, and safely evolve how work gets done.
 
+**Lotura is the operating system for organizational knowledge.** It helps an
+organization understand how it is structured, discover how work actually
+happens, connect responsibility to work, preserve institutional knowledge,
+govern what becomes trusted documentation, compare practice with standards and
+expectations, understand change, identify drift, and continuously improve.
+
 Lotura is becoming the system that helps organizations **discover, govern, and continuously improve their organizational knowledge**. Governance means keeping that knowledge maintained, reviewed, explainable, and trusted over time—not merely restricting access to it.
 
 Its purpose is to make the real operating model of an organization visible and understandable: who is expected to own work, how responsibility is currently assigned, which systems enable it, where exceptions occur, and how a change in one part of the organization may affect another.
@@ -33,12 +39,45 @@ records, effective timing, and visible limitations available to the
 organization at a point in time. Uncertainty, disagreement, missing context,
 and unresolved questions remain part of the model rather than defects to hide.
 
+The digital twin is the model. The product value is the organizational
+knowledge lifecycle around that model: the governed path through which people
+observe reality, preserve evidence, interpret it, propose changes, approve
+documented knowledge, compare it with other knowledge, and revisit it as the
+organization changes.
+
 **Workspace Studio** is the governed authoring environment for that digital
 twin. Organization, Explorer, Process Detail, and FLOW help people understand
 the model; Workspace Studio is where appropriately authorized people build and
 maintain it. A unified Studio experience must not collapse the underlying
 domains, permissions, credentials, or append-only histories into one
 unrestricted administration boundary.
+
+## Organizational Knowledge Lifecycle
+
+Lotura's long-term product lifecycle is:
+
+**Observe → Interview → Evidence → Review → Reconcile → Proposed Change →
+Approval → Operating Model → Continuous Improvement → Observe Again**
+
+The lifecycle must preserve the distinction among:
+
+- observed evidence;
+- participant statements;
+- reviewed interpretations;
+- proposed changes;
+- approved and currently documented knowledge; and
+- actual organizational reality.
+
+The operating model is the trusted destination. Discovery, AI, comparison,
+governance, and improvement exist to strengthen it—not silently replace it.
+An approved record may be the organization's governed documentation without
+being a claim that documentation and reality can never diverge.
+
+Knowledge lifecycle and operating-model structure are separate architectural
+dimensions. The lifecycle describes how knowledge earns enough trust to affect
+the documented model. Process Families, Reference Models, Job Descriptions,
+and drift describe how knowledge is grouped, related, or compared. A feature
+in one dimension must not collapse the states or semantics of the other.
 
 ## The operating model
 
@@ -52,6 +91,34 @@ Processes, Roles, Systems, Exceptions, Dependencies, and Assignments together fo
 - **Assignments** distinguish intended role ownership from the people who currently provide permanent, interim, acting, or backup coverage.
 
 These concepts are valuable individually, but Lotura's organizational intelligence emerges from their relationships. A process should be understood not only by its steps, but also by its ownership, current coverage, systems, exceptions, and place in the wider process network.
+
+### Process Families and Reference Models
+
+Process Families and Reference Models are preserved long-term product
+capabilities, not incidental side ideas.
+
+A Process Family groups related Processes without pretending that the family
+is itself an executable Process or that every relationship is a hierarchy. For
+example:
+
+```text
+Gift Processing
+├── Annual Fund Physical-Check Gift Processing
+└── Annual Fund Credit Card Gift Processing
+```
+
+Family membership, reusable subprocess composition, and upstream/downstream
+dependency answer different questions and require different relationship
+semantics. A Process may belong to a broader family without inheriting the
+family's Steps, Roles, Systems, Exceptions, governance, or conclusions unless
+that inheritance is separately defined and approved.
+
+A Reference Model represents a selected internal or external standard,
+framework, recommendation, prior approved version, or other comparison basis.
+It may apply to a Process or Process Family. Differences between a Reference
+Model, documented practice, and observed reality create evidence and review
+questions; they do not automatically establish error, quality, risk, or
+noncompliance.
 
 ### Organizational structure and operational responsibility
 
@@ -229,9 +296,43 @@ continuous improvement, and scenario analysis may enrich the same digital twin
 over time. Each capability must preserve its own source, authority, effective
 time, and limitation rather than flattening them into one apparent truth.
 
+### 11. The operating model is the trusted destination
+
+Evidence, reviewed interpretations, proposals, approved versions, and actual
+organizational reality remain distinct. Discovery and AI may help knowledge
+move through the lifecycle, but neither may silently write, approve, or replace
+the operating model.
+
+### 12. Difference is evidence, not automatically error
+
+Participant disagreement, Reference Model deviation, Process drift, Job Drift,
+and organizational restructuring create questions for accountable review.
+Lotura must not turn difference alone into a defect, compliance conclusion, or
+quality score.
+
 ## Roadmap phases
 
 The roadmap describes product outcomes rather than fixed release dates or implementation commitments.
+
+The immediate product sequence completes the manual organizational knowledge
+lifecycle before AI suggests or automates any part of it:
+
+1. Structured Proposed Changes
+2. Proposal Review & Governance
+3. Process Versions & Atomic Application
+4. Knowledge Gaps
+5. Process Families
+6. Question-Driven Discovery
+7. Reference Models
+8. Practice Comparison
+9. AI Discovery Assistance
+10. Job Descriptions & Job Drift
+11. Operating-Model Drift
+12. Continuous Improvement
+
+The relative position of AI Discovery Assistance may be reconsidered after the
+first three milestones prove the manual lifecycle. No reconsideration grants
+AI authority to approve or apply organizational knowledge.
 
 ### Phase 1: Operating-model foundation
 

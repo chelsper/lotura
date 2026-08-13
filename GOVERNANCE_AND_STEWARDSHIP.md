@@ -159,6 +159,25 @@ reviewers when a change crosses Process, Unit, Role, or System boundaries. A
 reporting manager is not automatically the approver, and a graph connection is
 review evidence rather than proof that a reviewer is mandatory.
 
+## Governance in the Organizational Knowledge Lifecycle
+
+Governance determines who may move knowledge between accountable lifecycle
+stages; it does not erase the distinction among those stages.
+
+- A Contributor may record an observation or participant statement.
+- A Process or knowledge Steward may review and reconcile evidence.
+- Another Unit may be asked to validate a dependency or handoff.
+- An explicitly scoped Approver may authorize a proposed change.
+- A Workspace Administrator may apply an approved change through the reviewed
+  maintenance boundary.
+- Leadership may analyze consequences without receiving approval or
+  administration authority.
+
+Evidence, proposed change, approval, current documentation, and actual
+organizational reality remain distinct even when one person holds several
+governance capabilities. Reporting hierarchy never supplies an omitted
+approval decision.
+
 ## Pilot presentation
 
 The private pilot may communicate governance before the complete engine exists,

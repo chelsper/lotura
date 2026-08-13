@@ -127,6 +127,13 @@
       "when": 1786638311742,
       "tag": "0017_discovery_proposed_update",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1786655697477,
+      "tag": "0018_structured_proposed_changes_slice_1",
+      "breakpoints": true
     }
   ]
 }

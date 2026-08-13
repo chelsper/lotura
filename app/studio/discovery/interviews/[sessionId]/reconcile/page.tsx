@@ -283,6 +283,16 @@ export default async function DiscoveryReconciliationPreviewPage({
           ? "Proposed update ready for review. It has not been approved or applied, and the documented Process has not changed."
           : "Choose how each interview answer should be treated. You do not need to append a correction first. If another person or department must validate an answer, choose Leave for later. Saving a choice records review work only; it does not change the documented Process."}
       </Alert>
+      {proposalFinished && readiness.included > 0 ? (
+        <div className="mt-4 flex justify-end">
+          <Link
+            className="inline-flex h-10 items-center justify-center rounded-[10px] bg-[var(--workspace-accent)] px-3.5 text-sm font-medium text-white transition hover:opacity-90"
+            href={`/studio/discovery/interviews/${session.id}/map`}
+          >
+            Turn notes into specific changes
+          </Link>
+        </div>
+      ) : null}
 
       <Card className="mt-5 p-5 sm:p-6">
         <div className="grid gap-5 md:grid-cols-3">

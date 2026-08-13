@@ -88,6 +88,10 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-043 | Deterministic Discovery review signals prompt human review without interpreting truth | Accepted — implementation authorized for Discovery Review Signals v0.1 |
 | LAD-044 | Discovery comparison shows current documentation beside interview notes without proposing change | Accepted — implementation authorized for Discovery Reconciliation Preview v0.1 |
 | LAD-045 | Human reconciliation creates a proposed-update package without changing the documented Process | Accepted — implementation authorized for Discovery Proposed Update v0.1 |
+| LAD-046 | The Organizational Knowledge Lifecycle preserves evidence, interpretation, proposal, approval, and the operating model as separate layers | Accepted — product direction |
+| LAD-047 | Process Family membership, Process composition, and Process dependency are distinct relationships | Accepted — product direction |
+| LAD-048 | Reference Model differences create review questions, not automatic conclusions | Accepted — product direction |
+| LAD-049 | Structured proposed changes are typed human mappings, not approval or Process mutation | Accepted — implementation authorized for Structured Proposed Changes v0.1, Slice 1 |
 
 ## Decision records
 
@@ -1223,6 +1227,247 @@ sequence privileges. Application of a proposal, structured target mappings,
 approval authority, Process version history, proposal withdrawal/rebasing,
 cross-session reconciliation, and AI assistance remain deferred.
 
+### LAD-046 — The Organizational Knowledge Lifecycle preserves evidence, interpretation, proposal, approval, and the operating model as separate layers
+
+**Status:** Accepted — product direction.
+
+**Context:** Lotura now preserves guided-interview observations, deterministic
+review prompts, a comparison with documented Process information, and a durable
+proposed-update package. The platform also maintains parts of the operating
+model through governed authoring. Without one enduring lifecycle, later
+structured mappings, approval, Process versions, AI assistance, comparison,
+and improvement could collapse evidence into documentation or treat a proposal
+as current organizational reality.
+
+**Decision:** Lotura adopts the Organizational Knowledge Lifecycle:
+**Observe → Interview → Evidence → Review → Reconcile → Proposed Change →
+Approval → Operating Model → Continuous Improvement → Observe Again**.
+
+Observed evidence, participant statements, reviewed interpretations, proposed
+changes, approved/current documented knowledge, and actual organizational
+reality remain distinguishable. The operating model is the trusted destination.
+Discovery, AI, comparison, governance, and improvement exist to strengthen it,
+not silently replace it.
+
+Knowledge lifecycle and operating-model structure are separate architectural
+dimensions. Lifecycle records describe how knowledge earns trust and authority.
+Process Families, Reference Models, Job Descriptions, and drift describe how
+knowledge is grouped, related, or compared. A lifecycle state does not create a
+structural relationship, and a structural relationship does not establish
+approval.
+
+The manual path from evidence through structured proposed change, human
+approval, atomic application, and a historically recoverable Process version
+must be completed before AI may suggest or automate any part of that path. AI
+never receives silent approval or canonical write authority.
+
+**Why:** A digital twin is only trustworthy when the organization can see how
+knowledge entered the product, who interpreted it, who had authority to approve
+it, what became effective, and how later evidence differs. Separating the
+layers preserves accountability without pretending approved documentation and
+actual reality can never diverge.
+
+**Alternatives considered:** Treat interview completion as approval; allow an
+administrator to apply reconciliation choices directly; store only the latest
+interpretation; use AI to synthesize and write the final Process; or make the
+operating model one more source beside evidence. These were rejected because
+they erase provenance, confuse authority, or remove the trusted destination.
+
+**Affected decisions:** This decision follows and extends LAD-001, LAD-002,
+LAD-021 through LAD-026, LAD-032, LAD-035 through LAD-037, and LAD-042 through
+LAD-045. It does not supersede them.
+
+**Consequences and deferrals:** The next implementation decision should cover
+manual structured proposed-change mappings only. Proposal review and
+governance, Process versions, atomic application, Knowledge Gaps, AI
+assistance, and Continuous Improvement remain separately approved milestones.
+This product-direction decision authorizes no schema, migration, credential,
+database, environment, deployment, or data change.
+
+### LAD-047 — Process Family membership, Process composition, and Process dependency are distinct relationships
+
+**Status:** Accepted — product direction.
+
+**Context:** Related Processes such as Annual Fund Physical-Check Gift
+Processing and Annual Fund Credit Card Gift Processing may belong to a broader
+Gift Processing family. A Process may also use a reusable subprocess or depend
+on another Process. A single `parentProcessId` or reuse of the existing
+dependency relationship would turn different operational meanings into an
+apparently simple tree.
+
+**Decision:** Process Family membership, executable Process composition, and
+upstream/downstream Process dependency remain distinct relationship types.
+
+The smallest durable family direction uses a first-class `ProcessFamily` and an
+explicit `ProcessFamilyMembership`. The family is a grouping and comparison
+context; it is not automatically an executable Process. The initial capability
+must not introduce inheritance.
+
+A Process may belong to a broader family without inheriting the family's Steps,
+Roles, Systems, Exceptions, governance, or conclusions unless that inheritance
+is separately defined and approved. Reusable subprocess semantics require a
+later typed composition decision. Existing Process dependencies continue to
+mean operational reliance and must not be overloaded for family membership or
+composition.
+
+**Why:** A graph can represent families, reuse, and dependencies honestly while
+a parent field assumes one hierarchy and invites accidental inheritance.
+Explicit relationships preserve stable Process identity and allow comparison
+without duplicating or merging meaningful variation.
+
+**Alternatives considered:** Add one nullable parent Process; make a broad
+family an ordinary Process; encode families as tags; reuse Process dependencies;
+or immediately create a general polymorphic Process graph. These were rejected
+because they conflate semantics, impose a tree, weaken constraints, or add
+speculative scope.
+
+**Affected decisions:** This decision follows and extends LAD-004, LAD-006,
+LAD-007, LAD-008, LAD-018, LAD-023, LAD-026, LAD-036, LAD-037, and LAD-046. It
+does not supersede the existing Process dependency model.
+
+**Consequences and deferrals:** Process Families are preserved as Milestone 5,
+after structured proposal, governance, and versioned application. Detailed
+schema, membership cardinality, effective dating, family governance,
+composition relationships, comparison behavior, browsing, and migration design
+remain deferred. No Step, Role, System, Exception, governance, or conclusion
+inheritance is authorized.
+
+### LAD-048 — Reference Model differences create review questions, not automatic conclusions
+
+**Status:** Accepted — product direction.
+
+**Context:** Organizations may compare documented or observed practice with an
+industry framework, regulatory guidance, professional recommendation, vendor
+procedure, internal standard, or prior approved Process version. Difference may
+represent a documentation gap, local adaptation, intentional deviation,
+operational drift, inapplicability, or possible innovation. It does not alone
+prove failure or noncompliance.
+
+**Decision:** Reference Models are first-class future comparison contexts that
+may apply explicitly to a Process or Process Family. A Reference Model retains
+its source, version or edition, timing, applicability, provenance, and use or
+licensing constraints. Attachments to Processes and Process Families remain
+explicit rather than using an unbounded polymorphic relationship.
+
+Comparison results use evidence-based classifications and questions such as
+aligned, intentional deviation, local adaptation, needs review, documentation
+gap, operational drift, possible innovation, or not applicable. Lotura must
+not derive a quality score, maturity percentage, compliance failure, or risk
+conclusion from difference alone. A stronger compliance conclusion requires a
+separately governed rule and accountable authority.
+
+**Why:** Reference material can make missing assumptions and local variation
+visible, but treating the reference as universal truth would repeat the same
+error Lotura avoids with interview evidence. The useful product question is:
+“This differs from the selected reference. Is that intentional?”
+
+**Alternatives considered:** Store standards as ordinary Processes; assume the
+selected reference is authoritative; generate compliance scores; keep only a
+URL on the Process; or allow AI to decide whether a difference is a failure.
+These were rejected because they lose provenance, applicability, versioning,
+licensing, and accountable human judgment.
+
+**Affected decisions:** This decision follows and extends LAD-002, LAD-012,
+LAD-013, LAD-022, LAD-024 through LAD-026, LAD-032, LAD-035, LAD-037, LAD-043,
+LAD-046, and LAD-047. It does not supersede them.
+
+**Consequences and deferrals:** Reference Models remain Milestone 7 and Practice
+Comparison Milestone 8. Schema, storage or external links, content rights,
+versioning, attachment rules, comparison snapshots, governance, retention, and
+compliance policy remain deferred. This decision authorizes no content intake,
+schema, migration, AI comparison, environment, or data change.
+
+### LAD-049 — Structured proposed changes are typed human mappings, not approval or Process mutation
+
+**Status:** Accepted — implementation authorized for Structured Proposed
+Changes v0.1, Slice 1.
+
+**Context:** LAD-045 preserves a finished proposed-update basis: exact interview
+observations, their current human treatments, and a frozen snapshot of the
+documented Process. It intentionally does not turn free text into Process
+fields. LAD-046 requires the next manual lifecycle boundary to remain separate
+from approval, Process versioning, and application. A durable intermediate
+model is therefore required before an administrator can responsibly propose
+specific changes.
+
+**Decision:** A finished `discovery_proposal` may have one separate,
+Organization-scoped structured-mapping workspace. The workspace has immutable
+proposal, interview, and Process context; a database-generated random UUID; a
+compare-and-set revision; and a lifecycle of **Draft** or **Ready for proposal
+review**. Ready for proposal review does not mean approved, applied, published,
+or current documentation.
+
+Structured proposal items are human-authored, typed review units. Each logical
+item has a stable proposal identity and append-only revisions. A revision
+records an explicit action, the relevant current documented state, the proposed
+state, a rationale, the authenticated Lotura actor, and transaction time.
+Withdrawing or restoring an item appends another revision; it never updates or
+deletes prior item history. Immutable source links identify the exact current
+interview observations supporting each item.
+
+Slice 1 supports only:
+
+- proposing an update to Process purpose;
+- proposing assignment, replacement, or Draft-compatible clearing of the
+  Process Owner Operational Role; and
+- preserving selected evidence as an unresolved question that requires later
+  information rather than pretending it is a Process change.
+
+Operational Role targets must already exist and be active in the same
+Organization. Owner Role is never inferred from Person, Position, title,
+RoleMandate, RoleCoverage, or reporting hierarchy. The proposed before and
+after states are typed snapshots, not executable generic JSON patches. Every
+current observation selected for use in the proposal must either support at
+least one current structured item or be explicitly preserved as unresolved
+before the mapping workspace can become ready.
+
+Readiness rechecks the current documented Process fingerprint against the
+frozen LAD-045 snapshot. If documentation changed after comparison began, the
+mapping remains readable but cannot silently become ready. Rebase,
+supersession, and withdrawal of a completed package require later decisions.
+
+The mapping workspace remains inside the existing server-only Discovery write
+boundary. Every mutation reauthorizes authenticated private-workspace access,
+derives Organization and actor identity on the server, validates same-
+Organization proposal, observation, Process, and Role references, uses
+serializable transactions and compare-and-set protection, and returns only
+bounded user-facing results. The Discovery role may receive only the additional
+mapping-table privileges required by this slice. It receives no Process, Role,
+operating-model history, structure, schema, or administration mutation
+privilege. Public/demo mode cannot render or invoke the capability.
+
+**Why:** Human-authored structured mappings make the proposed change explicit
+without treating evidence as approved documentation. Append-only revisions and
+exact evidence links preserve how an interpretation evolved, while the frozen
+Process comparison point and stale-documentation block prevent a proposal from
+silently overwriting later work.
+
+**Alternatives considered:** Store mappings as free text; add proposed fields
+directly to observations; mutate the finished LAD-045 package; write directly
+to `processes`; reuse `operating_model_changes`; allow arbitrary JSON Patch;
+infer an Owner Role; or combine mapping, approval, versioning, and application
+in one action. These were rejected because they blur lifecycle layers, weaken
+tenant and target integrity, erase interpretation history, or grant authority
+that this slice does not possess.
+
+**Affected decisions:** This decision follows and narrowly extends LAD-001,
+LAD-002, LAD-015, LAD-016, LAD-018, LAD-021 through LAD-026, LAD-029, LAD-032,
+LAD-035 through LAD-037, and LAD-042 through LAD-046. It does not supersede
+them. It does not change the structural or comparison concepts preserved by
+LAD-047 and LAD-048.
+
+**Consequences and deferrals:** After approval, forward-only migration `0018`
+may add only the structured-mapping status, action, and item-state enums; one
+mapping workspace table; append-only item revisions; immutable source links;
+same-Organization composite safeguards; lifecycle, identity, target-shape, and
+immutability checks; and supporting indexes. The runtime role may receive
+SELECT on the three new tables. The Discovery role may receive only reviewed
+SELECT, INSERT, limited mapping lifecycle UPDATE, and sequence privileges.
+Steps, Step responsibility, Systems, Exceptions, dependencies, proposal
+governance, approval, Process versions, application, `operating_model_changes`,
+AI suggestions, rebasing, and environment rollout remain separately approved
+work.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -1236,8 +1481,14 @@ The following ideas are recorded so postponement is visible and deliberate.
 | Uploads, imports, Visio/PDF/flowchart parsing | Requires malware handling, source permissions, artifact retention, provenance, and conflict treatment | Artifact architecture, storage, security, and extraction decision |
 | Whiteboard and collaborative capture | Draft contribution, authorship, reconciliation, and conversion to structured knowledge are undefined | Collaboration, observation, and approval decision |
 | Conflict detection and consensus | Conflicts need identity, scope, lifecycle, privacy, and human resolution | Conflict and reconciliation schema decision |
-| Structured proposal application and approval workflow | LAD-045 now preserves a human-reviewed proposed-update basis, but it does not produce field mappings or authority to change the Process | Structured mapping, approval authority, Process write/versioning, effective time, and supersession decision |
+| Structured proposal application and approval workflow | LAD-049 authorizes only Slice 1 purpose, Owner Role, and unresolved mappings; it grants no approval or authority to change the Process | Remaining structured targets, approval authority, Process write/versioning, effective time, and supersession decision |
 | Process version history | Snapshot boundary and related operating-model version semantics are unresolved | Temporal/version model and migration decision |
+| Knowledge Gaps | Explainable gaps are product direction under LAD-046, but persistence is not justified until assignment, governance, or resolution history requires it | Derived projection rules first; later lifecycle, ownership, and history decision if persistence is needed |
+| Process Families and reusable subprocesses | LAD-047 preserves explicit family membership and distinct composition semantics, but authorizes no schema or inheritance | Family identity, membership cardinality, effective dating, governance, composition, comparison, and migration decision |
+| Question-driven Discovery | Organizational questions may lead to existing knowledge, review, a new interview, or more evidence, but routing and scope are unresolved | Search, matching, participant selection, evidence scope, privacy, and session-start decision |
+| Reference Models and practice comparison | LAD-048 preserves reference applicability and evidence-based comparison without automatic conclusions | Reference provenance, versioning, content rights, attachment, comparison snapshot, governance, and retention decision |
+| Job Descriptions and Job Drift | Position-linked descriptions may differ from responsibility and observed work, but HR sensitivity and interpretation require governance | Effective-dated description, HR source, access, evidence mapping, comparison, and review decision |
+| Operating-model drift | Drift requires approved versions, observations, comparison baselines, timing, and human classification | Version, baseline, evidence, classification, governance, and longitudinal comparison decision |
 | Continuous Improvement | Initiative lifecycle, affected Systems, measures, repeated observations, and sustainment need design | Improvement domain and evidence decision |
 | Restructuring scenarios | Hypothetical state, baseline, sensitive access, and approval boundaries are unresolved | Scenario model, authorization, and retention decision |
 | Relationship canvas | The comprehension direction is accepted, but graph scope, layout, accessibility, evidence language, and performance need validation after the core builders exist | Focused graph projection and interaction decision |
@@ -1285,3 +1536,10 @@ not produce structured field changes, approve information, write Process facts,
 use AI, or authorize enablement in any environment. Migrations `0016` and
 `0017`, credential privilege changes, and environment rollout remain separately
 controlled operations.
+
+LAD-046 through LAD-048 add product-direction boundaries only. LAD-049
+authorizes the first manual structured proposed-change slice while preserving
+later target mappings, governance, approval, Process versions, and application
+as separate decisions. Process Families, Reference Models, AI assistance, Job
+Drift, operating-model drift, and Continuous Improvement remain later
+milestones and have no current schema authorization.

@@ -205,6 +205,22 @@ export const discoveryProposalDisposition = pgEnum(
   ["use_in_proposal", "keep_documented", "leave_for_later"],
 );
 
+export const discoveryMappingStatus = pgEnum("discovery_mapping_status", [
+  "draft",
+  "ready_for_proposal_review",
+]);
+
+export const discoveryMappingAction = pgEnum("discovery_mapping_action", [
+  "update_process_purpose",
+  "change_process_owner",
+  "preserve_unresolved",
+]);
+
+export const discoveryMappingItemState = pgEnum(
+  "discovery_mapping_item_state",
+  ["active", "withdrawn"],
+);
+
 export const organization = pgTable("organizations", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -646,6 +662,15 @@ export const discoveryProposal = pgTable(
       table.sessionId,
       table.sessionStableKey,
     ),
+    unique("discovery_proposals_full_context_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.sessionId,
+      table.sessionStableKey,
+      table.processId,
+      table.processStableKey,
+    ),
     check(
       "discovery_proposals_snapshot_object_check",
       sql`jsonb_typeof(${table.documentedProcessSnapshot}) = 'object'`,
@@ -753,6 +778,258 @@ export const discoveryProposalDecision = pgTable(
       table.organizationId,
       table.observationStableKey,
       table.decisionSequence,
+    ),
+  ],
+);
+
+export const discoveryProposalMapping = pgTable(
+  "discovery_proposal_mappings",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    proposalId: integer("proposal_id").notNull(),
+    proposalStableKey: uuid("proposal_stable_key").notNull(),
+    sessionId: integer("session_id").notNull(),
+    sessionStableKey: uuid("session_stable_key").notNull(),
+    processId: integer("process_id").notNull(),
+    processStableKey: uuid("process_stable_key").notNull(),
+    status: discoveryMappingStatus("status").default("draft").notNull(),
+    revision: integer("revision").default(1).notNull(),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    readyAt: timestamp("ready_at", { withTimezone: true }),
+    readyByActor: varchar("ready_by_actor", { length: 128 }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_mappings_proposal_context_fk",
+      columns: [
+        table.proposalId,
+        table.organizationId,
+        table.proposalStableKey,
+        table.sessionId,
+        table.sessionStableKey,
+        table.processId,
+        table.processStableKey,
+      ],
+      foreignColumns: [
+        discoveryProposal.id,
+        discoveryProposal.organizationId,
+        discoveryProposal.stableKey,
+        discoveryProposal.sessionId,
+        discoveryProposal.sessionStableKey,
+        discoveryProposal.processId,
+        discoveryProposal.processStableKey,
+      ],
+    }).onDelete("restrict"),
+    unique("discovery_mappings_stable_key_unique").on(table.stableKey),
+    unique("discovery_mappings_proposal_unique").on(table.proposalId),
+    unique("discovery_mappings_identity_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+    ),
+    unique("discovery_mappings_identity_session_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.sessionId,
+      table.sessionStableKey,
+    ),
+    check(
+      "discovery_mappings_revision_positive_check",
+      sql`${table.revision} >= 1`,
+    ),
+    check(
+      "discovery_mappings_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    check(
+      "discovery_mappings_ready_state_check",
+      sql`(${table.status} = 'draft' and ${table.readyAt} is null and ${table.readyByActor} is null) or (${table.status} = 'ready_for_proposal_review' and ${table.readyAt} is not null and ${table.readyByActor} is not null and char_length(trim(${table.readyByActor})) > 0)`,
+    ),
+    index("discovery_mappings_org_status_updated_idx").on(
+      table.organizationId,
+      table.status,
+      table.updatedAt,
+    ),
+  ],
+);
+
+export const discoveryProposalMappingItem = pgTable(
+  "discovery_mapping_items",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    mappingId: integer("mapping_id").notNull(),
+    mappingStableKey: uuid("mapping_stable_key").notNull(),
+    itemStableKey: uuid("item_stable_key").defaultRandom().notNull(),
+    itemSequence: integer("item_sequence").notNull(),
+    state: discoveryMappingItemState("state").default("active").notNull(),
+    action: discoveryMappingAction("action").notNull(),
+    ownerRoleId: integer("owner_role_id"),
+    ownerRoleStableKey: uuid("owner_role_stable_key"),
+    beforeState: jsonb("before_state").notNull(),
+    proposedState: jsonb("proposed_state").notNull(),
+    rationale: text("rationale").notNull(),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_mapping_items_mapping_fk",
+      columns: [
+        table.mappingId,
+        table.organizationId,
+        table.mappingStableKey,
+      ],
+      foreignColumns: [
+        discoveryProposalMapping.id,
+        discoveryProposalMapping.organizationId,
+        discoveryProposalMapping.stableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_mapping_items_owner_role_fk",
+      columns: [
+        table.ownerRoleId,
+        table.organizationId,
+        table.ownerRoleStableKey,
+      ],
+      foreignColumns: [role.id, role.organizationId, role.stableKey],
+    }).onDelete("restrict"),
+    unique("discovery_mapping_items_stable_key_unique").on(table.stableKey),
+    unique("discovery_mapping_items_item_sequence_unique").on(
+      table.mappingId,
+      table.itemStableKey,
+      table.itemSequence,
+    ),
+    unique("discovery_mapping_items_revision_identity_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.mappingId,
+      table.mappingStableKey,
+    ),
+    check(
+      "discovery_mapping_items_sequence_positive_check",
+      sql`${table.itemSequence} >= 1`,
+    ),
+    check(
+      "discovery_mapping_items_states_object_check",
+      sql`jsonb_typeof(${table.beforeState}) = 'object' and jsonb_typeof(${table.proposedState}) = 'object'`,
+    ),
+    check(
+      "discovery_mapping_items_rationale_not_blank_check",
+      sql`char_length(trim(${table.rationale})) > 0`,
+    ),
+    check(
+      "discovery_mapping_items_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    check(
+      "discovery_mapping_items_owner_role_pair_check",
+      sql`(${table.ownerRoleId} is null and ${table.ownerRoleStableKey} is null) or (${table.ownerRoleId} is not null and ${table.ownerRoleStableKey} is not null)`,
+    ),
+    check(
+      "discovery_mapping_items_target_shape_check",
+      sql`(${table.action} = 'change_process_owner') or (${table.action} in ('update_process_purpose', 'preserve_unresolved') and ${table.ownerRoleId} is null and ${table.ownerRoleStableKey} is null)`,
+    ),
+    check(
+      "discovery_mapping_items_payload_shape_check",
+      sql`(${table.action} = 'update_process_purpose' and ${table.beforeState} ? 'purpose' and ${table.proposedState} ? 'purpose') or (${table.action} = 'change_process_owner' and ${table.beforeState} ? 'ownerRoleStableKey' and ${table.proposedState} ? 'ownerRoleStableKey') or (${table.action} = 'preserve_unresolved' and ${table.proposedState} ? 'question')`,
+    ),
+    index("discovery_mapping_items_mapping_created_idx").on(
+      table.organizationId,
+      table.mappingStableKey,
+      table.createdAt,
+    ),
+    index("discovery_mapping_items_owner_role_idx").on(table.ownerRoleId),
+  ],
+);
+
+export const discoveryProposalMappingSource = pgTable(
+  "discovery_mapping_sources",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    mappingId: integer("mapping_id").notNull(),
+    mappingStableKey: uuid("mapping_stable_key").notNull(),
+    itemRevisionId: integer("item_revision_id").notNull(),
+    itemRevisionStableKey: uuid("item_revision_stable_key").notNull(),
+    sessionId: integer("session_id").notNull(),
+    sessionStableKey: uuid("session_stable_key").notNull(),
+    observationStableKey: uuid("observation_stable_key").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_mapping_sources_mapping_session_fk",
+      columns: [
+        table.mappingId,
+        table.organizationId,
+        table.mappingStableKey,
+        table.sessionId,
+        table.sessionStableKey,
+      ],
+      foreignColumns: [
+        discoveryProposalMapping.id,
+        discoveryProposalMapping.organizationId,
+        discoveryProposalMapping.stableKey,
+        discoveryProposalMapping.sessionId,
+        discoveryProposalMapping.sessionStableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_mapping_sources_item_revision_fk",
+      columns: [
+        table.itemRevisionId,
+        table.organizationId,
+        table.itemRevisionStableKey,
+        table.mappingId,
+        table.mappingStableKey,
+      ],
+      foreignColumns: [
+        discoveryProposalMappingItem.id,
+        discoveryProposalMappingItem.organizationId,
+        discoveryProposalMappingItem.stableKey,
+        discoveryProposalMappingItem.mappingId,
+        discoveryProposalMappingItem.mappingStableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_mapping_sources_observation_fk",
+      columns: [
+        table.observationStableKey,
+        table.sessionId,
+        table.organizationId,
+      ],
+      foreignColumns: [
+        discoveryObservation.stableKey,
+        discoveryObservation.sessionId,
+        discoveryObservation.organizationId,
+      ],
+    }).onDelete("restrict"),
+    unique("discovery_mapping_sources_stable_key_unique").on(table.stableKey),
+    unique("discovery_mapping_sources_item_observation_unique").on(
+      table.itemRevisionId,
+      table.observationStableKey,
+    ),
+    index("discovery_mapping_sources_observation_idx").on(
+      table.organizationId,
+      table.observationStableKey,
     ),
   ],
 );

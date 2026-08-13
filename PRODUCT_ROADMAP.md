@@ -17,6 +17,88 @@ The phases are intentionally cumulative. Each phase should deepen the same share
 - Real-world learning should improve the shared platform; it should not produce customer-specific application logic.
 - A deferred idea is intentionally postponed until its product boundaries and evidence requirements are understood. Deferred does not mean forgotten.
 - Workspace Studio is the governed authoring environment for Lotura's organizational digital twin; it unifies the product experience without creating one unrestricted write boundary.
+- The operating model is the trusted destination. Discovery, AI, comparison,
+  governance, and improvement strengthen it without silently replacing it.
+- Knowledge lifecycle and operating-model structure are separate dimensions:
+  the lifecycle governs how knowledge earns trust, while Process Families,
+  Reference Models, Job Descriptions, and drift group or compare that
+  knowledge.
+- Difference is evidence, not automatically error.
+
+## Organizational Knowledge Lifecycle
+
+Lotura's long-term lifecycle is:
+
+**Observe → Interview → Evidence → Review → Reconcile → Proposed Change →
+Approval → Operating Model → Continuous Improvement → Observe Again**
+
+Observed evidence, participant statements, reviewed interpretations, proposed
+changes, approved/current documentation, and actual organizational reality
+remain separately identifiable. Completion of one lifecycle stage does not
+silently confer the authority or certainty of the next.
+
+## Capability roadmap
+
+The roadmap is organized around five cumulative capabilities:
+
+- **Understand** — Organization Structure, Responsibilities, Processes,
+  Technology, Exceptions, Explorer, FLOW, and What-if are substantially
+  implemented.
+- **Discover** — guided interviews, evidence states, reconciliation, and
+  proposed-update packages are in progress; question-driven and AI-assisted
+  Discovery remain future capabilities.
+- **Govern** — Workspace Administration and append-only history exist;
+  Stewardship, contribution, review, approval, and scoped authority remain
+  incomplete.
+- **Compare** — Process Families, Process-to-Process comparison, prior versions,
+  Reference Models, standards, and Job Descriptions are future capabilities.
+- **Improve** — drift review, approved change, measurement, and sustainment form
+  the later continuous-improvement loop.
+
+Process Families and Reference Models are preserved product commitments. They
+remain later milestones because trustworthy comparison depends on the manual
+knowledge lifecycle, not because they are optional side ideas.
+
+## Ordered product milestones
+
+This is the current dependency-ordered sequence of meaningful product
+milestones:
+
+1. **Structured Proposed Changes** — a human maps selected evidence to explicit
+   proposed Process changes without changing the Process. Slice 1 provides the
+   typed mapping foundation for Process purpose, Owner Operational Role, and
+   unresolved questions; later slices add the remaining operating-model
+   targets before this milestone is complete.
+2. **Proposal Review & Governance** — accountable people review, validate, and
+   approve or reject proposed items within explicit scope.
+3. **Process Versions & Atomic Application** — an approved proposal produces a
+   historically recoverable, effective operating-model version in one governed
+   operation.
+4. **Knowledge Gaps** — explainable unresolved knowledge and review questions,
+   without a score.
+5. **Process Families** — explicit family identity and membership, with no
+   implied inheritance.
+6. **Question-Driven Discovery** — begin with an organizational question and
+   deliberately route to existing documentation, review, interview, or more
+   evidence.
+7. **Reference Models** — attach governed internal or external comparison bases
+   to Processes or Process Families.
+8. **Practice Comparison** — compare documented knowledge, observed reality,
+   prior versions, and selected references without treating difference as
+   failure.
+9. **AI Discovery Assistance** — suggest follow-up questions and structured
+   mappings for human review; never approve or apply them.
+10. **Job Descriptions & Job Drift** — compare Position-linked descriptions
+    with responsibility and observed work.
+11. **Operating-Model Drift** — review change across documented versions,
+    observations, responsibility, and Technology over time.
+12. **Continuous Improvement** — connect evidence, approved change,
+    implementation, measurement, and sustainment.
+
+Milestones 1 through 3 complete the manual path from evidence to an approved,
+versioned operating-model change. AI must not move ahead of that boundary. The
+relative timing of AI assistance and Reference Models may be reviewed after
+Milestones 1 through 3, without changing human approval authority.
 
 ## Workspace Studio product sequence
 
@@ -109,7 +191,10 @@ Enable authorized people to observe, discover, reconcile, approve, and steward a
 - Provide a blank Demo/Sandbox customer workspace with an optional, clearly labelled fictional sample organization.
 - Preserve process observations as first-class evidence with their source, participant perspective, timing, context, scope, and relationship to the operating model.
 - Add guided interviews that help people describe how work is intended to happen, how it actually happens, where it varies, and what knowledge is otherwise implicit.
-- Add bounded AI interviewing of employees within an approved scope, with clear disclosure, evidence provenance, and human review. AI interview output remains observation, not organizational truth.
+- After the manual proposal, approval, and version-application path works,
+  consider bounded AI interviewing within an approved scope, with clear
+  disclosure, evidence provenance, and human review. AI interview output
+  remains observation, not organizational truth.
 - Add guided capture and editing for processes, steps, roles, assignments, systems, exceptions, dependencies, and institutional knowledge.
 - Detect conflicts among interviews, observations, approved records, and other evidence without silently choosing a winner.
 - Provide reconciliation tools that let stewards compare evidence, preserve unresolved differences, and propose a coherent operating-model definition.
@@ -172,9 +257,14 @@ These are future domain and product commitments. They do not expand or modify th
 
 Add optional AI assistance that helps people discover, organize, question, and improve operating-model knowledge without allowing generated output to become silent operational truth.
 
+This phase cannot begin until the manual path from evidence through structured
+proposal, human approval, atomic application, and version history is proven.
+
 ### Product milestones
 
-- Expand the bounded interview assistance introduced in Phase 2 into a broader, organization-governed AI assistant.
+- Introduce bounded AI follow-up and mapping suggestions only after the manual
+  lifecycle is proven, then expand them deliberately into a broader,
+  organization-governed AI assistant.
 - Assist users in turning interviews, workshops, notes, observations, and approved source material into structured drafts.
 - Suggest clarifying questions, missing relationships, contradictory statements, and areas requiring review.
 - Summarize operating-model context while preserving links to the supporting records and source evidence.
@@ -231,14 +321,21 @@ This register makes intentional postponement visible so ideas are neither mistak
 | Governance and Stewardship engine | Phase 2 through Phase 5 | Product vocabulary and boundaries are established, but scoped policy, delegation, approval routing, effective timing, audit, and enterprise identity require separate design. |
 | Editing and knowledge stewardship | Phase 2 | Capture requires provenance, observation status, review meaning, and organizational authorization. |
 | JU Pilot with institutional information | Phase 2 | Pilot use requires private authenticated access and explicit data approval. |
-| Guided and AI-assisted interviews | Phase 2 | Interviewing requires approved scope, disclosure, provenance, observation preservation, and human review. |
+| Guided interviews | Phase 2 | Manual guided interviewing requires approved scope, disclosure, provenance, observation preservation, and human review. |
+| AI-assisted interviews and mappings | After Milestones 1–3 | AI assistance follows a proven manual structured-proposal, approval, application, and version-history path. |
 | Conflict detection, reconciliation, and consensus | Phase 2 | Lotura must preserve conflicting observations before stewards establish an approved definition. |
 | Approval workflow and process version history | Phase 2 | Observation, proposal, consensus, approval, effective timing, and supersession must remain distinct. |
 | Change requests and continuous improvement | Phase 2 and 3 | Phase 2 captures the reason for change; Phase 3 evaluates implementation, measurement, result, and sustainment. |
+| Knowledge Gaps | After Milestones 1–3 | Begin with explainable projections; persist only if assignment, governance, or resolution history requires it. |
+| Process Families and reusable subprocesses | Milestone 5 | Family membership, composition, and dependency require distinct semantics; no inheritance is implied. |
+| Question-Driven Discovery | Milestone 6 | Routing an organizational question requires search, matching, scope, participant, and evidence decisions. |
+| Reference Models and Practice Comparison | Milestones 7–8 | Provenance, version, applicability, content rights, governance, and evidence-based comparison must be designed. |
+| Job Descriptions and Job Drift | Milestone 10 | HR sensitivity, effective dating, authoritative sources, access, and human interpretation require governance. |
+| Operating-Model Drift | Milestone 11 | Drift requires approved versions, comparison baselines, observations, timing, and human classification. |
 | Tasks, comments, and notifications | Unscheduled | They should be added only where they serve operating-model stewardship or improvement, not as generic collaboration features. |
 | Workflow execution | Unscheduled | Lotura's core purpose is organizational intelligence, not replacing operational execution systems. |
 | External integrations and imports | Phase 3 or 5 | Identity matching, provenance, permissions, conflicts, and data ownership must be safe first. |
-| Broad AI assistance | Phase 4 | Phase 2 permits bounded AI interviewing, while wider AI capture and analysis require proven stewardship, provenance, and governance. |
+| Broad AI assistance | Phase 4 | AI capture and analysis require the completed manual lifecycle plus proven stewardship, provenance, and governance. |
 | Predictive analysis and benchmarking | Phase 4 or later | Longitudinal evidence, comparability, explainability, and validation are not yet sufficient. |
 | Autonomous operational changes | Not planned | Human accountability and explicit authority are permanent product requirements. |
 | Enterprise SSO, provisioning, and compliance controls | Phase 5 | These capabilities follow validated product value and multi-user governance needs. |
