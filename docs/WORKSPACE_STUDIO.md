@@ -154,13 +154,29 @@ maintenance, and deactivation preserve immutable identity and history.
   uncertainty, append corrections, and review the saved interview; and
 - `/studio/discovery/interviews/[sessionId]/reconcile` — compare documented
   Process information with active interview notes, record append-only human
-  choices, and finish a proposed update for later review without approving or
-  changing the Process.
+  choices, and finish with a durable Knowledge Outcome without approving or
+  changing the Process. When evidence supports specific changes, the same route
+  leads into the structured mapping workspace; when it does not, the review
+  ends successfully without an empty proposal experience.
 
 Discovery uses conversational product language. Technical terms such as
 canonical record, epistemic state, and reconciliation package remain available
 to architecture and audit boundaries but are not required vocabulary for a
 participant describing their work.
+
+### Knowledge Outcome
+
+The end of a completed review answers what the organization learned before it
+asks what should change. It shows what stayed consistent with current
+documentation, what remains for later validation, whether conflicting evidence
+or a Process-boundary question remains, and whether any specific changes were
+actually proposed. Counts support the explanation; they are not a score.
+
+Knowledge Outcome is a read-only projection from durable observations, the
+latest append-only human choices, and any structured mapping. It is distinct
+from approval and from the documented Process. No change is a valid outcome,
+and unresolved knowledge remains available for another participant, source, or
+later review.
 
 ### Reserved product destinations
 

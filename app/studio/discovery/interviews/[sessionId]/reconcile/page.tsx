@@ -4,8 +4,14 @@ import { connection } from "next/server";
 import type { ReactNode } from "react";
 
 import type {
+  DiscoveryObservationRecord,
   DiscoveryProposalDecisionRecord,
+  DiscoveryProposalMappingRecord,
 } from "@/lib/discovery-data";
+import {
+  buildDiscoveryKnowledgeOutcome,
+  type DiscoveryKnowledgeOutcome,
+} from "@/lib/discovery-knowledge-outcome.mjs";
 import {
   buildDocumentedProcessSnapshot,
   currentDiscoveryProposalDecisions,
@@ -14,6 +20,7 @@ import {
   type DocumentedProcessSnapshot,
 } from "@/lib/discovery-proposal-model.mjs";
 import { buildDiscoveryReconciliationEvidence } from "@/lib/discovery-reconciliation-preview.mjs";
+import { activeDiscoveryObservations } from "@/lib/discovery-review-signals.mjs";
 import { loadWorkspaceExperience } from "@/lib/workspace-experience";
 
 import {
@@ -213,6 +220,153 @@ function ProposalChoiceSummary({
   );
 }
 
+function formatOutcomeTimestamp(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC",
+    timeZoneName: "short",
+  }).format(new Date(value));
+}
+
+function KnowledgeOutcomeSummary({
+  decisions,
+  observations,
+  outcome,
+  processId,
+  sessionId,
+}: {
+  decisions: DiscoveryProposalDecisionRecord[];
+  observations: DiscoveryObservationRecord[];
+  outcome: DiscoveryKnowledgeOutcome;
+  processId: string;
+  sessionId: string;
+}) {
+  const observationById = new Map(
+    observations.map((observation) => [observation.id, observation]),
+  );
+  const decisionByObservation = new Map(
+    decisions.map((decision) => [decision.observationId, decision]),
+  );
+  const laterObservations = outcome.laterObservationIds
+    .map((id) => observationById.get(id))
+    .filter((observation): observation is DiscoveryObservationRecord => Boolean(observation));
+  const mappingMessage = outcome.stage === "ready_for_proposal_review"
+    ? `${outcome.structuredChangeCount} specific ${outcome.structuredChangeCount === 1 ? "change is" : "changes are"} ready for proposal review.`
+    : outcome.stage === "mapping_in_progress"
+      ? `${outcome.structuredChangeCount} specific ${outcome.structuredChangeCount === 1 ? "change is" : "changes are"} being prepared.`
+      : outcome.stage === "evidence_selected"
+        ? `${outcome.selectedObservationIds.length} ${outcome.selectedObservationIds.length === 1 ? "answer was" : "answers were"} selected for an update. Specific changes have not yet been described.`
+        : "No changes were proposed. This is a complete and valid outcome.";
+
+  return (
+    <section className="mt-7 border-t border-[var(--border)] pt-7">
+      <p className="text-xs font-medium text-[var(--text-tertiary)]">Knowledge outcome</p>
+      <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">What we learned</h2>
+      <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
+        {outcome.noChangesProposed
+          ? "This review supported parts of the current documentation while preserving questions for later. No change was needed to complete the interview successfully."
+          : "This review preserved what still fits, what needs more information, and which evidence may support specific changes."}
+      </p>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-3">
+        <Card className="p-4">
+          <p className="text-xs font-medium text-[var(--text-tertiary)]">Consistent with current documentation</p>
+          <p className="mt-2 text-2xl font-semibold text-[var(--text)]">{outcome.documentedObservationIds.length}</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">Kept as documented for this review. This does not create broader approval.</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs font-medium text-[var(--text-tertiary)]">Preserved for later</p>
+          <p className="mt-2 text-2xl font-semibold text-[var(--text)]">{outcome.laterObservationIds.length}</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+            Unresolved information remains visible without being forced into an answer. {outcome.needsValidationObservationIds.length} {outcome.needsValidationObservationIds.length === 1 ? "item is" : "items are"} explicitly uncertain or need validation.
+          </p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs font-medium text-[var(--text-tertiary)]">Specific changes proposed</p>
+          <p className="mt-2 text-2xl font-semibold text-[var(--text)]">{outcome.structuredChangeCount}</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">{mappingMessage}</p>
+        </Card>
+      </div>
+
+      {laterObservations.length ? (
+        <Card className="mt-5 p-5 sm:p-6" id="knowledge-outcome-unresolved">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-medium text-[var(--text-tertiary)]">Remaining questions</p>
+              <h3 className="mt-1 text-lg font-semibold text-[var(--text)]">Information saved for future validation</h3>
+            </div>
+            <Badge tone="warning">{laterObservations.length} for later</Badge>
+          </div>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
+            These answers remain part of the interview record. Lotura has not decided who must validate them or what the answer should be.
+          </p>
+          <ul className="mt-4 divide-y divide-[var(--border)]">
+            {laterObservations.map((observation) => {
+              const decision = decisionByObservation.get(observation.id);
+              return (
+                <li className="py-3 first:pt-0 last:pb-0" key={observation.id}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge tone="warning">{stateLabels[observation.epistemicState]}</Badge>
+                    <a className="text-xs font-medium text-[var(--workspace-accent)]" href={`#observation-${observation.id}`}>
+                      Interview answer {observation.sequence}
+                    </a>
+                    {outcome.unresolvedBoundaryObservationIds.includes(observation.id) ? <Badge tone="info">Boundary question</Badge> : null}
+                    {outcome.conflictingObservationIds.includes(observation.id) ? <Badge tone="info">Conflicting evidence preserved</Badge> : null}
+                  </div>
+                  <p className="mt-2 text-sm font-medium text-[var(--text)]">{observation.promptText}</p>
+                  {decision?.reviewNote ? (
+                    <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">Review note: {decision.reviewNote}</p>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      ) : null}
+
+      <Alert className="mt-5" tone={outcome.noChangesProposed ? "success" : "warning"}>
+        {mappingMessage} The documented Process has not changed. Only a later, separately approved application can change it.
+      </Alert>
+
+      <Card className="mt-5 p-5 sm:p-6">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+          <div>
+            <p className="text-sm font-semibold text-[var(--text)]">Review completed</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+              {outcome.completedAt ? formatOutcomeTimestamp(outcome.completedAt) : "Completion time unavailable"}
+              {outcome.completedByActor ? ` · ${outcome.completedByActor}` : ""}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {laterObservations.length ? (
+              <a className="inline-flex h-9 items-center justify-center rounded-[9px] border border-[var(--border)] px-3 text-xs font-medium text-[var(--text)] hover:bg-[var(--surface-hover)]" href="#knowledge-outcome-unresolved">
+                Review remaining questions
+              </a>
+            ) : null}
+            <Link className="inline-flex h-9 items-center justify-center rounded-[9px] border border-[var(--border)] px-3 text-xs font-medium text-[var(--text)] hover:bg-[var(--surface-hover)]" href={`/studio/discovery?process=${encodeURIComponent(processId)}`}>
+              Interview another participant
+            </Link>
+            <Link className="inline-flex h-9 items-center justify-center rounded-[9px] border border-[var(--border)] px-3 text-xs font-medium text-[var(--text)] hover:bg-[var(--surface-hover)]" href={`/studio/processes/${encodeURIComponent(processId)}`}>
+              Return to Process
+            </Link>
+            <Link className="inline-flex h-9 items-center justify-center rounded-[9px] bg-[var(--workspace-accent)] px-3 text-xs font-medium text-[var(--workspace-accent-foreground)] hover:bg-[var(--workspace-accent-hover)]" href="/studio/discovery">
+              Finish for now
+            </Link>
+          </div>
+        </div>
+      </Card>
+      {outcome.selectedObservationIds.length > 0 ? (
+        <div className="mt-4 flex justify-end">
+          <Link className="text-xs font-medium text-[var(--workspace-accent)]" href={`/studio/discovery/interviews/${sessionId}/map`}>
+            {outcome.stage === "evidence_selected" ? "Describe specific changes" : "Open specific changes"} →
+          </Link>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export default async function DiscoveryReconciliationPreviewPage({
   params,
 }: {
@@ -223,10 +377,11 @@ export default async function DiscoveryReconciliationPreviewPage({
   const experience = await loadWorkspaceExperience();
   if (!experience.discovery.enabled) notFound();
 
-  const { loadDiscoveryProposal, loadDiscoverySession } = await import("@/lib/discovery-data");
-  const [session, proposal] = await Promise.all([
+  const { loadDiscoveryProposal, loadDiscoveryProposalMapping, loadDiscoverySession } = await import("@/lib/discovery-data");
+  const [session, proposal, mapping] = await Promise.all([
     loadDiscoverySession(experience.discovery.organizationId, sessionId),
     loadDiscoveryProposal(experience.discovery.organizationId, sessionId),
+    loadDiscoveryProposalMapping(experience.discovery.organizationId, sessionId),
   ]);
   if (!session || session.status !== "ready_for_review") notFound();
 
@@ -251,6 +406,16 @@ export default async function DiscoveryReconciliationPreviewPage({
   const readiness = discoveryProposalReadiness(activeObservationIds, decisions);
   const proposalFinished = proposal?.status === "ready_for_review";
   const proposalFinishedWithoutChanges = proposalFinished && readiness.included === 0;
+  const activeObservations = activeDiscoveryObservations(session.observations);
+  const knowledgeOutcome = proposalFinished && proposal
+    ? buildDiscoveryKnowledgeOutcome({
+        completedAt: proposal.readyAt,
+        completedByActor: proposal.readyByActor,
+        decisions,
+        mapping: mapping as DiscoveryProposalMappingRecord | null,
+        observations: activeObservations,
+      })
+    : null;
 
   return (
     <WorkspaceShell
@@ -260,11 +425,13 @@ export default async function DiscoveryReconciliationPreviewPage({
       source={experience.source}
     >
       <WorkspacePageHeader
-        description="See what is documented now beside what you said in the interview."
-        eyebrow={<>Discovery · Side-by-side review</>}
+        description={proposalFinished
+          ? "See what this interview confirmed, what remains open, and whether any change was proposed."
+          : "See what is documented now beside what you said in the interview."}
+        eyebrow={proposalFinished ? <>Discovery · Interview outcome</> : <>Discovery · Side-by-side review</>}
         stats={[
-          { label: "Interview answers", value: evidenceCount },
-          { label: "Choices made", value: readiness.reviewed },
+          { label: proposalFinished ? "Reviewed answers" : "Interview answers", value: proposalFinished ? readiness.reviewed : evidenceCount },
+          { label: proposalFinished ? "Kept as documented" : "Choices made", value: proposalFinished ? readiness.kept : readiness.reviewed },
           { label: "Left for later", value: readiness.later },
         ]}
         title={process.name}
@@ -391,10 +558,19 @@ export default async function DiscoveryReconciliationPreviewPage({
         ))}
       </div>
 
-      <section className="mt-7 border-t border-[var(--border)] pt-7">
-        <p className="text-xs font-medium text-[var(--text-tertiary)]">
-          {proposalFinishedWithoutChanges ? "Review outcome" : "Proposed update"}
-        </p>
+      {knowledgeOutcome ? (
+        <KnowledgeOutcomeSummary
+          decisions={currentDecisionList}
+          observations={activeObservations}
+          outcome={knowledgeOutcome}
+          processId={process.id}
+          sessionId={session.id}
+        />
+      ) : (
+        <section className="mt-7 border-t border-[var(--border)] pt-7">
+          <p className="text-xs font-medium text-[var(--text-tertiary)]">
+            {proposalFinishedWithoutChanges ? "Review outcome" : "Proposed update"}
+          </p>
         <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">
           {proposalFinishedWithoutChanges ? "No changes proposed" : "Review your choices"}
         </h2>
@@ -440,7 +616,8 @@ export default async function DiscoveryReconciliationPreviewPage({
             )}
           </div>
         </Card>
-      </section>
+        </section>
+      )}
     </WorkspaceShell>
   );
 }

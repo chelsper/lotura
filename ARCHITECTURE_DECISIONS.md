@@ -93,6 +93,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-048 | Reference Model differences create review questions, not automatic conclusions | Accepted — product direction |
 | LAD-049 | Structured proposed changes are typed human mappings, not approval or Process mutation | Accepted — implementation authorized for Structured Proposed Changes v0.1, Slice 1 |
 | LAD-050 | Structured proposed-change mappings use explicit typed operating-model targets | Accepted — implementation authorized for Structured Proposed Changes v0.1, Slice 2 |
+| LAD-051 | Discovery may conclude with a durable Knowledge Outcome without producing an operating-model change | Accepted — implementation authorized for Knowledge Outcomes v0.1 |
 
 ## Decision records
 
@@ -1529,6 +1530,77 @@ review and governance, approval, Process versions, atomic application, AI
 suggestions, target creation inside Discovery, proposed-to-proposed references,
 deletion, rebasing, and supersession remain deferred.
 
+### LAD-051 — Discovery may conclude with a durable Knowledge Outcome without producing an operating-model change
+
+**Status:** Accepted — implementation authorized for Knowledge Outcomes v0.1.
+
+**Context:** The first complete private-workspace Discovery lifecycle showed
+that a human review can support current documentation, preserve unresolved
+questions, and select nothing for change. Treating that result as an empty or
+failed proposal would pressure people to manufacture work and would make
+Discovery serve change volume rather than organizational understanding.
+LAD-045 already preserves the frozen documented-Process comparison, append-only
+human choices, completion actor, and completion time. LAD-049 and LAD-050 create
+structured mappings only when selected evidence needs a specific proposed
+interpretation.
+
+**Decision:** A finished Discovery review produces a reproducible, human-
+readable **Knowledge Outcome**. Knowledge Outcome is a read-only projection from
+the active observations, each observation's latest append-only review choice,
+the immutable finished review package, and any structured mapping that exists.
+It does not replace or summarize away the underlying evidence.
+
+Outcome categories are not mutually exclusive. A review may show that current
+documentation was kept, knowledge was preserved for later, additional
+validation is needed, conflicting evidence or a Process boundary remains,
+evidence was selected for an update, specific structured changes were proposed,
+or no change was proposed. Product language must distinguish evidence selected
+for an update from a specific human-authored change.
+
+No change is a valid and successful outcome. When no evidence is selected for
+an update, Lotura must show the outcome without creating or linking to an empty
+structured-mapping workspace. Unresolved knowledge remains unresolved and
+available for later review. The documented Process remains unchanged unless a
+separate future governance and atomic-application boundary approves and applies
+a versioned change.
+
+The existing finished `discovery_proposal` is treated at the product surface as
+a durable review package when no change is proposed. Its current database name
+does not require a rename. Because finished packages and their decisions are
+already immutable and attributable, Knowledge Outcomes v0.1 adds no table,
+migration, database privilege, credential, environment variable, or write path.
+Organization scope remains server-derived, private-workspace access remains
+required, public/demo mode remains unavailable, and merely viewing an outcome
+performs no mutation.
+
+**Why:** Discovery exists to improve understanding, not manufacture a proposal.
+A deterministic outcome lets people see what was learned, what remains open,
+and whether change is warranted while preserving the authority and provenance
+boundaries already established by the Organizational Knowledge Lifecycle.
+
+**Alternatives considered:** Require at least one selected answer; create an
+empty mapping for navigation; persist generated narrative in a new table; add a
+single exclusive outcome status; derive a confidence or quality score; let AI
+declare the outcome; or treat interview completion as documentation approval.
+These were rejected because they manufacture work, erase simultaneous outcomes,
+duplicate reproducible facts, overstate certainty, or collapse evidence,
+interpretation, approval, and current documentation.
+
+**Affected decisions:** This decision follows and extends LAD-002, LAD-021
+through LAD-026, LAD-029, LAD-032, LAD-035 through LAD-037, LAD-042 through
+LAD-046, LAD-049, and LAD-050. It refines LAD-046 by making proposed change one
+possible branch after review rather than an inevitable next state. It does not
+supersede any earlier decision and does not change the Process Family or
+Reference Model boundaries in LAD-047 and LAD-048.
+
+**Consequences and deferrals:** Knowledge Outcomes v0.1 may add only a pure
+deterministic projection, completed-review presentation, conversational
+navigation, documentation, and regression tests. Persisted human outcome
+narratives, validation assignments to another Person, Role, Unit, or source,
+cross-session synthesis, longitudinal analytics, dashboards, scores, FLOW
+calculation changes, governance approval, Process versions, atomic application,
+and AI summarization remain separately approved work.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -1604,3 +1676,8 @@ later target mappings, governance, approval, Process versions, and application
 as separate decisions. Process Families, Reference Models, AI assistance, Job
 Drift, operating-model drift, and Continuous Improvement remain later
 milestones and have no current schema authorization.
+
+LAD-050 completes the initial typed target vocabulary. LAD-051 authorizes a
+read-only Knowledge Outcome projection and completed-review UX, including a
+successful no-change branch, without authorizing a schema, privilege, Process,
+FLOW, environment, or deployment change.

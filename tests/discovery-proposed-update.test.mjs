@@ -171,7 +171,8 @@ test("the review UX keeps interview evidence, human choices, readiness, and appr
   assert.match(controls, /Finish proposed update/);
   assert.match(interview, /Review and prepare an update/);
   assert.match(interview, /Continue proposed update/);
-  assert.match(interview, /View proposed update/);
+  assert.match(interview, /View interview outcome/);
+  assert.match(interview, /View outcome and proposed changes/);
   assert.match(interview, /these interview answers can no longer be corrected in place/);
   assert.match(route, /It has not been approved or applied/);
   assert.match(route, /Review complete — no changes proposed/);
