@@ -159,7 +159,7 @@ test("Slice 1 UI keeps evidence, proposal, review, and application visibly separ
   assert.match(page, /not been approved or applied/);
   assert.match(page, /documented Process has not changed/);
   assert.match(page, /future governed rebase/);
-  assert.match(page, /Steps, Systems, Exceptions, and dependencies come in later slices/);
+  assert.match(page, /Steps and responsibility, an existing System, an Exception, a dependency/);
   assert.match(controls, /existing active Operational Role/);
   assert.match(controls, /does not infer ownership from a Person, Position, title, coverage, or reporting line/);
   assert.doesNotMatch(`${controls}\n${page}`, /AI-generated|automatically apply/i);

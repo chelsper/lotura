@@ -11,6 +11,23 @@ import type { DocumentedProcessSnapshot } from "./discovery-proposal-model.mjs";
 import { resolveDiscoveryConfiguration } from "./discovery-policy.mjs";
 
 const ACTIONS = new Set<DiscoveryMappingAction>(DISCOVERY_MAPPING_ACTIONS);
+const SLICE_2_ACTIONS = new Set<DiscoveryMappingAction>([
+  "add_process_dependency",
+  "add_process_exception",
+  "add_process_step",
+  "change_step_responsibility",
+  "link_existing_system",
+  "revise_process_exception",
+  "revise_process_step",
+]);
+
+const DEPENDENCY_DIRECTIONS = new Set(["upstream", "downstream"]);
+const DEPENDENCY_TYPES = new Set([
+  "requires",
+  "receives_from",
+  "provides_to",
+  "triggers",
+]);
 
 function validUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -105,6 +122,553 @@ function validateMappingInput(input: {
     rationale,
     unresolvedQuestion: unresolvedQuestion || null,
   };
+}
+
+type Slice2MappingInput = {
+  action: DiscoveryMappingAction;
+  currentProcessFingerprint: string;
+  dependencyDescription: string;
+  dependencyDirection: string;
+  dependencyType: string;
+  exceptionCondition: string;
+  exceptionId: string;
+  exceptionName: string;
+  exceptionResponse: string;
+  expectedMappingRevision: number;
+  itemId: string;
+  observationIds: string[];
+  processStepId: string;
+  proposedStepInstructions: string;
+  proposedStepPosition: number;
+  proposedStepTitle: string;
+  rationale: string;
+  relatedProcessId: string;
+  responsibleRoleId: string;
+  sessionId: string;
+  systemId: string;
+  systemUsage: string;
+};
+
+function validateSlice2MappingInput(input: Slice2MappingInput) {
+  if (!SLICE_2_ACTIONS.has(input.action)) return null;
+  const trimmed = {
+    dependencyDescription: input.dependencyDescription.trim(),
+    exceptionCondition: input.exceptionCondition.trim(),
+    exceptionId: input.exceptionId.trim(),
+    exceptionName: input.exceptionName.trim(),
+    exceptionResponse: input.exceptionResponse.trim(),
+    itemId: input.itemId.trim(),
+    processStepId: input.processStepId.trim(),
+    proposedStepInstructions: input.proposedStepInstructions.trim(),
+    proposedStepTitle: input.proposedStepTitle.trim(),
+    rationale: input.rationale.trim(),
+    relatedProcessId: input.relatedProcessId.trim(),
+    responsibleRoleId: input.responsibleRoleId.trim(),
+    systemId: input.systemId.trim(),
+    systemUsage: input.systemUsage.trim(),
+  };
+  const observationIds = [...new Set(input.observationIds.map((id) => id.trim()))];
+  const optionalIds = [
+    trimmed.exceptionId,
+    trimmed.itemId,
+    trimmed.processStepId,
+    trimmed.relatedProcessId,
+    trimmed.responsibleRoleId,
+    trimmed.systemId,
+  ];
+  if (
+    !validUuid(input.sessionId) ||
+    !Number.isSafeInteger(input.expectedMappingRevision) ||
+    input.expectedMappingRevision < 0 ||
+    !/^[0-9a-f]{64}$/.test(input.currentProcessFingerprint) ||
+    optionalIds.some((id) => id.length > 0 && !validUuid(id)) ||
+    observationIds.length < 1 ||
+    observationIds.length > 100 ||
+    observationIds.some((id) => !validUuid(id)) ||
+    trimmed.rationale.length < 1 ||
+    trimmed.rationale.length > 2000
+  ) return null;
+
+  let proposedState: Record<string, unknown>;
+  if (input.action === "add_process_step") {
+    if (
+      trimmed.processStepId ||
+      trimmed.proposedStepTitle.length < 1 ||
+      trimmed.proposedStepTitle.length > 255 ||
+      trimmed.proposedStepInstructions.length < 1 ||
+      trimmed.proposedStepInstructions.length > 10000 ||
+      !Number.isSafeInteger(input.proposedStepPosition) ||
+      input.proposedStepPosition < 1 ||
+      input.proposedStepPosition > 10000
+    ) return null;
+    proposedState = {
+      instructions: trimmed.proposedStepInstructions,
+      position: input.proposedStepPosition,
+      responsibleRoleStableKey: trimmed.responsibleRoleId || null,
+      title: trimmed.proposedStepTitle,
+    };
+  } else if (input.action === "revise_process_step") {
+    if (
+      !trimmed.processStepId ||
+      trimmed.proposedStepTitle.length < 1 ||
+      trimmed.proposedStepTitle.length > 255 ||
+      trimmed.proposedStepInstructions.length < 1 ||
+      trimmed.proposedStepInstructions.length > 10000
+    ) return null;
+    proposedState = {
+      instructions: trimmed.proposedStepInstructions,
+      title: trimmed.proposedStepTitle,
+    };
+  } else if (input.action === "change_step_responsibility") {
+    if (!trimmed.processStepId) return null;
+    proposedState = {
+      responsibleRoleStableKey: trimmed.responsibleRoleId || null,
+    };
+  } else if (input.action === "link_existing_system") {
+    if (
+      !trimmed.systemId ||
+      trimmed.systemUsage.length < 1 ||
+      trimmed.systemUsage.length > 2000
+    ) return null;
+    proposedState = {
+      systemStableKey: trimmed.systemId,
+      usage: trimmed.systemUsage,
+    };
+  } else if (input.action === "add_process_exception") {
+    if (
+      trimmed.exceptionId ||
+      trimmed.exceptionName.length < 1 ||
+      trimmed.exceptionName.length > 255 ||
+      trimmed.exceptionCondition.length < 1 ||
+      trimmed.exceptionCondition.length > 5000 ||
+      trimmed.exceptionResponse.length < 1 ||
+      trimmed.exceptionResponse.length > 5000
+    ) return null;
+    proposedState = {
+      condition: trimmed.exceptionCondition,
+      name: trimmed.exceptionName,
+      processStepStableKey: trimmed.processStepId || null,
+      response: trimmed.exceptionResponse,
+    };
+  } else if (input.action === "revise_process_exception") {
+    if (
+      !trimmed.exceptionId ||
+      trimmed.exceptionName.length < 1 ||
+      trimmed.exceptionName.length > 255 ||
+      trimmed.exceptionCondition.length < 1 ||
+      trimmed.exceptionCondition.length > 5000 ||
+      trimmed.exceptionResponse.length < 1 ||
+      trimmed.exceptionResponse.length > 5000
+    ) return null;
+    proposedState = {
+      condition: trimmed.exceptionCondition,
+      name: trimmed.exceptionName,
+      response: trimmed.exceptionResponse,
+    };
+  } else {
+    if (
+      !trimmed.relatedProcessId ||
+      !DEPENDENCY_DIRECTIONS.has(input.dependencyDirection) ||
+      !DEPENDENCY_TYPES.has(input.dependencyType) ||
+      trimmed.dependencyDescription.length > 2000
+    ) return null;
+    proposedState = {
+      dependencyType: input.dependencyType,
+      description: trimmed.dependencyDescription || null,
+      direction: input.dependencyDirection,
+      relatedProcessStableKey: trimmed.relatedProcessId,
+    };
+  }
+
+  return {
+    ...trimmed,
+    exceptionId: trimmed.exceptionId || null,
+    itemId: trimmed.itemId || null,
+    observationIds,
+    processStepId: trimmed.processStepId || null,
+    proposedState,
+    relatedProcessId: trimmed.relatedProcessId || null,
+    responsibleRoleId: trimmed.responsibleRoleId || null,
+    systemId: trimmed.systemId || null,
+  };
+}
+
+export async function saveDiscoveryMappingItemSlice2(
+  input: Slice2MappingInput,
+): Promise<DiscoveryMutationResult> {
+  const validated = validateSlice2MappingInput(input);
+  if (!validated) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "Review the specific proposed change and try again.",
+    };
+  }
+  const context = await mappingWriteContext();
+  if (!context) {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Guided Discovery is not enabled.",
+    };
+  }
+
+  try {
+    const rows = await context.sql.query(
+      `with proposal_context as materialized (
+         select proposal.id as proposal_id, proposal.organization_id,
+           proposal.stable_key as proposal_stable_key,
+           proposal.session_id, proposal.session_stable_key,
+           proposal.process_id, proposal.process_stable_key
+         from discovery_proposals proposal
+         where proposal.organization_id = $1::integer
+           and proposal.session_stable_key = $2::uuid
+           and proposal.status = 'ready_for_review'
+           and proposal.documented_process_fingerprint = $3::varchar(64)
+       ), selected_observations as materialized (
+         select observation.stable_key
+         from discovery_observations observation
+         join proposal_context proposal
+           on proposal.session_id = observation.session_id
+          and proposal.organization_id = observation.organization_id
+          and proposal.session_stable_key = observation.session_stable_key
+         join lateral (
+           select decision.disposition
+           from discovery_proposal_decisions decision
+           where decision.proposal_id = proposal.proposal_id
+             and decision.organization_id = proposal.organization_id
+             and decision.proposal_stable_key = proposal.proposal_stable_key
+             and decision.observation_stable_key = observation.stable_key
+           order by decision.decision_sequence desc
+           limit 1
+         ) current_decision on current_decision.disposition = 'use_in_proposal'
+         where observation.stable_key = any($4::uuid[])
+           and not exists (
+             select 1 from discovery_observations later
+             where later.organization_id = observation.organization_id
+               and later.session_id = observation.session_id
+               and later.supersedes_observation_stable_key = observation.stable_key
+           )
+       ), selected_step as materialized (
+         select step.id, step.stable_key, step.title, step.instructions,
+           step.position, responsible.stable_key as responsible_role_stable_key,
+           responsible.name as responsible_role_name
+         from process_steps step
+         join proposal_context proposal
+           on proposal.process_id = step.process_id
+          and proposal.organization_id = step.organization_id
+         left join roles responsible
+           on responsible.id = step.responsible_role_id
+          and responsible.organization_id = step.organization_id
+         where step.stable_key = $8::uuid
+       ), selected_role as materialized (
+         select role.id, role.stable_key, role.name
+         from roles role
+         join proposal_context proposal
+           on proposal.organization_id = role.organization_id
+         where role.stable_key = $9::uuid and role.status = 'active'
+       ), selected_system as materialized (
+         select system.id, system.stable_key, system.name
+         from systems system
+         join proposal_context proposal
+           on proposal.organization_id = system.organization_id
+         where system.stable_key = $10::uuid and system.status = 'active'
+           and not exists (
+             select 1 from process_systems linked
+             where linked.organization_id = proposal.organization_id
+               and linked.process_id = proposal.process_id
+               and linked.system_id = system.id
+           )
+       ), selected_exception as materialized (
+         select exception.id, exception.stable_key, exception.name,
+           exception.condition, exception.response
+         from exceptions exception
+         join proposal_context proposal
+           on proposal.process_id = exception.process_id
+          and proposal.organization_id = exception.organization_id
+         where exception.stable_key = $11::uuid
+           and exception.status = 'active'
+       ), selected_related_process as materialized (
+         select related.id, related.stable_key, related.name
+         from processes related
+         join proposal_context proposal
+           on proposal.organization_id = related.organization_id
+          and proposal.process_id <> related.id
+         where related.stable_key = $12::uuid
+           and related.status <> 'archived'
+       ), target_gate as materialized (
+         select proposal.*
+         from proposal_context proposal
+         where (select count(*) from selected_observations) = cardinality($4::uuid[])
+           and case $5::discovery_mapping_action
+             when 'add_process_step' then
+               $8::uuid is null
+               and ($9::uuid is null or exists (select 1 from selected_role))
+             when 'revise_process_step' then
+               exists (select 1 from selected_step)
+               and (($13::jsonb ->> 'title') is distinct from (select title from selected_step)
+                 or ($13::jsonb ->> 'instructions') is distinct from (select instructions from selected_step))
+             when 'change_step_responsibility' then
+               exists (select 1 from selected_step)
+               and ($9::uuid is null or exists (select 1 from selected_role))
+               and $9::uuid is distinct from (select responsible_role_stable_key from selected_step)
+             when 'link_existing_system' then exists (select 1 from selected_system)
+             when 'add_process_exception' then
+               $11::uuid is null
+               and ($8::uuid is null or exists (select 1 from selected_step))
+             when 'revise_process_exception' then
+               exists (select 1 from selected_exception)
+               and (($13::jsonb ->> 'name') is distinct from (select name from selected_exception)
+                 or ($13::jsonb ->> 'condition') is distinct from (select condition from selected_exception)
+                 or ($13::jsonb ->> 'response') is distinct from (select response from selected_exception))
+             when 'add_process_dependency' then
+               exists (select 1 from selected_related_process)
+               and not exists (
+                 select 1 from process_dependencies dependency
+                 where dependency.organization_id = proposal.organization_id
+                   and dependency.source_process_id = case
+                     when $13::jsonb ->> 'direction' = 'upstream'
+                       then (select id from selected_related_process)
+                     else proposal.process_id end
+                   and dependency.target_process_id = case
+                     when $13::jsonb ->> 'direction' = 'upstream'
+                       then proposal.process_id
+                     else (select id from selected_related_process) end
+                   and dependency.dependency_type = ($13::jsonb ->> 'dependencyType')::process_dependency_type
+               )
+             else false
+           end
+       ), inserted_mapping as (
+         insert into discovery_proposal_mappings (
+           organization_id, proposal_id, proposal_stable_key, session_id,
+           session_stable_key, process_id, process_stable_key,
+           actor_identifier
+         )
+         select organization_id, proposal_id, proposal_stable_key, session_id,
+           session_stable_key, process_id, process_stable_key,
+           $15::varchar(128)
+         from target_gate
+         where $6::integer = 0 and $7::uuid is null
+           and not exists (
+             select 1 from discovery_proposal_mappings existing
+             where existing.proposal_id = target_gate.proposal_id
+           )
+         returning id, organization_id, stable_key, session_id,
+           session_stable_key, process_id, process_stable_key
+       ), selected_mapping as materialized (
+         select mapping.id, mapping.organization_id, mapping.stable_key,
+           mapping.session_id, mapping.session_stable_key,
+           mapping.process_id, mapping.process_stable_key
+         from discovery_proposal_mappings mapping
+         join target_gate proposal
+           on proposal.proposal_id = mapping.proposal_id
+          and proposal.organization_id = mapping.organization_id
+          and proposal.proposal_stable_key = mapping.proposal_stable_key
+         where $6::integer > 0
+           and mapping.revision = $6::integer
+           and mapping.status = 'draft'
+         for update of mapping
+       ), usable_mapping as materialized (
+         select * from inserted_mapping
+         union all
+         select * from selected_mapping
+       ), current_item as materialized (
+         select item.item_stable_key, item.item_sequence, item.action,
+           item.process_step_stable_key, item.system_stable_key,
+           item.exception_stable_key, item.related_process_stable_key,
+           item.proposed_state
+         from discovery_mapping_items item
+         join usable_mapping mapping
+           on mapping.id = item.mapping_id
+          and mapping.organization_id = item.organization_id
+          and mapping.stable_key = item.mapping_stable_key
+         where item.item_stable_key = $7::uuid
+         order by item.item_sequence desc
+         limit 1
+       ), validated_mapping as (
+         select mapping.*
+         from usable_mapping mapping
+         where ($7::uuid is null or exists (select 1 from current_item))
+           and ($7::uuid is null or (select action from current_item) = $5::discovery_mapping_action)
+           and ($7::uuid is null or case $5::discovery_mapping_action
+             when 'revise_process_step' then
+               (select process_step_stable_key from current_item) = $8::uuid
+             when 'change_step_responsibility' then
+               (select process_step_stable_key from current_item) = $8::uuid
+             when 'link_existing_system' then
+               (select system_stable_key from current_item) = $10::uuid
+             when 'revise_process_exception' then
+               (select exception_stable_key from current_item) = $11::uuid
+             when 'add_process_exception' then
+               (select process_step_stable_key from current_item) is not distinct from $8::uuid
+             when 'add_process_dependency' then
+               (select related_process_stable_key from current_item) = $12::uuid
+               and (select proposed_state ->> 'direction' from current_item) = ($13::jsonb ->> 'direction')
+               and (select proposed_state ->> 'dependencyType' from current_item) = ($13::jsonb ->> 'dependencyType')
+             else true
+           end)
+       ), item_identity as (
+         select coalesce(
+             (select item_stable_key from current_item), gen_random_uuid()
+           ) as item_stable_key,
+           coalesce((select item_sequence from current_item), 0) + 1 as item_sequence
+         from validated_mapping
+       ), inserted_item as (
+         insert into discovery_mapping_items (
+           organization_id, mapping_id, mapping_stable_key,
+           item_stable_key, item_sequence, action,
+           process_id, process_stable_key,
+           process_step_id, process_step_stable_key,
+           responsible_role_id, responsible_role_stable_key,
+           system_id, system_stable_key,
+           exception_id, exception_stable_key,
+           related_process_id, related_process_stable_key,
+           before_state, proposed_state, rationale, actor_identifier
+         )
+         select mapping.organization_id, mapping.id, mapping.stable_key,
+           identity.item_stable_key, identity.item_sequence,
+           $5::discovery_mapping_action,
+           mapping.process_id, mapping.process_stable_key,
+           case when $5::discovery_mapping_action in (
+               'revise_process_step', 'change_step_responsibility'
+             ) or ($5::discovery_mapping_action = 'add_process_exception' and $8::uuid is not null)
+             then step.id else null end,
+           case when $5::discovery_mapping_action in (
+               'revise_process_step', 'change_step_responsibility'
+             ) or ($5::discovery_mapping_action = 'add_process_exception' and $8::uuid is not null)
+             then step.stable_key else null end,
+           case when $5::discovery_mapping_action in (
+               'add_process_step', 'change_step_responsibility'
+             ) then selected_role.id else null end,
+           case when $5::discovery_mapping_action in (
+               'add_process_step', 'change_step_responsibility'
+             ) then selected_role.stable_key else null end,
+           case when $5::discovery_mapping_action = 'link_existing_system'
+             then selected_system.id else null end,
+           case when $5::discovery_mapping_action = 'link_existing_system'
+             then selected_system.stable_key else null end,
+           case when $5::discovery_mapping_action = 'revise_process_exception'
+             then selected_exception.id else null end,
+           case when $5::discovery_mapping_action = 'revise_process_exception'
+             then selected_exception.stable_key else null end,
+           case when $5::discovery_mapping_action = 'add_process_dependency'
+             then related.id else null end,
+           case when $5::discovery_mapping_action = 'add_process_dependency'
+             then related.stable_key else null end,
+           case $5::discovery_mapping_action
+             when 'revise_process_step' then jsonb_build_object(
+               'title', step.title, 'instructions', step.instructions)
+             when 'change_step_responsibility' then jsonb_build_object(
+               'responsibleRoleStableKey', step.responsible_role_stable_key,
+               'responsibleRoleName', step.responsible_role_name)
+             when 'revise_process_exception' then jsonb_build_object(
+               'name', selected_exception.name,
+               'condition', selected_exception.condition,
+               'response', selected_exception.response)
+             else '{}'::jsonb
+           end,
+           $13::jsonb
+             || case when $5::discovery_mapping_action in (
+                  'add_process_step', 'change_step_responsibility'
+                ) then jsonb_build_object('responsibleRoleName', selected_role.name)
+                else '{}'::jsonb end
+             || case when $5::discovery_mapping_action = 'link_existing_system'
+                then jsonb_build_object('systemName', selected_system.name)
+                else '{}'::jsonb end
+             || case when $5::discovery_mapping_action = 'add_process_exception'
+                then jsonb_build_object('processStepTitle', step.title)
+                else '{}'::jsonb end
+             || case when $5::discovery_mapping_action = 'add_process_dependency'
+                then jsonb_build_object('relatedProcessName', related.name)
+                else '{}'::jsonb end,
+           $14::text, $15::varchar(128)
+         from validated_mapping mapping
+         cross join item_identity identity
+         left join selected_step step on true
+         left join selected_role on true
+         left join selected_system on true
+         left join selected_exception on true
+         left join selected_related_process related on true
+         returning id, organization_id, stable_key, mapping_id,
+           mapping_stable_key
+       ), inserted_sources as (
+         insert into discovery_mapping_sources (
+           organization_id, mapping_id, mapping_stable_key,
+           item_revision_id, item_revision_stable_key, session_id,
+           session_stable_key, observation_stable_key
+         )
+         select item.organization_id, item.mapping_id,
+           item.mapping_stable_key, item.id, item.stable_key,
+           mapping.session_id, mapping.session_stable_key,
+           observation.stable_key
+         from inserted_item item
+         join validated_mapping mapping on mapping.id = item.mapping_id
+         cross join selected_observations observation
+         returning 1
+       ), advanced_existing as (
+         update discovery_proposal_mappings
+         set revision = revision + 1,
+           updated_at = transaction_timestamp()
+         where id = (select id from selected_mapping)
+           and exists (select 1 from inserted_item)
+           and (select count(*) from inserted_sources) = cardinality($4::uuid[])
+         returning 1
+       )
+       select
+         (select count(*)::int from proposal_context) as proposal_count,
+         (select count(*)::int from selected_observations) as observation_count,
+         (select count(*)::int from usable_mapping) as mapping_count,
+         (select count(*)::int from inserted_item) as item_count,
+         (select count(*)::int from inserted_sources) as source_count,
+         ((select count(*) from inserted_mapping) +
+          (select count(*) from advanced_existing))::int as revision_count`,
+      [
+        context.configuration.organizationId,
+        input.sessionId,
+        input.currentProcessFingerprint,
+        validated.observationIds,
+        input.action,
+        input.expectedMappingRevision,
+        validated.itemId,
+        validated.processStepId,
+        validated.responsibleRoleId,
+        validated.systemId,
+        validated.exceptionId,
+        validated.relatedProcessId,
+        JSON.stringify(validated.proposedState),
+        validated.rationale,
+        context.configuration.actorIdentifier,
+      ],
+    );
+    const row = rows[0];
+    if (
+      !row ||
+      Number(row.proposal_count) !== 1 ||
+      Number(row.observation_count) !== validated.observationIds.length ||
+      Number(row.mapping_count) !== 1 ||
+      Number(row.item_count) !== 1 ||
+      Number(row.source_count) !== validated.observationIds.length ||
+      Number(row.revision_count) !== 1
+    ) {
+      return {
+        ok: false,
+        code: "conflict",
+        message: "The proposed target, evidence, or documented Process changed. Reload before continuing.",
+      };
+    }
+    return {
+      ok: true,
+      message: "Specific proposed change saved. The documented Process has not changed.",
+      sessionId: input.sessionId,
+    };
+  } catch (error) {
+    logMappingFailure("save_slice_2_item", error);
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Lotura could not save this specific proposed change safely. No partial change was retained.",
+    };
+  }
 }
 
 export async function saveDiscoveryMappingItem(input: {
@@ -565,13 +1129,23 @@ export async function changeDiscoveryMappingItemState(input: {
          insert into discovery_mapping_items (
            organization_id, mapping_id, mapping_stable_key, item_stable_key,
            item_sequence, state, action, owner_role_id,
-           owner_role_stable_key, before_state, proposed_state, rationale,
-           actor_identifier
+           owner_role_stable_key, process_id, process_stable_key,
+           process_step_id, process_step_stable_key,
+           responsible_role_id, responsible_role_stable_key,
+           system_id, system_stable_key, exception_id, exception_stable_key,
+           related_process_id, related_process_stable_key,
+           before_state, proposed_state, rationale, actor_identifier
          )
          select item.organization_id, item.mapping_id,
            item.mapping_stable_key, item.item_stable_key,
            item.item_sequence + 1, $5::discovery_mapping_item_state,
            item.action, item.owner_role_id, item.owner_role_stable_key,
+           item.process_id, item.process_stable_key,
+           item.process_step_id, item.process_step_stable_key,
+           item.responsible_role_id, item.responsible_role_stable_key,
+           item.system_id, item.system_stable_key,
+           item.exception_id, item.exception_stable_key,
+           item.related_process_id, item.related_process_stable_key,
            item.before_state, item.proposed_state, $6::text,
            $7::varchar(128)
          from current_item item
@@ -687,7 +1261,10 @@ export async function finishDiscoveryProposalMapping(input: {
          select distinct on (item.item_stable_key)
            item.id, item.organization_id, item.stable_key,
            item.mapping_id, item.mapping_stable_key, item.item_stable_key,
-           item.state, item.action, item.owner_role_id
+           item.state, item.action, item.owner_role_id,
+           item.process_id, item.process_step_id, item.responsible_role_id,
+           item.system_id, item.exception_id, item.related_process_id,
+           item.proposed_state
          from discovery_mapping_items item
          join selected_mapping mapping
            on mapping.id = item.mapping_id
@@ -718,20 +1295,45 @@ export async function finishDiscoveryProposalMapping(input: {
           and item.organization_id = source.organization_id
           and item.stable_key = source.item_revision_stable_key
        ), conflicts as (
-         select action
+         select action, process_step_id, system_id, exception_id,
+           related_process_id,
+           case when action = 'add_process_dependency'
+             then proposed_state ->> 'direction' else null end as direction,
+           case when action = 'add_process_dependency'
+             then proposed_state ->> 'dependencyType' else null end as dependency_type,
+           case when action = 'add_process_step'
+             then proposed_state ->> 'position' else null end as proposed_position
          from active_items
-         where action <> 'preserve_unresolved'
-         group by action
+         where action in (
+           'update_process_purpose', 'change_process_owner',
+           'revise_process_step', 'change_step_responsibility',
+           'link_existing_system', 'revise_process_exception',
+           'add_process_dependency', 'add_process_step'
+         )
+         group by action, process_step_id, system_id, exception_id,
+           related_process_id, direction, dependency_type, proposed_position
          having count(*) > 1
-       ), invalid_roles as (
+       ), invalid_targets as (
          select item.id
          from active_items item
          left join roles role
-           on role.id = item.owner_role_id
+           on role.id = coalesce(item.owner_role_id, item.responsible_role_id)
           and role.organization_id = item.organization_id
-         where item.action = 'change_process_owner'
-           and item.owner_role_id is not null
-           and (role.id is null or role.status <> 'active')
+         left join systems system
+           on system.id = item.system_id
+          and system.organization_id = item.organization_id
+         left join exceptions exception
+           on exception.id = item.exception_id
+          and exception.organization_id = item.organization_id
+          and exception.process_id = item.process_id
+         left join processes related
+           on related.id = item.related_process_id
+          and related.organization_id = item.organization_id
+         where ((item.owner_role_id is not null or item.responsible_role_id is not null)
+             and (role.id is null or role.status <> 'active'))
+           or (item.system_id is not null and (system.id is null or system.status <> 'active'))
+           or (item.exception_id is not null and (exception.id is null or exception.status <> 'active'))
+           or (item.related_process_id is not null and (related.id is null or related.status = 'archived'))
        ), summary as (
          select
            (select count(*)::int from active_items) as active_count,
@@ -742,7 +1344,7 @@ export async function finishDiscoveryProposalMapping(input: {
                where covered.observation_stable_key = included.observation_stable_key
              )) as uncovered_count,
            (select count(*)::int from conflicts) as conflict_count,
-           (select count(*)::int from invalid_roles) as invalid_role_count
+           (select count(*)::int from invalid_targets) as invalid_target_count
        ), advanced as (
          update discovery_proposal_mappings
          set status = 'ready_for_proposal_review',
@@ -755,7 +1357,7 @@ export async function finishDiscoveryProposalMapping(input: {
            and (select included_count from summary) > 0
            and (select uncovered_count from summary) = 0
            and (select conflict_count from summary) = 0
-           and (select invalid_role_count from summary) = 0
+           and (select invalid_target_count from summary) = 0
          returning 1
        )
        select summary.*,
@@ -791,7 +1393,14 @@ export async function finishDiscoveryProposalMapping(input: {
         return {
           ok: false,
           code: "invalid",
-          message: "Resolve the competing purpose or Owner Role proposals before finishing.",
+          message: "Resolve the competing proposals for the same documented target before finishing.",
+        };
+      }
+      if (Number(row.invalid_target_count) > 0) {
+        return {
+          ok: false,
+          code: "conflict",
+          message: "A selected Role, System, Exception, or related Process is no longer available. Reload and revise the proposal before finishing.",
         };
       }
       return {
