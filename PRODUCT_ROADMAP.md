@@ -78,8 +78,10 @@ milestones:
    proposed change may coexist. A no-change outcome completes successfully and
    creates no empty structured-mapping workspace.
 2. **Proposal Review & Governance** — accountable people review, validate, and
-   approve or reject proposed items within explicit scope. It applies only when
-   structured proposed changes exist.
+   approve or reject exact proposed-item revisions within explicit scope. It
+   applies only when structured proposed changes exist, and approval means
+   eligible for later governed application rather than a change to current
+   documentation.
 3. **Process Versions & Atomic Application** — an approved proposal produces a
    historically recoverable, effective operating-model version in one governed
    operation.

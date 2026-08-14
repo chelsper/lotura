@@ -65,6 +65,7 @@ test("the Discovery credential is target-bound and distinct from every other cre
     "DATABASE_URL_UNPOOLED",
     "LOTURA_STRUCTURE_ADMIN_DATABASE_URL",
     "LOTURA_PROCESS_ADMIN_DATABASE_URL",
+    "LOTURA_PROPOSAL_REVIEW_DATABASE_URL",
   ]) {
     assert.throws(
       () => resolveDiscoveryConfiguration(

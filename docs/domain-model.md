@@ -32,6 +32,20 @@ history.
 It remains a proposal. It does not update the Process, establish approval, or
 become a Process version until separately governed application occurs.
 
+### OperatingModelProposalReview
+
+A finished structured mapping may have one accountable review package pinned
+to its exact Process comparison point and current item revisions. Reviewers
+record append-only item decisions: approve to move forward, do not approve, or
+needs more validation. The package result is derived from those decisions and
+records who completed the review and why.
+
+Proposal review is distinct from Process approval and application. An approved
+item is eligible for the future versioned-application boundary; it is not yet
+current documentation. Reviewer identity is the authenticated Lotura actor and
+is not inferred from a Person, Position, reporting relationship, Process Owner,
+or current Role coverage.
+
 ## Preserved future structural and comparison concepts
 
 ### ProcessFamily and ProcessFamilyMembership

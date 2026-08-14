@@ -31,6 +31,11 @@ environment. Temporary deployment lag is acceptable; code divergence is not.
 - uses a distinct least-privilege Process administration role only through the
   server-only `LOTURA_PROCESS_ADMIN_DATABASE_URL` when Operating Model
   Authoring is enabled;
+- uses a distinct least-privilege Discovery role only through the server-only
+  `LOTURA_DISCOVERY_DATABASE_URL` when Guided Discovery is enabled;
+- uses a distinct least-privilege proposal-review role only through the
+  server-only `LOTURA_PROPOSAL_REVIEW_DATABASE_URL` when Proposal Review is
+  enabled;
 - enables administration explicitly with
   `LOTURA_STRUCTURE_ADMIN_MODE=enabled` only after migration and privilege
   verification;
@@ -40,6 +45,10 @@ environment. Temporary deployment lag is acceptable; code divergence is not.
 - enables Process authoring explicitly with
   `LOTURA_OPERATING_MODEL_AUTHORING_MODE=enabled` only after migration `0010`
   and its separate privilege verification;
+- enables Proposal Review explicitly with
+  `LOTURA_PROPOSAL_REVIEW_MODE=enabled` only after migration `0020` and its
+  separate privilege verification; approval in this interface does not apply a
+  Process change;
 - resolves JU presentation through generic Workspace Configuration; and
 - receives no public-demo fixture fallback.
 
@@ -49,7 +58,7 @@ Governance and Stewardship engine.
 
 ## Environment isolation
 
-Structural and Process write credentials must not be configured in:
+Structural, Process, Discovery, and proposal-review write credentials must not be configured in:
 
 - the Public Demo project;
 - any Preview deployment;

@@ -178,6 +178,19 @@ from approval and from the documented Process. No change is a valid outcome,
 and unresolved knowledge remains available for another participant, source, or
 later review.
 
+### Proposal review
+
+When a finished mapping contains specific changes, an explicitly authorized
+Proposal Reviewer can inspect the exact documented and proposed states, the
+human rationale, and the supporting interview answers. Each change is approved
+to move forward, not approved, or left needing more validation. Decisions are
+append-only and remain separate from the documented Process.
+
+Finishing review produces an accountable handoff for the future Process-version
+and application boundary. It never changes the Process merely because a
+proposal was reviewed. A Knowledge Outcome with no structured changes does not
+create or display an empty review workspace.
+
 ### Reserved product destinations
 
 The following routes are reserved conceptually but should not ship until their

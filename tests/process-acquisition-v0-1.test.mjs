@@ -65,6 +65,8 @@ test("the Process credential is distinct and target-bound", () => {
     "DATABASE_URL",
     "DATABASE_URL_UNPOOLED",
     "LOTURA_STRUCTURE_ADMIN_DATABASE_URL",
+    "LOTURA_DISCOVERY_DATABASE_URL",
+    "LOTURA_PROPOSAL_REVIEW_DATABASE_URL",
   ]) {
     assert.throws(
       () =>
