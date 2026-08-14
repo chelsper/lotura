@@ -22,6 +22,12 @@ import {
 import type { DiscoveryMappingAction } from "@/lib/discovery-mapping-model.mjs";
 import { buildDocumentedProcessSnapshot } from "@/lib/discovery-proposal-model.mjs";
 import type { DiscoveryProposalDisposition } from "@/lib/discovery-proposal-model.mjs";
+import {
+  beginOperatingModelProposalReview,
+  finishOperatingModelProposalReview,
+  saveOperatingModelProposalReviewDecision,
+} from "@/lib/proposal-review-administration";
+import type { ProposalReviewDisposition } from "@/lib/proposal-review-model.mjs";
 import { loadWorkspaceExperience } from "@/lib/workspace-experience";
 
 import type { DiscoveryActionState } from "./action-state";
@@ -288,4 +294,99 @@ export async function finishDiscoveryProposalMappingAction(
   revalidatePath(`/studio/discovery/interviews/${sessionId}`);
   revalidatePath(`/studio/discovery/interviews/${sessionId}/map`);
   redirect(`/studio/discovery/interviews/${sessionId}/map`);
+}
+
+export async function beginProposalReviewAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const sessionId = text(formData, "sessionId");
+  const experience = await loadWorkspaceExperience();
+  if (!experience.proposalReview.enabled) {
+    return { message: "Proposal Review is not enabled.", status: "error" };
+  }
+  const { loadDiscoveryProposalMapping, loadDiscoverySession } = await import(
+    "@/lib/discovery-data"
+  );
+  const [session, mapping] = await Promise.all([
+    loadDiscoverySession(experience.proposalReview.organizationId, sessionId),
+    loadDiscoveryProposalMapping(
+      experience.proposalReview.organizationId,
+      sessionId,
+    ),
+  ]);
+  const process = session
+    ? experience.data.processes.find((item) => item.id === session.processId)
+    : null;
+  if (!session || !mapping || !process) {
+    return {
+      message: "The finished proposal or documented Process is no longer available.",
+      status: "error",
+    };
+  }
+  const result = await beginOperatingModelProposalReview({
+    currentProcessFingerprint: fingerprintDocumentedProcessSnapshot(
+      buildDocumentedProcessSnapshot(process),
+    ),
+    expectedMappingRevision: Number(text(formData, "expectedMappingRevision")),
+    sessionId,
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  revalidatePath(`/studio/discovery/interviews/${sessionId}/map`);
+  revalidatePath(`/studio/discovery/interviews/${sessionId}/proposal-review`);
+  redirect(`/studio/discovery/interviews/${sessionId}/proposal-review`);
+}
+
+export async function saveProposalReviewDecisionAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const sessionId = text(formData, "sessionId");
+  const result = await saveOperatingModelProposalReviewDecision({
+    disposition: text(formData, "disposition") as ProposalReviewDisposition,
+    expectedReviewRevision: Number(text(formData, "expectedReviewRevision")),
+    itemId: text(formData, "itemId"),
+    reviewNote: text(formData, "reviewNote"),
+    sessionId,
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  revalidatePath(`/studio/discovery/interviews/${sessionId}/proposal-review`);
+  redirect(`/studio/discovery/interviews/${sessionId}/proposal-review`);
+}
+
+export async function finishProposalReviewAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const sessionId = text(formData, "sessionId");
+  const experience = await loadWorkspaceExperience();
+  if (!experience.proposalReview.enabled) {
+    return { message: "Proposal Review is not enabled.", status: "error" };
+  }
+  const { loadDiscoverySession } = await import("@/lib/discovery-data");
+  const session = await loadDiscoverySession(
+    experience.proposalReview.organizationId,
+    sessionId,
+  );
+  const process = session
+    ? experience.data.processes.find((item) => item.id === session.processId)
+    : null;
+  if (!session || !process) {
+    return {
+      message: "The documented Process is no longer available.",
+      status: "error",
+    };
+  }
+  const result = await finishOperatingModelProposalReview({
+    completionNote: text(formData, "completionNote"),
+    currentProcessFingerprint: fingerprintDocumentedProcessSnapshot(
+      buildDocumentedProcessSnapshot(process),
+    ),
+    expectedReviewRevision: Number(text(formData, "expectedReviewRevision")),
+    sessionId,
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  revalidatePath(`/studio/discovery/interviews/${sessionId}/proposal-review`);
+  revalidatePath(`/studio/discovery/interviews/${sessionId}/reconcile`);
+  redirect(`/studio/discovery/interviews/${sessionId}/proposal-review`);
 }

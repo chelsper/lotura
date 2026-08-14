@@ -12,6 +12,8 @@ import {
   discoveryProposalDecision,
   discoverySession,
   exception as exceptionTable,
+  operatingModelProposalReview,
+  operatingModelProposalReviewDecision,
   process as processTable,
   processStep,
   processSystem,
@@ -27,6 +29,10 @@ import type {
   DiscoveryProposalDisposition,
   DocumentedProcessSnapshot,
 } from "./discovery-proposal-model.mjs";
+import type {
+  ProposalReviewDisposition,
+  ProposalReviewStatus,
+} from "./proposal-review-model.mjs";
 
 export type DiscoverySessionSummary = {
   actorIdentifier: string;
@@ -125,6 +131,34 @@ export type DiscoveryProposalMappingRecord = {
   readyByActor: string | null;
   revision: number;
   status: "draft" | "ready_for_proposal_review";
+  updatedAt: string;
+};
+
+export type ProposalReviewDecisionRecord = {
+  actorIdentifier: string;
+  createdAt: string;
+  decisionSequence: number;
+  disposition: ProposalReviewDisposition;
+  id: string;
+  itemId: string;
+  itemRevisionId: string;
+  itemSequence: number;
+  reviewNote: string | null;
+};
+
+export type ProposalReviewRecord = {
+  completedAt: string | null;
+  completedByActor: string | null;
+  completionNote: string | null;
+  createdAt: string;
+  decisions: ProposalReviewDecisionRecord[];
+  documentedProcessFingerprint: string;
+  id: string;
+  mappingId: string;
+  mappingRevision: number;
+  revision: number;
+  startedByActor: string;
+  status: ProposalReviewStatus;
   updatedAt: string;
 };
 
@@ -573,5 +607,80 @@ export async function loadDiscoveryProposalMapping(
     })),
     readyAt: mapping.readyAt?.toISOString() ?? null,
     updatedAt: mapping.updatedAt.toISOString(),
+  };
+}
+
+export async function loadOperatingModelProposalReview(
+  organizationId: number,
+  sessionStableKey: string,
+): Promise<ProposalReviewRecord | null> {
+  const reviews = await db
+    .select({
+      completedAt: operatingModelProposalReview.completedAt,
+      completedByActor: operatingModelProposalReview.completedByActor,
+      completionNote: operatingModelProposalReview.completionNote,
+      createdAt: operatingModelProposalReview.createdAt,
+      documentedProcessFingerprint:
+        operatingModelProposalReview.documentedProcessFingerprint,
+      id: operatingModelProposalReview.stableKey,
+      mappingId: operatingModelProposalReview.mappingStableKey,
+      mappingRevision: operatingModelProposalReview.mappingRevision,
+      revision: operatingModelProposalReview.revision,
+      startedByActor: operatingModelProposalReview.startedByActor,
+      status: operatingModelProposalReview.status,
+      updatedAt: operatingModelProposalReview.updatedAt,
+    })
+    .from(operatingModelProposalReview)
+    .where(
+      and(
+        eq(operatingModelProposalReview.organizationId, organizationId),
+        eq(operatingModelProposalReview.sessionStableKey, sessionStableKey),
+      ),
+    )
+    .limit(1);
+  const review = reviews[0];
+  if (!review) return null;
+
+  const decisions = await db
+    .select({
+      actorIdentifier: operatingModelProposalReviewDecision.actorIdentifier,
+      createdAt: operatingModelProposalReviewDecision.createdAt,
+      decisionSequence:
+        operatingModelProposalReviewDecision.decisionSequence,
+      disposition: operatingModelProposalReviewDecision.disposition,
+      id: operatingModelProposalReviewDecision.stableKey,
+      itemId: operatingModelProposalReviewDecision.itemStableKey,
+      itemRevisionId:
+        operatingModelProposalReviewDecision.itemRevisionStableKey,
+      itemSequence: operatingModelProposalReviewDecision.itemSequence,
+      reviewNote: operatingModelProposalReviewDecision.reviewNote,
+    })
+    .from(operatingModelProposalReviewDecision)
+    .where(
+      and(
+        eq(
+          operatingModelProposalReviewDecision.organizationId,
+          organizationId,
+        ),
+        eq(
+          operatingModelProposalReviewDecision.reviewStableKey,
+          review.id,
+        ),
+      ),
+    )
+    .orderBy(
+      asc(operatingModelProposalReviewDecision.createdAt),
+      asc(operatingModelProposalReviewDecision.id),
+    );
+
+  return {
+    ...review,
+    completedAt: review.completedAt?.toISOString() ?? null,
+    createdAt: review.createdAt.toISOString(),
+    decisions: decisions.map((decision) => ({
+      ...decision,
+      createdAt: decision.createdAt.toISOString(),
+    })),
+    updatedAt: review.updatedAt.toISOString(),
   };
 }

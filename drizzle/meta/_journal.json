@@ -141,6 +141,13 @@
       "when": 1786662210333,
       "tag": "0019_structured_proposed_changes_slice_2",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1786737204484,
+      "tag": "0020_proposal_review_governance",
+      "breakpoints": true
     }
   ]
 }

@@ -228,6 +228,19 @@ export const discoveryMappingItemState = pgEnum(
   ["active", "withdrawn"],
 );
 
+export const proposalReviewStatus = pgEnum("proposal_review_status", [
+  "in_review",
+  "approved_for_application",
+  "approved_in_part",
+  "needs_validation",
+  "not_approved",
+]);
+
+export const proposalReviewDisposition = pgEnum(
+  "proposal_review_disposition",
+  ["approve", "reject", "needs_validation"],
+);
+
 export const organization = pgTable("organizations", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -856,6 +869,17 @@ export const discoveryProposalMapping = pgTable(
       table.processId,
       table.processStableKey,
     ),
+    unique("discovery_mappings_review_context_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.proposalId,
+      table.proposalStableKey,
+      table.sessionId,
+      table.sessionStableKey,
+      table.processId,
+      table.processStableKey,
+    ),
     check(
       "discovery_mappings_revision_positive_check",
       sql`${table.revision} >= 1`,
@@ -1139,6 +1163,187 @@ export const discoveryProposalMappingSource = pgTable(
     index("discovery_mapping_sources_observation_idx").on(
       table.organizationId,
       table.observationStableKey,
+    ),
+  ],
+);
+
+export const operatingModelProposalReview = pgTable(
+  "operating_model_proposal_reviews",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    mappingId: integer("mapping_id").notNull(),
+    mappingStableKey: uuid("mapping_stable_key").notNull(),
+    mappingRevision: integer("mapping_revision").notNull(),
+    proposalId: integer("proposal_id").notNull(),
+    proposalStableKey: uuid("proposal_stable_key").notNull(),
+    sessionId: integer("session_id").notNull(),
+    sessionStableKey: uuid("session_stable_key").notNull(),
+    processId: integer("process_id").notNull(),
+    processStableKey: uuid("process_stable_key").notNull(),
+    documentedProcessFingerprint: varchar("documented_process_fingerprint", {
+      length: 64,
+    }).notNull(),
+    status: proposalReviewStatus("status").default("in_review").notNull(),
+    revision: integer("revision").default(1).notNull(),
+    startedByActor: varchar("started_by_actor", { length: 128 }).notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    completedByActor: varchar("completed_by_actor", { length: 128 }),
+    completionNote: text("completion_note"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "proposal_reviews_mapping_context_fk",
+      columns: [
+        table.mappingId,
+        table.organizationId,
+        table.mappingStableKey,
+        table.proposalId,
+        table.proposalStableKey,
+        table.sessionId,
+        table.sessionStableKey,
+        table.processId,
+        table.processStableKey,
+      ],
+      foreignColumns: [
+        discoveryProposalMapping.id,
+        discoveryProposalMapping.organizationId,
+        discoveryProposalMapping.stableKey,
+        discoveryProposalMapping.proposalId,
+        discoveryProposalMapping.proposalStableKey,
+        discoveryProposalMapping.sessionId,
+        discoveryProposalMapping.sessionStableKey,
+        discoveryProposalMapping.processId,
+        discoveryProposalMapping.processStableKey,
+      ],
+    }).onDelete("restrict"),
+    unique("proposal_reviews_stable_key_unique").on(table.stableKey),
+    unique("proposal_reviews_mapping_unique").on(table.mappingId),
+    unique("proposal_reviews_identity_mapping_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.mappingId,
+      table.mappingStableKey,
+    ),
+    check(
+      "proposal_reviews_mapping_revision_positive_check",
+      sql`${table.mappingRevision} >= 1`,
+    ),
+    check(
+      "proposal_reviews_revision_positive_check",
+      sql`${table.revision} >= 1`,
+    ),
+    check(
+      "proposal_reviews_fingerprint_check",
+      sql`${table.documentedProcessFingerprint} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "proposal_reviews_actor_not_blank_check",
+      sql`char_length(trim(${table.startedByActor})) > 0 and (${table.completedByActor} is null or char_length(trim(${table.completedByActor})) > 0)`,
+    ),
+    check(
+      "proposal_reviews_completion_state_check",
+      sql`(${table.status} = 'in_review' and ${table.completedAt} is null and ${table.completedByActor} is null and ${table.completionNote} is null) or (${table.status} <> 'in_review' and ${table.completedAt} is not null and ${table.completedByActor} is not null and ${table.completionNote} is not null and char_length(trim(${table.completionNote})) > 0)`,
+    ),
+    index("proposal_reviews_org_status_updated_idx").on(
+      table.organizationId,
+      table.status,
+      table.updatedAt,
+    ),
+  ],
+);
+
+export const operatingModelProposalReviewDecision = pgTable(
+  "operating_model_proposal_review_decisions",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    reviewId: integer("review_id").notNull(),
+    reviewStableKey: uuid("review_stable_key").notNull(),
+    mappingId: integer("mapping_id").notNull(),
+    mappingStableKey: uuid("mapping_stable_key").notNull(),
+    itemRevisionId: integer("item_revision_id").notNull(),
+    itemRevisionStableKey: uuid("item_revision_stable_key").notNull(),
+    itemStableKey: uuid("item_stable_key").notNull(),
+    itemSequence: integer("item_sequence").notNull(),
+    decisionSequence: integer("decision_sequence").notNull(),
+    disposition: proposalReviewDisposition("disposition").notNull(),
+    reviewNote: text("review_note"),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "proposal_review_decisions_review_fk",
+      columns: [
+        table.reviewId,
+        table.organizationId,
+        table.reviewStableKey,
+        table.mappingId,
+        table.mappingStableKey,
+      ],
+      foreignColumns: [
+        operatingModelProposalReview.id,
+        operatingModelProposalReview.organizationId,
+        operatingModelProposalReview.stableKey,
+        operatingModelProposalReview.mappingId,
+        operatingModelProposalReview.mappingStableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "proposal_review_decisions_item_revision_fk",
+      columns: [
+        table.itemRevisionId,
+        table.organizationId,
+        table.itemRevisionStableKey,
+        table.mappingId,
+        table.mappingStableKey,
+      ],
+      foreignColumns: [
+        discoveryProposalMappingItem.id,
+        discoveryProposalMappingItem.organizationId,
+        discoveryProposalMappingItem.stableKey,
+        discoveryProposalMappingItem.mappingId,
+        discoveryProposalMappingItem.mappingStableKey,
+      ],
+    }).onDelete("restrict"),
+    unique("proposal_review_decisions_stable_key_unique").on(table.stableKey),
+    unique("proposal_review_decisions_item_sequence_unique").on(
+      table.reviewId,
+      table.itemStableKey,
+      table.decisionSequence,
+    ),
+    check(
+      "proposal_review_decisions_item_sequence_positive_check",
+      sql`${table.itemSequence} >= 1`,
+    ),
+    check(
+      "proposal_review_decisions_sequence_positive_check",
+      sql`${table.decisionSequence} >= 1`,
+    ),
+    check(
+      "proposal_review_decisions_note_check",
+      sql`(${table.disposition} = 'approve' and (${table.reviewNote} is null or char_length(trim(${table.reviewNote})) > 0)) or (${table.disposition} <> 'approve' and ${table.reviewNote} is not null and char_length(trim(${table.reviewNote})) > 0)`,
+    ),
+    check(
+      "proposal_review_decisions_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    index("proposal_review_decisions_review_created_idx").on(
+      table.organizationId,
+      table.reviewStableKey,
+      table.createdAt,
     ),
   ],
 );

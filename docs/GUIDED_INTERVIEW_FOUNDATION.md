@@ -192,10 +192,17 @@ Discovery credential must be distinct from:
 - `DATABASE_URL_UNPOOLED`;
 - `LOTURA_STRUCTURE_ADMIN_DATABASE_URL`;
 - `LOTURA_PROCESS_ADMIN_DATABASE_URL`;
+- `LOTURA_PROPOSAL_REVIEW_DATABASE_URL`;
 - owner or migration credentials.
 
 Public/demo mode cannot enable Discovery. Public Northstar requires neither
 variable and exposes no Discovery route or control.
+
+Proposal Review is a later, separately enabled boundary. A finished structured
+mapping with specific changes may be reviewed through the dedicated contract
+in `PROPOSAL_REVIEW_AND_GOVERNANCE.md`. Discovery cannot approve or apply its
+own proposed changes, and a no-change Knowledge Outcome creates no empty review
+package.
 
 ## Least-privilege database contract
 

@@ -1601,6 +1601,91 @@ cross-session synthesis, longitudinal analytics, dashboards, scores, FLOW
 calculation changes, governance approval, Process versions, atomic application,
 and AI summarization remain separately approved work.
 
+### LAD-052 — Proposal review authorizes exact proposed items without changing the operating model
+
+**Status:** Accepted — implementation authorized for Proposal Review &
+Governance v0.1.
+
+**Context:** LAD-049 and LAD-050 preserve a finished, human-authored mapping of
+reviewed evidence to explicit possible operating-model changes. The mapping is
+frozen for review but deliberately has no approval meaning. LAD-035 also
+requires approval authority to remain independent from Workspace
+Administration, reporting hierarchy, Process ownership, Position, Person, and
+current Role coverage. The manual knowledge lifecycle therefore needs a
+durable review boundary before any proposal may reach Process versioning or
+application.
+
+**Decision:** An Organization-scoped proposal review may begin only from a
+finished mapping that contains at least one current structured change. An
+unresolved-question item remains useful review context but is not itself an
+operating-model change to approve. Beginning review is an explicit mutation;
+merely viewing a finished mapping never creates a review record.
+
+The review is pinned to the exact immutable mapping, Process context,
+documented-Process fingerprint, and current mapping-item revisions. Each
+structured item receives append-only human decisions. Proposal Review &
+Governance v0.1 supports only **Approve to move forward**, **Not approved**,
+and **Needs more validation**. A later decision for the same item appends a new
+sequence; it never updates or deletes the earlier decision.
+
+The package can be finished only when every current structured change has one
+current decision and the documented Process still matches the frozen
+comparison point. Its result is derived from the current item decisions:
+approved, approved in part, needs validation, or not approved. Approval means
+only that the exact proposed item may be considered by the future versioned
+application boundary. It is not institutional approval of the Process, does
+not establish current documentation, and writes no Process, Step, Role,
+System, Exception, dependency, Process version, or operating-model history
+record.
+
+Review decisions record the authenticated Lotura application actor at the time
+of the decision. Actor identity is not coupled to Person, Position,
+Membership, Operational Role, RoleMandate, RoleCoverage, reporting hierarchy,
+or Process ownership. The initial private pilot may explicitly configure its
+authenticated administrator as the Proposal Reviewer, but that capability is
+separately enabled and does not arise from Workspace Administrator status.
+
+Every mutation reauthorizes private-workspace access, derives Organization and
+actor scope from trusted server configuration, validates exact same-
+Organization references, uses serializable transactions and compare-and-set
+revisions, and returns bounded results. A dedicated server-only proposal-review
+credential may receive only reviewed catalog reads, review-table inserts,
+limited review lifecycle updates, and sequence use. It receives no canonical,
+Discovery-evidence, mapping, Organization Structure, schema, role, database, or
+migration mutation privilege. Public/demo mode cannot render or invoke review.
+
+**Why:** Accountable review must preserve exactly what was considered, who
+decided, why, and which evidence-backed proposal revision the decision covered.
+Keeping review separate from Process versions and application prevents an
+approval click from silently rewriting organizational knowledge while giving
+the next milestone an unambiguous, human-authorized input.
+
+**Alternatives considered:** Treat a finished mapping as approved; infer the
+reviewer from Process ownership or reporting structure; store one mutable
+decision per item; approve free-text observations directly; let viewing create
+an empty review; reuse the Discovery or Process administration credential; or
+combine review, Process versioning, and application. These were rejected
+because they collapse lifecycle layers, weaken accountability or least
+privilege, manufacture authority, or erase decision history.
+
+**Affected decisions:** This decision follows and extends LAD-002, LAD-015,
+LAD-016, LAD-018, LAD-021 through LAD-026, LAD-029, LAD-032, LAD-035 through
+LAD-037, LAD-042 through LAD-046, and LAD-049 through LAD-051. It extends
+LAD-035 with one explicitly configured review capability and LAD-046 with the
+next manual lifecycle boundary. It does not supersede any prior decision and
+does not authorize the Process-version and atomic-application semantics
+deferred by LAD-023.
+
+**Consequences and deferrals:** Forward-only migration `0020` may add only the
+proposal-review status and disposition enums, one review package table, one
+append-only item-decision table, exact mapping and item-revision safeguards,
+lifecycle and immutability triggers, and supporting indexes. The runtime role
+may receive SELECT on the new tables. Automated return-and-edit,
+proposal-package supersession or rebasing, multiple simultaneous review
+assignments, Steward or committee routing, notifications, effective dating,
+Process versions, atomic application, FLOW changes, and AI recommendations
+remain separately approved work.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -1614,7 +1699,7 @@ The following ideas are recorded so postponement is visible and deliberate.
 | Uploads, imports, Visio/PDF/flowchart parsing | Requires malware handling, source permissions, artifact retention, provenance, and conflict treatment | Artifact architecture, storage, security, and extraction decision |
 | Whiteboard and collaborative capture | Draft contribution, authorship, reconciliation, and conversion to structured knowledge are undefined | Collaboration, observation, and approval decision |
 | Conflict detection and consensus | Conflicts need identity, scope, lifecycle, privacy, and human resolution | Conflict and reconciliation schema decision |
-| Structured proposal application and approval workflow | LAD-049 and LAD-050 authorize human-authored typed proposals only; they grant no approval or authority to change the Process | Proposal-review authority, Process write/versioning, effective time, rejection, supersession, and atomic application decision |
+| Structured proposal application workflow | LAD-052 authorizes accountable item review without changing the Process; it grants no Process-version or application authority | Process write/versioning, effective time, proposal supersession, and atomic application decision |
 | Process version history | Snapshot boundary and related operating-model version semantics are unresolved | Temporal/version model and migration decision |
 | Knowledge Gaps | Explainable gaps are product direction under LAD-046, but persistence is not justified until assignment, governance, or resolution history requires it | Derived projection rules first; later lifecycle, ownership, and history decision if persistence is needed |
 | Process Families and reusable subprocesses | LAD-047 preserves explicit family membership and distinct composition semantics, but authorizes no schema or inheritance | Family identity, membership cardinality, effective dating, governance, composition, comparison, and migration decision |
@@ -1681,3 +1766,9 @@ LAD-050 completes the initial typed target vocabulary. LAD-051 authorizes a
 read-only Knowledge Outcome projection and completed-review UX, including a
 successful no-change branch, without authorizing a schema, privilege, Process,
 FLOW, environment, or deployment change.
+
+LAD-052 authorizes the first explicit proposal-review boundary over frozen
+structured mappings. It permits append-only item decisions and a deterministic
+review result through a distinct least-privilege credential, but it does not
+authorize Process versions, canonical application, JU rollout, public-demo
+changes, or AI participation.
