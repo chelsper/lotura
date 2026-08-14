@@ -193,6 +193,24 @@ change.
 **Product test:** Does Lotura ask an accountable question about the difference
 before presenting a judgment?
 
+## 16. No change is a valid outcome
+
+Discovery exists to improve understanding, not manufacture work. A successful
+interview may confirm current documentation, preserve unresolved questions,
+identify a need for another participant or source, propose specific changes,
+or recommend no change. More than one outcome may be true at once.
+
+Lotura should never create an empty proposal, force certainty, or imply that a
+review failed merely because no operating-model change was proposed. The
+underlying evidence and human decisions remain inspectable, and the documented
+Process remains unchanged until a separately governed change is approved and
+applied.
+
+> Understanding precedes change.
+
+**Product test:** Can an interview conclude successfully with useful knowledge,
+preserved uncertainty, and zero proposed changes?
+
 ## Discovery through documentation
 
 **Discovery is an expected outcome of documentation.**

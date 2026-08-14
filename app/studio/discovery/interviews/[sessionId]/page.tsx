@@ -6,7 +6,13 @@ import {
   DISCOVERY_QUESTIONS,
   getDiscoveryQuestion,
 } from "@/lib/discovery-questions.mjs";
-import { analyzeDiscoveryReview } from "@/lib/discovery-review-signals.mjs";
+import {
+  discoveryProposalReadiness,
+} from "@/lib/discovery-proposal-model.mjs";
+import {
+  activeDiscoveryObservations,
+  analyzeDiscoveryReview,
+} from "@/lib/discovery-review-signals.mjs";
 import { loadWorkspaceExperience } from "@/lib/workspace-experience";
 
 import { Alert, Badge, Button, Card } from "../../../../ui/primitives";
@@ -51,11 +57,21 @@ export default async function DiscoveryInterviewPage({
   const reviewSignals = session.status === "ready_for_review"
     ? analyzeDiscoveryReview(session.observations)
     : [];
-  const nextStepLabel = proposal?.status === "ready_for_review"
-    ? "View proposed update"
-    : proposal
-      ? "Continue proposed update"
-      : "Review and prepare an update";
+  const activeObservationIds = activeDiscoveryObservations(session.observations)
+    .map((observation) => observation.id);
+  const proposalReadiness = discoveryProposalReadiness(
+    activeObservationIds,
+    proposal?.decisions ?? [],
+  );
+  const completedWithoutChanges = proposal?.status === "ready_for_review"
+    && proposalReadiness.included === 0;
+  const nextStepLabel = completedWithoutChanges
+    ? "View interview outcome"
+    : proposal?.status === "ready_for_review"
+      ? "View outcome and proposed changes"
+      : proposal
+        ? "Continue proposed update"
+        : "Review and prepare an update";
   const nextStepHref = `/studio/discovery/interviews/${session.id}/reconcile`;
 
   return (
@@ -134,7 +150,9 @@ export default async function DiscoveryInterviewPage({
             </Alert>
             {proposal?.status === "ready_for_review" ? (
               <Alert className="mt-4" tone="success">
-                The proposed update is finished and preserved for its next review. To protect that review record, these interview answers can no longer be corrected in place.
+                {completedWithoutChanges
+                  ? "The interview review is complete. No changes were proposed, and unresolved answers remain preserved for later. To protect that review record, these answers can no longer be corrected in place."
+                  : "The review and its proposed changes are preserved for the next step. To protect that review record, these interview answers can no longer be corrected in place."}
               </Alert>
             ) : null}
           </div>
@@ -212,7 +230,9 @@ export default async function DiscoveryInterviewPage({
             <div>
               <h3 className="text-lg font-semibold text-[var(--text)]">Ready for the next step</h3>
               <p className="mt-1 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
-                Unresolved answers can move forward unchanged. The next step records how each answer should be treated without changing or approving the documented Process.
+                {completedWithoutChanges
+                  ? "See what the review confirmed, what remains open, and why completing an interview does not require proposing a change."
+                  : "Unresolved answers can move forward unchanged. The next step records how each answer should be treated without changing or approving the documented Process."}
               </p>
             </div>
             <Link

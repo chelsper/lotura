@@ -124,5 +124,5 @@ test("LAD-050 and the documented privilege delta keep Slice 2 proposal-only", as
   assert.match(guidance, /process_step_id, process_step_stable_key/);
   assert.match(guidance, /typed proposals, not executable instructions/);
   assert.match(guidance, /It does not approve or apply anything/);
-  assert.match(roadmap, /Slice 2 adds explicit typed proposals/);
+  assert.match(roadmap, /Slice 2\s+adds explicit typed proposals/);
 });

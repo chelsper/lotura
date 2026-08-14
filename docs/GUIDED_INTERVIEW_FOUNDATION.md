@@ -3,8 +3,12 @@
 Guided interviews are one entry point into Lotura's broader Organizational
 Knowledge Lifecycle:
 
-**Observe → Interview → Evidence → Review → Reconcile → Proposed Change →
-Approval → Operating Model → Continuous Improvement → Observe Again**
+**Observe → Interview → Evidence → Review → Knowledge Outcome**
+
+When specific changes are proposed, the lifecycle continues through Structured
+Proposed Changes, Proposal Review, Approval, a documented Process version, and
+Continuous Improvement. A no-change Knowledge Outcome may also complete the
+current cycle successfully.
 
 The interview is not the operating model. It preserves participant statements
 as evidence so accountable people can review and reconcile them before any
@@ -119,6 +123,34 @@ it cannot silently make a completed review stale.
 Free text is not silently converted into structured Steps, Roles, Systems,
 Exceptions, or dependencies. The package identifies the exact notes selected
 for later work and says when structured matching is still required.
+
+## Knowledge Outcomes
+
+Under LAD-051, a finished review produces a deterministic, human-readable
+Knowledge Outcome. It summarizes the active observations and their latest
+append-only choices, together with any existing structured mapping. It does not
+replace the evidence, create an approval, score confidence, or change the
+documented Process.
+
+Several outcomes may be true at once:
+
+- current documentation was kept for part of the review;
+- information was preserved for later;
+- another participant or authoritative source may be needed;
+- evidence was selected for specific proposed changes;
+- conflicting evidence or a boundary question remains; or
+- no operating-model change was proposed.
+
+No change is a complete and valid result. When no answer is selected for an
+update, Lotura shows the Knowledge Outcome and does not create or link to an
+empty structured-mapping workspace. When answers are selected, the outcome
+distinguishes selected evidence from specific human-authored changes and links
+to the mapping workspace only when it is relevant.
+
+The projection is reproducible because a Ready for review package freezes the
+documented Process snapshot, append-only decisions, completion actor, and
+completion time. Version 0.1 therefore requires no new table, migration,
+credential, privilege, or environment variable.
 
 ## Knowledge states
 

@@ -56,8 +56,17 @@ unrestricted administration boundary.
 
 Lotura's long-term product lifecycle is:
 
-**Observe → Interview → Evidence → Review → Reconcile → Proposed Change →
-Approval → Operating Model → Continuous Improvement → Observe Again**
+**Observe → Interview → Evidence → Review → Knowledge Outcome**
+
+A Knowledge Outcome may confirm current documentation, preserve unresolved
+knowledge, identify a need for additional validation, support structured
+proposed changes, or recommend no change. These outcomes may coexist. Proposal
+is one possible branch, not the required proof that Discovery succeeded.
+
+When specific changes are proposed, the lifecycle continues:
+
+**Knowledge Outcome → Structured Proposed Changes → Proposal Review → Approval
+→ Documented Process Version → Continuous Improvement → Observe Again**
 
 The lifecycle must preserve the distinction among:
 
@@ -72,6 +81,10 @@ The operating model is the trusted destination. Discovery, AI, comparison,
 governance, and improvement exist to strengthen it—not silently replace it.
 An approved record may be the organization's governed documentation without
 being a claim that documentation and reality can never diverge.
+
+An interview can be successful when it confirms the current documentation or
+preserves honest uncertainty without proposing a change. Discovery exists to
+improve understanding, not manufacture work.
 
 Knowledge lifecycle and operating-model structure are separate architectural
 dimensions. The lifecycle describes how knowledge earns enough trust to affect
@@ -310,6 +323,18 @@ and organizational restructuring create questions for accountable review.
 Lotura must not turn difference alone into a defect, compliance conclusion, or
 quality score.
 
+### 13. No change is a valid knowledge outcome
+
+A completed Discovery review may confirm current documentation, preserve
+questions for another participant or source, or conclude that no operating-
+model change is warranted now. Lotura should summarize that outcome from the
+durable evidence and human review decisions without creating an empty proposal,
+claiming completeness, or pressuring someone to invent work.
+
+Understanding precedes change. Unresolved knowledge may move forward without
+being falsely resolved, and the documented Process changes only through a
+separately governed approval and application boundary.
+
 ## Roadmap phases
 
 The roadmap describes product outcomes rather than fixed release dates or implementation commitments.
@@ -317,7 +342,7 @@ The roadmap describes product outcomes rather than fixed release dates or implem
 The immediate product sequence completes the manual organizational knowledge
 lifecycle before AI suggests or automates any part of it:
 
-1. Structured Proposed Changes
+1. Knowledge Outcomes
 2. Proposal Review & Governance
 3. Process Versions & Atomic Application
 4. Knowledge Gaps

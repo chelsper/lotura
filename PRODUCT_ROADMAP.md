@@ -24,13 +24,21 @@ The phases are intentionally cumulative. Each phase should deepen the same share
   Reference Models, Job Descriptions, and drift group or compare that
   knowledge.
 - Difference is evidence, not automatically error.
+- No change is a valid outcome. Discovery improves understanding and never
+  manufactures a proposal merely to complete a workflow.
 
 ## Organizational Knowledge Lifecycle
 
 Lotura's long-term lifecycle is:
 
-**Observe → Interview → Evidence → Review → Reconcile → Proposed Change →
-Approval → Operating Model → Continuous Improvement → Observe Again**
+**Observe → Interview → Evidence → Review → Knowledge Outcome**
+
+Knowledge Outcome may end the current cycle successfully through documentation
+confirmation, preserved uncertainty, additional validation, or no recommended
+change. When specific changes exist, the path continues:
+
+**Knowledge Outcome → Structured Proposed Changes → Proposal Review → Approval
+→ Documented Process Version → Continuous Improvement → Observe Again**
 
 Observed evidence, participant statements, reviewed interpretations, proposed
 changes, approved/current documentation, and actual organizational reality
@@ -64,14 +72,14 @@ knowledge lifecycle, not because they are optional side ideas.
 This is the current dependency-ordered sequence of meaningful product
 milestones:
 
-1. **Structured Proposed Changes** — a human maps selected evidence to explicit
-   proposed Process changes without changing the Process. Slice 1 provides the
-   typed mapping foundation for Process purpose, Owner Operational Role, and
-   unresolved questions. Slice 2 adds explicit typed proposals for Steps, Step
-   responsibility, existing Systems, Exceptions, and dependencies. Proposal
-   review remains the next separate boundary before this milestone is complete.
+1. **Knowledge Outcomes** — make a completed Discovery cycle understandable
+   from its durable evidence and review decisions. Confirmed documentation,
+   unresolved knowledge, additional validation, structured changes, and no
+   proposed change may coexist. A no-change outcome completes successfully and
+   creates no empty structured-mapping workspace.
 2. **Proposal Review & Governance** — accountable people review, validate, and
-   approve or reject proposed items within explicit scope.
+   approve or reject proposed items within explicit scope. It applies only when
+   structured proposed changes exist.
 3. **Process Versions & Atomic Application** — an approved proposal produces a
    historically recoverable, effective operating-model version in one governed
    operation.
@@ -96,8 +104,12 @@ milestones:
 12. **Continuous Improvement** — connect evidence, approved change,
     implementation, measurement, and sustainment.
 
-Milestones 1 through 3 complete the manual path from evidence to an approved,
-versioned operating-model change. AI must not move ahead of that boundary. The
+Structured Proposed Changes Slice 1 provides the mapping foundation. Slice 2
+adds explicit typed proposals for Steps, responsibility, Systems, Exceptions,
+and dependencies. They are used when a Knowledge Outcome identifies a change.
+Milestones 1 through 3 complete the understandable manual path from evidence to
+an approved, versioned operating-model change while preserving a successful
+no-change branch. AI must not move ahead of that boundary. The
 relative timing of AI assistance and Reference Models may be reviewed after
 Milestones 1 through 3, without changing human approval authority.
 
