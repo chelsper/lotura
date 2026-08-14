@@ -229,6 +229,18 @@ GRANT INSERT (
 GRANT USAGE ON SEQUENCE discovery_proposal_mappings_id_seq,
   discovery_mapping_items_id_seq, discovery_mapping_sources_id_seq
   TO <discovery_role>;
+
+-- Added only when Structured Proposed Changes v0.1, Slice 2 is enabled:
+GRANT SELECT ON TABLE process_steps, systems, exceptions,
+  process_systems, process_dependencies TO <discovery_role>;
+GRANT INSERT (
+  process_id, process_stable_key,
+  process_step_id, process_step_stable_key,
+  responsible_role_id, responsible_role_stable_key,
+  system_id, system_stable_key,
+  exception_id, exception_stable_key,
+  related_process_id, related_process_stable_key
+) ON discovery_mapping_items TO <discovery_role>;
 ```
 
 The normal runtime role may receive `SELECT` on the two Discovery tables added
@@ -266,6 +278,35 @@ documented Process still matches the snapshot saved when review began. This
 state does not approve or apply the proposal. No row is written to `processes`,
 `operating_model_changes`, or any other documented operating-model table.
 
+## Structured proposed changes — Slice 2
+
+Under LAD-050, the same human-authored workspace can also propose:
+
+- a new Step, including its proposed order and an optional existing active
+  responsible Operational Role;
+- revised wording for an existing Step;
+- a changed or unassigned Responsible Operational Role for an existing Step;
+- a link to an existing active System, with an explicit description of how it
+  is used;
+- a new Process Exception, optionally associated with an existing Step;
+- revised wording for an existing active Exception; and
+- an explicit upstream or downstream relationship to another existing,
+  non-archived Process.
+
+These are typed proposals, not executable instructions. Existing targets are
+selected by immutable stable key and protected by same-Organization composite
+foreign keys. A Step or Exception must belong to the Process being reviewed; a
+related Process must be different from that Process; Roles and Systems must be
+active; and an existing Process-System or Process-dependency relationship is
+not proposed as a duplicate. Revisions cannot silently redirect a proposal to
+a different existing Step, System, Exception, or related Process.
+
+The write role receives catalog `SELECT` and typed mapping-column `INSERT`
+privileges only. It still cannot insert, update, or delete a Process, Step,
+Role, System, Exception, Process-System link, dependency, Process history row,
+or any Organization Structure record. Completing the mapping only marks the
+package ready for its next human review. It does not approve or apply anything.
+
 ## Integrity behavior
 
 - Session and observation stable keys are random database-generated UUIDs.
@@ -286,15 +327,15 @@ state does not approve or apply the proposal. No row is written to `processes`,
 
 Multiple participants, interviewing on behalf of another Person, Contributor
 access, consent records, uploads, source artifacts, AI, dynamic follow-up
-selection, governed conflict detection, Step, responsibility, System,
-Exception, and dependency mappings, approval, application to the Process,
+selection, proposal-review governance, approval, application to the Process,
 Process versioning, completed-package withdrawal or rebasing, export, retention
 automation, and deletion require later decisions.
 Refresh-safe server persistence exists for submitted observations and proposal
 choices; unsent form text remains browser-local and may be lost.
 
-Slice 1 begins manual structured proposed-change mapping. Later slices add the
-remaining operating-model targets. Human approval and atomic application to a
-versioned Process remain later, separate boundaries. AI may not suggest or
-automate this path until the manual mapping, approval, and version-application
-semantics are proven.
+Slices 1 and 2 establish manual structured proposed-change mapping for the
+approved Process definition and connected operating-model targets. Human
+proposal review, approval, and atomic application to a versioned Process remain
+later, separate boundaries. AI may not suggest or automate this path until the
+manual mapping, approval, and version-application semantics are proven.
+Human approval and atomic application are never implied by a finished mapping.

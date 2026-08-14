@@ -134,6 +134,13 @@
       "when": 1786655697477,
       "tag": "0018_structured_proposed_changes_slice_1",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1786662210333,
+      "tag": "0019_structured_proposed_changes_slice_2",
+      "breakpoints": true
     }
   ]
 }

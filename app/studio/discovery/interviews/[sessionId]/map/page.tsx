@@ -34,6 +34,47 @@ function value(value: unknown, fallback = "Not documented") {
   return typeof value === "string" && value.length > 0 ? value : fallback;
 }
 
+function documentedTreatment(item: DiscoveryMappingItemRecord) {
+  switch (item.action) {
+    case "update_process_purpose":
+      return value(item.beforeState.purpose);
+    case "change_process_owner":
+      return value(item.beforeState.ownerRoleName, "Not assigned");
+    case "revise_process_step":
+      return `${value(item.beforeState.title)}\n${value(item.beforeState.instructions)}`;
+    case "change_step_responsibility":
+      return value(item.beforeState.responsibleRoleName, "Not assigned");
+    case "revise_process_exception":
+      return `${value(item.beforeState.name)}\nWhen: ${value(item.beforeState.condition)}\nInstead: ${value(item.beforeState.response)}`;
+    default:
+      return "No documented field is being replaced.";
+  }
+}
+
+function proposedTreatment(item: DiscoveryMappingItemRecord) {
+  switch (item.action) {
+    case "update_process_purpose":
+      return value(item.proposedState.purpose);
+    case "change_process_owner":
+      return value(item.proposedState.ownerRoleName, "No Owner Role");
+    case "add_process_step":
+      return `Step ${String(item.proposedState.position)}: ${value(item.proposedState.title)}\n${value(item.proposedState.instructions)}\nResponsible Role: ${value(item.proposedState.responsibleRoleName, "Not assigned")}`;
+    case "revise_process_step":
+      return `${value(item.proposedState.title)}\n${value(item.proposedState.instructions)}`;
+    case "change_step_responsibility":
+      return value(item.proposedState.responsibleRoleName, "Not assigned");
+    case "link_existing_system":
+      return `${value(item.proposedState.systemName)}\nUse: ${value(item.proposedState.usage)}`;
+    case "add_process_exception":
+    case "revise_process_exception":
+      return `${value(item.proposedState.name)}\nWhen: ${value(item.proposedState.condition)}\nInstead: ${value(item.proposedState.response)}${item.action === "add_process_exception" ? `\nRelated Step: ${value(item.proposedState.processStepTitle, "Whole Process")}` : ""}`;
+    case "add_process_dependency":
+      return `${value(item.proposedState.relatedProcessName)} · ${value(item.proposedState.direction)} · ${value(item.proposedState.dependencyType)}${item.proposedState.description ? `\n${value(item.proposedState.description)}` : ""}`;
+    case "preserve_unresolved":
+      return value(item.proposedState.question);
+  }
+}
+
 type DiscoveryMappingEvidence = {
   id: string;
   responseText: string | null;
@@ -53,21 +94,13 @@ function ProposalItemSummary({
         <div className="rounded-[10px] bg-[var(--surface-subtle)] p-4">
           <p className="text-xs font-medium text-[var(--text-tertiary)]">Documented when mapped</p>
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--text-secondary)]">
-            {item.action === "update_process_purpose"
-              ? value(item.beforeState.purpose)
-              : item.action === "change_process_owner"
-                ? value(item.beforeState.ownerRoleName, "Not assigned")
-                : "No documented field is being replaced."}
+            {documentedTreatment(item)}
           </p>
         </div>
         <div className="rounded-[10px] bg-[var(--accent-subtle)] p-4">
           <p className="text-xs font-medium text-[var(--workspace-accent)]">Proposed treatment</p>
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--text)]">
-            {item.action === "update_process_purpose"
-              ? value(item.proposedState.purpose)
-              : item.action === "change_process_owner"
-                ? value(item.proposedState.ownerRoleName, "No Owner Role")
-                : value(item.proposedState.question)}
+            {proposedTreatment(item)}
           </p>
         </div>
       </div>
@@ -106,14 +139,16 @@ export default async function DiscoveryMappingPage({
   const {
     loadDiscoveryProposal,
     loadDiscoveryProposalMapping,
+    loadDiscoveryMappingCatalog,
     loadDiscoverySession,
   } = await import("@/lib/discovery-data");
-  const [session, proposal, mapping] = await Promise.all([
+  const [session, proposal, mapping, catalog] = await Promise.all([
     loadDiscoverySession(experience.discovery.organizationId, sessionId),
     loadDiscoveryProposal(experience.discovery.organizationId, sessionId),
     loadDiscoveryProposalMapping(experience.discovery.organizationId, sessionId),
+    loadDiscoveryMappingCatalog(experience.discovery.organizationId, sessionId),
   ]);
-  if (!session || !proposal || proposal.status !== "ready_for_review") notFound();
+  if (!session || !proposal || proposal.status !== "ready_for_review" || !catalog) notFound();
   const process = experience.data.processes.find((item) => item.id === session.processId);
   if (!process) notFound();
 
@@ -144,6 +179,18 @@ export default async function DiscoveryMappingPage({
       : []),
     ...(!activeActions.has("change_process_owner")
       ? ["change_process_owner" as const]
+      : []),
+    "add_process_step",
+    ...(catalog.steps.length
+      ? ["revise_process_step" as const, "change_step_responsibility" as const]
+      : []),
+    ...(catalog.systems.some((system) => system.status === "active" && !system.alreadyLinked)
+      ? ["link_existing_system" as const]
+      : []),
+    "add_process_exception",
+    ...(catalog.exceptions.length ? ["revise_process_exception" as const] : []),
+    ...(catalog.processes.some((related) => related.status !== "archived")
+      ? ["add_process_dependency" as const]
       : []),
     "preserve_unresolved",
   ];
@@ -267,6 +314,7 @@ export default async function DiscoveryMappingPage({
                         <div className="mt-5">
                           <DiscoveryMappingItemForm
                             availableActions={[item.action]}
+                            catalog={catalog}
                             currentPurpose={process.purpose}
                             evidence={includedEvidence}
                             expectedMappingRevision={mapping.revision}
@@ -299,11 +347,12 @@ export default async function DiscoveryMappingPage({
         <Card className="mt-7 p-5 sm:p-6">
           <h2 className="text-lg font-semibold text-[var(--text)]">Add a proposal item</h2>
           <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
-            Slice 1 supports Process purpose, Owner Operational Role, and honest unresolved questions. Steps, Systems, Exceptions, and dependencies come in later slices.
+            Describe the exact change these answers support. You may propose Process definition, Steps and responsibility, an existing System, an Exception, a dependency, or preserve an honest unresolved question.
           </p>
           <div className="mt-5">
             <DiscoveryMappingItemForm
               availableActions={availableActions}
+              catalog={catalog}
               currentPurpose={process.purpose}
               evidence={includedEvidence}
               expectedMappingRevision={mapping?.revision ?? 0}

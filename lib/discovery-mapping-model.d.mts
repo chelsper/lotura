@@ -1,6 +1,13 @@
 export type DiscoveryMappingAction =
   | "update_process_purpose"
   | "change_process_owner"
+  | "add_process_step"
+  | "revise_process_step"
+  | "change_step_responsibility"
+  | "link_existing_system"
+  | "add_process_exception"
+  | "revise_process_exception"
+  | "add_process_dependency"
   | "preserve_unresolved";
 
 export type DiscoveryMappingItemState = "active" | "withdrawn";

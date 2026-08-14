@@ -213,6 +213,13 @@ export const discoveryMappingStatus = pgEnum("discovery_mapping_status", [
 export const discoveryMappingAction = pgEnum("discovery_mapping_action", [
   "update_process_purpose",
   "change_process_owner",
+  "add_process_step",
+  "revise_process_step",
+  "change_step_responsibility",
+  "link_existing_system",
+  "add_process_exception",
+  "revise_process_exception",
+  "add_process_dependency",
   "preserve_unresolved",
 ]);
 
@@ -842,6 +849,13 @@ export const discoveryProposalMapping = pgTable(
       table.sessionId,
       table.sessionStableKey,
     ),
+    unique("discovery_mappings_identity_process_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.processId,
+      table.processStableKey,
+    ),
     check(
       "discovery_mappings_revision_positive_check",
       sql`${table.revision} >= 1`,
@@ -876,6 +890,18 @@ export const discoveryProposalMappingItem = pgTable(
     action: discoveryMappingAction("action").notNull(),
     ownerRoleId: integer("owner_role_id"),
     ownerRoleStableKey: uuid("owner_role_stable_key"),
+    processId: integer("process_id"),
+    processStableKey: uuid("process_stable_key"),
+    processStepId: integer("process_step_id"),
+    processStepStableKey: uuid("process_step_stable_key"),
+    responsibleRoleId: integer("responsible_role_id"),
+    responsibleRoleStableKey: uuid("responsible_role_stable_key"),
+    systemId: integer("system_id"),
+    systemStableKey: uuid("system_stable_key"),
+    exceptionId: integer("exception_id"),
+    exceptionStableKey: uuid("exception_stable_key"),
+    relatedProcessId: integer("related_process_id"),
+    relatedProcessStableKey: uuid("related_process_stable_key"),
     beforeState: jsonb("before_state").notNull(),
     proposedState: jsonb("proposed_state").notNull(),
     rationale: text("rationale").notNull(),
@@ -906,6 +932,76 @@ export const discoveryProposalMappingItem = pgTable(
         table.ownerRoleStableKey,
       ],
       foreignColumns: [role.id, role.organizationId, role.stableKey],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_items_mapping_process_fk",
+      columns: [
+        table.mappingId,
+        table.organizationId,
+        table.mappingStableKey,
+        table.processId,
+        table.processStableKey,
+      ],
+      foreignColumns: [
+        discoveryProposalMapping.id,
+        discoveryProposalMapping.organizationId,
+        discoveryProposalMapping.stableKey,
+        discoveryProposalMapping.processId,
+        discoveryProposalMapping.processStableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_items_process_step_fk",
+      columns: [
+        table.processStepId,
+        table.processId,
+        table.organizationId,
+        table.processStepStableKey,
+      ],
+      foreignColumns: [
+        processStep.id,
+        processStep.processId,
+        processStep.organizationId,
+        processStep.stableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_items_responsible_role_fk",
+      columns: [
+        table.responsibleRoleId,
+        table.organizationId,
+        table.responsibleRoleStableKey,
+      ],
+      foreignColumns: [role.id, role.organizationId, role.stableKey],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_items_system_fk",
+      columns: [table.systemId, table.organizationId, table.systemStableKey],
+      foreignColumns: [system.id, system.organizationId, system.stableKey],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_items_exception_fk",
+      columns: [
+        table.exceptionId,
+        table.processId,
+        table.organizationId,
+        table.exceptionStableKey,
+      ],
+      foreignColumns: [
+        exception.id,
+        exception.processId,
+        exception.organizationId,
+        exception.stableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_items_related_process_fk",
+      columns: [
+        table.relatedProcessId,
+        table.organizationId,
+        table.relatedProcessStableKey,
+      ],
+      foreignColumns: [process.id, process.organizationId, process.stableKey],
     }).onDelete("restrict"),
     unique("discovery_mapping_items_stable_key_unique").on(table.stableKey),
     unique("discovery_mapping_items_item_sequence_unique").on(
@@ -941,12 +1037,20 @@ export const discoveryProposalMappingItem = pgTable(
       sql`(${table.ownerRoleId} is null and ${table.ownerRoleStableKey} is null) or (${table.ownerRoleId} is not null and ${table.ownerRoleStableKey} is not null)`,
     ),
     check(
+      "discovery_items_typed_target_pairs_check",
+      sql`((${table.processId} is null) = (${table.processStableKey} is null)) and ((${table.processStepId} is null) = (${table.processStepStableKey} is null)) and ((${table.responsibleRoleId} is null) = (${table.responsibleRoleStableKey} is null)) and ((${table.systemId} is null) = (${table.systemStableKey} is null)) and ((${table.exceptionId} is null) = (${table.exceptionStableKey} is null)) and ((${table.relatedProcessId} is null) = (${table.relatedProcessStableKey} is null))`,
+    ),
+    check(
+      "discovery_items_related_process_distinct_check",
+      sql`${table.relatedProcessId} is null or ${table.processId} is null or ${table.relatedProcessId} <> ${table.processId}`,
+    ),
+    check(
       "discovery_mapping_items_target_shape_check",
-      sql`(${table.action} = 'change_process_owner') or (${table.action} in ('update_process_purpose', 'preserve_unresolved') and ${table.ownerRoleId} is null and ${table.ownerRoleStableKey} is null)`,
+      sql`(${table.action} = 'change_process_owner' and ${table.processId} is null and ${table.processStepId} is null and ${table.responsibleRoleId} is null and ${table.systemId} is null and ${table.exceptionId} is null and ${table.relatedProcessId} is null) or (${table.action} in ('update_process_purpose', 'preserve_unresolved') and ${table.ownerRoleId} is null and ${table.processId} is null and ${table.processStepId} is null and ${table.responsibleRoleId} is null and ${table.systemId} is null and ${table.exceptionId} is null and ${table.relatedProcessId} is null) or (${table.action} = 'add_process_step' and ${table.ownerRoleId} is null and ${table.processId} is not null and ${table.processStepId} is null and ${table.systemId} is null and ${table.exceptionId} is null and ${table.relatedProcessId} is null) or (${table.action} = 'revise_process_step' and ${table.ownerRoleId} is null and ${table.processId} is not null and ${table.processStepId} is not null and ${table.responsibleRoleId} is null and ${table.systemId} is null and ${table.exceptionId} is null and ${table.relatedProcessId} is null) or (${table.action} = 'change_step_responsibility' and ${table.ownerRoleId} is null and ${table.processId} is not null and ${table.processStepId} is not null and ${table.systemId} is null and ${table.exceptionId} is null and ${table.relatedProcessId} is null) or (${table.action} = 'link_existing_system' and ${table.ownerRoleId} is null and ${table.processId} is not null and ${table.processStepId} is null and ${table.responsibleRoleId} is null and ${table.systemId} is not null and ${table.exceptionId} is null and ${table.relatedProcessId} is null) or (${table.action} = 'add_process_exception' and ${table.ownerRoleId} is null and ${table.processId} is not null and ${table.responsibleRoleId} is null and ${table.systemId} is null and ${table.exceptionId} is null and ${table.relatedProcessId} is null) or (${table.action} = 'revise_process_exception' and ${table.ownerRoleId} is null and ${table.processId} is not null and ${table.processStepId} is null and ${table.responsibleRoleId} is null and ${table.systemId} is null and ${table.exceptionId} is not null and ${table.relatedProcessId} is null) or (${table.action} = 'add_process_dependency' and ${table.ownerRoleId} is null and ${table.processId} is not null and ${table.processStepId} is null and ${table.responsibleRoleId} is null and ${table.systemId} is null and ${table.exceptionId} is null and ${table.relatedProcessId} is not null)`,
     ),
     check(
       "discovery_mapping_items_payload_shape_check",
-      sql`(${table.action} = 'update_process_purpose' and ${table.beforeState} ? 'purpose' and ${table.proposedState} ? 'purpose') or (${table.action} = 'change_process_owner' and ${table.beforeState} ? 'ownerRoleStableKey' and ${table.proposedState} ? 'ownerRoleStableKey') or (${table.action} = 'preserve_unresolved' and ${table.proposedState} ? 'question')`,
+      sql`(${table.action} = 'update_process_purpose' and ${table.beforeState} ? 'purpose' and ${table.proposedState} ? 'purpose') or (${table.action} = 'change_process_owner' and ${table.beforeState} ? 'ownerRoleStableKey' and ${table.proposedState} ? 'ownerRoleStableKey') or (${table.action} = 'preserve_unresolved' and ${table.proposedState} ? 'question') or (${table.action} = 'add_process_step' and ${table.proposedState} ?& array['title','instructions','position','responsibleRoleStableKey']) or (${table.action} = 'revise_process_step' and ${table.beforeState} ?& array['title','instructions'] and ${table.proposedState} ?& array['title','instructions']) or (${table.action} = 'change_step_responsibility' and ${table.beforeState} ? 'responsibleRoleStableKey' and ${table.proposedState} ? 'responsibleRoleStableKey') or (${table.action} = 'link_existing_system' and ${table.proposedState} ?& array['systemStableKey','usage']) or (${table.action} = 'add_process_exception' and ${table.proposedState} ?& array['name','condition','response','processStepStableKey']) or (${table.action} = 'revise_process_exception' and ${table.beforeState} ?& array['name','condition','response'] and ${table.proposedState} ?& array['name','condition','response']) or (${table.action} = 'add_process_dependency' and ${table.proposedState} ?& array['relatedProcessStableKey','direction','dependencyType','description'])`,
     ),
     index("discovery_mapping_items_mapping_created_idx").on(
       table.organizationId,
@@ -954,6 +1058,11 @@ export const discoveryProposalMappingItem = pgTable(
       table.createdAt,
     ),
     index("discovery_mapping_items_owner_role_idx").on(table.ownerRoleId),
+    index("discovery_items_process_step_idx").on(table.processStepId),
+    index("discovery_items_responsible_role_idx").on(table.responsibleRoleId),
+    index("discovery_items_system_idx").on(table.systemId),
+    index("discovery_items_exception_idx").on(table.exceptionId),
+    index("discovery_items_related_process_idx").on(table.relatedProcessId),
   ],
 );
 

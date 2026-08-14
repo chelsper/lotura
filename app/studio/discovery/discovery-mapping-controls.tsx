@@ -10,6 +10,7 @@ import {
 } from "@/lib/discovery-mapping-model.mjs";
 import type {
   DiscoveryMappingItemRecord,
+  DiscoveryMappingCatalog,
 } from "@/lib/discovery-data";
 
 import { Alert, Button, FieldLabel, Select } from "../../ui/primitives";
@@ -36,6 +37,7 @@ type DiscoveryMappingEvidence = {
 
 export function DiscoveryMappingItemForm({
   availableActions,
+  catalog,
   currentPurpose,
   evidence,
   expectedMappingRevision,
@@ -45,6 +47,7 @@ export function DiscoveryMappingItemForm({
   sessionId,
 }: {
   availableActions: DiscoveryMappingAction[];
+  catalog: DiscoveryMappingCatalog;
   currentPurpose: string | null;
   evidence: DiscoveryMappingEvidence[];
   expectedMappingRevision: number;
@@ -55,6 +58,12 @@ export function DiscoveryMappingItemForm({
 }) {
   const initialAction = item?.action ?? availableActions[0] ?? "preserve_unresolved";
   const [mappingAction, setMappingAction] = useState<DiscoveryMappingAction>(initialAction);
+  const [selectedStepId, setSelectedStepId] = useState(
+    item?.processStepId ?? "",
+  );
+  const [selectedExceptionId, setSelectedExceptionId] = useState(
+    item?.exceptionId ?? "",
+  );
   const [state, action, pending] = useActionState(
     saveDiscoveryMappingItemAction,
     initialDiscoveryActionState,
@@ -72,6 +81,16 @@ export function DiscoveryMappingItemForm({
   const unresolvedQuestion = item?.action === "preserve_unresolved"
     ? String(item.proposedState.question ?? "")
     : "";
+  const selectedStep = catalog.steps.find((step) => step.id === selectedStepId) ?? null;
+  const selectedException = catalog.exceptions.find(
+    (exception) => exception.id === selectedExceptionId,
+  ) ?? null;
+  const proposedStepTitle = String(
+    item?.proposedState.title ?? selectedStep?.title ?? "",
+  );
+  const proposedStepInstructions = String(
+    item?.proposedState.instructions ?? selectedStep?.instructions ?? "",
+  );
 
   return (
     <form action={action} className="space-y-5">
@@ -129,6 +148,199 @@ export function DiscoveryMappingItemForm({
             Choose an existing active Operational Role. Lotura does not infer ownership from a Person, Position, title, coverage, or reporting line.
           </span>
         </label>
+      ) : null}
+
+      {mappingAction === "add_process_step" ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="block md:col-span-2">
+            <FieldLabel>Step title</FieldLabel>
+            <input className={textAreaClass.replace("min-h-24", "min-h-0")} defaultValue={String(item?.proposedState.title ?? "")} maxLength={255} name="proposedStepTitle" required />
+          </label>
+          <label className="block md:col-span-2">
+            <FieldLabel>What happens in this Step?</FieldLabel>
+            <textarea className={textAreaClass} defaultValue={String(item?.proposedState.instructions ?? "")} maxLength={10000} name="proposedStepInstructions" required />
+          </label>
+          <label className="block">
+            <FieldLabel>Proposed order</FieldLabel>
+            <input className={textAreaClass.replace("min-h-24", "min-h-0")} defaultValue={Number(item?.proposedState.position ?? catalog.steps.length + 1)} min={1} name="proposedStepPosition" required type="number" />
+          </label>
+          <label className="block">
+            <FieldLabel>Responsible Operational Role</FieldLabel>
+            <Select defaultValue={item?.responsibleRoleId ?? ""} name="responsibleRoleId">
+              <option value="">Not assigned</option>
+              {roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}
+            </Select>
+          </label>
+        </div>
+      ) : null}
+
+      {mappingAction === "revise_process_step" || mappingAction === "change_step_responsibility" ? (
+        <label className="block">
+          <FieldLabel>Existing Step</FieldLabel>
+          <Select
+            disabled={Boolean(item)}
+            name="processStepId"
+            onChange={(event) => setSelectedStepId(event.target.value)}
+            required
+            value={selectedStepId}
+          >
+            <option value="">Choose a Step</option>
+            {catalog.steps.map((step) => (
+              <option key={step.id} value={step.id}>{step.position}. {step.title}</option>
+            ))}
+          </Select>
+          {item ? <input name="processStepId" type="hidden" value={selectedStepId} /> : null}
+        </label>
+      ) : null}
+
+      {mappingAction === "revise_process_step" ? (
+        <div className="grid gap-4" key={selectedStepId || "step-fields"}>
+          <label className="block">
+            <FieldLabel>Proposed Step title</FieldLabel>
+            <input className={textAreaClass.replace("min-h-24", "min-h-0")} defaultValue={proposedStepTitle} maxLength={255} name="proposedStepTitle" required />
+          </label>
+          <label className="block">
+            <FieldLabel>Proposed Step wording</FieldLabel>
+            <textarea className={textAreaClass} defaultValue={proposedStepInstructions} maxLength={10000} name="proposedStepInstructions" required />
+          </label>
+        </div>
+      ) : null}
+
+      {mappingAction === "change_step_responsibility" ? (
+        <label className="block">
+          <FieldLabel>Proposed Responsible Operational Role</FieldLabel>
+          <Select
+            defaultValue={item?.responsibleRoleId ?? selectedStep?.responsibleRoleId ?? ""}
+            key={`${selectedStepId}-responsibility`}
+            name="responsibleRoleId"
+          >
+            <option value="">Not assigned</option>
+            {roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}
+          </Select>
+          <span className="mt-1 block text-xs leading-5 text-[var(--text-tertiary)]">
+            Responsibility is assigned to an Operational Role, not inferred from a Person, title, Position, or reporting line.
+          </span>
+        </label>
+      ) : null}
+
+      {mappingAction === "link_existing_system" ? (
+        <div className="grid gap-4">
+          <label className="block">
+            <FieldLabel>Existing System</FieldLabel>
+            <Select
+              defaultValue={item?.systemId ?? ""}
+              disabled={Boolean(item)}
+              name="systemId"
+              required
+            >
+              <option value="">Choose a System</option>
+              {catalog.systems.filter((system) =>
+                system.status === "active" &&
+                (!system.alreadyLinked || system.id === item?.systemId)
+              ).map((system) => (
+                <option key={system.id} value={system.id}>{system.name}</option>
+              ))}
+            </Select>
+            {item ? <input name="systemId" type="hidden" value={item.systemId ?? ""} /> : null}
+          </label>
+          <label className="block">
+            <FieldLabel>How is the System used?</FieldLabel>
+            <textarea className={textAreaClass} defaultValue={String(item?.proposedState.usage ?? "")} maxLength={2000} name="systemUsage" required />
+          </label>
+        </div>
+      ) : null}
+
+      {mappingAction === "add_process_exception" ? (
+        <div className="grid gap-4">
+          <label className="block">
+            <FieldLabel>Exception name</FieldLabel>
+            <input className={textAreaClass.replace("min-h-24", "min-h-0")} defaultValue={String(item?.proposedState.name ?? "")} maxLength={255} name="exceptionName" required />
+          </label>
+          <label className="block">
+            <FieldLabel>When does this alternate path apply?</FieldLabel>
+            <textarea className={textAreaClass} defaultValue={String(item?.proposedState.condition ?? "")} maxLength={5000} name="exceptionCondition" required />
+          </label>
+          <label className="block">
+            <FieldLabel>What happens instead?</FieldLabel>
+            <textarea className={textAreaClass} defaultValue={String(item?.proposedState.response ?? "")} maxLength={5000} name="exceptionResponse" required />
+          </label>
+          <label className="block">
+            <FieldLabel>Related existing Step (optional)</FieldLabel>
+            <Select defaultValue={item?.processStepId ?? ""} disabled={Boolean(item)} name="processStepId">
+              <option value="">Whole Process</option>
+              {catalog.steps.map((step) => <option key={step.id} value={step.id}>{step.position}. {step.title}</option>)}
+            </Select>
+            {item ? <input name="processStepId" type="hidden" value={item.processStepId ?? ""} /> : null}
+          </label>
+        </div>
+      ) : null}
+
+      {mappingAction === "revise_process_exception" ? (
+        <div className="grid gap-4">
+          <label className="block">
+            <FieldLabel>Existing Exception</FieldLabel>
+            <Select
+              disabled={Boolean(item)}
+              name="exceptionId"
+              onChange={(event) => setSelectedExceptionId(event.target.value)}
+              required
+              value={selectedExceptionId}
+            >
+              <option value="">Choose an Exception</option>
+              {catalog.exceptions.map((exception) => <option key={exception.id} value={exception.id}>{exception.name}</option>)}
+            </Select>
+            {item ? <input name="exceptionId" type="hidden" value={selectedExceptionId} /> : null}
+          </label>
+          <div className="grid gap-4" key={selectedExceptionId || "exception-fields"}>
+            <label className="block">
+              <FieldLabel>Proposed Exception name</FieldLabel>
+              <input className={textAreaClass.replace("min-h-24", "min-h-0")} defaultValue={String(item?.proposedState.name ?? selectedException?.name ?? "")} maxLength={255} name="exceptionName" required />
+            </label>
+            <label className="block">
+              <FieldLabel>Proposed condition</FieldLabel>
+              <textarea className={textAreaClass} defaultValue={String(item?.proposedState.condition ?? selectedException?.condition ?? "")} maxLength={5000} name="exceptionCondition" required />
+            </label>
+            <label className="block">
+              <FieldLabel>Proposed response</FieldLabel>
+              <textarea className={textAreaClass} defaultValue={String(item?.proposedState.response ?? selectedException?.response ?? "")} maxLength={5000} name="exceptionResponse" required />
+            </label>
+          </div>
+        </div>
+      ) : null}
+
+      {mappingAction === "add_process_dependency" ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="block md:col-span-2">
+            <FieldLabel>Related Process</FieldLabel>
+            <Select defaultValue={item?.relatedProcessId ?? ""} disabled={Boolean(item)} name="relatedProcessId" required>
+              <option value="">Choose a Process</option>
+              {catalog.processes.filter((process) => process.status !== "archived").map((process) => <option key={process.id} value={process.id}>{process.name}</option>)}
+            </Select>
+            {item ? <input name="relatedProcessId" type="hidden" value={item.relatedProcessId ?? ""} /> : null}
+          </label>
+          <label className="block">
+            <FieldLabel>Relationship</FieldLabel>
+            <Select defaultValue={String(item?.proposedState.direction ?? "upstream")} disabled={Boolean(item)} name="dependencyDirection">
+              <option value="upstream">Upstream — this work relies on it</option>
+              <option value="downstream">Downstream — it receives or follows this work</option>
+            </Select>
+            {item ? <input name="dependencyDirection" type="hidden" value={String(item.proposedState.direction ?? "upstream")} /> : null}
+          </label>
+          <label className="block">
+            <FieldLabel>Dependency type</FieldLabel>
+            <Select defaultValue={String(item?.proposedState.dependencyType ?? "requires")} disabled={Boolean(item)} name="dependencyType">
+              <option value="requires">Requires</option>
+              <option value="receives_from">Receives from</option>
+              <option value="provides_to">Provides to</option>
+              <option value="triggers">Triggers</option>
+            </Select>
+            {item ? <input name="dependencyType" type="hidden" value={String(item.proposedState.dependencyType ?? "requires")} /> : null}
+          </label>
+          <label className="block md:col-span-2">
+            <FieldLabel>Describe the dependency (optional)</FieldLabel>
+            <textarea className={textAreaClass} defaultValue={String(item?.proposedState.description ?? "")} maxLength={2000} name="dependencyDescription" />
+          </label>
+        </div>
       ) : null}
 
       {mappingAction === "preserve_unresolved" ? (

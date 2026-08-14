@@ -17,6 +17,7 @@ import {
   fingerprintDocumentedProcessSnapshot,
   finishDiscoveryProposalMapping,
   saveDiscoveryMappingItem,
+  saveDiscoveryMappingItemSlice2,
 } from "@/lib/discovery-mapping-administration";
 import type { DiscoveryMappingAction } from "@/lib/discovery-mapping-model.mjs";
 import { buildDocumentedProcessSnapshot } from "@/lib/discovery-proposal-model.mjs";
@@ -45,6 +46,16 @@ function proposalDisposition(formData: FormData) {
 function mappingAction(formData: FormData) {
   return text(formData, "mappingAction") as DiscoveryMappingAction;
 }
+
+const slice2MappingActions = new Set<DiscoveryMappingAction>([
+  "add_process_step",
+  "revise_process_step",
+  "change_step_responsibility",
+  "link_existing_system",
+  "add_process_exception",
+  "revise_process_exception",
+  "add_process_dependency",
+]);
 
 export async function startDiscoverySessionAction(
   _previousState: DiscoveryActionState,
@@ -185,8 +196,9 @@ export async function saveDiscoveryMappingItemAction(
       status: "error",
     };
   }
-  const result = await saveDiscoveryMappingItem({
-    action: mappingAction(formData),
+  const selectedAction = mappingAction(formData);
+  const sharedInput = {
+    action: selectedAction,
     currentProcessFingerprint: fingerprintDocumentedProcessSnapshot(
       buildDocumentedProcessSnapshot(process),
     ),
@@ -195,12 +207,34 @@ export async function saveDiscoveryMappingItemAction(
     observationIds: formData.getAll("observationId").filter(
       (value): value is string => typeof value === "string",
     ),
-    ownerRoleId: text(formData, "ownerRoleId"),
-    proposedPurpose: text(formData, "proposedPurpose"),
     rationale: text(formData, "rationale"),
     sessionId,
-    unresolvedQuestion: text(formData, "unresolvedQuestion"),
-  });
+  };
+  const result = slice2MappingActions.has(selectedAction)
+    ? await saveDiscoveryMappingItemSlice2({
+        ...sharedInput,
+        dependencyDescription: text(formData, "dependencyDescription"),
+        dependencyDirection: text(formData, "dependencyDirection"),
+        dependencyType: text(formData, "dependencyType"),
+        exceptionCondition: text(formData, "exceptionCondition"),
+        exceptionId: text(formData, "exceptionId"),
+        exceptionName: text(formData, "exceptionName"),
+        exceptionResponse: text(formData, "exceptionResponse"),
+        processStepId: text(formData, "processStepId"),
+        proposedStepInstructions: text(formData, "proposedStepInstructions"),
+        proposedStepPosition: Number(text(formData, "proposedStepPosition")),
+        proposedStepTitle: text(formData, "proposedStepTitle"),
+        relatedProcessId: text(formData, "relatedProcessId"),
+        responsibleRoleId: text(formData, "responsibleRoleId"),
+        systemId: text(formData, "systemId"),
+        systemUsage: text(formData, "systemUsage"),
+      })
+    : await saveDiscoveryMappingItem({
+        ...sharedInput,
+        ownerRoleId: text(formData, "ownerRoleId"),
+        proposedPurpose: text(formData, "proposedPurpose"),
+        unresolvedQuestion: text(formData, "unresolvedQuestion"),
+      });
   if (!result.ok) return { message: result.message, status: "error" };
   revalidatePath(`/studio/discovery/interviews/${sessionId}/map`);
   redirect(`/studio/discovery/interviews/${sessionId}/map`);

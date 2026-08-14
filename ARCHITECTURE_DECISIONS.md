@@ -92,6 +92,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-047 | Process Family membership, Process composition, and Process dependency are distinct relationships | Accepted — product direction |
 | LAD-048 | Reference Model differences create review questions, not automatic conclusions | Accepted — product direction |
 | LAD-049 | Structured proposed changes are typed human mappings, not approval or Process mutation | Accepted — implementation authorized for Structured Proposed Changes v0.1, Slice 1 |
+| LAD-050 | Structured proposed-change mappings use explicit typed operating-model targets | Accepted — implementation authorized for Structured Proposed Changes v0.1, Slice 2 |
 
 ## Decision records
 
@@ -1456,17 +1457,77 @@ LAD-035 through LAD-037, and LAD-042 through LAD-046. It does not supersede
 them. It does not change the structural or comparison concepts preserved by
 LAD-047 and LAD-048.
 
-**Consequences and deferrals:** After approval, forward-only migration `0018`
-may add only the structured-mapping status, action, and item-state enums; one
-mapping workspace table; append-only item revisions; immutable source links;
-same-Organization composite safeguards; lifecycle, identity, target-shape, and
-immutability checks; and supporting indexes. The runtime role may receive
-SELECT on the three new tables. The Discovery role may receive only reviewed
-SELECT, INSERT, limited mapping lifecycle UPDATE, and sequence privileges.
-Steps, Step responsibility, Systems, Exceptions, dependencies, proposal
-governance, approval, Process versions, application, `operating_model_changes`,
-AI suggestions, rebasing, and environment rollout remain separately approved
-work.
+**Consequences and deferrals:** Forward-only migration `0018` may add only the
+structured-mapping status, action, and item-state enums; one mapping workspace
+table; append-only item revisions; immutable source links; same-Organization
+composite safeguards; lifecycle, identity, target-shape, and immutability
+checks; and supporting indexes. The runtime role may receive SELECT on the
+three new tables. The Discovery role may receive only reviewed SELECT, INSERT,
+limited mapping lifecycle UPDATE, and sequence privileges. Later structured
+targets, proposal governance, approval, Process versions, application,
+`operating_model_changes`, AI suggestions, rebasing, and environment rollout
+remain separately approved work.
+
+### LAD-050 — Structured proposed-change mappings use explicit typed operating-model targets
+
+**Status:** Accepted — implementation authorized for Structured Proposed
+Changes v0.1, Slice 2.
+
+**Context:** LAD-049 proves the append-only mapping workspace with Process
+purpose, Owner Operational Role, and unresolved-question items. Completing the
+manual path now requires human reviewers to express specific proposed changes
+to Steps, responsibility, Systems, Exceptions, and dependencies without
+turning interview evidence into documented operating-model facts.
+
+**Decision:** Slice 2 extends the existing mapping action enum through a
+forward-only migration. It supports only: adding a Process Step; revising an
+existing Step; changing a Step's Responsible Operational Role; linking an
+existing System; adding a Process Exception; revising an existing Exception;
+and adding an explicit upstream or downstream Process dependency.
+
+Every target is selected explicitly and protected by Organization-scoped
+foreign keys. Existing Step and Exception targets must belong to the mapping's
+Process. Roles and Systems must be active in the same Organization. A related
+Process must be a different Process in the same Organization. New Exceptions
+may reference an existing Step but not a proposed new Step. System creation,
+Role creation, target inference, arbitrary JSON patches, and implicit
+dependencies remain prohibited.
+
+Each revision preserves typed documented and proposed state, a human rationale,
+the authenticated Lotura actor, transaction time, and immutable links to the
+supporting interview answers. Revisions remain append-only. Readiness rechecks
+target availability, tenant and Process scope, duplicate and self-reference
+rules, evidence coverage, and the frozen documented-Process fingerprint.
+
+The Discovery write role receives only the catalog reads and mapping-table
+writes needed for these proposals. It receives no mutation privilege on
+Processes, Steps, Roles, Systems, Exceptions, dependencies, operating-model
+history, Organization Structure, schema, roles, or databases. Public/demo mode
+cannot render or invoke the feature.
+
+**Why:** Separate action values and typed targets make the proposed meaning
+reviewable and enforceable. Reusing Slice 1 actions or storing an executable
+generic patch would hide semantics, weaken tenant safety, and make future
+approval or version application ambiguous.
+
+**Alternatives considered:** Overload the three Slice 1 actions; store free
+text; let a selected observation directly create operating-model records;
+allow proposed objects to reference other proposed objects; infer targets from
+titles or interview language; or combine mapping with approval and application.
+These were rejected because they collapse lifecycle boundaries or introduce
+unreviewable dependencies.
+
+**Affected decisions:** This decision follows and narrowly extends LAD-001,
+LAD-002, LAD-015, LAD-016, LAD-018, LAD-021 through LAD-026, LAD-029, LAD-032,
+LAD-035 through LAD-037, LAD-042 through LAD-046, and LAD-049. It does not
+supersede them and does not change LAD-047 or LAD-048.
+
+**Consequences and deferrals:** Forward-only migration `0019` may expand the
+mapping action enum, add typed target columns, same-Organization and same-
+Process safeguards, action-specific checks, and supporting indexes. Proposal
+review and governance, approval, Process versions, atomic application, AI
+suggestions, target creation inside Discovery, proposed-to-proposed references,
+deletion, rebasing, and supersession remain deferred.
 
 ## Intentionally deferred ideas register
 
@@ -1481,7 +1542,7 @@ The following ideas are recorded so postponement is visible and deliberate.
 | Uploads, imports, Visio/PDF/flowchart parsing | Requires malware handling, source permissions, artifact retention, provenance, and conflict treatment | Artifact architecture, storage, security, and extraction decision |
 | Whiteboard and collaborative capture | Draft contribution, authorship, reconciliation, and conversion to structured knowledge are undefined | Collaboration, observation, and approval decision |
 | Conflict detection and consensus | Conflicts need identity, scope, lifecycle, privacy, and human resolution | Conflict and reconciliation schema decision |
-| Structured proposal application and approval workflow | LAD-049 authorizes only Slice 1 purpose, Owner Role, and unresolved mappings; it grants no approval or authority to change the Process | Remaining structured targets, approval authority, Process write/versioning, effective time, and supersession decision |
+| Structured proposal application and approval workflow | LAD-049 and LAD-050 authorize human-authored typed proposals only; they grant no approval or authority to change the Process | Proposal-review authority, Process write/versioning, effective time, rejection, supersession, and atomic application decision |
 | Process version history | Snapshot boundary and related operating-model version semantics are unresolved | Temporal/version model and migration decision |
 | Knowledge Gaps | Explainable gaps are product direction under LAD-046, but persistence is not justified until assignment, governance, or resolution history requires it | Derived projection rules first; later lifecycle, ownership, and history decision if persistence is needed |
 | Process Families and reusable subprocesses | LAD-047 preserves explicit family membership and distinct composition semantics, but authorizes no schema or inheritance | Family identity, membership cardinality, effective dating, governance, composition, comparison, and migration decision |
