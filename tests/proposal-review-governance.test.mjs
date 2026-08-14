@@ -204,6 +204,10 @@ test("LAD-052 and deployment documentation preserve the separate review boundary
   assert.match(decisions, /writes no Process, Step, Role,\s+System, Exception, dependency/);
   assert.match(guidance, /LOTURA_PROPOSAL_REVIEW_DATABASE_URL/);
   assert.match(guidance, /GRANT INSERT \([\s\S]*operating_model_proposal_review_decisions/);
+  assert.doesNotMatch(
+    guidance,
+    /GRANT SELECT ON TABLE organizations, processes|GRANT SELECT ON TABLE discovery_sessions/,
+  );
   assert.match(guidance, /no mutation privilege on\s+Discovery evidence, mappings, Processes, Steps, Roles, Systems, Exceptions/);
   assert.match(contract, /LOTURA_PROPOSAL_REVIEW_MODE=enabled/);
   assert.match(roadmap, /eligible for later governed application/);
