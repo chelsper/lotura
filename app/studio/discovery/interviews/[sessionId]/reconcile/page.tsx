@@ -222,10 +222,13 @@ function ProposalChoiceSummary({
 
 function formatOutcomeTimestamp(value: string) {
   return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    month: "short",
     timeZone: "UTC",
     timeZoneName: "short",
+    year: "numeric",
   }).format(new Date(value));
 }
 

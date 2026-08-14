@@ -178,6 +178,8 @@ test("the outcome UX remains read-only, conversational, and private-workspace ga
   assert.match(reconciliation, /What we learned/);
   assert.match(reconciliation, /No changes were proposed\. This is a complete and valid outcome/);
   assert.match(reconciliation, /Only a later, separately approved application can change it/);
+  assert.match(reconciliation, /timeZoneName: "short"/);
+  assert.doesNotMatch(reconciliation, /dateStyle|timeStyle/);
   assert.match(reconciliation, /loadWorkspaceExperience\(\)/);
   assert.ok(
     reconciliation.indexOf("if (!experience.discovery.enabled) notFound()")
