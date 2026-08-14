@@ -79,8 +79,7 @@ The dedicated application role needs only the following privileges for this
 slice. The exact role name remains environment-specific.
 
 ```sql
-GRANT SELECT ON TABLE organizations, processes,
-  discovery_sessions, discovery_proposals,
+GRANT SELECT ON TABLE discovery_proposals,
   discovery_proposal_mappings, discovery_mapping_items,
   operating_model_proposal_reviews,
   operating_model_proposal_review_decisions
