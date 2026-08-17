@@ -13,6 +13,7 @@ import {
 } from "../lib/workspace-configuration.mjs";
 import { resolveWorkspaceConfigurationOverrides } from "../lib/workspace-configuration-policy.mjs";
 import { resolveOperatingModelAuthoringConfiguration } from "../lib/operating-model-authoring-policy.mjs";
+import { resolveProcessApplicationConfiguration } from "../lib/process-application-policy.mjs";
 
 test("Production fixture mode remains public and never calls Neon", async () => {
   const source = resolveOperatingModelConfiguration({
@@ -38,6 +39,13 @@ test("Production fixture mode remains public and never calls Neon", async () => 
   assert.equal(loaded.source.label, "Fictional sample organization");
   assert.deepEqual(
     resolveOperatingModelAuthoringConfiguration(
+      {},
+      { authentication, operatingModel: source },
+    ),
+    { enabled: false },
+  );
+  assert.deepEqual(
+    resolveProcessApplicationConfiguration(
       {},
       { authentication, operatingModel: source },
     ),

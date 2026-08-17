@@ -1,8 +1,9 @@
 # Process Versions & Atomic Application v0.1 — implementation plan
 
-**Status:** Proposed for implementation approval. No code, schema, migration,
-credential, environment, JU data, deployment, or public-demo change is
-authorized by this plan alone.
+**Status:** Generic implementation complete; isolated fictional migration and
+boundary verification passed at journal `22/22`. JU migration, credential,
+environment, data, and deployment changes remain separately gated. Public
+Northstar remains unchanged.
 
 This plan translates accepted LAD-053 into the smallest implementation that
 can complete the manual path from evidence to an approved, versioned
@@ -389,6 +390,7 @@ GRANT INSERT (
   ON operating_model_proposal_applications TO <process_application_role>;
 GRANT INSERT (
   organization_id, application_id, application_stable_key,
+  review_id, review_stable_key, mapping_id, mapping_stable_key,
   review_decision_id, review_decision_stable_key, item_revision_id,
   item_revision_stable_key, item_stable_key, application_sequence, action,
   change_kind, before_state, after_state
@@ -433,10 +435,8 @@ Implementation is expected to add or change only these logical groups:
 - new `lib/process-application-policy.d.mts`
 - new `lib/process-version-snapshot.mjs`
 - new `lib/process-version-snapshot.d.mts`
-- new `lib/process-application-model.mjs`
-- new `lib/process-application-model.d.mts`
-- new `lib/process-application-data.ts`
 - new `lib/process-application-administration.ts`
+- `lib/discovery-data.ts`
 - `lib/workspace-experience.ts`
 
 ### Application experience
@@ -444,7 +444,7 @@ Implementation is expected to add or change only these logical groups:
 - `app/studio/discovery/interviews/[sessionId]/proposal-review/page.tsx`
 - new `app/studio/discovery/interviews/[sessionId]/proposal-review/apply/page.tsx`
 - new `app/studio/discovery/process-application-controls.tsx`
-- new `app/studio/discovery/application-actions.ts`
+- `app/studio/discovery/actions.ts`
 
 ### Verification and documentation
 

@@ -82,12 +82,12 @@ milestones:
    explicit scope. It applies only when structured proposed changes exist, and
    approval means eligible for later governed application rather than a change
    to current documentation.
-3. **Process Versions & Atomic Application (next; design approved)** — an
+3. **Process Versions & Atomic Application (in implementation)** — an
    approved proposal produces a historically recoverable, effective
-   operating-model version in one governed operation. LAD-053 authorizes
-   implementation planning only; the exact implementation, migration, and
-   credential require separate review, and implementation does not itself
-   authorize a JU migration or rollout.
+   operating-model version in one governed operation. LAD-053's generic
+   implementation and isolated fictional verification are complete. Its
+   dedicated credential, migration, and application boundary remain separately
+   reviewed; implementation does not itself authorize a JU migration or rollout.
 4. **Knowledge Gaps** — explainable unresolved knowledge and review questions,
    without a score.
 5. **Process Families** — explicit family identity and membership, with no

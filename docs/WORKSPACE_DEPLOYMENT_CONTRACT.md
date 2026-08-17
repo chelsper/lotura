@@ -17,6 +17,8 @@ environment. Temporary deployment lag is acceptable; code divergence is not.
 - keeps `LOTURA_STRUCTURE_ADMIN_MODE` absent or `disabled`;
 - keeps `LOTURA_OPERATING_MODEL_AUTHORING_MODE` absent or `disabled` and has no
   Process administration credential;
+- keeps `LOTURA_PROCESS_APPLICATION_MODE` absent or `disabled` and has no
+  Process-application credential;
 - receives no JU data, identity, branding, or configuration; and
 - renders no structural-administration controls.
 
@@ -36,6 +38,9 @@ environment. Temporary deployment lag is acceptable; code divergence is not.
 - uses a distinct least-privilege proposal-review role only through the
   server-only `LOTURA_PROPOSAL_REVIEW_DATABASE_URL` when Proposal Review is
   enabled;
+- uses a distinct least-privilege Process-application role only through the
+  server-only `LOTURA_PROCESS_APPLICATION_DATABASE_URL` when approved changes
+  may be applied as a documented Process version;
 - enables administration explicitly with
   `LOTURA_STRUCTURE_ADMIN_MODE=enabled` only after migration and privilege
   verification;
@@ -49,6 +54,9 @@ environment. Temporary deployment lag is acceptable; code divergence is not.
   `LOTURA_PROPOSAL_REVIEW_MODE=enabled` only after migration `0020` and its
   separate privilege verification; approval in this interface does not apply a
   Process change;
+- enables Process application explicitly with
+  `LOTURA_PROCESS_APPLICATION_MODE=enabled` only after migration `0021`, exact
+  application-role privilege verification, and separate environment approval;
 - resolves JU presentation through generic Workspace Configuration; and
 - receives no public-demo fixture fallback.
 
@@ -58,7 +66,8 @@ Governance and Stewardship engine.
 
 ## Environment isolation
 
-Structural, Process, Discovery, and proposal-review write credentials must not be configured in:
+Structural, Process, Discovery, proposal-review, and Process-application write
+credentials must not be configured in:
 
 - the Public Demo project;
 - any Preview deployment;

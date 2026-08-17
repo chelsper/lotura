@@ -188,8 +188,8 @@ test("review writes reauthorize, derive scope, use CAS, and never mutate the ope
   );
   assert.match(page, /This review decides what may move forward/);
   assert.match(page, /Process Steward<\/p>[\s\S]*Not assigned/);
-  assert.match(page, /Version application<\/p>[\s\S]*Not configured/);
-  assert.match(page, /No Process version was created/);
+  assert.match(page, /Version application<\/p>[\s\S]*processApplication\.enabled/);
+  assert.match(page, /documented Process remains unchanged until/);
   assert.match(page, /if \(!experience\.proposalReview\.enabled\) notFound\(\)/);
 });
 

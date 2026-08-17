@@ -33,7 +33,8 @@ export type OperatingModelChangeSummary = {
     | "unlink_system"
     | "create_exception"
     | "update_exception"
-    | "deactivate_exception";
+    | "deactivate_exception"
+    | "create_dependency";
   actorIdentifier: string;
   afterState: Record<string, unknown>;
   beforeState: Record<string, unknown>;

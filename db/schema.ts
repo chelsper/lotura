@@ -138,7 +138,14 @@ export const operatingModelChangeKind = pgEnum(
 
 export const operatingModelChangeEntityType = pgEnum(
   "operating_model_change_entity_type",
-  ["process", "process_step", "system", "process_system", "exception"],
+  [
+    "process",
+    "process_step",
+    "system",
+    "process_system",
+    "exception",
+    "process_dependency",
+  ],
 );
 
 export const operatingModelChangeAction = pgEnum(
@@ -160,6 +167,7 @@ export const operatingModelChangeAction = pgEnum(
     "create_exception",
     "update_exception",
     "deactivate_exception",
+    "create_dependency",
   ],
 );
 
@@ -240,6 +248,11 @@ export const proposalReviewDisposition = pgEnum(
   "proposal_review_disposition",
   ["approve", "reject", "needs_validation"],
 );
+
+export const processVersionKind = pgEnum("process_version_kind", [
+  "baseline",
+  "approved_application",
+]);
 
 export const organization = pgTable("organizations", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -1233,6 +1246,13 @@ export const operatingModelProposalReview = pgTable(
       table.mappingId,
       table.mappingStableKey,
     ),
+    unique("proposal_reviews_identity_process_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.processId,
+      table.processStableKey,
+    ),
     check(
       "proposal_reviews_mapping_revision_positive_check",
       sql`${table.mappingRevision} >= 1`,
@@ -1319,6 +1339,13 @@ export const operatingModelProposalReviewDecision = pgTable(
       ],
     }).onDelete("restrict"),
     unique("proposal_review_decisions_stable_key_unique").on(table.stableKey),
+    unique("proposal_review_decisions_application_identity_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.reviewId,
+      table.itemRevisionId,
+    ),
     unique("proposal_review_decisions_item_sequence_unique").on(
       table.reviewId,
       table.itemStableKey,
@@ -1344,6 +1371,350 @@ export const operatingModelProposalReviewDecision = pgTable(
       table.organizationId,
       table.reviewStableKey,
       table.createdAt,
+    ),
+  ],
+);
+
+export const processVersion = pgTable(
+  "process_versions",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    processId: integer("process_id").notNull(),
+    processStableKey: uuid("process_stable_key").notNull(),
+    versionSequence: integer("version_sequence").notNull(),
+    predecessorVersionId: integer("predecessor_version_id"),
+    predecessorVersionStableKey: uuid("predecessor_version_stable_key"),
+    versionKind: processVersionKind("version_kind").notNull(),
+    snapshotFormatVersion: integer("snapshot_format_version")
+      .default(1)
+      .notNull(),
+    documentedProcessSnapshot: jsonb("documented_process_snapshot").notNull(),
+    documentedProcessFingerprint: varchar("documented_process_fingerprint", {
+      length: 64,
+    }).notNull(),
+    effectiveAt: timestamp("effective_at", { withTimezone: true }),
+    recordedByActor: varchar("recorded_by_actor", { length: 128 }).notNull(),
+    sourceReviewId: integer("source_review_id"),
+    sourceReviewStableKey: uuid("source_review_stable_key"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "process_versions_process_fk",
+      columns: [table.processId, table.organizationId, table.processStableKey],
+      foreignColumns: [process.id, process.organizationId, process.stableKey],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "process_versions_source_review_fk",
+      columns: [
+        table.sourceReviewId,
+        table.organizationId,
+        table.sourceReviewStableKey,
+        table.processId,
+        table.processStableKey,
+      ],
+      foreignColumns: [
+        operatingModelProposalReview.id,
+        operatingModelProposalReview.organizationId,
+        operatingModelProposalReview.stableKey,
+        operatingModelProposalReview.processId,
+        operatingModelProposalReview.processStableKey,
+      ],
+    }).onDelete("restrict"),
+    unique("process_versions_stable_key_unique").on(table.stableKey),
+    unique("process_versions_process_sequence_unique").on(
+      table.processId,
+      table.versionSequence,
+    ),
+    unique("process_versions_identity_process_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.processId,
+      table.processStableKey,
+    ),
+    check(
+      "process_versions_sequence_positive_check",
+      sql`${table.versionSequence} >= 1`,
+    ),
+    check(
+      "process_versions_predecessor_pair_check",
+      sql`((${table.predecessorVersionId} is null) = (${table.predecessorVersionStableKey} is null))`,
+    ),
+    check(
+      "process_versions_source_review_pair_check",
+      sql`((${table.sourceReviewId} is null) = (${table.sourceReviewStableKey} is null))`,
+    ),
+    check(
+      "process_versions_kind_shape_check",
+      sql`(${table.versionKind} = 'baseline' and ${table.versionSequence} = 1 and ${table.predecessorVersionId} is null and ${table.effectiveAt} is null and ${table.sourceReviewId} is null) or (${table.versionKind} = 'approved_application' and ${table.versionSequence} > 1 and ${table.predecessorVersionId} is not null and ${table.effectiveAt} is not null and ${table.sourceReviewId} is not null)`,
+    ),
+    check(
+      "process_versions_snapshot_check",
+      sql`${table.snapshotFormatVersion} = 1 and jsonb_typeof(${table.documentedProcessSnapshot}) = 'object'`,
+    ),
+    check(
+      "process_versions_fingerprint_check",
+      sql`${table.documentedProcessFingerprint} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "process_versions_effective_at_check",
+      sql`${table.effectiveAt} is null or ${table.effectiveAt} <= ${table.createdAt}`,
+    ),
+    check(
+      "process_versions_actor_not_blank_check",
+      sql`char_length(trim(${table.recordedByActor})) > 0`,
+    ),
+    index("process_versions_org_process_created_idx").on(
+      table.organizationId,
+      table.processStableKey,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const operatingModelProposalApplication = pgTable(
+  "operating_model_proposal_applications",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    processId: integer("process_id").notNull(),
+    processStableKey: uuid("process_stable_key").notNull(),
+    reviewId: integer("review_id").notNull(),
+    reviewStableKey: uuid("review_stable_key").notNull(),
+    mappingId: integer("mapping_id").notNull(),
+    mappingStableKey: uuid("mapping_stable_key").notNull(),
+    mappingRevision: integer("mapping_revision").notNull(),
+    documentedProcessFingerprint: varchar("documented_process_fingerprint", {
+      length: 64,
+    }).notNull(),
+    beforeVersionId: integer("before_version_id").notNull(),
+    beforeVersionStableKey: uuid("before_version_stable_key").notNull(),
+    afterVersionId: integer("after_version_id").notNull(),
+    afterVersionStableKey: uuid("after_version_stable_key").notNull(),
+    reason: text("reason").notNull(),
+    effectiveAt: timestamp("effective_at", { withTimezone: true }).notNull(),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "proposal_applications_mapping_process_fk",
+      columns: [
+        table.mappingId,
+        table.organizationId,
+        table.mappingStableKey,
+        table.processId,
+        table.processStableKey,
+      ],
+      foreignColumns: [
+        discoveryProposalMapping.id,
+        discoveryProposalMapping.organizationId,
+        discoveryProposalMapping.stableKey,
+        discoveryProposalMapping.processId,
+        discoveryProposalMapping.processStableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "proposal_applications_review_fk",
+      columns: [
+        table.reviewId,
+        table.organizationId,
+        table.reviewStableKey,
+        table.mappingId,
+        table.mappingStableKey,
+      ],
+      foreignColumns: [
+        operatingModelProposalReview.id,
+        operatingModelProposalReview.organizationId,
+        operatingModelProposalReview.stableKey,
+        operatingModelProposalReview.mappingId,
+        operatingModelProposalReview.mappingStableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "proposal_applications_before_version_fk",
+      columns: [
+        table.beforeVersionId,
+        table.organizationId,
+        table.beforeVersionStableKey,
+        table.processId,
+        table.processStableKey,
+      ],
+      foreignColumns: [
+        processVersion.id,
+        processVersion.organizationId,
+        processVersion.stableKey,
+        processVersion.processId,
+        processVersion.processStableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "proposal_applications_after_version_fk",
+      columns: [
+        table.afterVersionId,
+        table.organizationId,
+        table.afterVersionStableKey,
+        table.processId,
+        table.processStableKey,
+      ],
+      foreignColumns: [
+        processVersion.id,
+        processVersion.organizationId,
+        processVersion.stableKey,
+        processVersion.processId,
+        processVersion.processStableKey,
+      ],
+    }).onDelete("restrict"),
+    unique("proposal_applications_stable_key_unique").on(table.stableKey),
+    unique("proposal_applications_review_unique").on(table.reviewId),
+    unique("proposal_applications_identity_review_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.reviewId,
+      table.reviewStableKey,
+      table.mappingId,
+      table.mappingStableKey,
+    ),
+    check(
+      "proposal_applications_mapping_revision_check",
+      sql`${table.mappingRevision} >= 1`,
+    ),
+    check(
+      "proposal_applications_fingerprint_check",
+      sql`${table.documentedProcessFingerprint} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "proposal_applications_reason_actor_check",
+      sql`char_length(trim(${table.reason})) > 0 and char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    check(
+      "proposal_applications_effective_at_check",
+      sql`${table.effectiveAt} <= ${table.createdAt}`,
+    ),
+    index("proposal_applications_org_process_created_idx").on(
+      table.organizationId,
+      table.processStableKey,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const operatingModelProposalApplicationItem = pgTable(
+  "operating_model_proposal_application_items",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    applicationId: integer("application_id").notNull(),
+    applicationStableKey: uuid("application_stable_key").notNull(),
+    reviewId: integer("review_id").notNull(),
+    reviewStableKey: uuid("review_stable_key").notNull(),
+    mappingId: integer("mapping_id").notNull(),
+    mappingStableKey: uuid("mapping_stable_key").notNull(),
+    reviewDecisionId: integer("review_decision_id").notNull(),
+    reviewDecisionStableKey: uuid("review_decision_stable_key").notNull(),
+    itemRevisionId: integer("item_revision_id").notNull(),
+    itemRevisionStableKey: uuid("item_revision_stable_key").notNull(),
+    itemStableKey: uuid("item_stable_key").notNull(),
+    applicationSequence: integer("application_sequence").notNull(),
+    action: discoveryMappingAction("action").notNull(),
+    changeKind: operatingModelChangeKind("change_kind").notNull(),
+    beforeState: jsonb("before_state").notNull(),
+    afterState: jsonb("after_state").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "proposal_application_items_application_fk",
+      columns: [
+        table.applicationId,
+        table.organizationId,
+        table.applicationStableKey,
+        table.reviewId,
+        table.reviewStableKey,
+        table.mappingId,
+        table.mappingStableKey,
+      ],
+      foreignColumns: [
+        operatingModelProposalApplication.id,
+        operatingModelProposalApplication.organizationId,
+        operatingModelProposalApplication.stableKey,
+        operatingModelProposalApplication.reviewId,
+        operatingModelProposalApplication.reviewStableKey,
+        operatingModelProposalApplication.mappingId,
+        operatingModelProposalApplication.mappingStableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "proposal_application_items_decision_fk",
+      columns: [
+        table.reviewDecisionId,
+        table.organizationId,
+        table.reviewDecisionStableKey,
+        table.reviewId,
+        table.itemRevisionId,
+      ],
+      foreignColumns: [
+        operatingModelProposalReviewDecision.id,
+        operatingModelProposalReviewDecision.organizationId,
+        operatingModelProposalReviewDecision.stableKey,
+        operatingModelProposalReviewDecision.reviewId,
+        operatingModelProposalReviewDecision.itemRevisionId,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "proposal_application_items_item_revision_fk",
+      columns: [
+        table.itemRevisionId,
+        table.organizationId,
+        table.itemRevisionStableKey,
+        table.mappingId,
+        table.mappingStableKey,
+      ],
+      foreignColumns: [
+        discoveryProposalMappingItem.id,
+        discoveryProposalMappingItem.organizationId,
+        discoveryProposalMappingItem.stableKey,
+        discoveryProposalMappingItem.mappingId,
+        discoveryProposalMappingItem.mappingStableKey,
+      ],
+    }).onDelete("restrict"),
+    unique("proposal_application_items_stable_key_unique").on(table.stableKey),
+    unique("proposal_application_items_item_unique").on(
+      table.applicationId,
+      table.itemStableKey,
+    ),
+    unique("proposal_application_items_sequence_unique").on(
+      table.applicationId,
+      table.applicationSequence,
+    ),
+    check(
+      "proposal_application_items_sequence_check",
+      sql`${table.applicationSequence} >= 1`,
+    ),
+    check(
+      "proposal_application_items_action_check",
+      sql`${table.action} <> 'preserve_unresolved'`,
+    ),
+    check(
+      "proposal_application_items_state_check",
+      sql`jsonb_typeof(${table.beforeState}) = 'object' and jsonb_typeof(${table.afterState}) = 'object'`,
+    ),
+    index("proposal_application_items_org_application_idx").on(
+      table.organizationId,
+      table.applicationStableKey,
+      table.applicationSequence,
     ),
   ],
 );
@@ -1417,6 +1788,8 @@ export const operatingModelChange = pgTable(
     systemStableKey: uuid("system_stable_key"),
     exceptionId: integer("exception_id"),
     exceptionStableKey: uuid("exception_stable_key"),
+    processDependencyId: integer("process_dependency_id"),
+    processDependencyStableKey: uuid("process_dependency_stable_key"),
     entityType: operatingModelChangeEntityType("entity_type").notNull(),
     targetReference: varchar("target_reference", { length: 255 }).notNull(),
     changeKind: operatingModelChangeKind("change_kind").notNull(),
@@ -1483,6 +1856,19 @@ export const operatingModelChange = pgTable(
         exception.stableKey,
       ],
     }).onDelete("restrict"),
+    foreignKey({
+      name: "operating_model_changes_dependency_org_stable_fk",
+      columns: [
+        table.processDependencyId,
+        table.organizationId,
+        table.processDependencyStableKey,
+      ],
+      foreignColumns: [
+        processDependency.id,
+        processDependency.organizationId,
+        processDependency.stableKey,
+      ],
+    }).onDelete("restrict"),
     unique("operating_model_changes_stable_key_unique").on(
       table.stableKey,
     ),
@@ -1508,7 +1894,7 @@ export const operatingModelChange = pgTable(
     ),
     check(
       "operating_model_changes_target_shape_check",
-      sql`(${table.entityType} = 'process' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null) or (${table.entityType} = 'process_step' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is not null and ${table.processStepStableKey} is not null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null) or (${table.entityType} = 'system' and ${table.processId} is null and ${table.processStableKey} is null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is not null and ${table.systemStableKey} is not null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null) or (${table.entityType} = 'process_system' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is not null and ${table.systemStableKey} is not null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null) or (${table.entityType} = 'exception' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is not null and ${table.exceptionStableKey} is not null)`,
+      sql`(${table.entityType} = 'process' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'process_step' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is not null and ${table.processStepStableKey} is not null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'system' and ${table.processId} is null and ${table.processStableKey} is null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is not null and ${table.systemStableKey} is not null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'process_system' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is not null and ${table.systemStableKey} is not null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'exception' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is not null and ${table.exceptionStableKey} is not null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'process_dependency' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is not null and ${table.processDependencyStableKey} is not null)`,
     ),
     index("operating_model_changes_org_created_idx").on(
       table.organizationId,
@@ -1532,6 +1918,11 @@ export const operatingModelChange = pgTable(
     index("operating_model_changes_exception_created_idx").on(
       table.organizationId,
       table.exceptionStableKey,
+      table.createdAt,
+    ),
+    index("operating_model_changes_dependency_created_idx").on(
+      table.organizationId,
+      table.processDependencyStableKey,
       table.createdAt,
     ),
   ],
@@ -1703,6 +2094,7 @@ export const processDependency = pgTable(
   {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
     sourceProcessId: integer("source_process_id").notNull(),
     targetProcessId: integer("target_process_id").notNull(),
     dependencyType: processDependencyType("dependency_type").notNull(),
@@ -1729,6 +2121,12 @@ export const processDependency = pgTable(
       table.sourceProcessId,
       table.targetProcessId,
       table.dependencyType,
+    ),
+    unique("process_dependencies_stable_key_unique").on(table.stableKey),
+    unique("process_dependencies_id_org_stable_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
     ),
     check(
       "process_dependencies_distinct_processes_check",

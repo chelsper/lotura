@@ -148,6 +148,13 @@
       "when": 1786737204484,
       "tag": "0020_proposal_review_governance",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1786999446314,
+      "tag": "0021_process_versions_atomic_application",
+      "breakpoints": true
     }
   ]
 }

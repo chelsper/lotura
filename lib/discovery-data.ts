@@ -14,7 +14,10 @@ import {
   exception as exceptionTable,
   operatingModelProposalReview,
   operatingModelProposalReviewDecision,
+  operatingModelProposalApplication,
+  operatingModelProposalApplicationItem,
   process as processTable,
+  processVersion,
   processStep,
   processSystem,
   role,
@@ -160,6 +163,26 @@ export type ProposalReviewRecord = {
   startedByActor: string;
   status: ProposalReviewStatus;
   updatedAt: string;
+};
+
+export type ProcessApplicationItemRecord = {
+  action: DiscoveryMappingAction;
+  afterState: Record<string, unknown>;
+  applicationSequence: number;
+  beforeState: Record<string, unknown>;
+  changeKind: "correction" | "organizational_change";
+  id: string;
+};
+
+export type ProcessApplicationRecord = {
+  actorIdentifier: string;
+  afterVersionSequence: number;
+  beforeVersionSequence: number;
+  createdAt: string;
+  effectiveAt: string;
+  id: string;
+  items: ProcessApplicationItemRecord[];
+  reason: string;
 };
 
 export type DiscoveryMappingCatalog = {
@@ -682,5 +705,120 @@ export async function loadOperatingModelProposalReview(
       createdAt: decision.createdAt.toISOString(),
     })),
     updatedAt: review.updatedAt.toISOString(),
+  };
+}
+
+export async function loadOperatingModelProposalApplication(
+  organizationId: number,
+  sessionStableKey: string,
+): Promise<ProcessApplicationRecord | null> {
+  const applications = await db
+    .select({
+      actorIdentifier: operatingModelProposalApplication.actorIdentifier,
+      afterVersionSequence: processVersion.versionSequence,
+      beforeVersionId: operatingModelProposalApplication.beforeVersionId,
+      createdAt: operatingModelProposalApplication.createdAt,
+      effectiveAt: operatingModelProposalApplication.effectiveAt,
+      id: operatingModelProposalApplication.stableKey,
+      reason: operatingModelProposalApplication.reason,
+      reviewId: operatingModelProposalApplication.reviewId,
+    })
+    .from(operatingModelProposalApplication)
+    .innerJoin(
+      operatingModelProposalReview,
+      and(
+        eq(
+          operatingModelProposalReview.organizationId,
+          operatingModelProposalApplication.organizationId,
+        ),
+        eq(
+          operatingModelProposalReview.id,
+          operatingModelProposalApplication.reviewId,
+        ),
+        eq(
+          operatingModelProposalReview.stableKey,
+          operatingModelProposalApplication.reviewStableKey,
+        ),
+      ),
+    )
+    .innerJoin(
+      processVersion,
+      and(
+        eq(
+          processVersion.organizationId,
+          operatingModelProposalApplication.organizationId,
+        ),
+        eq(
+          processVersion.id,
+          operatingModelProposalApplication.afterVersionId,
+        ),
+        eq(
+          processVersion.stableKey,
+          operatingModelProposalApplication.afterVersionStableKey,
+        ),
+      ),
+    )
+    .where(
+      and(
+        eq(operatingModelProposalApplication.organizationId, organizationId),
+        eq(operatingModelProposalReview.sessionStableKey, sessionStableKey),
+      ),
+    )
+    .limit(1);
+  const application = applications[0];
+  if (!application) return null;
+
+  const [beforeVersions, items] = await Promise.all([
+    db
+      .select({ versionSequence: processVersion.versionSequence })
+      .from(processVersion)
+      .where(
+        and(
+          eq(processVersion.organizationId, organizationId),
+          eq(processVersion.id, application.beforeVersionId),
+        ),
+      )
+      .limit(1),
+    db
+      .select({
+        action: operatingModelProposalApplicationItem.action,
+        afterState: operatingModelProposalApplicationItem.afterState,
+        applicationSequence:
+          operatingModelProposalApplicationItem.applicationSequence,
+        beforeState: operatingModelProposalApplicationItem.beforeState,
+        changeKind: operatingModelProposalApplicationItem.changeKind,
+        id: operatingModelProposalApplicationItem.stableKey,
+      })
+      .from(operatingModelProposalApplicationItem)
+      .where(
+        and(
+          eq(
+            operatingModelProposalApplicationItem.organizationId,
+            organizationId,
+          ),
+          eq(
+            operatingModelProposalApplicationItem.applicationStableKey,
+            application.id,
+          ),
+        ),
+      )
+      .orderBy(asc(operatingModelProposalApplicationItem.applicationSequence)),
+  ]);
+  const beforeVersion = beforeVersions[0];
+  if (!beforeVersion) return null;
+
+  return {
+    actorIdentifier: application.actorIdentifier,
+    afterVersionSequence: application.afterVersionSequence,
+    beforeVersionSequence: beforeVersion.versionSequence,
+    createdAt: application.createdAt.toISOString(),
+    effectiveAt: application.effectiveAt.toISOString(),
+    id: application.id,
+    items: items.map((item) => ({
+      ...item,
+      afterState: item.afterState as Record<string, unknown>,
+      beforeState: item.beforeState as Record<string, unknown>,
+    })),
+    reason: application.reason,
   };
 }

@@ -390,3 +390,47 @@ export async function finishProposalReviewAction(
   revalidatePath(`/studio/discovery/interviews/${sessionId}/reconcile`);
   redirect(`/studio/discovery/interviews/${sessionId}/proposal-review`);
 }
+
+export async function applyProposalReviewAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const sessionId = text(formData, "sessionId");
+  const experience = await loadWorkspaceExperience();
+  if (!experience.processApplication.enabled) {
+    return { message: "Process application is not enabled.", status: "error" };
+  }
+
+  const classifications: Record<string, string> = {};
+  for (const [name, value] of formData.entries()) {
+    if (
+      name.startsWith("classification:") &&
+      typeof value === "string"
+    ) {
+      classifications[name.slice("classification:".length)] = value;
+    }
+  }
+  const effectiveDate = text(formData, "effectiveDate");
+  const effectiveAt = new Date(`${effectiveDate}T00:00:00.000Z`);
+  const { applyApprovedOperatingModelProposal } = await import(
+    "@/lib/process-application-administration"
+  );
+  const result = await applyApprovedOperatingModelProposal({
+    classifications,
+    effectiveAt,
+    expectedDocumentedFingerprint: text(
+      formData,
+      "expectedDocumentedFingerprint",
+    ),
+    expectedReviewId: text(formData, "expectedReviewId"),
+    reason: text(formData, "reason"),
+    sessionId,
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  revalidatePath(`/studio/discovery/interviews/${sessionId}/proposal-review`);
+  revalidatePath(`/studio/discovery/interviews/${sessionId}/proposal-review/apply`);
+  revalidatePath(`/studio/discovery/interviews/${sessionId}/reconcile`);
+  revalidatePath("/studio/operating-model");
+  revalidatePath("/explorer");
+  redirect(`/studio/discovery/interviews/${sessionId}/proposal-review/apply`);
+}

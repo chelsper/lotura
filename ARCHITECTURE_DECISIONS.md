@@ -95,7 +95,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-050 | Structured proposed-change mappings use explicit typed operating-model targets | Accepted — implementation authorized for Structured Proposed Changes v0.1, Slice 2 |
 | LAD-051 | Discovery may conclude with a durable Knowledge Outcome without producing an operating-model change | Accepted — implementation authorized for Knowledge Outcomes v0.1 |
 | LAD-052 | Proposal review authorizes exact proposed items without changing the operating model | Accepted — implementation authorized for Proposal Review & Governance v0.1 |
-| LAD-053 | Approved proposed items create one immutable Process version through a separate atomic application boundary | Accepted — implementation planning authorized |
+| LAD-053 | Approved proposed items create one immutable Process version through a separate atomic application boundary | Accepted — generic implementation complete and isolated verification passed |
 
 ## Decision records
 
@@ -1690,7 +1690,9 @@ remain separately approved work.
 
 ### LAD-053 — Approved proposed items create one immutable Process version through a separate atomic application boundary
 
-**Status:** Accepted — implementation planning authorized.
+**Status:** Accepted — generic implementation complete and isolated fictional
+verification passed at migration journal `22/22`. JU rollout remains separately
+gated.
 
 **Context:** LAD-049 and LAD-050 preserve immutable, typed human mappings.
 LAD-052 permits an accountable reviewer to approve exact item revisions to
@@ -1817,8 +1819,8 @@ The following ideas are recorded so postponement is visible and deliberate.
 | Uploads, imports, Visio/PDF/flowchart parsing | Requires malware handling, source permissions, artifact retention, provenance, and conflict treatment | Artifact architecture, storage, security, and extraction decision |
 | Whiteboard and collaborative capture | Draft contribution, authorship, reconciliation, and conversion to structured knowledge are undefined | Collaboration, observation, and approval decision |
 | Conflict detection and consensus | Conflicts need identity, scope, lifecycle, privacy, and human resolution | Conflict and reconciliation schema decision |
-| Structured proposal application workflow | LAD-053 accepts the write, authority, effective-time, and atomicity design boundary but authorizes planning only | Review and approve the exact implementation, migration, credential, and rollout |
-| Process version history | LAD-053 accepts a Process-centered immutable snapshot and linear v0.1 chain but authorizes planning only | Review and approve the exact snapshot schema and migration |
+| Structured proposal application workflow | LAD-053 accepts the write, authority, effective-time, and atomicity design boundary; generic implementation and isolated fictional verification are authorized | Verify the exact migration and least-privilege role fictionally before any separately approved rollout |
+| Process version history | LAD-053 accepts a Process-centered immutable snapshot and linear v0.1 chain; generic implementation and isolated fictional verification are authorized | Verify snapshot format 1 and the linear chain in the fictional database before any separately approved rollout |
 | Knowledge Gaps | Explainable gaps are product direction under LAD-046, but persistence is not justified until assignment, governance, or resolution history requires it | Derived projection rules first; later lifecycle, ownership, and history decision if persistence is needed |
 | Process Families and reusable subprocesses | LAD-047 preserves explicit family membership and distinct composition semantics, but authorizes no schema or inheritance | Family identity, membership cardinality, effective dating, governance, composition, comparison, and migration decision |
 | Question-driven Discovery | Organizational questions may lead to existing knowledge, review, a new interview, or more evidence, but routing and scope are unresolved | Search, matching, participant selection, evidence scope, privacy, and session-start decision |
@@ -1892,6 +1894,7 @@ authorize Process versions, canonical application, JU rollout, public-demo
 changes, or AI participation.
 
 LAD-053 accepts the immutable Process-version and atomic-application design
-boundary after Proposal Review. It authorizes implementation planning only and
-authorizes no code, schema, migration, credential, environment, canonical
-write, JU rollout, public-demo change, or AI participation.
+boundary after Proposal Review. Generic implementation and isolated fictional
+verification are authorized. JU migration, credentials, environment changes,
+canonical JU application, deployment, public-demo change, and AI participation
+remain separately gated.

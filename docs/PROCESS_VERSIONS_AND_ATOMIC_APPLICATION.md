@@ -189,11 +189,12 @@ results. Public/demo mode cannot initialize the application database module,
 render the control, or invoke the action. Public Northstar receives no
 application credential.
 
-## Verification sequence after implementation approval
+## Verification sequence for the approved fictional implementation
 
-LAD-053 is accepted. Implementation should proceed only after the exact schema,
-write boundary, privilege contract, and isolated test plan receive separate
-approval:
+LAD-053's generic implementation is complete. Its exact schema, write boundary,
+privilege contract, and rollback-only isolated fictional verification passed at
+migration journal `22/22`. JU migration, configuration, deployment, and real
+Process application remain separately gated:
 
 1. add the forward-only migration and server-only application boundary;
 2. verify the complete mixed-action path in the isolated fictional database;
