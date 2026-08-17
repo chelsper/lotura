@@ -3,7 +3,9 @@
 This document describes the accepted LAD-053 design boundary after Proposal
 Review. It authorizes implementation planning, not implementation. No code,
 schema, migration, credential, environment, deployment, or private-data change
-is approved until the resulting implementation is reviewed separately.
+is approved until the resulting implementation is reviewed separately. The
+resulting exact proposal is recorded in
+[PROCESS_VERSIONS_AND_ATOMIC_APPLICATION_IMPLEMENTATION_PLAN.md](PROCESS_VERSIONS_AND_ATOMIC_APPLICATION_IMPLEMENTATION_PLAN.md).
 
 ## Product boundary
 
