@@ -72,19 +72,22 @@ knowledge lifecycle, not because they are optional side ideas.
 This is the current dependency-ordered sequence of meaningful product
 milestones:
 
-1. **Knowledge Outcomes** — make a completed Discovery cycle understandable
-   from its durable evidence and review decisions. Confirmed documentation,
-   unresolved knowledge, additional validation, structured changes, and no
-   proposed change may coexist. A no-change outcome completes successfully and
-   creates no empty structured-mapping workspace.
-2. **Proposal Review & Governance** — accountable people review, validate, and
-   approve or reject exact proposed-item revisions within explicit scope. It
-   applies only when structured proposed changes exist, and approval means
-   eligible for later governed application rather than a change to current
-   documentation.
-3. **Process Versions & Atomic Application** — an approved proposal produces a
-   historically recoverable, effective operating-model version in one governed
-   operation.
+1. **Knowledge Outcomes (implemented in v0.1)** — make a completed Discovery
+   cycle understandable from its durable evidence and review decisions.
+   Confirmed documentation, unresolved knowledge, additional validation,
+   structured changes, and no proposed change may coexist. A no-change outcome
+   completes successfully and creates no empty structured-mapping workspace.
+2. **Proposal Review & Governance (implemented in v0.1)** — accountable people
+   review, validate, and approve or reject exact proposed-item revisions within
+   explicit scope. It applies only when structured proposed changes exist, and
+   approval means eligible for later governed application rather than a change
+   to current documentation.
+3. **Process Versions & Atomic Application (next; design approved)** — an
+   approved proposal produces a historically recoverable, effective
+   operating-model version in one governed operation. LAD-053 authorizes
+   implementation planning only; the exact implementation, migration, and
+   credential require separate review, and implementation does not itself
+   authorize a JU migration or rollout.
 4. **Knowledge Gaps** — explainable unresolved knowledge and review questions,
    without a score.
 5. **Process Families** — explicit family identity and membership, with no
