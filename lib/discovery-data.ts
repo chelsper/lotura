@@ -5,6 +5,9 @@ import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   discoveryInquiry,
+  discoveryInquiryObservation,
+  discoveryInquiryRoute,
+  discoveryInquirySession,
   discoveryObservation,
   discoveryProposalMapping,
   discoveryProposalMappingItem,
@@ -18,6 +21,7 @@ import {
   operatingModelProposalApplication,
   operatingModelProposalApplicationItem,
   process as processTable,
+  processFamily,
   processVersion,
   processStep,
   processSystem,
@@ -46,6 +50,27 @@ export type DiscoveryInquiryRecord = {
   revision: number;
   status: "open" | "waiting_for_information" | "routed" | "closed_for_now";
   updatedAt: string;
+};
+
+export type DiscoveryInquiryRouteRecord = {
+  actorIdentifier: string;
+  createdAt: string;
+  discoveryInquirySessionId: string | null;
+  discoverySessionId: string | null;
+  id: string;
+  processFamilyId: string | null;
+  processFamilyName: string | null;
+  processId: string | null;
+  processName: string | null;
+  routeKind:
+    | "review_process"
+    | "review_process_family"
+    | "start_guided_interview"
+    | "start_inquiry_exploration"
+    | "wait_for_source"
+    | "finish_for_now";
+  routeNote: string | null;
+  routeSequence: number;
 };
 
 export type DiscoverySessionSummary = {
@@ -118,6 +143,62 @@ export async function loadDiscoveryInquiry(
     : null;
 }
 
+export async function loadDiscoveryInquiryRoutes(
+  organizationId: number,
+  inquiryStableKey: string,
+): Promise<DiscoveryInquiryRouteRecord[]> {
+  const rows = await db
+    .select({
+      actorIdentifier: discoveryInquiryRoute.actorIdentifier,
+      createdAt: discoveryInquiryRoute.createdAt,
+      discoveryInquirySessionId:
+        discoveryInquiryRoute.discoveryInquirySessionStableKey,
+      discoverySessionId: discoveryInquiryRoute.discoverySessionStableKey,
+      id: discoveryInquiryRoute.stableKey,
+      processFamilyId: discoveryInquiryRoute.processFamilyStableKey,
+      processFamilyName: processFamily.name,
+      processId: discoveryInquiryRoute.processId,
+      processName: processTable.name,
+      routeKind: discoveryInquiryRoute.routeKind,
+      routeNote: discoveryInquiryRoute.routeNote,
+      routeSequence: discoveryInquiryRoute.routeSequence,
+    })
+    .from(discoveryInquiryRoute)
+    .leftJoin(
+      processTable,
+      and(
+        eq(processTable.organizationId, organizationId),
+        eq(processTable.id, discoveryInquiryRoute.processId),
+        eq(processTable.stableKey, discoveryInquiryRoute.processStableKey),
+      ),
+    )
+    .leftJoin(
+      processFamily,
+      and(
+        eq(processFamily.organizationId, organizationId),
+        eq(processFamily.id, discoveryInquiryRoute.processFamilyId),
+        eq(
+          processFamily.stableKey,
+          discoveryInquiryRoute.processFamilyStableKey,
+        ),
+      ),
+    )
+    .where(
+      and(
+        eq(discoveryInquiryRoute.organizationId, organizationId),
+        eq(discoveryInquiryRoute.inquiryStableKey, inquiryStableKey),
+      ),
+    )
+    .orderBy(asc(discoveryInquiryRoute.routeSequence));
+
+  return rows.map((row) => ({
+    ...row,
+    createdAt: row.createdAt.toISOString(),
+    processFamilyId: row.processFamilyId?.toString() ?? null,
+    processId: row.processId ? `process:${row.processId}` : null,
+  }));
+}
+
 export type DiscoveryObservationRecord = {
   actorIdentifier: string;
   createdAt: string;
@@ -146,6 +227,21 @@ export type DiscoveryObservationRecord = {
 
 export type DiscoverySessionDetail = DiscoverySessionSummary & {
   observations: DiscoveryObservationRecord[];
+};
+
+export type DiscoveryInquirySessionDetail = {
+  actorIdentifier: string;
+  createdAt: string;
+  currentQuestionKey: string;
+  id: string;
+  inquiryId: string;
+  observationCount: number;
+  observations: DiscoveryObservationRecord[];
+  questionText: string;
+  revision: number;
+  scopeStatement: string;
+  status: "in_progress" | "paused" | "ready_for_review" | "closed";
+  updatedAt: string;
 };
 
 export type DiscoveryProposalDecisionRecord = {
@@ -445,6 +541,82 @@ export async function loadDiscoverySessions(
     processId: `process:${row.processId}`,
     updatedAt: row.updatedAt.toISOString(),
   }));
+}
+
+export async function loadDiscoveryInquirySession(
+  organizationId: number,
+  inquiryStableKey: string,
+  sessionStableKey: string,
+): Promise<DiscoveryInquirySessionDetail | null> {
+  const sessions = await db
+    .select({
+      actorIdentifier: discoveryInquirySession.actorIdentifier,
+      createdAt: discoveryInquirySession.createdAt,
+      currentQuestionKey: discoveryInquirySession.currentQuestionKey,
+      id: discoveryInquirySession.stableKey,
+      inquiryId: discoveryInquiry.stableKey,
+      questionText: discoveryInquiry.questionText,
+      revision: discoveryInquirySession.revision,
+      scopeStatement: discoveryInquirySession.scopeStatement,
+      status: discoveryInquirySession.status,
+      updatedAt: discoveryInquirySession.updatedAt,
+    })
+    .from(discoveryInquirySession)
+    .innerJoin(
+      discoveryInquiry,
+      and(
+        eq(discoveryInquiry.organizationId, organizationId),
+        eq(discoveryInquiry.id, discoveryInquirySession.inquiryId),
+        eq(
+          discoveryInquiry.stableKey,
+          discoveryInquirySession.inquiryStableKey,
+        ),
+      ),
+    )
+    .where(
+      and(
+        eq(discoveryInquirySession.organizationId, organizationId),
+        eq(discoveryInquiry.stableKey, inquiryStableKey),
+        eq(discoveryInquirySession.stableKey, sessionStableKey),
+      ),
+    )
+    .limit(1);
+  const session = sessions[0];
+  if (!session) return null;
+
+  const observations = await db
+    .select({
+      actorIdentifier: discoveryInquiryObservation.actorIdentifier,
+      createdAt: discoveryInquiryObservation.createdAt,
+      epistemicState: discoveryInquiryObservation.epistemicState,
+      id: discoveryInquiryObservation.stableKey,
+      promptKey: discoveryInquiryObservation.promptKey,
+      promptText: discoveryInquiryObservation.promptText,
+      responseText: discoveryInquiryObservation.responseText,
+      sequence: discoveryInquiryObservation.sequence,
+      supersedesObservationId:
+        discoveryInquiryObservation.supersedesObservationStableKey,
+      topic: discoveryInquiryObservation.topic,
+    })
+    .from(discoveryInquiryObservation)
+    .where(
+      and(
+        eq(discoveryInquiryObservation.organizationId, organizationId),
+        eq(discoveryInquiryObservation.sessionStableKey, sessionStableKey),
+      ),
+    )
+    .orderBy(asc(discoveryInquiryObservation.sequence));
+
+  return {
+    ...session,
+    createdAt: session.createdAt.toISOString(),
+    observationCount: observations.length,
+    observations: observations.map((observation) => ({
+      ...observation,
+      createdAt: observation.createdAt.toISOString(),
+    })),
+    updatedAt: session.updatedAt.toISOString(),
+  };
 }
 
 export async function loadDiscoverySession(

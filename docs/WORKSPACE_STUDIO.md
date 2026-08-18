@@ -72,7 +72,10 @@ Workspace Studio grows under one coherent product umbrella:
 - **Discovery** — organizational questions, guided interviews, evidence,
   review, reconciliation, and proposed updates. Question-driven entry remains
   a human routing experience: possible matches do not establish truth, create
-  a Process, or select a participant automatically.
+  a Process, or select a participant automatically. When the Process boundary
+  is itself unknown, the accepted LAD-057 experience preserves inquiry-scoped
+  evidence separately rather than creating a placeholder Process or making an
+  existing Process-bound interview ambiguous.
 - **Activity** — a chronological, read-only projection of the existing
   append-only change ledgers. Activity does not replace those ledgers or imply
   causality between events.
@@ -178,6 +181,11 @@ maintenance, and deactivation preserve immutable identity and history.
   changing the Process. When evidence supports specific changes, the same route
   leads into the structured mapping workspace; when it does not, the review
   ends successfully without an empty proposal experience.
+
+LAD-057 Slice B now implements **Explore before choosing a Process** as a
+private, typed inquiry-scoped interview that preserves evidence without
+selecting or creating a Process. Generic implementation and isolated
+verification are complete; workspace rollout remains separately controlled.
 
 Discovery uses conversational product language. Technical terms such as
 canonical record, epistemic state, and reconciliation package remain available

@@ -126,7 +126,11 @@ test("interview scope defaults to the whole process and preserves a focused desc
   assert.match(form, /name="scopeDetails"/);
   assert.doesNotMatch(form, /Interview scope/);
   assert.match(actions, /buildDiscoveryScopeStatement/);
-  assert.doesNotMatch(actions, /text\(formData, "scopeStatement"\)/);
+  const processStartAction = actions.slice(
+    actions.indexOf("export async function startDiscoverySessionAction"),
+    actions.indexOf("export async function answerDiscoveryQuestionAction"),
+  );
+  assert.doesNotMatch(processStartAction, /text\(formData, "scopeStatement"\)/);
 });
 
 test("migration 0016 creates tenant-safe immutable evidence without touching canonical Process facts", async () => {

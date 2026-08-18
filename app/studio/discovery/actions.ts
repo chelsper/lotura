@@ -13,6 +13,14 @@ import {
   setDiscoverySessionPaused,
   type DiscoveryEpistemicState,
 } from "@/lib/discovery-administration";
+import {
+  answerInquiryDiscoveryQuestion,
+  appendInquiryDiscoveryCorrection,
+  routeDiscoveryInquiry,
+  setInquiryDiscoverySessionPaused,
+  startInquiryDiscoverySession,
+  startProcessDiscoverySessionFromInquiry,
+} from "@/lib/discovery-inquiry-administration";
 import { buildDiscoveryScopeStatement } from "@/lib/discovery-scope.mjs";
 import {
   changeDiscoveryMappingItemState,
@@ -75,6 +83,148 @@ export async function createDiscoveryInquiryAction(
   if (!result.ok) return { message: result.message, status: "error" };
   revalidatePath("/studio/discovery");
   redirect(`/studio/discovery/inquiries/${result.inquiryId}`);
+}
+
+export async function startInquiryDiscoverySessionAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const inquiryId = text(formData, "inquiryId");
+  const result = await startInquiryDiscoverySession({
+    expectedRevision: revision(formData),
+    inquiryId,
+    scopeStatement: text(formData, "scopeStatement"),
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  if (!result.destinationId) {
+    return {
+      message: "Lotura could not open the preserved interview.",
+      status: "error",
+    };
+  }
+  revalidatePath(`/studio/discovery/inquiries/${inquiryId}`);
+  revalidatePath("/studio/discovery");
+  redirect(
+    `/studio/discovery/inquiries/${inquiryId}/interviews/${result.destinationId}`,
+  );
+}
+
+export async function startProcessDiscoveryFromInquiryAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const inquiryId = text(formData, "inquiryId");
+  const result = await startProcessDiscoverySessionFromInquiry({
+    expectedRevision: revision(formData),
+    inquiryId,
+    processKey: text(formData, "processKey"),
+    scopeStatement: text(formData, "scopeStatement"),
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  if (!result.destinationId) {
+    return {
+      message: "Lotura could not open the preserved interview.",
+      status: "error",
+    };
+  }
+  revalidatePath(`/studio/discovery/inquiries/${inquiryId}`);
+  revalidatePath("/studio/discovery");
+  redirect(`/studio/discovery/interviews/${result.destinationId}`);
+}
+
+const inquiryRouteKinds = new Set([
+  "review_process",
+  "review_process_family",
+  "wait_for_source",
+  "finish_for_now",
+]);
+
+export async function routeDiscoveryInquiryAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const inquiryId = text(formData, "inquiryId");
+  const routeKind = text(formData, "routeKind");
+  if (!inquiryRouteKinds.has(routeKind)) {
+    return { message: "Choose what should happen next.", status: "error" };
+  }
+  const result = await routeDiscoveryInquiry({
+    expectedRevision: revision(formData),
+    inquiryId,
+    routeKind: routeKind as
+      | "review_process"
+      | "review_process_family"
+      | "wait_for_source"
+      | "finish_for_now",
+    routeNote: text(formData, "routeNote"),
+    targetKey: text(formData, "targetKey"),
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  revalidatePath(`/studio/discovery/inquiries/${inquiryId}`);
+  revalidatePath("/studio/discovery");
+  if (result.destinationKind === "process" && result.destinationId) {
+    redirect(
+      `/studio/processes/${encodeURIComponent(result.destinationId)}`,
+    );
+  }
+  if (result.destinationKind === "process_family" && result.destinationId) {
+    redirect(`/studio/process-families/${result.destinationId}`);
+  }
+  redirect(`/studio/discovery/inquiries/${inquiryId}`);
+}
+
+export async function answerInquiryDiscoveryQuestionAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const inquiryId = text(formData, "inquiryId");
+  const sessionId = text(formData, "sessionId");
+  const result = await answerInquiryDiscoveryQuestion({
+    epistemicState: state(formData),
+    expectedRevision: revision(formData),
+    inquiryId,
+    promptKey: text(formData, "promptKey"),
+    responseText: text(formData, "responseText"),
+    sessionId,
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  const path = `/studio/discovery/inquiries/${inquiryId}/interviews/${sessionId}`;
+  revalidatePath(path);
+  redirect(path);
+}
+
+export async function correctInquiryDiscoveryObservationAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const inquiryId = text(formData, "inquiryId");
+  const sessionId = text(formData, "sessionId");
+  const result = await appendInquiryDiscoveryCorrection({
+    epistemicState: state(formData),
+    expectedRevision: revision(formData),
+    inquiryId,
+    observationId: text(formData, "observationId"),
+    responseText: text(formData, "responseText"),
+    sessionId,
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  const path = `/studio/discovery/inquiries/${inquiryId}/interviews/${sessionId}`;
+  revalidatePath(path);
+  redirect(path);
+}
+
+export async function changeInquiryDiscoveryPauseAction(formData: FormData) {
+  const inquiryId = text(formData, "inquiryId");
+  const sessionId = text(formData, "sessionId");
+  await setInquiryDiscoverySessionPaused({
+    expectedRevision: revision(formData),
+    inquiryId,
+    paused: text(formData, "paused") === "yes",
+    sessionId,
+  });
+  const path = `/studio/discovery/inquiries/${inquiryId}/interviews/${sessionId}`;
+  revalidatePath(path);
+  redirect(path);
 }
 
 export async function startDiscoverySessionAction(

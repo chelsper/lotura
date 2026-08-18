@@ -98,6 +98,14 @@ An interview can be successful when it confirms the current documentation or
 preserves honest uncertainty without proposing a change. Discovery exists to
 improve understanding, not manufacture work.
 
+Discovery may also begin before the correct Process boundary is known. In that
+case Lotura should preserve the organizational question and attributable
+evidence without creating a placeholder Process, treating a Process Family as
+a Process, or weakening the identity of existing Process-bound interviews. A
+person should later decide whether the evidence belongs with an existing
+Process, supports proposing a new working Draft, spans several Processes,
+requires more validation, or does not justify a separate Process.
+
 Knowledge lifecycle and operating-model structure are separate architectural
 dimensions. The lifecycle describes how knowledge earns enough trust to affect
 the documented model. Process Families, Reference Models, Job Descriptions,
