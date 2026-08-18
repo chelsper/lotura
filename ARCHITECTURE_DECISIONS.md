@@ -36,6 +36,8 @@ A feature request does not implicitly authorize a schema, migration, database, c
 
 - **Accepted — implemented:** the decision is reflected in the current product or repository.
 - **Accepted — product direction:** the decision governs future design but is not fully implemented.
+- **Accepted — implementation authorized:** the decision is approved for the bounded implementation it describes, but rollout remains separately controlled.
+- **Proposed — awaiting approval:** the decision is documented for review and authorizes no implementation.
 - **Intentionally deferred:** the idea remains visible but lacks approval or sufficient design for implementation.
 - **Superseded:** a later decision replaces the record while preserving its history.
 
@@ -97,6 +99,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-052 | Proposal review authorizes exact proposed items without changing the operating model | Accepted — implementation authorized for Proposal Review & Governance v0.1 |
 | LAD-053 | Approved proposed items create one immutable Process version through a separate atomic application boundary | Accepted — generic implementation complete and isolated verification passed |
 | LAD-054 | Removing a populated Organization Unit moves its direct contents before retiring the Unit | Accepted — generic implementation complete and isolated verification passed |
+| LAD-055 | Process Families use explicit many-to-many, non-inheriting membership with separate history | Accepted — implementation authorized for Process Families v0.1 |
 
 ## Decision records
 
@@ -1885,6 +1888,94 @@ rollback, history immutability, hard-delete denial, and zero persisted probe
 rows. No JU migration, configuration, deployment, or canonical change has been
 authorized or performed for this slice.
 
+### LAD-055 — Process Families use explicit many-to-many, non-inheriting membership with separate history
+
+**Status:** Accepted — implementation authorized for Process Families v0.1.
+
+**Context:** LAD-047 establishes that Process Family membership, executable
+Process composition, and operational dependency have different meanings. It
+deliberately leaves Family identity, membership cardinality, effective dating,
+history, governance, security, and migration unresolved. The current schema can
+represent Processes and dependencies but cannot preserve a durable grouping
+such as Gift Processing without overloading those concepts or storing an
+unattributable label.
+
+**Decision:** Process Families v0.1 introduces one first-class,
+Organization-scoped `ProcessFamily` identity and one explicit,
+Organization-scoped `ProcessFamilyMembership` interval connecting an existing
+Process to a Family.
+
+Membership is many-to-many. A Process may have current membership in more than
+one Family, while the same Process/Family pair may have only one current
+membership. v0.1 defines no primary Family, no Family-to-Family nesting, and no
+Family hierarchy. Ending membership preserves the row and its effective dates;
+re-establishing it later creates a new durable interval.
+
+A Family is grouping and navigation context, not an executable Process.
+Membership does not provide or inherit Process purpose, Owner Role, Steps,
+responsible Roles, Systems, Exceptions, dependencies, governance, approval, or
+conclusions. Existing `ProcessDependency` remains operational reliance.
+Reusable subprocess composition remains a separately designed future typed
+relationship.
+
+Workspace Studio permits an authenticated Workspace Administrator to create,
+describe, rename, and inactivate a Family and to add or end membership.
+Inactivation is blocked while current memberships remain. Every mutation uses
+server-derived Organization and actor identity, compare-and-set protection,
+same-Organization constraints, and an atomic append-only
+`operating_model_changes` event in the same serializable transaction. The
+history actor is the authenticated Lotura
+identity and is not inferred from Person, Position, Membership, reporting,
+Process ownership, Operational Role, RoleMandate, or RoleCoverage.
+
+Family and membership changes do not create a `process_version`. LAD-053's
+version snapshot remains the executable documented Process definition; Family
+membership is separate operating-model grouping context. No Family approval,
+Steward, Reference Model, comparison, Discovery mapping, FLOW calculation, or
+AI behavior is introduced.
+
+The existing dedicated Process-admin boundary may receive only exact table and
+column privileges for Family/membership maintenance and history insertion. The
+runtime role may receive SELECT. No new credential or environment variable is
+required. Public/demo mode cannot initialize or invoke authoring and public
+Northstar receives no Family content in this milestone.
+
+**Why:** Explicit many-to-many membership preserves durable identity and future
+graph flexibility without turning Families into Processes or dependencies.
+Allowing overlap now avoids a later destructive cardinality change, while
+omitting primary and nested semantics prevents unsupported hierarchy or
+inheritance. Reusing the operating-model change ledger preserves one coherent,
+target-specific administration history without confusing grouping with Process
+versions.
+
+**Alternatives considered:** Add one nullable parent Process; make a Family an
+ordinary Process; reuse dependencies; store tags or free text; allow only one
+Family per Process; introduce nested Families immediately; build a generic
+polymorphic relationship graph; include membership in every Process version; or
+create a separate Family audit ledger. These were rejected because they
+conflate meanings, impose a tree, weaken identity and tenant safety, introduce
+speculative hierarchy, or duplicate an existing suitable history boundary.
+
+**Affected decisions:** This decision follows and extends LAD-003, LAD-004,
+LAD-006 through LAD-009, LAD-015, LAD-016, LAD-018, LAD-023, LAD-026, LAD-035
+through LAD-037, LAD-046, and LAD-047. It preserves the Reference Model boundary
+in LAD-048 and the Knowledge Outcome and Process-version boundaries in LAD-051
+and LAD-053. It supersedes no decision.
+
+**Consequences and deferrals:** The accepted implementation may add only the
+two bounded Family tables, exact membership lifecycle constraints, forward-only
+operating-model history target/action expansion, private Studio browsing and
+maintenance, contextual Process navigation, the reviewed Process-admin/runtime
+privilege delta, and focused tests described in
+[docs/PROCESS_FAMILIES_V0_1.md](docs/PROCESS_FAMILIES_V0_1.md). Existing
+Processes receive no backfill and remain ungrouped until a human records a
+membership. Migration, isolated database verification, JU role enablement, JU
+deployment, and the first JU Family/membership remain separately controlled
+release actions. Inheritance, primary membership, nested Families,
+composition, comparison, Reference Models, governance workflow, imports,
+Discovery mappings, FLOW changes, AI, and public fixture content remain
+deferred.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -1899,7 +1990,7 @@ The following ideas are recorded so postponement is visible and deliberate.
 | Whiteboard and collaborative capture | Draft contribution, authorship, reconciliation, and conversion to structured knowledge are undefined | Collaboration, observation, and approval decision |
 | Conflict detection and consensus | Conflicts need identity, scope, lifecycle, privacy, and human resolution | Conflict and reconciliation schema decision |
 | Knowledge Gaps | Explainable gaps are product direction under LAD-046, but persistence is not justified until assignment, governance, or resolution history requires it | Derived projection rules first; later lifecycle, ownership, and history decision if persistence is needed |
-| Process Families and reusable subprocesses | LAD-047 preserves explicit family membership and distinct composition semantics, but authorizes no schema or inheritance | Family identity, membership cardinality, effective dating, governance, composition, comparison, and migration decision |
+| Process Families and reusable subprocesses | LAD-055 authorizes bounded non-inheriting Family identity and membership; reusable composition remains distinct | Composition identity, cardinality, effective dating, governance, application, and comparison decision |
 | Question-driven Discovery | Organizational questions may lead to existing knowledge, review, a new interview, or more evidence, but routing and scope are unresolved | Search, matching, participant selection, evidence scope, privacy, and session-start decision |
 | Reference Models and practice comparison | LAD-048 preserves reference applicability and evidence-based comparison without automatic conclusions | Reference provenance, versioning, content rights, attachment, comparison snapshot, governance, and retention decision |
 | Job Descriptions and Job Drift | Position-linked descriptions may differ from responsibility and observed work, but HR sensitivity and interpretation require governance | Effective-dated description, HR source, access, evidence mapping, comparison, and review decision |
@@ -1955,9 +2046,8 @@ controlled operations.
 LAD-046 through LAD-048 add product-direction boundaries only. LAD-049
 authorizes the first manual structured proposed-change slice while preserving
 later target mappings, governance, approval, Process versions, and application
-as separate decisions. Process Families, Reference Models, AI assistance, Job
-Drift, operating-model drift, and Continuous Improvement remain later
-milestones and have no current schema authorization.
+as separate decisions. Reference Models, AI assistance, Job Drift,
+operating-model drift, and Continuous Improvement remain later milestones.
 
 LAD-050 completes the initial typed target vocabulary. LAD-051 authorizes a
 read-only Knowledge Outcome projection and completed-review UX, including a
@@ -1977,3 +2067,11 @@ Production-only enablement, deployment, and read-only QA are complete. No
 canonical JU application has occurred. A genuine approved proposal remains
 required before the first application; public-demo change and AI participation
 remain separately gated.
+
+LAD-055 authorizes the bounded generic Process Families v0.1 implementation:
+first-class Family identity, explicit many-to-many membership intervals,
+existing operating-model history, private Studio authoring, and exact
+Process-admin/runtime privilege deltas. It does not authorize inheritance,
+composition, nested Families, primary membership, JU data creation, public
+fixture content, or deployment. Migration and environment rollout remain
+separately controlled.

@@ -44,6 +44,11 @@ const actionLabels: Record<OperatingModelChangeSummary["action"], string> = {
   update_exception: "Exception updated",
   deactivate_exception: "Exception deactivated",
   create_dependency: "Process dependency added",
+  create_process_family: "Process Family added",
+  update_process_family: "Process Family updated",
+  deactivate_process_family: "Process Family deactivated",
+  add_process_family_membership: "Process added to Family",
+  end_process_family_membership: "Process Family membership ended",
 };
 
 function utcDate(value: string) {

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 
 import { loadWorkspaceExperience } from "@/lib/workspace-experience";
+import { loadProcessFamilyProcessIndex } from "@/lib/process-family-data";
 
 import { LayersIcon } from "../../ui/icons";
 import { Alert } from "../../ui/primitives";
@@ -17,9 +18,13 @@ export default async function ProcessBuilderPage() {
   const experience = await loadWorkspaceExperience();
   if (!experience.authoring.enabled) notFound();
   const { asOf, configuration, data, processAcquisition, source } = experience;
+  const familyIndex = await loadProcessFamilyProcessIndex(
+    experience.authoring.organizationId,
+  );
   const processes = data.processes.map((process) => ({
     dependencyCount: process.upstream.length + process.downstream.length,
     exceptionCount: process.exceptions.length,
+    families: familyIndex[process.id] ?? [],
     id: process.id,
     name: process.name,
     ownerRoleName: process.ownerRole?.name ?? null,
@@ -45,7 +50,7 @@ export default async function ProcessBuilderPage() {
       />
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
-          Select a Process to maintain its definition, Owner Role, ordered Steps, explicit or inherited Step responsibility, documented Systems, and legitimate alternate-path Exceptions. Dependencies remain read-only.
+          Select a Process to maintain its definition, Owner Role, ordered Steps, explicit or inherited Step responsibility, documented Systems, and legitimate alternate-path Exceptions. Dependencies remain read-only. Family context is explicit; it does not create inheritance.
         </p>
         {processAcquisition.enabled ? (
           <Link className={actionClass} href="/process-acquisition">Add Process</Link>

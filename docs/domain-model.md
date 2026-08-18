@@ -65,6 +65,10 @@ it, a typed `ProcessCompositionRelationship` should be designed separately
 rather than overloading family membership or the existing Process dependency
 model.
 
+The accepted bounded identity, membership, history, security, and rollout
+contract is recorded in
+[PROCESS_FAMILIES_V0_1.md](PROCESS_FAMILIES_V0_1.md).
+
 ### ReferenceModel and ReferenceModelVersion
 
 `ReferenceModel` represents an internal or external comparison basis, including
