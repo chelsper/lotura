@@ -5,17 +5,17 @@ import test from "node:test";
 const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
 
-test("migration 0013 expands only the structural history action enum", async () => {
+test("migration 0022 adds only the distinct Unit-removal history action", async () => {
   const [migration, schema] = await Promise.all([
-    read("drizzle/0013_organization_unit_merge.sql"),
+    read("drizzle/0022_retire_unit_and_move_contents.sql"),
     read("db/schema.ts"),
   ]);
 
   assert.match(
     migration,
-    /ALTER TYPE "public"\."organization_structure_change_action" ADD VALUE 'merge_unit'/,
+    /ALTER TYPE "public"\."organization_structure_change_action" ADD VALUE 'retire_unit_and_move_contents'/,
   );
-  assert.match(schema, /"merge_unit"/);
+  assert.match(schema, /"retire_unit_and_move_contents"/);
   assert.doesNotMatch(
     migration,
     /CREATE TABLE|DROP|DELETE|TRUNCATE|UPDATE|INSERT INTO|ALTER TABLE/i,
@@ -23,26 +23,34 @@ test("migration 0013 expands only the structural history action enum", async () 
   assert.equal([...migration.matchAll(/ALTER TYPE/g)].length, 1);
 });
 
-test("Unit merge is server-authorized, tenant-scoped, stale-safe, and atomic", async () => {
+test("populated Unit removal is server-authorized, tenant-scoped, stale-safe, and atomic", async () => {
   const [actions, administration] = await Promise.all([
     read("app/organization/actions.ts"),
     read("lib/organization-structure-administration.ts"),
   ]);
 
-  assert.match(actions, /export async function mergeOrganizationUnitAction/);
-  assert.match(administration, /export async function mergeOrganizationUnit/);
+  assert.match(
+    actions,
+    /export async function removeOrganizationUnitAndMoveContentsAction/,
+  );
+  assert.match(
+    administration,
+    /export async function removeOrganizationUnitAndMoveContents/,
+  );
   assert.match(administration, /await administrationAccess\(\)/);
   assert.match(administration, /configuration\.organizationId/);
   assert.match(administration, /configuration\.actorIdentifier/);
   assert.doesNotMatch(actions, /organizationId|actorIdentifier|databaseUrl/);
   assert.match(administration, /expectedImpactFingerprint/);
   assert.match(administration, /expectedTargetRevision/);
-  assert.match(administration, /date_trunc\('milliseconds', source\.updated_at\)/);
-  assert.match(administration, /date_trunc\('milliseconds', target\.updated_at\)/);
   assert.match(administration, /await atomicQuery\(/);
+  assert.match(
+    administration,
+    /action: "retire_unit_and_move_contents"/,
+  );
 });
 
-test("Unit merge preserves identities and changes only direct structural placement", async () => {
+test("populated Unit removal moves only direct structural contents and retires the source", async () => {
   const administration = await read(
     "lib/organization-structure-administration.ts",
   );
@@ -74,14 +82,12 @@ test("Unit merge preserves identities and changes only direct structural placeme
   }
 });
 
-test("Unit merge rejects self and descendant targets before retiring the source", async () => {
+test("populated Unit removal rejects unsafe destinations and stale impact", async () => {
   const administration = await read(
     "lib/organization-structure-administration.ts",
   );
-  assert.match(
-    administration,
-    /input\.sourceStableKey === input\.targetStableKey/,
-  );
+
+  assert.match(administration, /input\.sourceStableKey === input\.targetStableKey/);
   assert.match(administration, /descendants\(id\) as/);
   assert.match(
     administration,
@@ -90,48 +96,46 @@ test("Unit merge rejects self and descendant targets before retiring the source"
   assert.match(administration, /impact\.fingerprint = \$6::text/);
   assert.match(
     administration,
-    /\(select count\(\*\) from moved_positions\)[\s\S]*\(select count\(\*\) from position_before\)/,
+    /date_trunc\('milliseconds', source\.updated_at\)/,
   );
   assert.match(
     administration,
-    /\(select count\(\*\) from moved_children\)[\s\S]*\(select count\(\*\) from child_before\)/,
+    /date_trunc\('milliseconds', target\.updated_at\)/,
   );
 });
 
-test("Unit merge writes complete append-only history for every affected identity", async () => {
+test("populated Unit removal records complete history or rolls everything back", async () => {
   const administration = await read(
     "lib/organization-structure-administration.ts",
   );
+
   assert.match(administration, /position_history as \(/);
   assert.match(administration, /child_history as \(/);
   assert.match(administration, /source_history as \(/);
-  assert.match(
-    administration,
-    /\$11::organization_structure_change_action/,
-  );
-  assert.match(administration, /action: "merge_unit"/);
-  assert.match(administration, /mergedIntoOrganizationUnitStableKey/);
+  assert.match(administration, /contentsMovedToOrganizationUnitStableKey/);
   assert.match(administration, /directPositionsMoved/);
   assert.match(administration, /directChildUnitsMoved/);
   assert.match(administration, /position_history_count/);
   assert.match(administration, /child_history_count/);
+  assert.match(
+    administration,
+    /Number\(result\?\.position_history_count[\s\S]*=== positionsMoved/,
+  );
 });
 
-test("Studio presents an explicit merge preview without changing browse surfaces", async () => {
-  const [panel, docs] = await Promise.all([
+test("Studio explains the removal impact without presenting hard deletion", async () => {
+  const [panel, docs, decisions] = await Promise.all([
     read("app/organization/structure-administration-panel.tsx"),
     read("docs/ORGANIZATION_STRUCTURE_ADMINISTRATION.md"),
+    read("ARCHITECTURE_DECISIONS.md"),
   ]);
 
-  assert.match(panel, /Merge into an existing Unit/);
+  assert.match(panel, /Remove Unit and move its contents/);
   assert.match(panel, /Direct \{isMerge \? "merge" : "removal"\} impact/);
-  assert.match(panel, /This list excludes the source and all of its descendants/);
-  assert.match(panel, /retire—not delete—the\s+source identity/);
-  assert.match(
-    panel,
-    /name=\{isMerge \? "confirmMerge" : "confirmRemovalWithContents"\}/,
-  );
-  assert.match(panel, /mergeImpactFingerprint/);
-  assert.match(docs, /Merging duplicate Organization Units/);
-  assert.match(docs, /No other structural or operating-model relationship changes/);
+  assert.match(panel, /name=\{isMerge \? "confirmMerge" : "confirmRemovalWithContents"\}/);
+  assert.match(panel, /current occupant/);
+  assert.match(panel, /Operational Role/);
+  assert.match(panel, /retire—not delete—the/);
+  assert.match(docs, /Removing a populated Organization Unit/);
+  assert.match(decisions, /LAD-054 — Removing a populated Organization Unit/);
 });

@@ -96,6 +96,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-051 | Discovery may conclude with a durable Knowledge Outcome without producing an operating-model change | Accepted — implementation authorized for Knowledge Outcomes v0.1 |
 | LAD-052 | Proposal review authorizes exact proposed items without changing the operating model | Accepted — implementation authorized for Proposal Review & Governance v0.1 |
 | LAD-053 | Approved proposed items create one immutable Process version through a separate atomic application boundary | Accepted — generic implementation complete and isolated verification passed |
+| LAD-054 | Removing a populated Organization Unit moves its direct contents before retiring the Unit | Accepted — generic implementation complete and isolated verification passed |
 
 ## Decision records
 
@@ -1814,6 +1815,75 @@ JU Production configuration. Rollout probes were transactional and left no
 Process version, application, provenance, history, or canonical test row. No
 real application has occurred; the first one remains contingent on a genuine
 approved proposal.
+
+### LAD-054 — Removing a populated Organization Unit moves its direct contents before retiring the Unit
+
+**Status:** Accepted — generic implementation complete and isolated fictional
+verification passed at migration journal `23/23`. JU rollout remains separately
+gated.
+
+**Context:** LAD-009 correctly blocks ordinary retirement while current
+Positions or child Units still depend on an Organization Unit. LAD-039 provides
+an atomic transfer for the narrower case where two Unit records describe the
+same durable grouping. Administrators also need to remove a valid but no-longer-
+current Unit while preserving its Positions, people context, responsibilities,
+and subordinate Units under another active Unit. Calling that operation a
+duplicate merge would misstate the organizational event, while hard deletion
+would erase identity and history.
+
+**Decision:** Workspace Studio provides a distinct **Remove Unit and move its
+contents** action. The administrator selects one active destination Unit in the
+same Organization and reviews the exact direct Positions, direct child Units,
+current occupants, and Operational Role context before confirming.
+
+In one serializable transaction, active Positions directly assigned to the
+source move to the destination, active direct child Units are reparented to the
+destination, and the source Unit is retired. People, Position Assignments,
+reporting relationships, Role Mandates, Role Coverage, Process ownership,
+Process responsibility, and stable keys are not rewritten, deleted, or
+inferred. The source Unit and its import provenance remain historically
+available.
+
+The destination must be active, distinct from the source, in the same
+Organization, and outside the source's descendant graph. Source and destination
+revisions plus a deterministic impact fingerprint protect against stale review.
+The source retirement and every moved Position and child-Unit relationship
+append truthful history in the same transaction. Any mutation, constraint, or
+history failure rolls back the complete operation. Ordinary hard deletion
+remains unavailable.
+
+**Why:** Removing a grouping from the current structure must not require erasing
+the organizational knowledge attached to it. A distinct operation accurately
+records that the Unit ended while its contents continued elsewhere, and avoids
+overloading duplicate consolidation with different organizational semantics.
+
+**Alternatives considered:** Hard-delete the Unit and cascade its relationships;
+reuse **Merge into existing Unit** for every removal; silently move contents to
+the parent; allow retirement with dependent records; or require every Position
+and child Unit to be moved manually. These were rejected because they erase
+knowledge, misclassify the event, infer intent, permit invalid current state, or
+create avoidable partial-work risk.
+
+**Affected decisions:** This decision follows LAD-008, LAD-009, LAD-015,
+LAD-018, LAD-026, LAD-029, LAD-033, LAD-035, and LAD-037. It extends LAD-039's
+reviewed atomic transfer mechanics without superseding the distinct duplicate-
+merge meaning. It does not change reporting, responsibility, Process, evidence,
+or governance boundaries.
+
+**Consequences and deferrals:** A forward-only migration may add only a distinct
+append-only structural-history action. The operation reuses the existing
+reviewed Structure-admin Unit, Position, and history privileges; no credential
+or privilege expansion is authorized. Moving different contents to different
+destinations, reversing a removal, bulk restructuring, deleting every attached
+record as an error correction, and physical hard deletion remain deferred.
+
+**Implementation status — August 17, 2026:** The generic Workspace Studio
+action, forward-only migration `0022`, distinct history semantics, impact
+preview, and shared atomic transfer engine are complete. Isolated fictional
+verification proved the content move and source retirement, forced-history
+rollback, history immutability, hard-delete denial, and zero persisted probe
+rows. No JU migration, configuration, deployment, or canonical change has been
+authorized or performed for this slice.
 
 ## Intentionally deferred ideas register
 

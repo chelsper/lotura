@@ -58,6 +58,34 @@ Migration `0013` adds only the append-only `merge_unit` history action. The
 operation reuses the structural administrator's already reviewed column-level
 Unit, Position, and history privileges; it requires no broader database grant.
 
+### Removing a populated Organization Unit
+
+**Remove Unit and move its contents** is distinct from duplicate merge. Use it
+when the source Unit was a valid organizational grouping that should no longer
+appear in the current structure, while its contents continue under another
+active Unit. The administrator chooses the destination and reviews the direct
+Positions, direct child Units, current occupants, and Operational Role context.
+
+One serializable transaction moves the direct active Positions, reparents the
+direct active child Units, and retires the source Unit. People remain assigned
+to their Positions, and reporting relationships, Role Mandates, Role Coverage,
+Process ownership, and operational responsibility remain unchanged. Every
+moved identity and the source retirement receive append-only history in that
+same transaction. Source and destination revisions plus an exact impact
+fingerprint make stale previews fail closed. The source Unit is retired, not
+deleted, so its stable identity, import provenance, prior relationships, and
+organizational history remain available.
+
+This operation reuses the same already reviewed column-level Structure-admin
+privileges as Unit merge. Migration `0022` adds only the distinct
+`retire_unit_and_move_contents` history action; it does not grant hard-delete or
+broader mutation authority.
+
+The generic migration and rollback-only transaction were verified on the
+isolated fictional schema-test database at journal `23/23`. The verification
+left no probe Unit, Position, role, or history row. Environment-specific rollout
+remains separately gated.
+
 An Organization Unit parent records Unit hierarchy only. It never creates a
 manager relationship, Process ownership, or operational responsibility. Unit
 parent changes reuse the existing same-Organization foreign key and deferred
