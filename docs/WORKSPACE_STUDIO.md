@@ -51,6 +51,9 @@ Workspace Studio grows under one coherent product umbrella:
 - **Responsibilities** — Operational Roles, Role Mandates, and Role Coverage.
 - **Processes** — Process definition, ownership, Steps, responsible Roles,
   Systems, Exceptions, and Process dependencies.
+- **Process Families** — explicit, durable groupings of related Processes.
+  Membership does not create inheritance, dependency, approval, or a primary
+  Family.
 - **Technology** — the System catalog and its explicit operating-model
   relationships. Technology is the durable navigation concept; Version 1
   models Systems only and does not prematurely introduce integrations, APIs,
@@ -129,6 +132,20 @@ matching Studio stable-key route.
 - `/studio/processes/[processId]` — maintain Process definition, ownership,
   ordered Steps, and explicit Step responsibility through the reviewed
   operating-model authoring boundary.
+
+### Process Family routes
+
+- `/studio/process-families` — search the explicit Process Family catalog;
+- `/studio/process-families/new` — add a Family without placing Processes in
+  it automatically; and
+- `/studio/process-families/[stableKey]` — maintain the Family definition,
+  add or end explicit Process memberships, review member Process context, and
+  read append-only Family activity.
+
+A Process may belong to more than one Family. Version 0.1 does not model a
+primary Family, nested Families, reusable subprocess composition, or inherited
+Steps, Roles, Systems, Exceptions, governance, or conclusions. Process Family
+membership and Process dependency remain different operating-model facts.
 
 ### Technology & Exceptions Builder routes
 

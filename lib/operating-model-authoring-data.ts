@@ -34,7 +34,12 @@ export type OperatingModelChangeSummary = {
     | "create_exception"
     | "update_exception"
     | "deactivate_exception"
-    | "create_dependency";
+    | "create_dependency"
+    | "create_process_family"
+    | "update_process_family"
+    | "deactivate_process_family"
+    | "add_process_family_membership"
+    | "end_process_family_membership";
   actorIdentifier: string;
   afterState: Record<string, unknown>;
   beforeState: Record<string, unknown>;

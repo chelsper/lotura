@@ -107,8 +107,10 @@ milestones:
    without a score, task workflow, or new persistence. JU acceptance confirmed
    evidence-backed Discovery questions, exact source navigation, no manufactured
    responsibility questions, and continued public-demo isolation.
-5. **Process Families** — explicit family identity and membership, with no
-   implied inheritance.
+5. **Process Families (v0.1 implementation authorized)** — explicit Family
+   identity and many-to-many membership, with no primary Family, nesting, or
+   implied inheritance. The bounded contract is recorded in
+   [docs/PROCESS_FAMILIES_V0_1.md](docs/PROCESS_FAMILIES_V0_1.md).
 6. **Question-Driven Discovery** — begin with an organizational question and
    deliberately route to existing documentation, review, interview, or more
    evidence.

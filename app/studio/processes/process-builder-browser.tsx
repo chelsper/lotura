@@ -9,6 +9,7 @@ import { Badge, Card, SearchField } from "@/app/ui/primitives";
 export type ProcessBuilderSummary = {
   dependencyCount: number;
   exceptionCount: number;
+  families: Array<{ name: string; stableKey: string; status: "active" | "inactive" }>;
   id: string;
   name: string;
   ownerRoleName: string | null;
@@ -33,7 +34,10 @@ export function ProcessBuilderBrowser({
         (!normalized ||
           process.name.toLowerCase().includes(normalized) ||
           process.purpose?.toLowerCase().includes(normalized) ||
-          process.ownerRoleName?.toLowerCase().includes(normalized)),
+          process.ownerRoleName?.toLowerCase().includes(normalized) ||
+          process.families.some((family) =>
+            family.name.toLowerCase().includes(normalized),
+          )),
     );
   }, [processes, query, status]);
 
@@ -79,6 +83,9 @@ export function ProcessBuilderBrowser({
                       {process.status === "draft" ? "Working draft" : process.status}
                     </Badge>
                     {!process.ownerRoleName ? <Badge tone="warning">Owner needs validation</Badge> : null}
+                    {process.families.map((family) => (
+                      <Badge key={family.stableKey} tone="accent">Family: {family.name}</Badge>
+                    ))}
                   </div>
                   <p className="mt-1 max-w-3xl text-xs leading-5 text-[var(--text-secondary)]">
                     {process.purpose ?? "Purpose needs validation."}

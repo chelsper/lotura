@@ -48,6 +48,11 @@ export const processStatus = pgEnum("process_status", [
   "archived",
 ]);
 
+export const processFamilyMembershipStatus = pgEnum(
+  "process_family_membership_status",
+  ["active", "ended"],
+);
+
 export const systemType = pgEnum("system_type", [
   "software",
   "external_service",
@@ -146,6 +151,8 @@ export const operatingModelChangeEntityType = pgEnum(
     "process_system",
     "exception",
     "process_dependency",
+    "process_family",
+    "process_family_membership",
   ],
 );
 
@@ -169,6 +176,11 @@ export const operatingModelChangeAction = pgEnum(
     "update_exception",
     "deactivate_exception",
     "create_dependency",
+    "create_process_family",
+    "update_process_family",
+    "deactivate_process_family",
+    "add_process_family_membership",
+    "end_process_family_membership",
   ],
 );
 
@@ -465,6 +477,116 @@ export const process = pgTable(
     index("processes_owner_role_id_idx").on(table.ownerRoleId),
     index("processes_organization_id_status_idx").on(
       table.organizationId,
+      table.status,
+    ),
+  ],
+);
+
+export const processFamily = pgTable(
+  "process_families",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    description: text("description"),
+    status: activeInactiveStatus("status").default("active").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "process_families_organization_id_organizations_id_fk",
+      columns: [table.organizationId],
+      foreignColumns: [organization.id],
+    }).onDelete("restrict"),
+    unique("process_families_id_organization_id_unique").on(
+      table.id,
+      table.organizationId,
+    ),
+    unique("process_families_stable_key_unique").on(table.stableKey),
+    unique("process_families_id_org_stable_key_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+    ),
+    uniqueIndex("process_families_organization_name_unique").on(
+      table.organizationId,
+      sql`lower(btrim(${table.name}))`,
+    ),
+    check(
+      "process_families_name_not_blank_check",
+      sql`char_length(btrim(${table.name})) > 0`,
+    ),
+    index("process_families_organization_status_name_idx").on(
+      table.organizationId,
+      table.status,
+      table.name,
+    ),
+  ],
+);
+
+export const processFamilyMembership = pgTable(
+  "process_family_memberships",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    processFamilyId: integer("process_family_id").notNull(),
+    processId: integer("process_id").notNull(),
+    status: processFamilyMembershipStatus("status")
+      .default("active")
+      .notNull(),
+    effectiveFrom: timestamp("effective_from", { withTimezone: true })
+      .notNull(),
+    effectiveUntil: timestamp("effective_until", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "process_family_memberships_family_organization_fk",
+      columns: [table.processFamilyId, table.organizationId],
+      foreignColumns: [processFamily.id, processFamily.organizationId],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "process_family_memberships_process_organization_fk",
+      columns: [table.processId, table.organizationId],
+      foreignColumns: [process.id, process.organizationId],
+    }).onDelete("restrict"),
+    unique("process_family_memberships_stable_key_unique").on(
+      table.stableKey,
+    ),
+    unique("process_family_memberships_identity_context_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.processFamilyId,
+      table.processId,
+    ),
+    uniqueIndex("process_family_memberships_active_pair_unique")
+      .on(table.processFamilyId, table.processId)
+      .where(sql`${table.status} = 'active'`),
+    check(
+      "process_family_memberships_effective_shape_check",
+      sql`(${table.status} = 'active' and ${table.effectiveUntil} is null) or (${table.status} = 'ended' and ${table.effectiveUntil} is not null and ${table.effectiveUntil} >= ${table.effectiveFrom})`,
+    ),
+    index("process_family_memberships_organization_family_status_idx").on(
+      table.organizationId,
+      table.processFamilyId,
+      table.status,
+    ),
+    index("process_family_memberships_organization_process_status_idx").on(
+      table.organizationId,
+      table.processId,
       table.status,
     ),
   ],
@@ -1791,6 +1913,12 @@ export const operatingModelChange = pgTable(
     exceptionStableKey: uuid("exception_stable_key"),
     processDependencyId: integer("process_dependency_id"),
     processDependencyStableKey: uuid("process_dependency_stable_key"),
+    processFamilyId: integer("process_family_id"),
+    processFamilyStableKey: uuid("process_family_stable_key"),
+    processFamilyMembershipId: integer("process_family_membership_id"),
+    processFamilyMembershipStableKey: uuid(
+      "process_family_membership_stable_key",
+    ),
     entityType: operatingModelChangeEntityType("entity_type").notNull(),
     targetReference: varchar("target_reference", { length: 255 }).notNull(),
     changeKind: operatingModelChangeKind("change_kind").notNull(),
@@ -1870,6 +1998,36 @@ export const operatingModelChange = pgTable(
         processDependency.stableKey,
       ],
     }).onDelete("restrict"),
+    foreignKey({
+      name: "operating_model_changes_family_org_stable_fk",
+      columns: [
+        table.processFamilyId,
+        table.organizationId,
+        table.processFamilyStableKey,
+      ],
+      foreignColumns: [
+        processFamily.id,
+        processFamily.organizationId,
+        processFamily.stableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "operating_model_changes_family_membership_context_fk",
+      columns: [
+        table.processFamilyMembershipId,
+        table.organizationId,
+        table.processFamilyMembershipStableKey,
+        table.processFamilyId,
+        table.processId,
+      ],
+      foreignColumns: [
+        processFamilyMembership.id,
+        processFamilyMembership.organizationId,
+        processFamilyMembership.stableKey,
+        processFamilyMembership.processFamilyId,
+        processFamilyMembership.processId,
+      ],
+    }).onDelete("restrict"),
     unique("operating_model_changes_stable_key_unique").on(
       table.stableKey,
     ),
@@ -1895,7 +2053,7 @@ export const operatingModelChange = pgTable(
     ),
     check(
       "operating_model_changes_target_shape_check",
-      sql`(${table.entityType} = 'process' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'process_step' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is not null and ${table.processStepStableKey} is not null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'system' and ${table.processId} is null and ${table.processStableKey} is null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is not null and ${table.systemStableKey} is not null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'process_system' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is not null and ${table.systemStableKey} is not null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'exception' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is not null and ${table.exceptionStableKey} is not null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'process_dependency' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is not null and ${table.processDependencyStableKey} is not null)`,
+      sql`(((${table.entityType} = 'process' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'process_step' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is not null and ${table.processStepStableKey} is not null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'system' and ${table.processId} is null and ${table.processStableKey} is null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is not null and ${table.systemStableKey} is not null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'process_system' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is not null and ${table.systemStableKey} is not null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'exception' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is not null and ${table.exceptionStableKey} is not null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'process_dependency' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is not null and ${table.processDependencyStableKey} is not null)) and ${table.processFamilyId} is null and ${table.processFamilyStableKey} is null and ${table.processFamilyMembershipId} is null and ${table.processFamilyMembershipStableKey} is null) or (${table.entityType} = 'process_family' and ${table.processId} is null and ${table.processStableKey} is null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null and ${table.processFamilyId} is not null and ${table.processFamilyStableKey} is not null and ${table.processFamilyMembershipId} is null and ${table.processFamilyMembershipStableKey} is null) or (${table.entityType} = 'process_family_membership' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null and ${table.processFamilyId} is not null and ${table.processFamilyStableKey} is not null and ${table.processFamilyMembershipId} is not null and ${table.processFamilyMembershipStableKey} is not null)`,
     ),
     index("operating_model_changes_org_created_idx").on(
       table.organizationId,
@@ -1924,6 +2082,16 @@ export const operatingModelChange = pgTable(
     index("operating_model_changes_dependency_created_idx").on(
       table.organizationId,
       table.processDependencyStableKey,
+      table.createdAt,
+    ),
+    index("operating_model_changes_family_created_idx").on(
+      table.organizationId,
+      table.processFamilyStableKey,
+      table.createdAt,
+    ),
+    index("operating_model_changes_family_membership_created_idx").on(
+      table.organizationId,
+      table.processFamilyMembershipStableKey,
       table.createdAt,
     ),
   ],

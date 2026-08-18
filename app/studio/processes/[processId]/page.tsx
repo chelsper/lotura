@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 
 import { loadProcessAuthoringContext } from "@/lib/operating-model-authoring-data";
+import { loadProcessFamilyProcessIndex } from "@/lib/process-family-data";
 import { decodeProcessRouteId } from "@/lib/process-route.mjs";
 import { loadWorkspaceExperience } from "@/lib/workspace-experience";
 
@@ -30,6 +31,8 @@ export default async function StudioProcessPage({
     asOf,
   );
   if (!context) notFound();
+  const familyIndex = await loadProcessFamilyProcessIndex(authoring.organizationId);
+  const families = familyIndex[decodedProcessId] ?? [];
 
   return (
     <WorkspaceShell activeView="studio" asOf={asOf} configuration={configuration} source={source}>
@@ -47,6 +50,33 @@ export default async function StudioProcessPage({
           </Link>
         </div>
       ) : null}
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-[var(--border)] bg-[var(--surface)] p-4">
+        <div>
+          <p className="text-sm font-semibold text-[var(--text)]">Process Family context</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
+            {families.length > 0
+              ? `This Process has ${families.length} explicit current Family ${families.length === 1 ? "membership" : "memberships"}. Membership does not create inheritance.`
+              : "No Process Family membership is currently recorded. This does not mean the Process is unrelated to other work."}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {families.map((family) => (
+            <Link
+              className="inline-flex h-8 items-center rounded-[8px] border border-[var(--workspace-accent-border)] px-3 text-xs font-medium text-[var(--workspace-accent)] hover:bg-[var(--workspace-accent-subtle)]"
+              href={`/studio/process-families/${family.stableKey}`}
+              key={family.stableKey}
+            >
+              {family.name}
+            </Link>
+          ))}
+          <Link
+            className="inline-flex h-8 items-center rounded-[8px] border border-[var(--border)] px-3 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
+            href="/studio/process-families"
+          >
+            View Families
+          </Link>
+        </div>
+      </div>
       <ProcessAuthoringWorkspace
         context={context}
         surface="studio"

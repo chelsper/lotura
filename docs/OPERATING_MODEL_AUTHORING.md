@@ -185,3 +185,51 @@ Organization Structure mutation, dependency mutation, schema changes, role
 administration, and database administration remain denied. A System cannot be
 deactivated while a current Process relationship depends on it. Exception
 deactivation is a lifecycle update, not deletion.
+
+## Process Families v0.1 privilege delta
+
+LAD-055 reuses the dedicated Process administration credential. It does not
+introduce a universal Studio credential. The role may receive only this
+forward-only delta after migration `0023`:
+
+```sql
+GRANT SELECT ON TABLE process_families, process_family_memberships
+TO <process_admin_role>;
+
+GRANT INSERT (
+  organization_id, name, description, status
+) ON process_families TO <process_admin_role>;
+GRANT UPDATE (
+  name, description, status, updated_at
+) ON process_families TO <process_admin_role>;
+
+GRANT INSERT (
+  organization_id, process_family_id, process_id, status, effective_from
+) ON process_family_memberships TO <process_admin_role>;
+GRANT UPDATE (
+  status, effective_until, updated_at
+) ON process_family_memberships TO <process_admin_role>;
+
+GRANT INSERT (
+  organization_id, process_id, process_stable_key,
+  process_family_id, process_family_stable_key,
+  process_family_membership_id, process_family_membership_stable_key,
+  entity_type, target_reference, change_kind, change_action, before_state,
+  after_state, reason, effective_at, actor_identifier
+) ON operating_model_changes TO <process_admin_role>;
+
+GRANT USAGE ON SEQUENCE process_families_id_seq,
+  process_family_memberships_id_seq
+TO <process_admin_role>;
+```
+
+The runtime role receives `SELECT` on `process_families` and
+`process_family_memberships`. It remains read-only.
+
+The Process administration role receives no `DELETE` or `TRUNCATE` on either
+Family table; no history `UPDATE` or `DELETE`; no Process mutation beyond its
+existing contract; and no Role, Position, Person, Unit, System, Exception,
+dependency, schema, database, migration, or role-administration authority.
+Family deactivation and membership ending are lifecycle updates with stable
+identity and append-only history. A Family with a current membership cannot be
+deactivated.
