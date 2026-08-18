@@ -26,6 +26,7 @@ const actionLabels: Record<TechnologySystemContext["history"][number]["action"],
   create_exception: "Exception added",
   update_exception: "Exception updated",
   deactivate_exception: "Exception deactivated",
+  create_dependency: "Process dependency added",
 };
 
 function utcDate(value: string) {

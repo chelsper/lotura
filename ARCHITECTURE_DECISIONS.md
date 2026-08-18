@@ -94,6 +94,8 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-049 | Structured proposed changes are typed human mappings, not approval or Process mutation | Accepted — implementation authorized for Structured Proposed Changes v0.1, Slice 1 |
 | LAD-050 | Structured proposed-change mappings use explicit typed operating-model targets | Accepted — implementation authorized for Structured Proposed Changes v0.1, Slice 2 |
 | LAD-051 | Discovery may conclude with a durable Knowledge Outcome without producing an operating-model change | Accepted — implementation authorized for Knowledge Outcomes v0.1 |
+| LAD-052 | Proposal review authorizes exact proposed items without changing the operating model | Accepted — implementation authorized for Proposal Review & Governance v0.1 |
+| LAD-053 | Approved proposed items create one immutable Process version through a separate atomic application boundary | Accepted — generic implementation complete and isolated verification passed |
 
 ## Decision records
 
@@ -1686,6 +1688,124 @@ assignments, Steward or committee routing, notifications, effective dating,
 Process versions, atomic application, FLOW changes, and AI recommendations
 remain separately approved work.
 
+### LAD-053 — Approved proposed items create one immutable Process version through a separate atomic application boundary
+
+**Status:** Accepted — generic implementation complete and isolated fictional
+verification passed at migration journal `22/22`. JU rollout remains separately
+gated.
+
+**Context:** LAD-049 and LAD-050 preserve immutable, typed human mappings.
+LAD-052 permits an accountable reviewer to approve exact item revisions to
+move forward while deliberately writing no canonical operating-model record.
+LAD-023 requires approved Process version history to remain distinct from
+improvement history, and LAD-046 requires approval, current documentation, and
+actual organizational reality to remain separate. The next manual lifecycle
+boundary must therefore turn eligible approved items into a historically
+recoverable documented Process state without making review itself a write to
+the operating model.
+
+**Decision:** Versioned application is a separate, explicit,
+Organization-scoped human action. A finished Proposal Review is eligible only
+when at least one current structured item has the current disposition
+**Approve to move forward**. Application applies every and only currently
+approved item revision in that review. It never applies unresolved-question
+items, and it creates no application or version when no item is approved.
+Opening a review, application preview, or version page performs no mutation.
+
+The application is pinned to the exact immutable mapping, current review
+decisions, and documented-Process fingerprint. It reauthorizes the
+application actor, derives Organization scope on the server, reloads and locks
+all targets, rejects cross-Organization or changed references, re-runs
+dependency and integrity guards, and uses a serializable transaction. The
+actor is the authenticated Lotura application identity at the time of
+application and is not coupled to Person, Position, Membership, Operational
+Role, Process ownership, RoleMandate, RoleCoverage, or reporting hierarchy.
+Application authority is separately configured and is never inferred from
+Proposal Reviewer or Workspace Administrator capability.
+
+Each successful application appends an immutable complete Process-centered
+snapshot containing the Process definition, Owner Operational Role, ordered
+Steps and responsible Roles, explicit System relationships, Exceptions, and
+Process dependencies. Stable keys and contemporaneous display values make the
+documented state understandable later. Person, Position, current coverage, and
+reporting context are not silently incorporated into the Process definition.
+The first application records both an initial baseline snapshot of the
+immediately preceding documented state and the resulting successor version;
+the baseline does not invent an earlier institutional effective date. Later
+applications append one successor in a linear Process-local version chain.
+
+Version 0.1 permits neither future scheduled activation nor retrospective
+insertion into the version chain. The application uses one effective time that
+is not in the future and does not precede the prior known effective time. It
+applies approved actions in deterministic item order. Each applied item retains
+its exact mapping revision and review decision, correction-versus-
+organizational-change classification, and canonical before and after state.
+One package-level reason, authenticated actor, effective time, and transaction
+timestamp remain attributable.
+
+Canonical mutation, target-specific `operating_model_changes` events, the
+resulting immutable Process version, the application ledger, and item-level
+provenance must all succeed in the same transaction. Missing exact history
+semantics require forward-only enum and target-reference expansion rather than
+overloading an existing action. Any stale state, reference failure, constraint
+failure, history failure, version failure, or provenance failure rolls back
+the entire operation. A completed review may be applied successfully at most
+once.
+
+The durable model is one immutable Process-version table, one
+immutable proposal-application table, and one immutable applied-item
+provenance table. The version snapshot is server-produced and carries an
+explicit snapshot-format version. Current canonical tables remain the source
+for Explorer and authoring; the immutable version chain establishes historical
+documented states rather than becoming a second mutable operating model. The
+detailed accepted design contract is recorded in
+[docs/PROCESS_VERSIONS_AND_ATOMIC_APPLICATION.md](docs/PROCESS_VERSIONS_AND_ATOMIC_APPLICATION.md).
+
+A dedicated server-only application credential receives only the reviewed
+catalog reads, exact column-limited canonical writes required by approved
+v0.1 actions, append-only history/version/application inserts, and sequence
+use. It receives no hard-delete, history or version mutation, unrelated
+Structure mutation, generic Role/System creation, schema, database, role, or
+migration privilege. Public/demo mode cannot initialize or invoke application
+and receives no credential.
+
+**Why:** A governed application boundary must prove exactly which reviewed
+changes became documented knowledge, what existed immediately before them,
+who applied them, and when they became effective. One transaction prevents a
+Process mutation from surviving without its audit history, version, or
+evidence-to-decision provenance. A complete Process-centered snapshot keeps
+historical interpretation stable even when shared Role, System, or related
+Process labels later change.
+
+**Alternatives considered:** Treat review completion as application; mutate
+the Process and reconstruct versions from audit events; store only field-level
+diffs; update one mutable “current version”; let the applicant cherry-pick
+approved items; include unresolved questions as changes; infer application
+authority from administration or ownership; reuse the Process-admin or review
+credential; schedule future canonical mutations without an activation engine;
+or combine versioning with Improvement history. These alternatives were
+rejected because they collapse lifecycle layers, make historical recovery
+ambiguous, weaken authorization or atomicity, or overstate what approved
+evidence establishes.
+
+**Affected decisions:** This decision follows and extends LAD-002, LAD-007
+through LAD-009, LAD-015, LAD-016, LAD-018, LAD-021 through LAD-026, LAD-029,
+LAD-032, LAD-035 through LAD-037, LAD-040 through LAD-046, and LAD-049 through
+LAD-052. It operationalizes Process version history under LAD-023 without
+superseding Improvement history. It does not alter Process Family or Reference
+Model boundaries in LAD-047 and LAD-048.
+
+**Consequences and deferrals:** This acceptance authorizes design and isolated
+implementation planning, not implementation, a migration, credential,
+environment, JU data, deployment, or public-demo change. A later implementation
+approval must define the exact migration, snapshot schema, action handlers,
+history enum expansion, privilege matrix, isolated verification, and deployment
+sequence. Version
+branches, future scheduling, retrospective insertion, multi-Process packages,
+proposal rebasing, automated rollback, AI application, FLOW changes,
+notifications, Steward routing, Process Families, Reference Models, drift,
+and Continuous Improvement remain deferred.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -1699,8 +1819,8 @@ The following ideas are recorded so postponement is visible and deliberate.
 | Uploads, imports, Visio/PDF/flowchart parsing | Requires malware handling, source permissions, artifact retention, provenance, and conflict treatment | Artifact architecture, storage, security, and extraction decision |
 | Whiteboard and collaborative capture | Draft contribution, authorship, reconciliation, and conversion to structured knowledge are undefined | Collaboration, observation, and approval decision |
 | Conflict detection and consensus | Conflicts need identity, scope, lifecycle, privacy, and human resolution | Conflict and reconciliation schema decision |
-| Structured proposal application workflow | LAD-052 authorizes accountable item review without changing the Process; it grants no Process-version or application authority | Process write/versioning, effective time, proposal supersession, and atomic application decision |
-| Process version history | Snapshot boundary and related operating-model version semantics are unresolved | Temporal/version model and migration decision |
+| Structured proposal application workflow | LAD-053 accepts the write, authority, effective-time, and atomicity design boundary; generic implementation and isolated fictional verification are authorized | Verify the exact migration and least-privilege role fictionally before any separately approved rollout |
+| Process version history | LAD-053 accepts a Process-centered immutable snapshot and linear v0.1 chain; generic implementation and isolated fictional verification are authorized | Verify snapshot format 1 and the linear chain in the fictional database before any separately approved rollout |
 | Knowledge Gaps | Explainable gaps are product direction under LAD-046, but persistence is not justified until assignment, governance, or resolution history requires it | Derived projection rules first; later lifecycle, ownership, and history decision if persistence is needed |
 | Process Families and reusable subprocesses | LAD-047 preserves explicit family membership and distinct composition semantics, but authorizes no schema or inheritance | Family identity, membership cardinality, effective dating, governance, composition, comparison, and migration decision |
 | Question-driven Discovery | Organizational questions may lead to existing knowledge, review, a new interview, or more evidence, but routing and scope are unresolved | Search, matching, participant selection, evidence scope, privacy, and session-start decision |
@@ -1772,3 +1892,9 @@ structured mappings. It permits append-only item decisions and a deterministic
 review result through a distinct least-privilege credential, but it does not
 authorize Process versions, canonical application, JU rollout, public-demo
 changes, or AI participation.
+
+LAD-053 accepts the immutable Process-version and atomic-application design
+boundary after Proposal Review. Generic implementation and isolated fictional
+verification are authorized. JU migration, credentials, environment changes,
+canonical JU application, deployment, public-demo change, and AI participation
+remain separately gated.

@@ -125,5 +125,9 @@ transitions, and compare-and-set revision advances.
 Approval to move forward is not application. Process Versions & Atomic
 Application remains a separate milestone with its own authority, credential,
 effective-time semantics, before/after version history, and rollback contract.
+The proposed boundary is documented in
+[PROCESS_VERSIONS_AND_ATOMIC_APPLICATION.md](PROCESS_VERSIONS_AND_ATOMIC_APPLICATION.md)
+as the accepted design boundary under LAD-053. Implementation, migration,
+credential, and rollout remain separately reviewed.
 Proposal Review v0.1 also does not add automatic routing, Steward assignments,
 committees, notifications, rebasing, FLOW changes, or AI recommendations.

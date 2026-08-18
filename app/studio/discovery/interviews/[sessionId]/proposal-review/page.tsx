@@ -57,9 +57,10 @@ export default async function ProposalReviewPage({
     loadDiscoveryProposal,
     loadDiscoveryProposalMapping,
     loadDiscoverySession,
+    loadOperatingModelProposalApplication,
     loadOperatingModelProposalReview,
   } = await import("@/lib/discovery-data");
-  const [session, proposal, mapping, review] = await Promise.all([
+  const [session, proposal, mapping, review, application] = await Promise.all([
     loadDiscoverySession(experience.proposalReview.organizationId, sessionId),
     loadDiscoveryProposal(experience.proposalReview.organizationId, sessionId),
     loadDiscoveryProposalMapping(
@@ -67,6 +68,10 @@ export default async function ProposalReviewPage({
       sessionId,
     ),
     loadOperatingModelProposalReview(
+      experience.proposalReview.organizationId,
+      sessionId,
+    ),
+    loadOperatingModelProposalApplication(
       experience.proposalReview.organizationId,
       sessionId,
     ),
@@ -170,9 +175,17 @@ export default async function ProposalReviewPage({
           </div>
           <div>
             <p className="text-xs font-medium text-[var(--text-tertiary)]">Version application</p>
-            <p className="mt-1 text-sm font-semibold text-[var(--text)]">Not configured</p>
+            <p className="mt-1 text-sm font-semibold text-[var(--text)]">
+              {application
+                ? `Applied as version ${application.afterVersionSequence}`
+                : experience.processApplication.enabled
+                  ? "Explicitly enabled"
+                  : "Not configured"}
+            </p>
             <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-              A later governed step is required before current documentation can change.
+              {application
+                ? "The prior and resulting documented states are preserved."
+                : "A separate governed application step is required before current documentation can change."}
             </p>
           </div>
         </div>
@@ -276,9 +289,19 @@ export default async function ProposalReviewPage({
               {review.completedAt ? `${formatTimestamp(review.completedAt)} UTC` : "Completion time unavailable"}
               {review.completedByActor ? ` · ${review.completedByActor}` : ""}
             </p>
-            <Alert className="mt-4" tone="info">
-              This review is preserved. No Process version was created and the documented Process remains unchanged.
+            <Alert className="mt-4" tone={application ? "success" : "info"}>
+              {application
+                ? `This review was applied atomically as Process version ${application.afterVersionSequence}.`
+                : "This review is preserved. The documented Process remains unchanged until a separately authorized application succeeds."}
             </Alert>
+            {experience.processApplication.enabled && summary.approved > 0 ? (
+              <Link
+                className="mt-4 inline-flex rounded-[10px] bg-[var(--workspace-accent)] px-4 py-2.5 text-sm font-semibold text-white"
+                href={`/studio/discovery/interviews/${session.id}/proposal-review/apply`}
+              >
+                {application ? "View application receipt" : "Apply approved changes"}
+              </Link>
+            ) : null}
           </div>
         ) : (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.7fr)]">
