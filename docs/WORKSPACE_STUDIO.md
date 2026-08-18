@@ -69,10 +69,10 @@ Workspace Studio grows under one coherent product umbrella:
   administration, and Stewardship. Version 1 is read-only and uses **Not
   assigned**, **Not configured**, and **Needs validation** where evidence is
   absent.
-- **Discovery** — source intake, review, reconciliation, and eventual guided
-  interviews. It is the long-term product destination for capabilities that
-  begin today as local Preview, Resolution, Process Acquisition, and future
-  imports.
+- **Discovery** — organizational questions, guided interviews, evidence,
+  review, reconciliation, and proposed updates. Question-driven entry remains
+  a human routing experience: possible matches do not establish truth, create
+  a Process, or select a participant automatically.
 - **Activity** — a chronological, read-only projection of the existing
   append-only change ledgers. Activity does not replace those ledgers or imply
   causality between events.
@@ -165,8 +165,11 @@ maintenance, and deactivation preserve immutable identity and history.
 
 ### Implemented Discovery routes
 
-- `/studio/discovery` — start and resume guided interviews for an existing
-  Process;
+- `/studio/discovery` — preserve an organizational question before selecting a
+  Process, or start and resume guided interviews for an existing Process;
+- `/studio/discovery/inquiries/[inquiryId]` — review the exact preserved
+  question and transparent text-based possible places to look without creating
+  a route, interview, evidence, or documented change;
 - `/studio/discovery/interviews/[sessionId]` — answer questions, preserve
   uncertainty, append corrections, and review the saved interview; and
 - `/studio/discovery/interviews/[sessionId]/reconcile` — compare documented

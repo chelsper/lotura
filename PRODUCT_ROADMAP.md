@@ -107,13 +107,20 @@ milestones:
    without a score, task workflow, or new persistence. JU acceptance confirmed
    evidence-backed Discovery questions, exact source navigation, no manufactured
    responsibility questions, and continued public-demo isolation.
-5. **Process Families (v0.1 implementation authorized)** — explicit Family
+5. **Process Families (v0.1 implemented and live-validated)** — explicit Family
    identity and many-to-many membership, with no primary Family, nesting, or
-   implied inheritance. The bounded contract is recorded in
+   implied inheritance. JU validation confirmed one explicit Gift Processing
+   membership and append-only creation/membership history. The bounded contract is recorded in
    [docs/PROCESS_FAMILIES_V0_1.md](docs/PROCESS_FAMILIES_V0_1.md).
-6. **Question-Driven Discovery** — begin with an organizational question and
-   deliberately route to existing documentation, review, interview, or more
-   evidence.
+6. **Question-Driven Discovery (Slice A implemented and isolated-verified under
+   accepted LAD-056)** — begin with an organizational question and preserve why
+   Discovery began before selecting a Process. Slice A adds durable inquiry
+   identity, a private question-first entry, and transparent deterministic
+   possible places to look. Migration `0024` and the inquiry-only
+   Discovery/runtime boundary passed rollback-only fictional verification at
+   journal `25/25`. Deliberate routing and atomic interview handoff remain
+   Slices B and C; JU rollout and the first real inquiry remain separately
+   controlled.
 7. **AI Discovery Assistance** — suggest follow-up questions and structured
    mappings for human review; never approve or apply them.
 8. **Reference Models** — attach governed internal or external comparison bases

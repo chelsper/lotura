@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import {
   answerDiscoveryQuestion,
   appendDiscoveryCorrection,
+  createDiscoveryInquiry,
   createDiscoverySession,
   finishDiscoveryProposal,
   saveDiscoveryProposalDecision,
@@ -63,6 +64,18 @@ const slice2MappingActions = new Set<DiscoveryMappingAction>([
   "revise_process_exception",
   "add_process_dependency",
 ]);
+
+export async function createDiscoveryInquiryAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const result = await createDiscoveryInquiry({
+    questionText: text(formData, "questionText"),
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  revalidatePath("/studio/discovery");
+  redirect(`/studio/discovery/inquiries/${result.inquiryId}`);
+}
 
 export async function startDiscoverySessionAction(
   _previousState: DiscoveryActionState,

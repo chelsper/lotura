@@ -7,6 +7,7 @@ import { loadWorkspaceExperience } from "@/lib/workspace-experience";
 import { ArrowIcon, LayersIcon } from "../../ui/icons";
 import { Alert, Badge, Card } from "../../ui/primitives";
 import { WorkspacePageHeader, WorkspaceShell } from "../../workspace-shell";
+import { DiscoveryInquiryForm } from "./discovery-inquiry-form";
 import { DiscoveryStartForm } from "./discovery-start-form";
 
 function first(value: string | string[] | undefined) {
@@ -23,10 +24,11 @@ export default async function DiscoveryPage({
   const experience = await loadWorkspaceExperience();
   if (!experience.discovery.enabled) notFound();
 
-  const { loadDiscoverySessions } = await import("@/lib/discovery-data");
-  const sessions = await loadDiscoverySessions(
-    experience.discovery.organizationId,
-  );
+  const { loadDiscoveryInquiries, loadDiscoverySessions } = await import("@/lib/discovery-data");
+  const [inquiries, sessions] = await Promise.all([
+    loadDiscoveryInquiries(experience.discovery.organizationId),
+    loadDiscoverySessions(experience.discovery.organizationId),
+  ]);
   const processes = experience.data.processes.map((process) => ({
     id: process.id,
     name: process.name,
@@ -45,9 +47,10 @@ export default async function DiscoveryPage({
       source={experience.source}
     >
       <WorkspacePageHeader
-        description="Describe current work one question at a time while preserving uncertainty, assumptions, and disagreement as reviewable observations."
+        description="Begin with an organizational question or an existing Process. Preserve what you are trying to understand before deciding whether an interview or documented change is needed."
         eyebrow={<><LayersIcon className="size-3.5" /> Guided discovery</>}
         stats={[
+          { label: "Open questions", value: inquiries.filter((item) => item.status === "open").length },
           { label: "Sessions", value: sessions.length },
           { label: "Ready to review", value: sessions.filter((item) => item.status === "ready_for_review").length },
         ]}
@@ -58,7 +61,18 @@ export default async function DiscoveryPage({
         Interview answers are notes about how work happens. They do not change the documented Process until a person reviews and approves an update.
       </Alert>
 
-      <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="mt-6 grid gap-5 xl:grid-cols-2">
+        <Card className="p-4 sm:p-6">
+          <p className="text-xs font-medium text-[var(--text-tertiary)]">Start with a question</p>
+          <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">What are you trying to understand?</h2>
+          <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+            You do not need to know the right Process first. Preserve the question, then review transparent possible places to look.
+          </p>
+          <div className="mt-5">
+            <DiscoveryInquiryForm />
+          </div>
+        </Card>
+
         <Card className="p-4 sm:p-6">
           <p className="text-xs font-medium text-[var(--text-tertiary)]">Start with an existing Process</p>
           <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">Interview yourself about how the work happens</h2>
@@ -67,6 +81,32 @@ export default async function DiscoveryPage({
           </p>
           <div className="mt-5">
             <DiscoveryStartForm initialProcessId={initialProcessId} processes={processes} />
+          </div>
+        </Card>
+      </div>
+
+      <div className="mt-6 grid gap-5 xl:grid-cols-2">
+        <Card className="h-fit p-4 sm:p-5">
+          <p className="text-xs font-medium text-[var(--text-tertiary)]">Organizational questions</p>
+          <div className="mt-4 space-y-3">
+            {inquiries.length ? inquiries.map((inquiry) => (
+              <Link
+                className="group block rounded-[10px] border border-[var(--border)] p-3 transition hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)]"
+                href={`/studio/discovery/inquiries/${inquiry.id}`}
+                key={inquiry.id}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p className="line-clamp-2 text-sm font-medium leading-5 text-[var(--text)]">{inquiry.questionText}</p>
+                  <ArrowIcon className="mt-1 size-4 shrink-0 text-[var(--workspace-accent)]" />
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Badge tone="accent">{inquiry.status.replaceAll("_", " ")}</Badge>
+                  <Badge tone="neutral">Recorded by {inquiry.actorIdentifier}</Badge>
+                </div>
+              </Link>
+            )) : (
+              <p className="text-xs leading-5 text-[var(--text-tertiary)]">No organizational questions have been recorded yet.</p>
+            )}
           </div>
         </Card>
 

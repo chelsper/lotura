@@ -32,6 +32,14 @@ export type DiscoveryMutationResult =
       message: string;
     };
 
+export type DiscoveryInquiryMutationResult =
+  | { inquiryId: string; message: string; ok: true }
+  | {
+      code: "invalid" | "unavailable";
+      message: string;
+      ok: false;
+    };
+
 const STATES = new Set<DiscoveryEpistemicState>([
   "known",
   "assumed",
@@ -84,6 +92,62 @@ async function discoveryWriteContext() {
       readOnly: false,
     }),
   };
+}
+
+export async function createDiscoveryInquiry(input: {
+  questionText: string;
+}): Promise<DiscoveryInquiryMutationResult> {
+  const questionText = input.questionText.trim();
+  if (questionText.length < 3 || questionText.length > 2000) {
+    return {
+      code: "invalid",
+      message: "Enter a question between 3 and 2,000 characters.",
+      ok: false,
+    };
+  }
+
+  const context = await discoveryWriteContext();
+  if (!context) {
+    return {
+      code: "unavailable",
+      message: "Discovery questions are not enabled for this workspace.",
+      ok: false,
+    };
+  }
+
+  try {
+    const rows = await context.sql.query(
+      `insert into discovery_inquiries (
+         organization_id, question_text, actor_identifier
+       ) values ($1::integer, $2::text, $3::varchar(128))
+       returning stable_key::text as inquiry_id`,
+      [
+        context.configuration.organizationId,
+        questionText,
+        context.configuration.actorIdentifier,
+      ],
+    );
+    const inquiryId = String(rows[0]?.inquiry_id ?? "");
+    if (!validUuid(inquiryId)) {
+      return {
+        code: "unavailable",
+        message: "Lotura could not preserve this question safely.",
+        ok: false,
+      };
+    }
+    return {
+      inquiryId,
+      message: "Question preserved. No Process or interview was created.",
+      ok: true,
+    };
+  } catch (error) {
+    logDiscoveryDatabaseFailure("create_inquiry", error);
+    return {
+      code: "unavailable",
+      message: "Lotura could not preserve this question safely. No partial inquiry was retained.",
+      ok: false,
+    };
+  }
 }
 
 export async function createDiscoverySession(input: {

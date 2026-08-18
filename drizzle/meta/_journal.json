@@ -169,6 +169,13 @@
       "when": 1787023771606,
       "tag": "0023_process_families",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1787060749754,
+      "tag": "0024_question_driven_discovery_slice_a",
+      "breakpoints": true
     }
   ]
 }

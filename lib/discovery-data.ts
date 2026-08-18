@@ -4,6 +4,7 @@ import { and, asc, desc, eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
+  discoveryInquiry,
   discoveryObservation,
   discoveryProposalMapping,
   discoveryProposalMappingItem,
@@ -37,6 +38,16 @@ import type {
   ProposalReviewStatus,
 } from "./proposal-review-model.mjs";
 
+export type DiscoveryInquiryRecord = {
+  actorIdentifier: string;
+  createdAt: string;
+  id: string;
+  questionText: string;
+  revision: number;
+  status: "open" | "waiting_for_information" | "routed" | "closed_for_now";
+  updatedAt: string;
+};
+
 export type DiscoverySessionSummary = {
   actorIdentifier: string;
   createdAt: string;
@@ -50,6 +61,62 @@ export type DiscoverySessionSummary = {
   status: "in_progress" | "paused" | "ready_for_review" | "closed";
   updatedAt: string;
 };
+
+export async function loadDiscoveryInquiries(
+  organizationId: number,
+): Promise<DiscoveryInquiryRecord[]> {
+  const rows = await db
+    .select({
+      actorIdentifier: discoveryInquiry.actorIdentifier,
+      createdAt: discoveryInquiry.createdAt,
+      id: discoveryInquiry.stableKey,
+      questionText: discoveryInquiry.questionText,
+      revision: discoveryInquiry.revision,
+      status: discoveryInquiry.status,
+      updatedAt: discoveryInquiry.updatedAt,
+    })
+    .from(discoveryInquiry)
+    .where(eq(discoveryInquiry.organizationId, organizationId))
+    .orderBy(desc(discoveryInquiry.updatedAt), desc(discoveryInquiry.id));
+
+  return rows.map((row) => ({
+    ...row,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  }));
+}
+
+export async function loadDiscoveryInquiry(
+  organizationId: number,
+  stableKey: string,
+): Promise<DiscoveryInquiryRecord | null> {
+  const rows = await db
+    .select({
+      actorIdentifier: discoveryInquiry.actorIdentifier,
+      createdAt: discoveryInquiry.createdAt,
+      id: discoveryInquiry.stableKey,
+      questionText: discoveryInquiry.questionText,
+      revision: discoveryInquiry.revision,
+      status: discoveryInquiry.status,
+      updatedAt: discoveryInquiry.updatedAt,
+    })
+    .from(discoveryInquiry)
+    .where(
+      and(
+        eq(discoveryInquiry.organizationId, organizationId),
+        eq(discoveryInquiry.stableKey, stableKey),
+      ),
+    )
+    .limit(1);
+  const inquiry = rows[0];
+  return inquiry
+    ? {
+        ...inquiry,
+        createdAt: inquiry.createdAt.toISOString(),
+        updatedAt: inquiry.updatedAt.toISOString(),
+      }
+    : null;
+}
 
 export type DiscoveryObservationRecord = {
   actorIdentifier: string;

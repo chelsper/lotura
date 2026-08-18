@@ -191,6 +191,24 @@ export const discoverySessionStatus = pgEnum("discovery_session_status", [
   "closed",
 ]);
 
+export const discoveryInquiryStatus = pgEnum("discovery_inquiry_status", [
+  "open",
+  "waiting_for_information",
+  "routed",
+  "closed_for_now",
+]);
+
+export const discoveryInquiryRouteKind = pgEnum(
+  "discovery_inquiry_route_kind",
+  [
+    "review_process",
+    "review_process_family",
+    "start_guided_interview",
+    "wait_for_source",
+    "finish_for_now",
+  ],
+);
+
 export const discoveryObservationState = pgEnum(
   "discovery_observation_state",
   [
@@ -592,6 +610,60 @@ export const processFamilyMembership = pgTable(
   ],
 );
 
+export const discoveryInquiry = pgTable(
+  "discovery_inquiries",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    questionText: text("question_text").notNull(),
+    status: discoveryInquiryStatus("status").default("open").notNull(),
+    revision: integer("revision").default(1).notNull(),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_inquiries_organization_fk",
+      columns: [table.organizationId],
+      foreignColumns: [organization.id],
+    }).onDelete("restrict"),
+    unique("discovery_inquiries_stable_key_unique").on(table.stableKey),
+    unique("discovery_inquiries_identity_context_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+    ),
+    check(
+      "discovery_inquiries_question_shape_check",
+      sql`char_length(trim(${table.questionText})) > 0 and char_length(${table.questionText}) <= 2000`,
+    ),
+    check(
+      "discovery_inquiries_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    check(
+      "discovery_inquiries_revision_positive_check",
+      sql`${table.revision} >= 1`,
+    ),
+    index("discovery_inquiries_org_status_updated_idx").on(
+      table.organizationId,
+      table.status,
+      table.updatedAt,
+    ),
+    index("discovery_inquiries_org_actor_created_idx").on(
+      table.organizationId,
+      table.actorIdentifier,
+      table.createdAt,
+    ),
+  ],
+);
+
 export const discoverySession = pgTable(
   "discovery_sessions",
   {
@@ -665,6 +737,163 @@ export const discoverySession = pgTable(
       table.organizationId,
       table.processStableKey,
       table.updatedAt,
+    ),
+  ],
+);
+
+export const discoveryInquiryRoute = pgTable(
+  "discovery_inquiry_routes",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    inquiryId: integer("inquiry_id").notNull(),
+    inquiryStableKey: uuid("inquiry_stable_key").notNull(),
+    routeSequence: integer("route_sequence").notNull(),
+    routeKind: discoveryInquiryRouteKind("route_kind").notNull(),
+    processId: integer("process_id"),
+    processStableKey: uuid("process_stable_key"),
+    processFamilyId: integer("process_family_id"),
+    processFamilyStableKey: uuid("process_family_stable_key"),
+    discoverySessionId: integer("discovery_session_id"),
+    discoverySessionStableKey: uuid("discovery_session_stable_key"),
+    routeNote: text("route_note"),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_inquiry_routes_inquiry_context_fk",
+      columns: [
+        table.inquiryId,
+        table.organizationId,
+        table.inquiryStableKey,
+      ],
+      foreignColumns: [
+        discoveryInquiry.id,
+        discoveryInquiry.organizationId,
+        discoveryInquiry.stableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_inquiry_routes_process_context_fk",
+      columns: [
+        table.processId,
+        table.organizationId,
+        table.processStableKey,
+      ],
+      foreignColumns: [
+        process.id,
+        process.organizationId,
+        process.stableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_inquiry_routes_family_context_fk",
+      columns: [
+        table.processFamilyId,
+        table.organizationId,
+        table.processFamilyStableKey,
+      ],
+      foreignColumns: [
+        processFamily.id,
+        processFamily.organizationId,
+        processFamily.stableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_inquiry_routes_session_context_fk",
+      columns: [
+        table.discoverySessionId,
+        table.organizationId,
+        table.discoverySessionStableKey,
+        table.processId,
+        table.processStableKey,
+      ],
+      foreignColumns: [
+        discoverySession.id,
+        discoverySession.organizationId,
+        discoverySession.stableKey,
+        discoverySession.processId,
+        discoverySession.processStableKey,
+      ],
+    }).onDelete("restrict"),
+    unique("discovery_inquiry_routes_stable_key_unique").on(table.stableKey),
+    unique("discovery_inquiry_routes_identity_context_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.inquiryId,
+      table.inquiryStableKey,
+    ),
+    unique("discovery_inquiry_routes_inquiry_sequence_unique").on(
+      table.inquiryId,
+      table.routeSequence,
+    ),
+    check(
+      "discovery_inquiry_routes_sequence_positive_check",
+      sql`${table.routeSequence} >= 1`,
+    ),
+    check(
+      "discovery_inquiry_routes_note_shape_check",
+      sql`${table.routeNote} is null or (char_length(trim(${table.routeNote})) > 0 and char_length(${table.routeNote}) <= 2000)`,
+    ),
+    check(
+      "discovery_inquiry_routes_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    check(
+      "discovery_inquiry_routes_target_shape_check",
+      sql`(
+        ${table.routeKind} = 'review_process'
+        and ${table.processId} is not null
+        and ${table.processStableKey} is not null
+        and ${table.processFamilyId} is null
+        and ${table.processFamilyStableKey} is null
+        and ${table.discoverySessionId} is null
+        and ${table.discoverySessionStableKey} is null
+      ) or (
+        ${table.routeKind} = 'review_process_family'
+        and ${table.processId} is null
+        and ${table.processStableKey} is null
+        and ${table.processFamilyId} is not null
+        and ${table.processFamilyStableKey} is not null
+        and ${table.discoverySessionId} is null
+        and ${table.discoverySessionStableKey} is null
+      ) or (
+        ${table.routeKind} = 'start_guided_interview'
+        and ${table.processId} is not null
+        and ${table.processStableKey} is not null
+        and ${table.processFamilyId} is null
+        and ${table.processFamilyStableKey} is null
+        and ${table.discoverySessionId} is not null
+        and ${table.discoverySessionStableKey} is not null
+      ) or (
+        ${table.routeKind} in ('wait_for_source', 'finish_for_now')
+        and ${table.processId} is null
+        and ${table.processStableKey} is null
+        and ${table.processFamilyId} is null
+        and ${table.processFamilyStableKey} is null
+        and ${table.discoverySessionId} is null
+        and ${table.discoverySessionStableKey} is null
+      )`,
+    ),
+    index("discovery_inquiry_routes_org_inquiry_sequence_idx").on(
+      table.organizationId,
+      table.inquiryStableKey,
+      table.routeSequence,
+    ),
+    index("discovery_inquiry_routes_org_process_created_idx").on(
+      table.organizationId,
+      table.processStableKey,
+      table.createdAt,
+    ),
+    index("discovery_inquiry_routes_org_family_created_idx").on(
+      table.organizationId,
+      table.processFamilyStableKey,
+      table.createdAt,
     ),
   ],
 );

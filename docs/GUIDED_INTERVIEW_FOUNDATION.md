@@ -280,12 +280,26 @@ GRANT INSERT (
   exception_id, exception_stable_key,
   related_process_id, related_process_stable_key
 ) ON discovery_mapping_items TO <discovery_role>;
+
+-- Added only when Question-Driven Discovery v0.1, Slice A is enabled:
+GRANT SELECT ON TABLE discovery_inquiries TO <discovery_role>;
+GRANT INSERT (
+  organization_id, question_text, actor_identifier
+) ON discovery_inquiries TO <discovery_role>;
+GRANT USAGE ON SEQUENCE discovery_inquiries_id_seq TO <discovery_role>;
 ```
 
 The normal runtime role may receive `SELECT` on the two Discovery tables added
 by Discovery Proposed Update v0.1 and, after Slice 1, on the three structured-
 mapping tables for server-rendered reads. It remains unable to insert, update,
 or delete.
+
+For Question-Driven Discovery Slice A, the normal runtime role receives
+`SELECT` on `discovery_inquiries` only. The route table is present as durable
+forward schema but receives no application write privilege until explicit
+human routing is separately approved. The Discovery role receives no inquiry
+`UPDATE` or `DELETE`, route `INSERT`, `UPDATE`, or `DELETE`, or additional
+operating-model privilege in Slice A.
 
 The Discovery role receives no write privilege on Process, Step, Role, System,
 Exception, dependency, Organization Structure, `operating_model_changes`, or
