@@ -123,6 +123,7 @@ export const organizationStructureChangeAction = pgEnum(
     "create",
     "establish_assignment",
     "merge_unit",
+    "retire_unit_and_move_contents",
   ],
 );
 

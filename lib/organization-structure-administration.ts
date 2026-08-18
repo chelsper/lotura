@@ -29,7 +29,8 @@ export type StructureChangeAction =
   | "end_role_coverage"
   | "create"
   | "establish_assignment"
-  | "merge_unit";
+  | "merge_unit"
+  | "retire_unit_and_move_contents";
 
 export type StructureChangeSummary = {
   action: StructureChangeAction;
@@ -1344,8 +1345,14 @@ export async function removeStructureEntity(
   }
 }
 
-export async function mergeOrganizationUnit(
+type OrganizationUnitTransferOperation = {
+  action: "merge_unit" | "retire_unit_and_move_contents";
+  conflictNoun: "merge" | "removal";
+};
+
+async function transferOrganizationUnitContents(
   input: MergeOrganizationUnitMutation,
+  operation: OrganizationUnitTransferOperation,
 ): Promise<StructureMutationResult> {
   const invalid = validateMetadata(input);
   if (invalid) return invalid;
@@ -1359,7 +1366,8 @@ export async function mergeOrganizationUnit(
     return {
       ok: false,
       code: "invalid",
-      message: "Select a distinct active Organization Unit to receive this Unit.",
+      message:
+        "Select a distinct active Organization Unit to receive this Unit's contents.",
     };
   }
 
@@ -1394,7 +1402,7 @@ export async function mergeOrganizationUnit(
       return {
         ok: false,
         code: "not_found",
-        message: "The source or surviving Organization Unit is unavailable.",
+        message: "The source or destination Organization Unit is unavailable.",
       };
     }
     if (
@@ -1405,14 +1413,14 @@ export async function mergeOrganizationUnit(
         ok: false,
         code: "conflict",
         message:
-          "The source or surviving Unit changed after the merge was reviewed. Refresh before trying again.",
+          `The source or destination Unit changed after the ${operation.conflictNoun} was reviewed. Refresh before trying again.`,
       };
     }
     if (input.effectiveAt <= new Date(String(source.effective_from))) {
       return {
         ok: false,
         code: "invalid",
-        message: "The merge date must be after the source Unit became effective.",
+        message: `The ${operation.conflictNoun} date must be after the source Unit became effective.`,
       };
     }
 
@@ -1590,7 +1598,8 @@ export async function mergeOrganizationUnit(
             organization_unit_id, change_kind, change_action,
             before_state, after_state, reason, effective_at, actor_identifier)
          select $1::integer, 'organization_unit', retired.stable_key,
-           retired.id, $7::organization_structure_change_kind, 'merge_unit',
+           retired.id, $7::organization_structure_change_kind,
+           $11::organization_structure_change_action,
            jsonb_build_object(
              'effectiveUntil', eligible.effective_until,
              'isProvisional', eligible.is_provisional,
@@ -1600,19 +1609,35 @@ export async function mergeOrganizationUnit(
              'status', eligible.status,
              'statusReason', eligible.status_reason
            ),
-           jsonb_build_object(
-             'directChildUnitsMoved', (select count(*) from moved_children),
-             'directPositionsMoved', (select count(*) from moved_positions),
-             'effectiveUntil', $8::timestamptz,
-             'isProvisional', eligible.is_provisional,
-             'mergedIntoOrganizationUnitName', eligible.target_name,
-             'mergedIntoOrganizationUnitStableKey', eligible.target_stable_key,
-             'name', eligible.name,
-             'parentOrganizationUnitStableKey',
-               eligible.parent_organization_unit_stable_key,
-             'status', 'retired',
-             'statusReason', $9::text
-           ),
+           case when $11::text = 'merge_unit' then
+             jsonb_build_object(
+               'directChildUnitsMoved', (select count(*) from moved_children),
+               'directPositionsMoved', (select count(*) from moved_positions),
+               'effectiveUntil', $8::timestamptz,
+               'isProvisional', eligible.is_provisional,
+               'mergedIntoOrganizationUnitName', eligible.target_name,
+               'mergedIntoOrganizationUnitStableKey', eligible.target_stable_key,
+               'name', eligible.name,
+               'parentOrganizationUnitStableKey',
+                 eligible.parent_organization_unit_stable_key,
+               'status', 'retired',
+               'statusReason', $9::text
+             )
+           else
+             jsonb_build_object(
+               'contentsMovedToOrganizationUnitName', eligible.target_name,
+               'contentsMovedToOrganizationUnitStableKey', eligible.target_stable_key,
+               'directChildUnitsMoved', (select count(*) from moved_children),
+               'directPositionsMoved', (select count(*) from moved_positions),
+               'effectiveUntil', $8::timestamptz,
+               'isProvisional', eligible.is_provisional,
+               'name', eligible.name,
+               'parentOrganizationUnitStableKey',
+                 eligible.parent_organization_unit_stable_key,
+               'status', 'retired',
+               'statusReason', $9::text
+             )
+           end,
            $9::text, $8::timestamptz, $10::varchar(128)
          from retired_source retired cross join eligible
          returning 1
@@ -1638,6 +1663,7 @@ export async function mergeOrganizationUnit(
         input.effectiveAt.toISOString(),
         input.reason.trim(),
         configuration.actorIdentifier,
+        operation.action,
       ],
     );
 
@@ -1660,22 +1686,46 @@ export async function mergeOrganizationUnit(
         ok: false,
         code: "conflict",
         message:
-          "The hierarchy or merge impact changed after review. Refresh before trying again.",
+          `The hierarchy or ${operation.conflictNoun} impact changed after review. Refresh before trying again.`,
       };
     }
-    return {
-      ok: true,
-      message: `Organization Unit merged. ${positionsMoved} Position${positionsMoved === 1 ? "" : "s"} and ${childrenMoved} child Unit${childrenMoved === 1 ? "" : "s"} moved; the source identity and history were retained.`,
-      stableKey: targetStableKey,
-    };
+    const impact = `${positionsMoved} Position${positionsMoved === 1 ? "" : "s"} and ${childrenMoved} child Unit${childrenMoved === 1 ? "" : "s"} moved`;
+    return operation.action === "merge_unit"
+      ? {
+          ok: true,
+          message: `Organization Unit merged. ${impact}; the source identity and history were retained.`,
+          stableKey: targetStableKey,
+        }
+      : {
+          ok: true,
+          message: `Organization Unit removed from the current structure. ${impact}; its identity and history were retained.`,
+          stableKey: targetStableKey,
+        };
   } catch {
     return {
       ok: false,
       code: "unavailable",
-      message:
-        "The Organization Unit could not be merged. No partial change was accepted.",
+      message: `The Organization Unit ${operation.conflictNoun} could not be completed. No partial change was accepted.`,
     };
   }
+}
+
+export async function mergeOrganizationUnit(
+  input: MergeOrganizationUnitMutation,
+): Promise<StructureMutationResult> {
+  return transferOrganizationUnitContents(input, {
+    action: "merge_unit",
+    conflictNoun: "merge",
+  });
+}
+
+export async function removeOrganizationUnitAndMoveContents(
+  input: MergeOrganizationUnitMutation,
+): Promise<StructureMutationResult> {
+  return transferOrganizationUnitContents(input, {
+    action: "retire_unit_and_move_contents",
+    conflictNoun: "removal",
+  });
 }
 
 async function assignmentContext(

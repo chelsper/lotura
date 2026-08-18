@@ -25,6 +25,7 @@ import {
   establishPositionAssignmentAction,
   establishPositionReportingRelationshipAction,
   mergeOrganizationUnitAction,
+  removeOrganizationUnitAndMoveContentsAction,
   removeStructureEntityAction,
   replacePositionAssignmentAction,
   replacePositionReportingRelationshipAction,
@@ -406,15 +407,19 @@ function mergeImpactFingerprint(unit: OrganizationUnit) {
     .join("|");
 }
 
-function MergeOrganizationUnitForm({
+function OrganizationUnitTransferForm({
   data,
+  mode,
   unit,
 }: {
   data: OrganizationStructureData;
+  mode: "merge" | "remove";
   unit: OrganizationUnit;
 }) {
   const [state, action, pending] = useActionState(
-    mergeOrganizationUnitAction,
+    mode === "merge"
+      ? mergeOrganizationUnitAction
+      : removeOrganizationUnitAndMoveContentsAction,
     initialStructureActionState,
   );
   const [targetStableKey, setTargetStableKey] = useState("");
@@ -436,6 +441,12 @@ function MergeOrganizationUnitForm({
       position.assignments.map((assignment) => assignment.person.id),
     ),
   ).size;
+  const operationalRoles = new Set(
+    directPositions.flatMap((position) =>
+      position.mandates.map((mandate) => mandate.role.id),
+    ),
+  ).size;
+  const isMerge = mode === "merge";
 
   return (
     <form action={action} className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -453,7 +464,7 @@ function MergeOrganizationUnitForm({
       />
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Surviving Organization Unit
+          {isMerge ? "Surviving Organization Unit" : "Destination Organization Unit"}
         </span>
         <Select
           name="targetStableKey"
@@ -479,12 +490,13 @@ function MergeOrganizationUnitForm({
 
       <div className="rounded-[10px] border border-[var(--border)] bg-[var(--surface-subtle)] p-3 sm:col-span-2">
         <p className="text-xs font-semibold text-[var(--text)]">
-          Direct merge impact
+          Direct {isMerge ? "merge" : "removal"} impact
         </p>
-        <ul className="mt-2 grid gap-1 text-xs leading-5 text-[var(--text-secondary)] sm:grid-cols-3">
+        <ul className="mt-2 grid gap-1 text-xs leading-5 text-[var(--text-secondary)] sm:grid-cols-2 lg:grid-cols-4">
           <li>{directPositions.length} direct Position{directPositions.length === 1 ? "" : "s"} move</li>
           <li>{directChildren.length} direct child Unit{directChildren.length === 1 ? "" : "s"} move</li>
           <li>{currentOccupants} current occupant{currentOccupants === 1 ? "" : "s"} remain assigned</li>
+          <li>{operationalRoles} Operational Role{operationalRoles === 1 ? "" : "s"} remain connected through Position mandates</li>
         </ul>
         <p className="mt-2 text-xs leading-5 text-[var(--text-tertiary)]">
           People, Position Assignments, reporting relationships, Role Mandates,
@@ -497,13 +509,15 @@ function MergeOrganizationUnitForm({
       <label className="flex items-start gap-3 rounded-[10px] border border-[var(--warning-border)] bg-[var(--warning-subtle)] p-3 sm:col-span-2">
         <input
           className="mt-0.5 size-4"
-          name="confirmMerge"
+          name={isMerge ? "confirmMerge" : "confirmRemovalWithContents"}
           required
           type="checkbox"
           value="confirmed"
         />
         <span className="text-xs leading-5 text-[var(--warning)]">
-          I reviewed this impact. Merge the source into the selected survivor,
+          I reviewed this impact. {isMerge
+            ? "Merge the source into the selected survivor"
+            : "Move the source Unit's direct contents to the selected destination"},
           move its direct Positions and child Units, and retire—not delete—the
           source identity.
         </span>
@@ -512,14 +526,34 @@ function MergeOrganizationUnitForm({
       <div className="sm:col-span-2">
         <Button disabled={pending || !target} type="submit" variant="primary">
           {pending
-            ? "Merging Unit…"
+            ? isMerge
+              ? "Merging Unit…"
+              : "Moving contents and removing Unit…"
             : target
-              ? `Merge into ${target.name}`
-              : "Select a surviving Unit"}
+              ? isMerge
+                ? `Merge into ${target.name}`
+                : `Move contents to ${target.name} and remove Unit`
+              : isMerge
+                ? "Select a surviving Unit"
+                : "Select a destination Unit"}
         </Button>
       </div>
     </form>
   );
+}
+
+function MergeOrganizationUnitForm(props: {
+  data: OrganizationStructureData;
+  unit: OrganizationUnit;
+}) {
+  return <OrganizationUnitTransferForm {...props} mode="merge" />;
+}
+
+function RemoveOrganizationUnitWithContentsForm(props: {
+  data: OrganizationStructureData;
+  unit: OrganizationUnit;
+}) {
+  return <OrganizationUnitTransferForm {...props} mode="remove" />;
 }
 
 function EndAssignmentForm({
@@ -1373,6 +1407,8 @@ const stateLabels: Record<string, string> = {
   assignmentType: "Assignment type",
   coverageRecordId: "Role Coverage record",
   coverageType: "Coverage type",
+  contentsMovedToOrganizationUnitName: "Destination Organization Unit",
+  contentsMovedToOrganizationUnitStableKey: "Destination Unit stable key",
   directChildUnitsMoved: "Direct child Units moved",
   directPositionsMoved: "Direct Positions moved",
   displayName: "Display name",
@@ -1464,6 +1500,7 @@ function changeActionLabel(action: StructureChangeSummary["action"]) {
     establish_role_coverage: "Role Coverage established",
     establish_role_mandate: "Operational Role mandate established",
     merge_unit: "Organization Unit merged",
+    retire_unit_and_move_contents: "Organization Unit removed; contents moved",
     remove_from_current_structure: "Removed from current structure",
     replace_assignment: "Assignment replaced",
     replace_reporting_relationship: "Reporting relationship replaced",
@@ -1513,23 +1550,42 @@ export function StructureAdministrationPanel({
         </Card>
       </div>
       {entityType === "organization_unit" ? (
-        <Card className="mt-4 p-4 sm:p-5">
-          <details>
-            <summary className="cursor-pointer text-sm font-semibold text-[var(--text)]">
-              Merge into an existing Unit
-            </summary>
-            <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">
-              Use this when two Unit records describe the same organizational
-              grouping. The selected survivor keeps its stable identity. Direct
-              Positions and child Units move to it, while this source Unit is
-              retired with its identity, provenance, and history preserved.
-            </p>
-            <MergeOrganizationUnitForm
-              data={data}
-              unit={entity as OrganizationUnit}
-            />
-          </details>
-        </Card>
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <Card className="p-4 sm:p-5">
+            <details>
+              <summary className="cursor-pointer text-sm font-semibold text-[var(--text)]">
+                Remove Unit and move its contents
+              </summary>
+              <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">
+                Use this when this Unit should no longer appear in the current
+                structure, but its Positions and child Units continue under
+                another Unit. Select their destination; this source Unit will be
+                retired with its identity, provenance, and history preserved.
+              </p>
+              <RemoveOrganizationUnitWithContentsForm
+                data={data}
+                unit={entity as OrganizationUnit}
+              />
+            </details>
+          </Card>
+          <Card className="p-4 sm:p-5">
+            <details>
+              <summary className="cursor-pointer text-sm font-semibold text-[var(--text)]">
+                Merge into an existing Unit
+              </summary>
+              <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">
+                Use this when two Unit records describe the same organizational
+                grouping. The selected survivor keeps its stable identity. Direct
+                Positions and child Units move to it, while this source Unit is
+                retired with its identity, provenance, and history preserved.
+              </p>
+              <MergeOrganizationUnitForm
+                data={data}
+                unit={entity as OrganizationUnit}
+              />
+            </details>
+          </Card>
+        </div>
       ) : null}
       {entityType === "position" ? (
         <>

@@ -17,6 +17,7 @@ import {
   establishPositionAssignment,
   establishPositionReportingRelationship,
   mergeOrganizationUnit,
+  removeOrganizationUnitAndMoveContents,
   removeStructureEntity,
   replacePositionAssignment,
   replacePositionReportingRelationship,
@@ -269,6 +270,50 @@ export async function mergeOrganizationUnitAction(
     return {
       status: "error",
       message: "The surviving Unit could not be opened safely.",
+    };
+  }
+
+  revalidatePath("/organization");
+  revalidatePath("/studio");
+  revalidatePath("/studio/organization");
+  redirect(studioTargetPath("organization_unit", result.stableKey));
+}
+
+export async function removeOrganizationUnitAndMoveContentsAction(
+  _previousState: StructureActionState,
+  formData: FormData,
+): Promise<StructureActionState> {
+  const metadata = changeMetadata(formData);
+  const sourceStableKey = textValue(formData, "sourceStableKey");
+  const targetStableKey = textValue(formData, "targetStableKey");
+  if (
+    !metadata ||
+    !sourceStableKey ||
+    !targetStableKey ||
+    textValue(formData, "confirmRemovalWithContents") !== "confirmed"
+  ) {
+    return {
+      status: "error",
+      message:
+        "Select the destination Unit and confirm the reviewed removal impact.",
+    };
+  }
+
+  const result = await removeOrganizationUnitAndMoveContents({
+    ...metadata,
+    expectedImpactFingerprint: textValue(
+      formData,
+      "expectedImpactFingerprint",
+    ),
+    expectedTargetRevision: textValue(formData, "expectedTargetRevision"),
+    sourceStableKey,
+    targetStableKey,
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+  if (!result.stableKey) {
+    return {
+      status: "error",
+      message: "The destination Unit could not be opened safely.",
     };
   }
 

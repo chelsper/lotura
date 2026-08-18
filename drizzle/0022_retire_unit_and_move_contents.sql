@@ -1,0 +1,1 @@
+ALTER TYPE "public"."organization_structure_change_action" ADD VALUE 'retire_unit_and_move_contents';
