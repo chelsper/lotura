@@ -13,6 +13,7 @@ import {
   getDiscoveryQuestion,
   getNextDiscoveryQuestionKey,
 } from "../lib/discovery-questions.mjs";
+import { buildDiscoveryScopeStatement } from "../lib/discovery-scope.mjs";
 
 const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
@@ -91,6 +92,41 @@ test("the versioned question catalog is bounded and ends in review", () => {
     DISCOVERY_REVIEW_KEY,
   );
   assert.equal(getDiscoveryQuestion("untrusted-client-question"), null);
+});
+
+test("interview scope defaults to the whole process and preserves a focused description when needed", async () => {
+  assert.equal(
+    buildDiscoveryScopeStatement({ details: "", mode: "whole" }),
+    "The whole process, from beginning to end.",
+  );
+  assert.equal(
+    buildDiscoveryScopeStatement({
+      details: "  Focus on the intake handoff.  ",
+      mode: "part",
+    }),
+    "Focus on the intake handoff.",
+  );
+  assert.equal(
+    buildDiscoveryScopeStatement({ details: "", mode: "part" }),
+    null,
+  );
+  assert.equal(
+    buildDiscoveryScopeStatement({ details: "Ignored", mode: "unexpected" }),
+    null,
+  );
+
+  const [form, actions] = await Promise.all([
+    read("app/studio/discovery/discovery-start-form.tsx"),
+    read("app/studio/discovery/actions.ts"),
+  ]);
+  assert.match(form, /What part of this work are we discussing\?/);
+  assert.match(form, /The whole process/);
+  assert.match(form, /One part of the process/);
+  assert.match(form, /name="scopeMode"/);
+  assert.match(form, /name="scopeDetails"/);
+  assert.doesNotMatch(form, /Interview scope/);
+  assert.match(actions, /buildDiscoveryScopeStatement/);
+  assert.doesNotMatch(actions, /text\(formData, "scopeStatement"\)/);
 });
 
 test("migration 0016 creates tenant-safe immutable evidence without touching canonical Process facts", async () => {
