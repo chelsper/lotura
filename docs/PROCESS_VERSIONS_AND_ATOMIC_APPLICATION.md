@@ -193,8 +193,10 @@ application credential.
 
 LAD-053's generic implementation is complete. Its exact schema, write boundary,
 privilege contract, and rollback-only isolated fictional verification passed at
-migration journal `22/22`. JU migration, configuration, deployment, and real
-Process application remain separately gated:
+migration journal `22/22`. The dedicated JU role, Production-only
+configuration, exact-commit deployment, and read-only QA are also complete. A
+real Process application remains separately contingent on a genuine approved
+proposal:
 
 1. add the forward-only migration and server-only application boundary;
 2. verify the complete mixed-action path in the isolated fictional database;
@@ -203,9 +205,9 @@ Process application remain separately gated:
 4. prove application-role least privilege and runtime read-only access;
 5. verify public/demo builds do not initialize or expose application;
 6. commit, review, and merge shared code without changing JU;
-7. separately approve the JU migration, role, Production-only configuration,
-   and deployment; and
-8. validate JU only when a genuine approved proposal exists. Never manufacture
+7. separately approve and complete the JU migration, role, Production-only
+   configuration, and deployment; and
+8. apply in JU only when a genuine approved proposal exists. Never manufacture
    a JU change merely to exercise the workflow.
 
 ## Explicit deferrals

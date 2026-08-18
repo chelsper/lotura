@@ -1806,6 +1806,15 @@ proposal rebasing, automated rollback, AI application, FLOW changes,
 notifications, Steward routing, Process Families, Reference Models, drift,
 and Continuous Improvement remain deferred.
 
+**Implementation status — August 17, 2026:** The generic v0.1 implementation,
+forward-only migration `0021`, isolated fictional verification, and dedicated
+JU least-privilege application boundary are complete. JU Production runs the
+same shared commit as public Northstar with application enabled only through
+JU Production configuration. Rollout probes were transactional and left no
+Process version, application, provenance, history, or canonical test row. No
+real application has occurred; the first one remains contingent on a genuine
+approved proposal.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -1819,8 +1828,6 @@ The following ideas are recorded so postponement is visible and deliberate.
 | Uploads, imports, Visio/PDF/flowchart parsing | Requires malware handling, source permissions, artifact retention, provenance, and conflict treatment | Artifact architecture, storage, security, and extraction decision |
 | Whiteboard and collaborative capture | Draft contribution, authorship, reconciliation, and conversion to structured knowledge are undefined | Collaboration, observation, and approval decision |
 | Conflict detection and consensus | Conflicts need identity, scope, lifecycle, privacy, and human resolution | Conflict and reconciliation schema decision |
-| Structured proposal application workflow | LAD-053 accepts the write, authority, effective-time, and atomicity design boundary; generic implementation and isolated fictional verification are authorized | Verify the exact migration and least-privilege role fictionally before any separately approved rollout |
-| Process version history | LAD-053 accepts a Process-centered immutable snapshot and linear v0.1 chain; generic implementation and isolated fictional verification are authorized | Verify snapshot format 1 and the linear chain in the fictional database before any separately approved rollout |
 | Knowledge Gaps | Explainable gaps are product direction under LAD-046, but persistence is not justified until assignment, governance, or resolution history requires it | Derived projection rules first; later lifecycle, ownership, and history decision if persistence is needed |
 | Process Families and reusable subprocesses | LAD-047 preserves explicit family membership and distinct composition semantics, but authorizes no schema or inheritance | Family identity, membership cardinality, effective dating, governance, composition, comparison, and migration decision |
 | Question-driven Discovery | Organizational questions may lead to existing knowledge, review, a new interview, or more evidence, but routing and scope are unresolved | Search, matching, participant selection, evidence scope, privacy, and session-start decision |
@@ -1894,7 +1901,9 @@ authorize Process versions, canonical application, JU rollout, public-demo
 changes, or AI participation.
 
 LAD-053 accepts the immutable Process-version and atomic-application design
-boundary after Proposal Review. Generic implementation and isolated fictional
-verification are authorized. JU migration, credentials, environment changes,
-canonical JU application, deployment, public-demo change, and AI participation
+boundary after Proposal Review. Generic implementation, isolated fictional
+verification, the dedicated JU least-privilege role, migration `0021`,
+Production-only enablement, deployment, and read-only QA are complete. No
+canonical JU application has occurred. A genuine approved proposal remains
+required before the first application; public-demo change and AI participation
 remain separately gated.

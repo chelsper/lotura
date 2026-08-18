@@ -67,6 +67,20 @@ Process Families and Reference Models are preserved product commitments. They
 remain later milestones because trustworthy comparison depends on the manual
 knowledge lifecycle, not because they are optional side ideas.
 
+## Current product phase — Make Lotura useful at scale
+
+The first trustworthy manual lifecycle is now implemented: evidence can move
+through human reconciliation, a Knowledge Outcome, typed proposed changes,
+Proposal Review, and a separately authorized atomic application that records an
+immutable Process version. JU has the application boundary enabled, but no
+change was manufactured merely to exercise it. The first real application
+should wait for a genuine reviewed proposal.
+
+The center of gravity now shifts from proving write boundaries to helping an
+organization build and use connected knowledge at scale. The immediate bridge
+is Knowledge Gaps: explainable questions derived from facts and unresolved
+evidence that help people decide what to understand next.
+
 ## Ordered product milestones
 
 This is the current dependency-ordered sequence of meaningful product
@@ -82,12 +96,12 @@ milestones:
    explicit scope. It applies only when structured proposed changes exist, and
    approval means eligible for later governed application rather than a change
    to current documentation.
-3. **Process Versions & Atomic Application (in implementation)** — an
+3. **Process Versions & Atomic Application (implemented in v0.1)** — an
    approved proposal produces a historically recoverable, effective
    operating-model version in one governed operation. LAD-053's generic
-   implementation and isolated fictional verification are complete. Its
-   dedicated credential, migration, and application boundary remain separately
-   reviewed; implementation does not itself authorize a JU migration or rollout.
+   implementation, isolated fictional verification, and JU least-privilege
+   enablement are complete. No JU application has been manufactured; the first
+   version should be created only by a genuine approved proposal.
 4. **Knowledge Gaps** — explainable unresolved knowledge and review questions,
    without a score.
 5. **Process Families** — explicit family identity and membership, with no
@@ -95,13 +109,13 @@ milestones:
 6. **Question-Driven Discovery** — begin with an organizational question and
    deliberately route to existing documentation, review, interview, or more
    evidence.
-7. **Reference Models** — attach governed internal or external comparison bases
+7. **AI Discovery Assistance** — suggest follow-up questions and structured
+   mappings for human review; never approve or apply them.
+8. **Reference Models** — attach governed internal or external comparison bases
    to Processes or Process Families.
-8. **Practice Comparison** — compare documented knowledge, observed reality,
+9. **Practice Comparison** — compare documented knowledge, observed reality,
    prior versions, and selected references without treating difference as
    failure.
-9. **AI Discovery Assistance** — suggest follow-up questions and structured
-   mappings for human review; never approve or apply them.
 10. **Job Descriptions & Job Drift** — compare Position-linked descriptions
     with responsibility and observed work.
 11. **Operating-Model Drift** — review change across documented versions,
@@ -114,9 +128,10 @@ adds explicit typed proposals for Steps, responsibility, Systems, Exceptions,
 and dependencies. They are used when a Knowledge Outcome identifies a change.
 Milestones 1 through 3 complete the understandable manual path from evidence to
 an approved, versioned operating-model change while preserving a successful
-no-change branch. AI must not move ahead of that boundary. The
-relative timing of AI assistance and Reference Models may be reviewed after
-Milestones 1 through 3, without changing human approval authority.
+no-change branch. With that prerequisite met, AI assistance may move ahead of
+Reference Models, but it remains bounded to asking, organizing, comparing,
+summarizing, and suggesting. Human judgment, governance approval, and the
+separate application boundary remain authoritative.
 
 ## Workspace Studio product sequence
 
@@ -340,14 +355,14 @@ This register makes intentional postponement visible so ideas are neither mistak
 | Editing and knowledge stewardship | Phase 2 | Capture requires provenance, observation status, review meaning, and organizational authorization. |
 | JU Pilot with institutional information | Phase 2 | Pilot use requires private authenticated access and explicit data approval. |
 | Guided interviews | Phase 2 | Manual guided interviewing requires approved scope, disclosure, provenance, observation preservation, and human review. |
-| AI-assisted interviews and mappings | After Milestones 1–3 | AI assistance follows a proven manual structured-proposal, approval, application, and version-history path. |
+| AI-assisted interviews and mappings | Milestone 7 | AI assistance follows the now-implemented manual structured-proposal, approval, application, and version-history path. |
 | Conflict detection, reconciliation, and consensus | Phase 2 | Lotura must preserve conflicting observations before stewards establish an approved definition. |
 | Approval workflow and process version history | Phase 2 | Observation, proposal, consensus, approval, effective timing, and supersession must remain distinct. |
 | Change requests and continuous improvement | Phase 2 and 3 | Phase 2 captures the reason for change; Phase 3 evaluates implementation, measurement, result, and sustainment. |
 | Knowledge Gaps | After Milestones 1–3 | Begin with explainable projections; persist only if assignment, governance, or resolution history requires it. |
 | Process Families and reusable subprocesses | Milestone 5 | Family membership, composition, and dependency require distinct semantics; no inheritance is implied. |
 | Question-Driven Discovery | Milestone 6 | Routing an organizational question requires search, matching, scope, participant, and evidence decisions. |
-| Reference Models and Practice Comparison | Milestones 7–8 | Provenance, version, applicability, content rights, governance, and evidence-based comparison must be designed. |
+| Reference Models and Practice Comparison | Milestones 8–9 | Provenance, version, applicability, content rights, governance, and evidence-based comparison must be designed. |
 | Job Descriptions and Job Drift | Milestone 10 | HR sensitivity, effective dating, authoritative sources, access, and human interpretation require governance. |
 | Operating-Model Drift | Milestone 11 | Drift requires approved versions, comparison baselines, observations, timing, and human classification. |
 | Tasks, comments, and notifications | Unscheduled | They should be added only where they serve operating-model stewardship or improvement, not as generic collaboration features. |

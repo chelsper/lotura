@@ -82,6 +82,18 @@ governance, and improvement exist to strengthen it—not silently replace it.
 An approved record may be the organization's governed documentation without
 being a claim that documentation and reality can never diverge.
 
+Lotura must also name the layer in which change occurred:
+
+- evidence changed when a new observation or source was preserved;
+- understanding changed when people interpreted or reconciled evidence;
+- the operating model changed when an approved proposal was atomically
+  applied; and
+- the organization changed when actual structure, work, responsibility, or
+  technology changed.
+
+One kind of change may motivate review of another, but none proves that the
+next occurred.
+
 An interview can be successful when it confirms the current documentation or
 preserves honest uncertainty without proposing a change. Discovery exists to
 improve understanding, not manufacture work.
@@ -348,16 +360,22 @@ lifecycle before AI suggests or automates any part of it:
 4. Knowledge Gaps
 5. Process Families
 6. Question-Driven Discovery
-7. Reference Models
-8. Practice Comparison
-9. AI Discovery Assistance
+7. AI Discovery Assistance
+8. Reference Models
+9. Practice Comparison
 10. Job Descriptions & Job Drift
 11. Operating-Model Drift
 12. Continuous Improvement
 
-The relative position of AI Discovery Assistance may be reconsidered after the
-first three milestones prove the manual lifecycle. No reconsideration grants
-AI authority to approve or apply organizational knowledge.
+The first three milestones now establish the manual lifecycle and its separate
+application authority. AI Discovery Assistance therefore moves ahead of
+Reference Models, while remaining unable to approve or apply organizational
+knowledge.
+
+The next phase is **Make Lotura useful at scale**. It begins with Knowledge
+Gaps and Process Families so Lotura can help people find the next useful
+question and navigate related work before AI becomes a prominent product
+surface.
 
 ### Phase 1: Operating-model foundation
 
