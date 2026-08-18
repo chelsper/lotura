@@ -67,7 +67,10 @@ test("Family mutations reuse the protected Process-admin boundary and trusted sc
 });
 
 test("every Family mutation is stale-safe and atomically appends exact history", async () => {
-  const administration = await read("lib/process-family-administration.ts");
+  const [administration, data] = await Promise.all([
+    read("lib/process-family-administration.ts"),
+    read("lib/process-family-data.ts"),
+  ]);
   for (const action of [
     "create_process_family",
     "update_process_family",
@@ -85,6 +88,8 @@ test("every Family mutation is stale-safe and atomically appends exact history",
   assert.match(administration, /expectedMembershipRevision/);
   assert.match(administration, /family\.updated_at = \$3::timestamptz/g);
   assert.match(administration, /membership\.updated_at = \$5::timestamptz/);
+  assert.match(data, /sql<string>`\$\{processFamily\.updatedAt\}::text`/g);
+  assert.match(data, /sql<string>`\$\{processFamilyMembership\.updatedAt\}::text`/);
   assert.match(administration, /with current_family as[\s\S]+history as/);
   assert.doesNotMatch(administration, /(?:update|delete from) operating_model_changes/i);
   assert.doesNotMatch(administration, /delete from process_families|delete from process_family_memberships/i);

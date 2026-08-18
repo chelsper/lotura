@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 
 import {
   operatingModelChange,
@@ -70,6 +70,10 @@ export type ProcessFamilyProcessIndex = Record<
   Array<{ name: string; stableKey: string; status: "active" | "inactive" }>
 >;
 
+function exactRevision(value: string | Date) {
+  return typeof value === "string" ? value : value.toISOString();
+}
+
 export async function loadProcessFamilyCatalog(
   organizationId: number,
 ): Promise<ProcessFamilyCatalog> {
@@ -82,7 +86,7 @@ export async function loadProcessFamilyCatalog(
         name: processFamily.name,
         stableKey: processFamily.stableKey,
         status: processFamily.status,
-        updatedAt: processFamily.updatedAt,
+        updatedAt: sql<string>`${processFamily.updatedAt}::text`,
       })
       .from(processFamily)
       .where(eq(processFamily.organizationId, organizationId))
@@ -126,7 +130,7 @@ export async function loadProcessFamilyCatalog(
       description: family.description,
       memberProcessNames: memberProcessNames.get(family.id) ?? [],
       name: family.name,
-      revision: family.updatedAt.toISOString(),
+      revision: exactRevision(family.updatedAt),
       stableKey: family.stableKey,
       status: family.status,
     })),
@@ -146,7 +150,7 @@ export async function loadProcessFamilyContext(
         name: processFamily.name,
         stableKey: processFamily.stableKey,
         status: processFamily.status,
-        updatedAt: processFamily.updatedAt,
+        updatedAt: sql<string>`${processFamily.updatedAt}::text`,
       })
       .from(processFamily)
       .where(
@@ -161,7 +165,7 @@ export async function loadProcessFamilyContext(
         effectiveFrom: processFamilyMembership.effectiveFrom,
         effectiveUntil: processFamilyMembership.effectiveUntil,
         membershipStableKey: processFamilyMembership.stableKey,
-        membershipUpdatedAt: processFamilyMembership.updatedAt,
+        membershipUpdatedAt: sql<string>`${processFamilyMembership.updatedAt}::text`,
         processId: processTable.id,
         processName: processTable.name,
         processPurpose: processTable.purpose,
@@ -248,7 +252,7 @@ export async function loadProcessFamilyContext(
     members: members.map((item) => ({
       effectiveFrom: item.effectiveFrom.toISOString(),
       effectiveUntil: item.effectiveUntil?.toISOString() ?? null,
-      membershipRevision: item.membershipUpdatedAt.toISOString(),
+      membershipRevision: exactRevision(item.membershipUpdatedAt),
       membershipStableKey: item.membershipStableKey,
       process: {
         id: `process:${item.processId}`,
@@ -267,7 +271,7 @@ export async function loadProcessFamilyContext(
       stableKey: item.stableKey,
       status: item.status,
     })),
-    revision: family.updatedAt.toISOString(),
+    revision: exactRevision(family.updatedAt),
     stableKey: family.stableKey,
     status: family.status,
   };
