@@ -96,6 +96,9 @@ entity is justified only when assignment, lifecycle, governance, or resolution
 history cannot be represented by the underlying records. No aggregate health
 or confidence score is implied.
 
+The bounded v0.1 projection and its non-persistence rule are documented in
+[KNOWLEDGE_GAPS_V0_1.md](KNOWLEDGE_GAPS_V0_1.md).
+
 ## Separate historical records
 
 Lotura will eventually need two independent kinds of history:

@@ -2,6 +2,7 @@ import "server-only";
 
 import { requireWorkspaceAccess } from "./authentication";
 import { resolveDiscoveryConfiguration } from "./discovery-policy.mjs";
+import { buildKnowledgeGaps } from "./knowledge-gaps.mjs";
 import { resolveOrganizationStructureAdministrationConfiguration } from "./organization-structure-administration-policy.mjs";
 import { buildOrganizationStructureData } from "./organization-structure-data.mjs";
 import { loadOrganizationStructure } from "./organization-structure-source";
@@ -46,8 +47,9 @@ export async function loadOrganizationStructureExperience() {
   };
 }
 
-export async function loadWorkspaceStudioExperience() {
-  const runtimeAccess = await requireWorkspaceAccess();
+async function loadWorkspaceStudioContext(
+  runtimeAccess: Awaited<ReturnType<typeof requireWorkspaceAccess>>,
+) {
   const administration =
     resolveOrganizationStructureAdministrationConfiguration(
       process.env,
@@ -84,5 +86,45 @@ export async function loadWorkspaceStudioExperience() {
     enabled: true as const,
     processAcquisition,
     source,
+    structure,
+    operatingModel,
   };
+}
+
+export async function loadWorkspaceStudioExperience() {
+  const runtimeAccess = await requireWorkspaceAccess();
+  const context = await loadWorkspaceStudioContext(runtimeAccess);
+  if (!context.enabled) return context;
+  const { operatingModel: _operatingModel, structure: _structure, ...experience } =
+    context;
+  void _operatingModel;
+  void _structure;
+  return experience;
+}
+
+export async function loadKnowledgeGapsExperience() {
+  const runtimeAccess = await requireWorkspaceAccess();
+  const context = await loadWorkspaceStudioContext(runtimeAccess);
+  if (!context.enabled) return context;
+
+  const discoverySources = context.discovery.enabled
+    ? await import("./knowledge-gaps-neon").then(
+        ({ loadNeonKnowledgeGapDiscoverySources }) =>
+          loadNeonKnowledgeGapDiscoverySources(
+            context.administration.organizationId,
+          ),
+      )
+    : { decisions: [], observations: [] };
+  const knowledgeGaps = buildKnowledgeGaps({
+    asOf: context.asOf,
+    discovery: discoverySources,
+    operatingModel: context.operatingModel,
+    organizationKey: `organization:${context.administration.organizationId}`,
+    structure: context.structure,
+  });
+  const { operatingModel: _operatingModel, structure: _structure, ...experience } =
+    context;
+  void _operatingModel;
+  void _structure;
+  return { ...experience, knowledgeGaps };
 }

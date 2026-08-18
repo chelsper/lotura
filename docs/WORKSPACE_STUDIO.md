@@ -276,6 +276,12 @@ Strong evidence language remains reserved for its approved meaning. Graph
 connectivity may establish a review set; it does not prove failure or required
 change.
 
+Knowledge Gaps v0.1 is the first focused implementation of this lens. It
+projects specific questions from current documented facts and unresolved
+evidence, links each question back to its source, and creates no score or new
+workflow record. Its bounded design is documented in
+[KNOWLEDGE_GAPS_V0_1.md](KNOWLEDGE_GAPS_V0_1.md).
+
 ## Relationship canvas direction
 
 A future relationship canvas should help a person understand the local context

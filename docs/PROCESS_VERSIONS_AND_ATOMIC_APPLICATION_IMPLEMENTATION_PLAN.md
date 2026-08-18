@@ -1,9 +1,11 @@
 # Process Versions & Atomic Application v0.1 — implementation plan
 
 **Status:** Generic implementation complete; isolated fictional migration and
-boundary verification passed at journal `22/22`. JU migration, credential,
-environment, data, and deployment changes remain separately gated. Public
-Northstar remains unchanged.
+boundary verification passed at journal `22/22`; the dedicated JU role,
+Production-only configuration, exact-commit deployment, and read-only QA are
+complete. No JU Process version or application was manufactured during
+rollout. Public Northstar remains unchanged and read-only on the same shared
+commit.
 
 This plan translates accepted LAD-053 into the smallest implementation that
 can complete the manual path from evidence to an approved, versioned

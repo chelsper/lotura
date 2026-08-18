@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 
-import { loadWorkspaceStudioExperience } from "@/lib/organization-structure-experience";
+import { loadKnowledgeGapsExperience } from "@/lib/organization-structure-experience";
 
 import { ArrowIcon, LayersIcon, OrganizationIcon, RoleIcon, SystemIcon } from "../ui/icons";
 import { Badge, Card } from "../ui/primitives";
@@ -10,23 +10,10 @@ import { WorkspacePageHeader, WorkspaceShell } from "../workspace-shell";
 
 export default async function WorkspaceStudioPage() {
   await connection();
-  const experience = await loadWorkspaceStudioExperience();
+  const experience = await loadKnowledgeGapsExperience();
   if (!experience.enabled) notFound();
-  const { asOf, configuration, data, source } = experience;
-  const attention = [
-    data.gaps.positionsWithoutUnit > 0
-      ? `${data.gaps.positionsWithoutUnit} Positions have no Organization Unit recorded.`
-      : null,
-    data.gaps.occupancyNotEstablished > 0
-      ? `${data.gaps.occupancyNotEstablished} Positions have no established occupancy state.`
-      : null,
-    data.gaps.rolesWithoutMandates > 0
-      ? `${data.gaps.rolesWithoutMandates} Operational Roles have no current Position mandate.`
-      : null,
-    data.gaps.mandatesWithoutCoverage > 0
-      ? `${data.gaps.mandatesWithoutCoverage} Role Mandates have no current human coverage.`
-      : null,
-  ].filter((item): item is string => Boolean(item));
+  const { asOf, configuration, data, knowledgeGaps, source } = experience;
+  const attention = knowledgeGaps.items.slice(0, 4);
 
   return (
     <WorkspaceShell
@@ -81,6 +68,7 @@ export default async function WorkspaceStudioPage() {
               { icon: LayersIcon, title: "Processes", description: "Find, start, and maintain Draft Processes through the existing authoring boundary.", href: "/studio/processes" },
               { icon: SystemIcon, title: "Technology", description: "Maintain Systems and review the Processes that explicitly document their use.", href: "/studio/technology" },
               { icon: LayersIcon, title: "Discovery", description: "Document current work through guided questions while preserving uncertainty as source observations.", href: experience.discovery.enabled ? "/studio/discovery" : undefined },
+              { icon: LayersIcon, title: "Knowledge Gaps", description: "Review explainable questions raised by recorded responsibilities and Discovery evidence—without a score.", href: "/studio/knowledge-gaps" },
               { icon: LayersIcon, title: "Activity", description: "A future read-only timeline across existing append-only ledgers, without implying causality." },
             ].map((area) => {
               const Icon = area.icon;
@@ -108,14 +96,21 @@ export default async function WorkspaceStudioPage() {
           <div className="mt-4 space-y-3">
             {attention.length > 0 ? (
               attention.map((item) => (
-                <p className="rounded-[10px] border border-[var(--border)] p-3 text-xs leading-5 text-[var(--text-secondary)]" key={item}>
-                  {item}
-                </p>
+                <Link
+                  className="block rounded-[10px] border border-[var(--border)] p-3 text-xs leading-5 text-[var(--text-secondary)] transition hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)]"
+                  href={item.href ?? "/studio/knowledge-gaps"}
+                  key={item.key}
+                >
+                  {item.question}
+                </Link>
               ))
             ) : (
-              <p className="text-xs leading-5 text-[var(--text-tertiary)]">No deterministic structural gaps are visible in the current snapshot.</p>
+              <p className="text-xs leading-5 text-[var(--text-tertiary)]">No deterministic responsibility or Discovery questions are visible under the current rules.</p>
             )}
           </div>
+          <Link className="mt-4 inline-flex items-center gap-2 text-xs font-medium text-[var(--workspace-accent)] hover:underline" href="/studio/knowledge-gaps">
+            Review Knowledge Gaps <ArrowIcon className="size-3.5" />
+          </Link>
           <p className="mt-4 border-t border-[var(--border)] pt-3 text-[11px] leading-4 text-[var(--text-tertiary)]">
             These findings describe recorded structure. They do not measure performance, workload, institutional approval, or organizational quality.
           </p>

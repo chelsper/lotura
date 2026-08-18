@@ -211,6 +211,28 @@ applied.
 **Product test:** Can an interview conclude successfully with useful knowledge,
 preserved uncertainty, and zero proposed changes?
 
+## 17. Name the layer that changed
+
+Lotura must keep four different events understandable:
+
+- **Evidence changed** — someone supplied a new observation, source, or
+  statement.
+- **Understanding changed** — accountable people interpreted, reconciled, or
+  classified evidence differently.
+- **Operating model changed** — a governed proposal was approved and applied
+  to the documented model.
+- **Organization changed** — the work, structure, responsibility, technology,
+  or other organizational reality changed after documentation was established.
+
+One event may lead to another, but none proves the next occurred. Product
+language, history, versions, comparison, drift, and future AI assistance must
+identify the layer they describe instead of using the word “change” without
+context.
+
+**Product test:** Can a person tell whether Lotura learned something new,
+interpreted existing evidence differently, updated documentation, or observed
+that organizational reality itself changed?
+
 ## Discovery through documentation
 
 **Discovery is an expected outcome of documentation.**
