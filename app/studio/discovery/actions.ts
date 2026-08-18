@@ -12,6 +12,7 @@ import {
   setDiscoverySessionPaused,
   type DiscoveryEpistemicState,
 } from "@/lib/discovery-administration";
+import { buildDiscoveryScopeStatement } from "@/lib/discovery-scope.mjs";
 import {
   changeDiscoveryMappingItemState,
   fingerprintDocumentedProcessSnapshot,
@@ -67,9 +68,19 @@ export async function startDiscoverySessionAction(
   _previousState: DiscoveryActionState,
   formData: FormData,
 ): Promise<DiscoveryActionState> {
+  const scopeStatement = buildDiscoveryScopeStatement({
+    details: text(formData, "scopeDetails"),
+    mode: text(formData, "scopeMode"),
+  });
+  if (!scopeStatement) {
+    return {
+      message: "Choose the whole process or briefly describe the part you want to discuss.",
+      status: "error",
+    };
+  }
   const result = await createDiscoverySession({
     processKey: text(formData, "processKey"),
-    scopeStatement: text(formData, "scopeStatement"),
+    scopeStatement,
   });
   if (!result.ok) return { message: result.message, status: "error" };
   revalidatePath("/studio/discovery");
