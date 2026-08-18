@@ -1,9 +1,11 @@
 # Question-Driven Discovery v0.1
 
-**Status:** LAD-056 accepted. Slice A is generically implemented and passed
-isolated fictional verification at migration journal `25/25`. JU migration,
-database privilege enablement, configuration/deployment, and the first real
-inquiry remain separate approvals.
+**Status:** LAD-056 accepted. Slice A is implemented, isolated-verified, and
+live-validated in JU at migration journal `25/25`. The first real inquiry
+confirmed that Discovery also needs a separate, typed way to gather evidence
+before a Process is selected. LAD-057 Slice B is now implemented generically
+and passed isolated fictional verification at journal `26/26`; JU rollout
+remains separately controlled.
 
 ## Product outcome
 
@@ -33,19 +35,27 @@ Workspace Studio → Discovery begins with two honest entry paths:
 Submitting **Explore this question** creates a private Discovery inquiry only.
 The question is posted in the request body and never placed in the URL.
 
-The inquiry page shows:
+The implemented Slice A inquiry page shows:
 
 - the exact question and who recorded it;
 - current Processes and Process Families that may be relevant;
 - clear language that possible matches are navigation choices, not answers;
-- an explicit human choice to review a Process, review a Family, start an
-  interview, wait for another participant or source, or finish for now; and
-- a chronological, append-only record of deliberate routing choices.
+  and
+- links for inspecting possible documentation without recording a route.
+
+After a routing slice is approved and implemented, the page may also offer
+explicit choices to review a Process, review a Family, start an interview,
+explore before choosing a Process, wait for another participant or source, or
+finish for now, followed by an append-only record of deliberate choices.
 
 Opening documentation or inspecting possible matches creates no route event.
-Starting an interview requires the administrator to select one existing
-Process and confirm the scope. The question may prefill conversational scope
-copy, but it never becomes interview evidence automatically.
+The implemented Slice A stops before routing or interview creation. LAD-056's
+original Process-bound handoff remains valid when the administrator already
+knows the Process. When the Process boundary itself is what the person needs to
+discover, the implemented LAD-057 path offers **Explore before choosing a
+Process** without manufacturing a placeholder Process. The question may guide
+conversational scope copy, but it never becomes interview evidence
+automatically.
 
 ## Domain boundaries
 
@@ -91,17 +101,19 @@ roll back both the inquiry transition and session creation.
 
 The current model already provides:
 
+- durable Organization-scoped inquiries and dormant typed route records;
 - Organization-scoped Processes and Process Families;
 - Process-bound guided interviews;
 - authenticated Discovery actor and credential boundaries;
 - immutable interview observations;
 - review, Knowledge Outcome, proposal, approval, and application layers.
 
-It cannot durably preserve an organizational question before a Process is
-selected because every `discovery_session` requires one Process. Making that
-foreign key nullable would blur inquiry and interview semantics.
+It can preserve a question before a Process is selected, but it cannot preserve
+interview evidence in that state because every `discovery_session` requires
+one Process. Making that foreign key nullable would blur inquiry and interview
+semantics.
 
-After LAD-056 approval, one forward-only migration should add only:
+Migration `0024` already added:
 
 - `discovery_inquiry_status`;
 - `discovery_inquiry_route_kind`;
@@ -111,8 +123,12 @@ After LAD-056 approval, one forward-only migration should add only:
 - append-only route and terminal-state guards; and
 - supporting tenant/status/time indexes.
 
-No existing Process, Process Family, Discovery session, observation, proposal,
-review, version, or history row should be rewritten or backfilled.
+Migration `0025` adds only the inquiry-scoped session and observation model, a
+forward-only route-kind expansion, typed route/session references,
+immutability and lifecycle protections, and supporting indexes. No existing
+Process, Process Family, Process-bound
+Discovery session, observation, proposal, review, version, or history row
+should be rewritten or backfilled.
 
 ## Possible-match behavior
 
@@ -156,34 +172,49 @@ needed.
 - deterministic possible places to look;
 - no routing write yet.
 
-**Current implementation status:** In progress. The generic repository includes
-the forward schema, private inquiry create/list/detail experience, and
-deterministic matching. The route table is intentionally dormant: no route
-action or route-write privilege is part of Slice A.
+**Current implementation status:** Complete and live-validated. The generic
+repository includes the forward schema, private inquiry create/list/detail
+experience, and deterministic matching. The route table is intentionally
+dormant: no route action or route-write privilege is part of Slice A.
 
-### Slice B — Explicit human routing
+### Slice B — Inquiry Routing & Unbound Discovery
 
-- append-only route decisions;
-- Process and Family review routes;
-- wait-for-more-information and finish-for-now outcomes;
-- lifecycle compare-and-set protection.
+- implemented and isolated-verified under accepted LAD-057;
+- append-only Process, Family, interview, wait, finish, and inquiry-exploration
+  route decisions;
+- typed inquiry-scoped sessions and append-only observations for the case where
+  no Process has been selected;
+- atomic route and session creation with lifecycle compare-and-set protection;
+  and
+- no Process creation or operating-model write authority.
 
-### Slice C — Atomic interview handoff
+### Slice C — Human review and Knowledge Outcome
 
-- require existing Process and confirmed scope;
-- atomically create the guided interview and route record;
-- preserve navigation back to the originating inquiry;
-- leave observations and all later lifecycle stages unchanged.
+- review inquiry-scoped evidence without inferring a Process boundary;
+- explicitly connect to an existing Process, preserve a cross-Process or
+  unresolved boundary, identify a possible new Process, or conclude that no
+  separate Process is needed;
+- produce a valid Knowledge Outcome without requiring a proposal; and
+- preserve the originating inquiry and evidence chain.
 
-## Expected files
+### Slice D — Governed candidate Process creation
 
-Expected changes after approval include:
+- requires a further decision extending LAD-036, LAD-037, and LAD-053;
+- maps reviewed evidence to a typed new-Process proposal;
+- applies only an approved proposal through a separate atomic boundary; and
+- creates a working Draft Process rather than approved organizational truth.
 
-- `ARCHITECTURE_DECISIONS.md` — accept LAD-056 after approval;
+## Slice B files
+
+Slice B changes include:
+
+- `ARCHITECTURE_DECISIONS.md` — accepted LAD-057 and verified implementation status;
 - `PRODUCT_ROADMAP.md`, `PRODUCT_VISION.md`, and
   `docs/WORKSPACE_STUDIO.md` — implementation status only;
 - `docs/QUESTION_DRIVEN_DISCOVERY_V0_1.md` — accepted contract and rollout
   evidence;
+- `docs/INQUIRY_ROUTING_AND_UNBOUND_DISCOVERY_V0_1.md` — accepted LAD-057
+  contract and verification for the no-Process-yet path;
 - `db/schema.ts`, one forward-only migration, and migration metadata;
 - focused inquiry data, policy, and administration modules under `lib/`;
 - private routes and forms under `app/studio/discovery/`;
@@ -197,14 +228,15 @@ existing migration should change.
 
 Isolated fictional verification must prove:
 
-- stable inquiry and route identity;
+- stable inquiry, route, inquiry-session, and observation identity;
 - exact Organization scoping and cross-tenant rejection;
-- inquiry text never enters diagnostic output or URLs;
+- inquiry, scope, and answer text never enter diagnostic output or URLs;
 - deterministic candidate explanations without automatic routing;
-- append-only routes and terminal lifecycle enforcement;
+- append-only routes and observations, same-session supersession, and terminal
+  lifecycle enforcement;
 - stale-write rejection;
 - atomic inquiry transition plus route;
-- atomic interview-session plus route creation;
+- atomic Process-bound or inquiry-scoped interview-session plus route creation;
 - forced route/history failure rolls back every related write;
 - Discovery-role allowed and denied operations;
 - runtime read-only behavior;
@@ -225,10 +257,20 @@ persisted fictional inquiry, route, Organization, Process, Family, or probe-role
 artifacts. Route writes remain unavailable to both application credentials in
 Slice A.
 
-## JU rollout sequence
+### JU validation result
 
-After generic implementation, isolated verification, review, merge, and a
-separate rollout approval:
+Migration `0024` and the inquiry-only privilege delta are enabled on the
+dedicated JU database at journal `25/25`. The shared Slice A application is live
+in JU, public Northstar remains isolated, and the first real inquiry preserved
+an organizational question with transparent Process and Family possibilities.
+Opening those possibilities created no route, interview, evidence, proposal,
+or operating-model change. That live use established the LAD-057 product gap:
+the organization may need to interview and preserve evidence before it can
+truthfully select or create a Process.
+
+## Release boundary
+
+Slice A completed the following separately controlled JU sequence:
 
 1. verify the exact JU project, branch, database, Organization, commit, and
    migration baseline;
@@ -239,10 +281,14 @@ separate rollout approval:
 6. deploy the exact shared commit to JU Production only;
 7. perform authenticated read-only QA of the question entry and possible-match
    presentation; and
-8. stop before creating the first real JU inquiry.
+8. separately create and validate the first real inquiry without routing or
+   changing the operating model.
 
-The first real organizational question remains a separate human-approved data
-action.
+Slice B must repeat the target, baseline, migration, least-privilege,
+rollback, public-isolation, exact-commit deployment, and authenticated QA
+sequence under a new approval. Any first inquiry-scoped interview remains a
+separate human-approved live data action after LAD-057 implementation,
+isolated verification, and rollout.
 
 ## Explicit deferrals
 

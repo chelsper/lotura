@@ -7,14 +7,15 @@ import { findPossibleDiscoveryPlaces } from "../lib/discovery-inquiry-matching.m
 const root = new URL("../", import.meta.url);
 const read = (path) => readFile(new URL(path, root), "utf8");
 
-test("LAD-056 is accepted only for bounded Question-Driven Discovery Slice A", async () => {
+test("LAD-056 remains the accepted Slice A boundary and LAD-057 extends it without weakening Process-bound interviews", async () => {
   const decisions = await read("ARCHITECTURE_DECISIONS.md");
   const decision = decisions.slice(decisions.indexOf("### LAD-056"));
   assert.match(decision, /Accepted — implementation authorized for Question-Driven Discovery/);
   assert.match(decision, /An inquiry is a statement\s+of what someone wants to understand/);
   assert.match(decision, /Merely viewing candidates or opening documentation writes\s+nothing/);
-  assert.match(decision, /Route mutations remain disabled until Slice B/);
-  assert.match(decision, /first\s+real inquiry remain separately controlled release actions/);
+  assert.match(decision, /LAD-057 — Discovery may preserve evidence before a Process is selected/);
+  assert.match(decision, /existing `DiscoverySession\.process_id`[\s\S]+remain unchanged and non-null/);
+  assert.match(decision, /does not authorize creating or mutating a Process/);
 });
 
 test("migration 0024 adds inquiry and future route identity without weakening Process-bound sessions", async () => {
@@ -135,11 +136,12 @@ test("private inquiry reads remain organization-scoped and authorize before data
   assert.match(detailPage, /if \(!inquiry\) notFound\(\)/);
 });
 
-test("Slice A UX starts with ordinary language and explicitly defers routing", async () => {
-  const [catalogPage, detailPage, form] = await Promise.all([
+test("Slice A question capture remains ordinary-language while approved routing is explicit and human-selected", async () => {
+  const [catalogPage, detailPage, form, routing] = await Promise.all([
     read("app/studio/discovery/page.tsx"),
     read("app/studio/discovery/inquiries/[inquiryId]/page.tsx"),
     read("app/studio/discovery/discovery-inquiry-form.tsx"),
+    read("app/studio/discovery/discovery-inquiry-routing-controls.tsx"),
   ]);
   assert.match(catalogPage, /Start with a question/);
   assert.match(catalogPage, /You do not need to know the right Process first/);
@@ -148,19 +150,26 @@ test("Slice A UX starts with ordinary language and explicitly defers routing", a
   assert.match(form, /does not create an interview, change documentation, or decide the answer/);
   assert.match(detailPage, /Possible places to look/);
   assert.match(detailPage, /does not use AI, semantic confidence, or automatic selection/);
-  assert.match(detailPage, /Human routing is not enabled yet/);
   assert.match(detailPage, /does not route the inquiry, create evidence, start an interview, or change a documented Process/);
+  assert.match(routing, /Explore before choosing a Process/);
+  assert.match(routing, /It will not select or create a\s+Process automatically/);
 });
 
 test("Slice A grants only inquiry creation and read privileges", async () => {
   const documentation = await read("docs/GUIDED_INTERVIEW_FOUNDATION.md");
+  const start = documentation.indexOf("Question-Driven Discovery v0.1, Slice A");
   const delta = documentation.slice(
-    documentation.indexOf("Question-Driven Discovery v0.1, Slice A"),
+    start,
+    documentation.indexOf("LAD-057 Inquiry Routing", start),
+  );
+  const runtimeBoundary = documentation.slice(
+    documentation.indexOf("For Question-Driven Discovery Slice A"),
+    documentation.indexOf("After LAD-057 Slice B"),
   );
   assert.match(delta, /GRANT SELECT ON TABLE discovery_inquiries/);
   assert.match(delta, /GRANT INSERT \([\s\S]+organization_id, question_text, actor_identifier/);
   assert.match(delta, /GRANT USAGE ON SEQUENCE discovery_inquiries_id_seq/);
-  assert.match(delta, /runtime role receives\n`SELECT` on `discovery_inquiries` only/);
-  assert.match(delta, /route table is present as durable\nforward schema but receives no application write privilege/);
+  assert.match(runtimeBoundary, /runtime role receives\n`SELECT` on `discovery_inquiries` only/);
+  assert.match(runtimeBoundary, /route table is present as durable\nforward schema but receives no application write privilege/);
   assert.doesNotMatch(delta, /GRANT (?:INSERT|UPDATE|DELETE).*discovery_inquiry_routes/);
 });

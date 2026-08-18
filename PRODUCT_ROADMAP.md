@@ -112,15 +112,19 @@ milestones:
    implied inheritance. JU validation confirmed one explicit Gift Processing
    membership and append-only creation/membership history. The bounded contract is recorded in
    [docs/PROCESS_FAMILIES_V0_1.md](docs/PROCESS_FAMILIES_V0_1.md).
-6. **Question-Driven Discovery (Slice A implemented and isolated-verified under
+6. **Question-Driven Discovery (Slice A implemented and live-validated under
    accepted LAD-056)** — begin with an organizational question and preserve why
    Discovery began before selecting a Process. Slice A adds durable inquiry
    identity, a private question-first entry, and transparent deterministic
    possible places to look. Migration `0024` and the inquiry-only
-   Discovery/runtime boundary passed rollback-only fictional verification at
-   journal `25/25`. Deliberate routing and atomic interview handoff remain
-   Slices B and C; JU rollout and the first real inquiry remain separately
-   controlled.
+   Discovery/runtime boundary passed isolated verification and are enabled in
+   JU at journal `25/25`. The first real inquiry showed that evidence may need
+   to be gathered before anyone can truthfully select or create a Process.
+   Accepted LAD-057 now has a generic, isolated-verified **Inquiry Routing &
+   Unbound Discovery** implementation: a separate typed inquiry-scoped
+   interview path, not a nullable Process reference or placeholder Process.
+   Its controlled rollout remains separate. Human review and any governed
+   proposal to create a Draft Process follow as later slices.
 7. **AI Discovery Assistance** — suggest follow-up questions and structured
    mappings for human review; never approve or apply them.
 8. **Reference Models** — attach governed internal or external comparison bases

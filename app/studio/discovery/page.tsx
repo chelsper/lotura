@@ -51,8 +51,8 @@ export default async function DiscoveryPage({
         eyebrow={<><LayersIcon className="size-3.5" /> Guided discovery</>}
         stats={[
           { label: "Open questions", value: inquiries.filter((item) => item.status === "open").length },
-          { label: "Sessions", value: sessions.length },
-          { label: "Ready to review", value: sessions.filter((item) => item.status === "ready_for_review").length },
+          { label: "Process interviews", value: sessions.length },
+          { label: "Process interviews ready", value: sessions.filter((item) => item.status === "ready_for_review").length },
         ]}
         title="Discovery"
       />
@@ -111,7 +111,7 @@ export default async function DiscoveryPage({
         </Card>
 
         <Card className="h-fit p-4 sm:p-5">
-          <p className="text-xs font-medium text-[var(--text-tertiary)]">Interview sessions</p>
+          <p className="text-xs font-medium text-[var(--text-tertiary)]">Existing-Process interviews</p>
           <div className="mt-4 space-y-3">
             {sessions.length ? sessions.map((session) => (
               <Link

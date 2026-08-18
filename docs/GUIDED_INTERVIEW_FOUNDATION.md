@@ -287,6 +287,34 @@ GRANT INSERT (
   organization_id, question_text, actor_identifier
 ) ON discovery_inquiries TO <discovery_role>;
 GRANT USAGE ON SEQUENCE discovery_inquiries_id_seq TO <discovery_role>;
+
+-- Added only when LAD-057 Inquiry Routing & Unbound Discovery Slice B is enabled:
+GRANT SELECT ON TABLE process_families, discovery_inquiry_routes,
+  discovery_inquiry_sessions, discovery_inquiry_observations
+  TO <discovery_role>;
+GRANT UPDATE (status, revision, updated_at)
+  ON discovery_inquiries TO <discovery_role>;
+GRANT INSERT (
+  organization_id, inquiry_id, inquiry_stable_key, route_sequence,
+  route_kind, process_id, process_stable_key, process_family_id,
+  process_family_stable_key, discovery_session_id,
+  discovery_session_stable_key, discovery_inquiry_session_id,
+  discovery_inquiry_session_stable_key, route_note, actor_identifier
+) ON discovery_inquiry_routes TO <discovery_role>;
+GRANT INSERT (
+  organization_id, inquiry_id, inquiry_stable_key, scope_statement,
+  current_question_key, actor_identifier
+) ON discovery_inquiry_sessions TO <discovery_role>;
+GRANT UPDATE (status, current_question_key, revision, updated_at)
+  ON discovery_inquiry_sessions TO <discovery_role>;
+GRANT INSERT (
+  organization_id, session_id, session_stable_key, sequence, prompt_key,
+  prompt_text, topic, response_text, epistemic_state,
+  supersedes_observation_stable_key, actor_identifier
+) ON discovery_inquiry_observations TO <discovery_role>;
+GRANT USAGE ON SEQUENCE discovery_inquiry_routes_id_seq,
+  discovery_inquiry_sessions_id_seq,
+  discovery_inquiry_observations_id_seq TO <discovery_role>;
 ```
 
 The normal runtime role may receive `SELECT` on the two Discovery tables added
@@ -300,6 +328,14 @@ forward schema but receives no application write privilege until explicit
 human routing is separately approved. The Discovery role receives no inquiry
 `UPDATE` or `DELETE`, route `INSERT`, `UPDATE`, or `DELETE`, or additional
 operating-model privilege in Slice A.
+
+After LAD-057 Slice B is separately enabled, the normal runtime role receives
+`SELECT` on `discovery_inquiry_routes`, `discovery_inquiry_sessions`, and
+`discovery_inquiry_observations`. The Discovery role receives only the exact
+column-level inquiry lifecycle, route, session, and observation grants shown
+above. It still receives no inquiry question/identity update, route update or
+delete, inquiry-session identity update or delete, observation update or
+delete, Process/Family mutation, or operating-model write privilege.
 
 The Discovery role receives no write privilege on Process, Step, Role, System,
 Exception, dependency, Organization Structure, `operating_model_changes`, or

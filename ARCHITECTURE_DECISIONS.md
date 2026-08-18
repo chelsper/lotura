@@ -101,6 +101,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-054 | Removing a populated Organization Unit moves its direct contents before retiring the Unit | Accepted — generic implementation complete and isolated verification passed |
 | LAD-055 | Process Families use explicit many-to-many, non-inheriting membership with separate history | Accepted — implementation authorized for Process Families v0.1 |
 | LAD-056 | Question-driven Discovery preserves an inquiry and requires explicit human routing | Accepted — implementation authorized for Question-Driven Discovery v0.1, Slice A; generic implementation complete and isolated fictional verification passed |
+| LAD-057 | Discovery may preserve evidence before a Process is selected without creating a placeholder Process | Accepted — generic implementation complete and isolated fictional verification passed |
 
 ## Decision records
 
@@ -2069,6 +2070,97 @@ read-only behavior, and zero persisted fictional probe rows. The route schema
 remains dormant from the application perspective: neither the Discovery role
 nor runtime receives route-write authority in Slice A.
 
+### LAD-057 — Discovery may preserve evidence before a Process is selected without creating a placeholder Process
+
+**Status:** Accepted — generic implementation complete and isolated fictional
+verification passed for Inquiry Routing & Unbound Discovery v0.1, Slice B.
+
+**Context:** The first live question-driven Discovery use showed an important
+case that LAD-056 deliberately did not resolve. A person may know the work they
+want to understand—for example, a parallel way that gifts are processed—without
+yet knowing whether it is a distinct Process, part of an existing Process, or
+work that crosses several boundaries. LAD-042 correctly requires each existing
+guided interview to reference one documented Process. LAD-056 correctly rejects
+making that reference nullable and rejects automatically creating a Draft
+Process. The current path therefore cannot gather interview evidence until a
+person asserts a Process identity that the evidence may be intended to
+discover.
+
+**Decision:** Question-driven Discovery adds an explicit human choice labeled
+**Explore before choosing a Process**. This choice creates a separate,
+Organization-scoped `DiscoveryInquirySession` tied to one existing
+`DiscoveryInquiry`. It does not create, select, or imply a Process or Process
+Family. The inquiry transition, append-only inquiry route, and inquiry-session
+creation occur atomically with compare-and-set protection.
+
+A `DiscoveryInquirySession` has immutable stable identity, a conversational
+scope statement, capture lifecycle, current question, revision, authenticated
+Lotura actor, and transaction timestamps. Its answers are append-only
+`DiscoveryInquiryObservation` records with the exact prompt key and wording,
+bounded topic, response or explicit unknown, epistemic state, actor, sequence,
+transaction time, and same-session supersession reference. It reuses the
+approved evidence language **Known**, **Assumed**, **Unknown**, **Needs
+validation**, and **Conflicting observation**, but it does not reuse the
+Process-bound session or observation tables.
+
+The existing `DiscoverySession.process_id` and Process-bound observation model
+remain unchanged and non-null. A typed route to the new inquiry session uses a
+forward-only route-kind expansion and same-Organization composite foreign key;
+it does not use a nullable polymorphic reference or free-form JSON target. The
+application may present the same conversational interview experience through a
+shared adapter, but storage and authorization must preserve whether evidence
+was gathered about a selected Process or before any Process was selected.
+
+Completing an inquiry-scoped interview does not resolve the question
+automatically. A later human review may explicitly conclude that the evidence
+belongs with an existing Process, supports proposing a new Draft Process,
+requires more validation, crosses several Processes, or does not justify a
+separate Process. These are review outcomes, not AI classifications or
+automatic routes. A proposed new Process must enter the existing proposal,
+governance, and application lifecycle through a separately approved creation
+contract; inquiry evidence itself receives no operating-model write authority.
+
+**Why:** Discovery sometimes exists precisely because the correct Process
+boundary is unknown. A separate inquiry-scoped evidence container lets Lotura
+preserve what people know without manufacturing structure. It also keeps the
+distinction among intent, evidence, reviewed interpretation, proposed change,
+and documented knowledge visible while preserving the stronger invariants of
+the existing Process-bound interview lifecycle.
+
+**Alternatives considered:** Make `discovery_sessions.process_id` nullable;
+create a placeholder Draft Process before interviewing; use a Process Family as
+the interview target; attach unstructured answers directly to the inquiry;
+store one generic entity type and JSON reference; or ask AI to decide the
+Process boundary. These are rejected because they weaken LAD-042, manufacture
+organizational knowledge, conflate grouping with Process identity, lose typed
+referential integrity, or grant interpretation authority before the evidence
+has been reviewed.
+
+**Affected decisions:** This decision follows and extends LAD-002, LAD-008,
+LAD-021, LAD-022, LAD-025, LAD-026, LAD-029, LAD-032, LAD-035 through LAD-037,
+LAD-042, LAD-043, LAD-046, LAD-047, LAD-051, LAD-053, LAD-055, and LAD-056. It
+conflicts with and supersedes no accepted decision. It specifically preserves
+LAD-042's Process-bound interview semantics, LAD-047 and LAD-055's distinction
+between Process Families and Process identity, LAD-051's valid no-change
+outcome, and LAD-056's rejection of nullable Process references and automatic
+Process creation.
+
+**Consequences and deferrals:** Approval authorizes a bounded implementation
+plan for **Inquiry Routing & Unbound Discovery v0.1**: a forward-only route enum
+expansion; inquiry-session and inquiry-observation tables; typed tenant-safe
+references; append-only evidence and supersession protections; atomic routing
+and session creation; stale-write protection; private conversational UI; exact
+Discovery/runtime privilege deltas; and isolated fictional verification.
+
+The first implementation does not authorize creating or mutating a Process,
+Process Family, Step, Role, System, Exception, dependency, proposal, approval,
+version, or operating-model history. It does not authorize AI, participant
+assignment, messages, tasks, uploads, generalized evidence, or public/demo
+content. Human review of inquiry-scoped evidence, linking reviewed evidence to
+an existing Process, and proposing a new Draft Process remain subsequent
+bounded slices. A governed new-Process creation application requires a further
+decision extending LAD-036, LAD-037, and LAD-053 before implementation.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -2084,7 +2176,7 @@ The following ideas are recorded so postponement is visible and deliberate.
 | Conflict detection and consensus | Conflicts need identity, scope, lifecycle, privacy, and human resolution | Conflict and reconciliation schema decision |
 | Knowledge Gaps | Explainable gaps are product direction under LAD-046, but persistence is not justified until assignment, governance, or resolution history requires it | Derived projection rules first; later lifecycle, ownership, and history decision if persistence is needed |
 | Process Families and reusable subprocesses | LAD-055 authorizes bounded non-inheriting Family identity and membership; reusable composition remains distinct | Composition identity, cardinality, effective dating, governance, application, and comparison decision |
-| Question-driven Discovery routing | LAD-056 and Slice A preserve questions and transparent possible places; deliberate routes and interview handoff remain unimplemented | Slice B route semantics and privileges, then Slice C atomic session-start authorization |
+| Question-driven Discovery routing | LAD-056 and Slice A preserve questions and transparent possible places; LAD-057 Slice B now implements typed inquiry-scoped evidence and deliberate human routing generically | Complete the separately controlled rollout, then define human outcome mapping without automatic Process creation |
 | Reference Models and practice comparison | LAD-048 preserves reference applicability and evidence-based comparison without automatic conclusions | Reference provenance, versioning, content rights, attachment, comparison snapshot, governance, and retention decision |
 | Job Descriptions and Job Drift | Position-linked descriptions may differ from responsibility and observed work, but HR sensitivity and interpretation require governance | Effective-dated description, HR source, access, evidence mapping, comparison, and review decision |
 | Operating-model drift | Drift requires approved versions, observations, comparison baselines, timing, and human classification | Version, baseline, evidence, classification, governance, and longitudinal comparison decision |

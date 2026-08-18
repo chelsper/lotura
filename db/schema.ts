@@ -204,6 +204,7 @@ export const discoveryInquiryRouteKind = pgEnum(
     "review_process",
     "review_process_family",
     "start_guided_interview",
+    "start_inquiry_exploration",
     "wait_for_source",
     "finish_for_now",
   ],
@@ -741,6 +742,86 @@ export const discoverySession = pgTable(
   ],
 );
 
+export const discoveryInquirySession = pgTable(
+  "discovery_inquiry_sessions",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    inquiryId: integer("inquiry_id").notNull(),
+    inquiryStableKey: uuid("inquiry_stable_key").notNull(),
+    scopeStatement: text("scope_statement").notNull(),
+    status: discoverySessionStatus("status").default("in_progress").notNull(),
+    currentQuestionKey: varchar("current_question_key", { length: 64 })
+      .notNull(),
+    revision: integer("revision").default(1).notNull(),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_inquiry_sessions_inquiry_context_fk",
+      columns: [
+        table.inquiryId,
+        table.organizationId,
+        table.inquiryStableKey,
+      ],
+      foreignColumns: [
+        discoveryInquiry.id,
+        discoveryInquiry.organizationId,
+        discoveryInquiry.stableKey,
+      ],
+    }).onDelete("restrict"),
+    unique("discovery_inquiry_sessions_stable_key_unique").on(
+      table.stableKey,
+    ),
+    unique("discovery_inquiry_sessions_id_org_stable_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+    ),
+    unique("discovery_inquiry_sessions_inquiry_unique").on(table.inquiryId),
+    unique("discovery_inquiry_sessions_identity_context_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.inquiryId,
+      table.inquiryStableKey,
+    ),
+    check(
+      "discovery_inquiry_sessions_scope_not_blank_check",
+      sql`char_length(trim(${table.scopeStatement})) > 0 and char_length(${table.scopeStatement}) <= 2000`,
+    ),
+    check(
+      "discovery_inquiry_sessions_question_not_blank_check",
+      sql`char_length(trim(${table.currentQuestionKey})) > 0`,
+    ),
+    check(
+      "discovery_inquiry_sessions_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    check(
+      "discovery_inquiry_sessions_revision_positive_check",
+      sql`${table.revision} >= 1`,
+    ),
+    index("discovery_inquiry_sessions_org_status_updated_idx").on(
+      table.organizationId,
+      table.status,
+      table.updatedAt,
+    ),
+    index("discovery_inquiry_sessions_inquiry_updated_idx").on(
+      table.organizationId,
+      table.inquiryStableKey,
+      table.updatedAt,
+    ),
+  ],
+);
+
 export const discoveryInquiryRoute = pgTable(
   "discovery_inquiry_routes",
   {
@@ -757,6 +838,10 @@ export const discoveryInquiryRoute = pgTable(
     processFamilyStableKey: uuid("process_family_stable_key"),
     discoverySessionId: integer("discovery_session_id"),
     discoverySessionStableKey: uuid("discovery_session_stable_key"),
+    discoveryInquirySessionId: integer("discovery_inquiry_session_id"),
+    discoveryInquirySessionStableKey: uuid(
+      "discovery_inquiry_session_stable_key",
+    ),
     routeNote: text("route_note"),
     actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -820,6 +905,23 @@ export const discoveryInquiryRoute = pgTable(
         discoverySession.processStableKey,
       ],
     }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_inquiry_routes_inquiry_session_fk",
+      columns: [
+        table.discoveryInquirySessionId,
+        table.organizationId,
+        table.discoveryInquirySessionStableKey,
+        table.inquiryId,
+        table.inquiryStableKey,
+      ],
+      foreignColumns: [
+        discoveryInquirySession.id,
+        discoveryInquirySession.organizationId,
+        discoveryInquirySession.stableKey,
+        discoveryInquirySession.inquiryId,
+        discoveryInquirySession.inquiryStableKey,
+      ],
+    }).onDelete("restrict"),
     unique("discovery_inquiry_routes_stable_key_unique").on(table.stableKey),
     unique("discovery_inquiry_routes_identity_context_unique").on(
       table.id,
@@ -854,6 +956,8 @@ export const discoveryInquiryRoute = pgTable(
         and ${table.processFamilyStableKey} is null
         and ${table.discoverySessionId} is null
         and ${table.discoverySessionStableKey} is null
+        and ${table.discoveryInquirySessionId} is null
+        and ${table.discoveryInquirySessionStableKey} is null
       ) or (
         ${table.routeKind} = 'review_process_family'
         and ${table.processId} is null
@@ -862,6 +966,8 @@ export const discoveryInquiryRoute = pgTable(
         and ${table.processFamilyStableKey} is not null
         and ${table.discoverySessionId} is null
         and ${table.discoverySessionStableKey} is null
+        and ${table.discoveryInquirySessionId} is null
+        and ${table.discoveryInquirySessionStableKey} is null
       ) or (
         ${table.routeKind} = 'start_guided_interview'
         and ${table.processId} is not null
@@ -870,6 +976,18 @@ export const discoveryInquiryRoute = pgTable(
         and ${table.processFamilyStableKey} is null
         and ${table.discoverySessionId} is not null
         and ${table.discoverySessionStableKey} is not null
+        and ${table.discoveryInquirySessionId} is null
+        and ${table.discoveryInquirySessionStableKey} is null
+      ) or (
+        ${table.routeKind} = 'start_inquiry_exploration'
+        and ${table.processId} is null
+        and ${table.processStableKey} is null
+        and ${table.processFamilyId} is null
+        and ${table.processFamilyStableKey} is null
+        and ${table.discoverySessionId} is null
+        and ${table.discoverySessionStableKey} is null
+        and ${table.discoveryInquirySessionId} is not null
+        and ${table.discoveryInquirySessionStableKey} is not null
       ) or (
         ${table.routeKind} in ('wait_for_source', 'finish_for_now')
         and ${table.processId} is null
@@ -878,6 +996,8 @@ export const discoveryInquiryRoute = pgTable(
         and ${table.processFamilyStableKey} is null
         and ${table.discoverySessionId} is null
         and ${table.discoverySessionStableKey} is null
+        and ${table.discoveryInquirySessionId} is null
+        and ${table.discoveryInquirySessionStableKey} is null
       )`,
     ),
     index("discovery_inquiry_routes_org_inquiry_sequence_idx").on(
@@ -893,6 +1013,105 @@ export const discoveryInquiryRoute = pgTable(
     index("discovery_inquiry_routes_org_family_created_idx").on(
       table.organizationId,
       table.processFamilyStableKey,
+      table.createdAt,
+    ),
+    index("discovery_inquiry_routes_org_inquiry_session_idx").on(
+      table.organizationId,
+      table.discoveryInquirySessionStableKey,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const discoveryInquiryObservation = pgTable(
+  "discovery_inquiry_observations",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    sessionId: integer("session_id").notNull(),
+    sessionStableKey: uuid("session_stable_key").notNull(),
+    sequence: integer("sequence").notNull(),
+    promptKey: varchar("prompt_key", { length: 64 }).notNull(),
+    promptText: text("prompt_text").notNull(),
+    topic: discoveryObservationTopic("topic").notNull(),
+    responseText: text("response_text"),
+    epistemicState: discoveryObservationState("epistemic_state").notNull(),
+    supersedesObservationStableKey: uuid(
+      "supersedes_observation_stable_key",
+    ),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_inquiry_observations_session_context_fk",
+      columns: [
+        table.sessionId,
+        table.organizationId,
+        table.sessionStableKey,
+      ],
+      foreignColumns: [
+        discoveryInquirySession.id,
+        discoveryInquirySession.organizationId,
+        discoveryInquirySession.stableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_inquiry_observations_supersedes_fk",
+      columns: [
+        table.supersedesObservationStableKey,
+        table.sessionId,
+        table.organizationId,
+      ],
+      foreignColumns: [table.stableKey, table.sessionId, table.organizationId],
+    }).onDelete("restrict"),
+    unique("discovery_inquiry_observations_stable_key_unique").on(
+      table.stableKey,
+    ),
+    unique("discovery_inquiry_observations_context_unique").on(
+      table.stableKey,
+      table.sessionId,
+      table.organizationId,
+    ),
+    unique("discovery_inquiry_observations_sequence_unique").on(
+      table.sessionId,
+      table.sequence,
+    ),
+    check(
+      "discovery_inquiry_observations_sequence_positive_check",
+      sql`${table.sequence} >= 1`,
+    ),
+    check(
+      "discovery_inquiry_observations_prompt_key_check",
+      sql`char_length(trim(${table.promptKey})) > 0`,
+    ),
+    check(
+      "discovery_inquiry_observations_prompt_text_check",
+      sql`char_length(trim(${table.promptText})) > 0`,
+    ),
+    check(
+      "discovery_inquiry_observations_response_state_check",
+      sql`(${table.epistemicState} = 'unknown' and (${table.responseText} is null or char_length(trim(${table.responseText})) > 0)) or (${table.epistemicState} <> 'unknown' and ${table.responseText} is not null and char_length(trim(${table.responseText})) > 0)`,
+    ),
+    check(
+      "discovery_inquiry_observations_supersedes_distinct_check",
+      sql`${table.supersedesObservationStableKey} is null or ${table.supersedesObservationStableKey} <> ${table.stableKey}`,
+    ),
+    check(
+      "discovery_inquiry_observations_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    index("discovery_inquiry_observations_session_sequence_idx").on(
+      table.organizationId,
+      table.sessionStableKey,
+      table.sequence,
+    ),
+    index("discovery_inquiry_observations_org_state_idx").on(
+      table.organizationId,
+      table.epistemicState,
       table.createdAt,
     ),
   ],

@@ -11,6 +11,7 @@ import {
   WorkspacePageHeader,
   WorkspaceShell,
 } from "../../../../workspace-shell";
+import { DiscoveryInquiryRoutingControls } from "../../discovery-inquiry-routing-controls";
 
 function validUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -38,13 +39,20 @@ export default async function DiscoveryInquiryPage({
   const experience = await loadWorkspaceExperience();
   if (!experience.discovery.enabled) notFound();
 
-  const [{ loadDiscoveryInquiry }, { loadProcessFamilyCatalog }] =
+  const [
+    { loadDiscoveryInquiry, loadDiscoveryInquiryRoutes },
+    { loadProcessFamilyCatalog },
+  ] =
     await Promise.all([
       import("@/lib/discovery-data"),
       import("@/lib/process-family-data"),
     ]);
-  const [inquiry, familyCatalog] = await Promise.all([
+  const [inquiry, routes, familyCatalog] = await Promise.all([
     loadDiscoveryInquiry(experience.discovery.organizationId, inquiryId),
+    loadDiscoveryInquiryRoutes(
+      experience.discovery.organizationId,
+      inquiryId,
+    ),
     loadProcessFamilyCatalog(experience.discovery.organizationId),
   ]);
   if (!inquiry) notFound();
@@ -83,6 +91,7 @@ export default async function DiscoveryInquiryPage({
         stats={[
           { label: "Revision", value: inquiry.revision },
           { label: "Possible places", value: possiblePlaces.length },
+          { label: "Choices preserved", value: routes.length },
         ]}
         title="Discovery question"
       />
@@ -155,13 +164,95 @@ export default async function DiscoveryInquiryPage({
         )}
       </section>
 
-      <Card className="mt-7 p-4 sm:p-5">
-        <p className="text-xs font-medium text-[var(--text-tertiary)]">Next bounded slice</p>
-        <h2 className="mt-1 text-base font-semibold text-[var(--text)]">Human routing is not enabled yet</h2>
-        <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
-          A later approved slice will let you deliberately choose a documented Process, Process Family, another source, or finish for now. Until then, this question remains open and unchanged.
-        </p>
-      </Card>
+      {inquiry.status === "open" || inquiry.status === "waiting_for_information" ? (
+        <DiscoveryInquiryRoutingControls
+          families={familyCatalog.families
+            .filter((family) => family.status === "active")
+            .map((family) => ({
+              id: family.stableKey,
+              name: family.name,
+              status: family.status,
+            }))}
+          inquiryId={inquiry.id}
+          processes={experience.data.processes
+            .filter((process) => process.status !== "archived")
+            .map((process) => ({
+              id: process.id,
+              name: process.name,
+              status: process.status,
+            }))}
+          revision={inquiry.revision}
+        />
+      ) : (
+        <Alert className="mt-7" tone="success">
+          This question has a preserved next step. That choice did not create,
+          approve, or change a documented Process.
+        </Alert>
+      )}
+
+      {routes.length ? (
+        <section className="mt-7">
+          <p className="text-xs font-medium text-[var(--text-tertiary)]">
+            Preserved choices
+          </p>
+          <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">
+            What happened next
+          </h2>
+          <div className="mt-4 space-y-3">
+            {routes.map((route) => {
+              const routeLabel = route.routeKind === "review_process"
+                ? `Look at ${route.processName || "an existing Process"}`
+                : route.routeKind === "review_process_family"
+                  ? `Look at ${route.processFamilyName || "a Process Family"}`
+                  : route.routeKind === "start_guided_interview"
+                    ? `Interview about ${route.processName || "an existing Process"}`
+                    : route.routeKind === "start_inquiry_exploration"
+                      ? "Explore before choosing a Process"
+                      : route.routeKind === "wait_for_source"
+                        ? "Wait for someone or something else"
+                        : "Finish for now";
+              const routeHref = route.discoveryInquirySessionId
+                ? `/studio/discovery/inquiries/${inquiry.id}/interviews/${route.discoveryInquirySessionId}`
+                : route.discoverySessionId
+                  ? `/studio/discovery/interviews/${route.discoverySessionId}`
+                  : route.processId
+                    ? `/studio/processes/${encodeURIComponent(route.processId)}`
+                    : route.processFamilyId
+                      ? `/studio/process-families/${route.processFamilyId}`
+                      : null;
+              const content = (
+                <Card className="p-4 sm:p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--text)]">
+                        {routeLabel}
+                      </p>
+                      {route.routeNote ? (
+                        <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
+                          {route.routeNote}
+                        </p>
+                      ) : null}
+                      <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">
+                        Preserved by {route.actorIdentifier} on {formatTimestamp(route.createdAt)} UTC
+                      </p>
+                    </div>
+                    {routeHref ? (
+                      <ArrowIcon className="mt-1 size-4 shrink-0 text-[var(--workspace-accent)]" />
+                    ) : null}
+                  </div>
+                </Card>
+              );
+              return routeHref ? (
+                <Link className="block" href={routeHref} key={route.id}>
+                  {content}
+                </Link>
+              ) : (
+                <div key={route.id}>{content}</div>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
     </WorkspaceShell>
   );
 }
