@@ -1,8 +1,17 @@
 # Knowledge Gaps v0.1 — bounded product and architecture plan
 
-**Status:** First read-only projection slice implemented. It adds no schema,
-migration, credential, environment, data mutation, score, or application write
-boundary.
+**Status:** Implemented and live-validated in the private JU workspace. It adds
+no schema, migration, credential, environment, data mutation, score, or
+application write boundary.
+
+Live acceptance on August 17, 2026 confirmed that the view presents
+evidence-backed Discovery questions in conversational language, links each
+question to its exact reviewed source, does not manufacture responsibility
+questions, and does not turn recent Organization Structure retirement into an
+unsupported gap. Public Northstar continues to fail closed for the private
+route. The implemented empty state also states explicitly that finding no
+questions does not mean the organization is complete, approved, or free of
+unknowns.
 
 Knowledge Gaps is the first milestone in the **Make Lotura useful at scale**
 phase. It answers a practical question:
