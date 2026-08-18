@@ -102,9 +102,11 @@ milestones:
    implementation, isolated fictional verification, and JU least-privilege
    enablement are complete. No JU application has been manufactured; the first
    version should be created only by a genuine approved proposal.
-4. **Knowledge Gaps (first read-only slice implemented)** — explainable
+4. **Knowledge Gaps (v0.1 implemented and live-validated)** — explainable
    responsibility and Discovery questions derived from current recorded facts,
-   without a score, task workflow, or new persistence.
+   without a score, task workflow, or new persistence. JU acceptance confirmed
+   evidence-backed Discovery questions, exact source navigation, no manufactured
+   responsibility questions, and continued public-demo isolation.
 5. **Process Families** — explicit family identity and membership, with no
    implied inheritance.
 6. **Question-Driven Discovery** — begin with an organizational question and
