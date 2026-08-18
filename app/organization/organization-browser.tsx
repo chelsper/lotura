@@ -77,7 +77,7 @@ function UnitTreeNode({
   basePath: string;
   node: OrganizationUnitHierarchyNode;
 }) {
-  const [expanded, setExpanded] = useState(node.depth === 0);
+  const [expanded, setExpanded] = useState(false);
   const hasChildren = node.children.length > 0;
   return (
     <div

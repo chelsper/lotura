@@ -76,11 +76,16 @@ test("defensive hierarchy projection terminates malformed cyclic evidence", () =
   assert.ok(hierarchy[0].descendantCount <= 1);
 });
 
-test("Organization browser renders an expandable focused Unit tree and path-aware search", async () => {
+test("Organization browser starts collapsed and renders an expandable, path-aware Unit tree", async () => {
   const browser = await read("app/organization/organization-browser.tsx");
   assert.match(browser, /buildOrganizationUnitHierarchy/);
   assert.match(browser, /role="tree"/);
   assert.match(browser, /role="treeitem"/);
+  assert.match(
+    browser,
+    /function UnitTreeNode[\s\S]*const \[expanded, setExpanded\] = useState\(false\)/,
+  );
+  assert.doesNotMatch(browser, /useState\(node\.depth === 0\)/);
   assert.match(browser, /aria-label=\{`\$\{expanded \? "Collapse" : "Expand"\}/);
   assert.match(browser, /organizationUnitPath\(data\.units, unit\.id\)/);
   assert.match(browser, /total descendants/);
