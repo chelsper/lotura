@@ -52,20 +52,25 @@ test("Workspace Studio exposes the approved Organization Builder routes", async 
 
 test("Studio access fails closed before any structure source load", async () => {
   const experience = await read("lib/organization-structure-experience.ts");
+  const contextStart = experience.indexOf(
+    "async function loadWorkspaceStudioContext",
+  );
   const studioStart = experience.indexOf(
     "export async function loadWorkspaceStudioExperience",
   );
+  const contextSource = experience.slice(contextStart, studioStart);
   const studioSource = experience.slice(studioStart);
+  assert.ok(contextStart >= 0);
   assert.ok(studioStart >= 0);
   assert.ok(
     studioSource.indexOf("await requireWorkspaceAccess()") <
-      studioSource.indexOf("await loadOrganizationStructure()"),
+      studioSource.indexOf("await loadWorkspaceStudioContext(runtimeAccess)"),
   );
   assert.ok(
-    studioSource.indexOf("if (!administration.enabled)") <
-      studioSource.indexOf("await loadOrganizationStructure()"),
+    contextSource.indexOf("if (!administration.enabled)") <
+      contextSource.indexOf("await loadOrganizationStructure()"),
   );
-  assert.match(studioSource, /return \{ enabled: false as const \}/);
+  assert.match(contextSource, /return \{ enabled: false as const \}/);
 });
 
 test("public and browse surfaces never expose canonical mutation controls", async () => {

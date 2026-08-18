@@ -1,8 +1,8 @@
 # Knowledge Gaps v0.1 — bounded product and architecture plan
 
-**Status:** Approved product direction; documentation-only boundary. No schema,
-migration, credential, environment, deployment, or data change is authorized
-by this document.
+**Status:** First read-only projection slice implemented. It adds no schema,
+migration, credential, environment, data mutation, score, or application write
+boundary.
 
 Knowledge Gaps is the first milestone in the **Make Lotura useful at scale**
 phase. It answers a practical question:
@@ -124,8 +124,7 @@ historical metrics.
 
 ## Initial Workspace Studio experience
 
-Add a focused **Knowledge Gaps** or **Things to understand** view inside
-Workspace Studio only when the projection is implemented. The page should:
+The focused **Knowledge Gaps** view inside Workspace Studio:
 
 - group questions by responsibility and Discovery, not by severity;
 - use ordinary language and show the source fact directly;

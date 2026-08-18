@@ -102,8 +102,9 @@ milestones:
    implementation, isolated fictional verification, and JU least-privilege
    enablement are complete. No JU application has been manufactured; the first
    version should be created only by a genuine approved proposal.
-4. **Knowledge Gaps** — explainable unresolved knowledge and review questions,
-   without a score.
+4. **Knowledge Gaps (first read-only slice implemented)** — explainable
+   responsibility and Discovery questions derived from current recorded facts,
+   without a score, task workflow, or new persistence.
 5. **Process Families** — explicit family identity and membership, with no
    implied inheritance.
 6. **Question-Driven Discovery** — begin with an organizational question and
