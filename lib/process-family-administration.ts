@@ -257,6 +257,12 @@ export async function updateProcessFamily(
            and stable_key <> $2::uuid
            and lower(btrim(name)) = lower(btrim($4))
          limit 1
+       ), unchanged as (
+         select 1 from current_family
+         where updated_at = $3::timestamptz
+           and status = 'active'
+           and name = $4
+           and description is not distinct from $5
        ), changed as (
          update process_families family
          set name = $4, description = $5, updated_at = clock_timestamp()
@@ -265,6 +271,7 @@ export async function updateProcessFamily(
            and family.updated_at = $3::timestamptz
            and family.status = 'active'
            and not exists (select 1 from duplicate)
+           and not exists (select 1 from unchanged)
          returning family.id, family.organization_id, family.stable_key,
            family.name, family.description, family.status, family.updated_at,
            current.name as old_name, current.description as old_description,
@@ -288,6 +295,7 @@ export async function updateProcessFamily(
        select
          (select count(*)::int from current_family) as current_count,
          (select count(*)::int from duplicate) as duplicate_count,
+         (select count(*)::int from unchanged) as unchanged_count,
          (select count(*)::int from changed) as changed_count,
          (select count(*)::int from history) as history_count,
          (select updated_at from changed) as revision`,
@@ -309,6 +317,9 @@ export async function updateProcessFamily(
     }
     if (Number(row.duplicate_count ?? 0) > 0) {
       return { ok: false, code: "duplicate", message: "A Process Family with this name already exists in the Organization." };
+    }
+    if (Number(row.unchanged_count ?? 0) > 0) {
+      return { ok: false, code: "invalid", message: "Change the Family name or description before saving." };
     }
     const revision = revisionFrom(row);
     if (Number(row.changed_count ?? 0) !== 1 || Number(row.history_count ?? 0) !== 1 || !revision) {

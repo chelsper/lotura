@@ -10,7 +10,19 @@ import { initialProcessFamilyActionState } from "./action-state";
 const textareaClass =
   "min-h-24 w-full resize-y rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-6 text-[var(--text)] outline-none transition placeholder:text-[var(--text-tertiary)] hover:border-[var(--border-strong)] focus:border-[var(--workspace-accent)] focus:ring-3 focus:ring-[var(--focus-soft)]";
 
-export function ProcessFamilyCreateForm({ today }: { today: string }) {
+type RelationshipIntent = "broader" | "narrower";
+
+export function ProcessFamilyCreateForm({
+  relationshipIntent = null,
+  sourceFamilyName = null,
+  sourceFamilyStableKey = null,
+  today,
+}: {
+  relationshipIntent?: RelationshipIntent | null;
+  sourceFamilyName?: string | null;
+  sourceFamilyStableKey?: string | null;
+  today: string;
+}) {
   const [state, action, pending] = useActionState(
     createProcessFamilyAction,
     initialProcessFamilyActionState,
@@ -34,8 +46,19 @@ export function ProcessFamilyCreateForm({ today }: { today: string }) {
       <Alert className="mt-6" tone="warning">
         Search existing Families before adding one. Similar names may describe the same organizational grouping.
       </Alert>
+      {relationshipIntent && sourceFamilyName && sourceFamilyStableKey ? (
+        <Alert className="mt-4" tone="info">
+          You are creating a {relationshipIntent === "broader" ? "broader" : "more specific"} Family for {sourceFamilyName}. After creation, Lotura will show the grouping for explicit confirmation; it will not create the relationship automatically.
+        </Alert>
+      ) : null}
       <Card className="mt-5 p-5 sm:p-6">
         <form action={action} className="space-y-5">
+          {relationshipIntent && sourceFamilyStableKey ? (
+            <>
+              <input name="relationshipIntent" type="hidden" value={relationshipIntent} />
+              <input name="sourceFamilyStableKey" type="hidden" value={sourceFamilyStableKey} />
+            </>
+          ) : null}
           <label className="block">
             <FieldLabel>Family name</FieldLabel>
             <Input maxLength={255} name="name" placeholder="Customer Onboarding" required />

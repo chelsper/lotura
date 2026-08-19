@@ -112,6 +112,9 @@ test("Process Family UX remains explicit, conversational, and non-inheriting", a
   assert.match(workspace, /Add an existing Process/);
   assert.match(workspace, /End this Family membership/);
   assert.match(workspace, /Append-only activity/);
+  assert.match(workspace, /Edit details/);
+  assert.match(workspace, /Save changes/);
+  assert.match(workspace, /disabled=\{pending \|\| !changed\}/);
   assert.equal(
     (workspace.match(/<ChangeFields today=\{today\} \/>/g) ?? []).length,
     6,
@@ -120,6 +123,18 @@ test("Process Family UX remains explicit, conversational, and non-inheriting", a
   assert.match(processes, /Family:/);
   assert.match(processDetail, /Process Family context/);
   assert.doesNotMatch(workspace, /inherits? from Family|Approve Family/i);
+});
+
+test("unchanged Family definitions cannot manufacture history", async () => {
+  const administration = await read("lib/process-family-administration.ts");
+  const updateStart = administration.indexOf("export async function updateProcessFamily");
+  const updateEnd = administration.indexOf("export async function deactivateProcessFamily");
+  const update = administration.slice(updateStart, updateEnd);
+  assert.match(update, /unchanged as \(/);
+  assert.match(update, /description is not distinct from \$5/);
+  assert.match(update, /not exists \(select 1 from unchanged\)/);
+  assert.match(update, /unchanged_count/);
+  assert.match(update, /Change the Family name or description before saving/);
 });
 
 test("Family routes authorize before organization-scoped reads and fail closed", async () => {

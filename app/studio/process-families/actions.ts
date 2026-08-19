@@ -43,6 +43,27 @@ function familyIdentity(formData: FormData) {
   };
 }
 
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function creationContinuation(formData: FormData, createdStableKey: string) {
+  const sourceFamilyStableKey = text(formData, "sourceFamilyStableKey");
+  const relationshipIntent = text(formData, "relationshipIntent");
+  if (
+    !uuidPattern.test(sourceFamilyStableKey) ||
+    !uuidPattern.test(createdStableKey) ||
+    (relationshipIntent !== "broader" && relationshipIntent !== "narrower")
+  ) {
+    return `/studio/process-families/${createdStableKey}`;
+  }
+
+  const narrowerFamilyStableKey =
+    relationshipIntent === "broader" ? sourceFamilyStableKey : createdStableKey;
+  const broaderFamilyStableKey =
+    relationshipIntent === "broader" ? createdStableKey : sourceFamilyStableKey;
+  const query = new URLSearchParams({ broaderFamily: broaderFamilyStableKey });
+  return `/studio/process-families/${narrowerFamilyStableKey}?${query.toString()}#family-grouping-form`;
+}
+
 function revalidateFamilies(stableKey?: string) {
   revalidatePath("/studio");
   revalidatePath("/studio/processes");
@@ -63,7 +84,7 @@ export async function createProcessFamilyAction(
   });
   if (!result.ok) return { status: "error", message: result.message };
   revalidateFamilies(result.stableKey);
-  redirect(`/studio/process-families/${result.stableKey}`);
+  redirect(creationContinuation(formData, result.stableKey!));
 }
 
 export async function updateProcessFamilyAction(

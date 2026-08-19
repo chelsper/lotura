@@ -97,10 +97,32 @@ test("Workspace Studio separates broader contexts, narrower Families, and direct
   assert.match(workspace, /does not create inheritance or a dependency/);
   assert.match(workspace, /Place this Family in a broader context/);
   assert.match(workspace, /End this Family relationship/);
+  assert.match(workspace, /Create a broader Family/);
+  assert.match(workspace, /Create a more specific Family/);
+  assert.match(workspace, /suggestedBroaderFamilyStableKey/);
   assert.match(data, /This would create a loop/);
   assert.match(data, /eq\(processFamilyRelationship\.organizationId, organizationId\)/);
   assert.match(data, /descendantFamilyIds/);
   assert.doesNotMatch(data, /insert\(|update\(|delete\(/);
+});
+
+test("creating a related Family returns to an explicit relationship confirmation", async () => {
+  const [actions, createForm, createPage, detailPage] = await Promise.all([
+    read("app/studio/process-families/actions.ts"),
+    read("app/studio/process-families/process-family-create-form.tsx"),
+    read("app/studio/process-families/new/page.tsx"),
+    read("app/studio/process-families/[stableKey]/page.tsx"),
+  ]);
+  assert.match(createForm, /it will not create the relationship automatically/);
+  assert.match(createForm, /name="relationshipIntent"/);
+  assert.match(createForm, /name="sourceFamilyStableKey"/);
+  assert.match(actions, /function creationContinuation/);
+  assert.match(actions, /relationshipIntent === "broader"/);
+  assert.match(actions, /#family-grouping-form/);
+  assert.doesNotMatch(actions, /redirect\(text\(formData/);
+  assert.match(createPage, /sourceFamily\?\.status === "active"/);
+  assert.match(detailPage, /family\.disabledReason === null/);
+  assert.match(detailPage, /suggestedBroaderFamilyStableKey/);
 });
 
 test("the LAD-059 privilege delta is column-limited and runtime remains read-only", async () => {
