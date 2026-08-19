@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import type { ProcessFamilyContext } from "@/lib/process-family-data";
 
@@ -61,6 +61,97 @@ function ChangeFields({ today }: { today: string }) {
         <Input defaultValue={today} max={today} name="effectiveDate" required type="date" />
       </label>
     </div>
+  );
+}
+
+function FamilyDefinitionCard({
+  context,
+  today,
+}: {
+  context: ProcessFamilyContext;
+  today: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(context.name);
+  const [description, setDescription] = useState(context.description ?? "");
+  const [state, action, pending] = useActionState(
+    updateProcessFamilyAction,
+    initialProcessFamilyActionState,
+  );
+  const changed =
+    name.trim() !== context.name ||
+    (description.trim() || null) !== context.description;
+
+  function cancelEditing() {
+    setName(context.name);
+    setDescription(context.description ?? "");
+    setEditing(false);
+  }
+
+  return (
+    <Card className="p-5 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium text-[var(--text-tertiary)]">Definition</p>
+          <h2 className="mt-1 text-lg font-semibold text-[var(--text)]">Family details</h2>
+        </div>
+        {!editing && context.status === "active" ? (
+          <Button onClick={() => setEditing(true)} size="sm" type="button">
+            Edit details
+          </Button>
+        ) : null}
+      </div>
+
+      {editing ? (
+        <form action={action} className="mt-5 space-y-5">
+          <FamilyIdentity context={context} />
+          <label className="block">
+            <FieldLabel>Family name</FieldLabel>
+            <Input
+              maxLength={255}
+              name="name"
+              onChange={(event) => setName(event.target.value)}
+              required
+              value={name}
+            />
+          </label>
+          <label className="block">
+            <FieldLabel>Description</FieldLabel>
+            <textarea
+              className={textareaClass}
+              maxLength={5000}
+              name="description"
+              onChange={(event) => setDescription(event.target.value)}
+              value={description}
+            />
+          </label>
+          <ChangeFields today={today} />
+          <label className="block">
+            <FieldLabel>Reason</FieldLabel>
+            <textarea className={textareaClass} maxLength={2000} name="reason" placeholder="Why is this Family definition changing?" required />
+          </label>
+          {state.status !== "idle" ? <Alert tone={state.status === "success" ? "success" : "error"}>{state.message}</Alert> : null}
+          <div className="flex justify-end gap-2">
+            <Button disabled={pending} onClick={cancelEditing} type="button">Cancel</Button>
+            <Button disabled={pending || !changed} type="submit" variant="primary">{pending ? "Saving…" : "Save changes"}</Button>
+          </div>
+        </form>
+      ) : (
+        <dl className="mt-5 space-y-4">
+          <div>
+            <dt className="text-xs font-medium text-[var(--text-secondary)]">Family name</dt>
+            <dd className="mt-1 text-sm font-medium text-[var(--text)]">{context.name}</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-medium text-[var(--text-secondary)]">Description</dt>
+            <dd className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[var(--text-secondary)]">
+              {context.description ?? "No description has been recorded."}
+            </dd>
+          </div>
+          {state.status === "success" ? <Alert tone="success">{state.message}</Alert> : null}
+        </dl>
+      )}
+    </Card>
   );
 }
 
@@ -156,11 +247,15 @@ function RelatedFamilyCard({
   );
 }
 
-export function ProcessFamilyWorkspace({ context, today }: { context: ProcessFamilyContext; today: string }) {
-  const [updateState, updateAction, updatePending] = useActionState(
-    updateProcessFamilyAction,
-    initialProcessFamilyActionState,
-  );
+export function ProcessFamilyWorkspace({
+  context,
+  suggestedBroaderFamilyStableKey = null,
+  today,
+}: {
+  context: ProcessFamilyContext;
+  suggestedBroaderFamilyStableKey?: string | null;
+  today: string;
+}) {
   const [addState, addAction, addPending] = useActionState(
     addProcessFamilyMembershipAction,
     initialProcessFamilyActionState,
@@ -207,30 +302,7 @@ export function ProcessFamilyWorkspace({ context, today }: { context: ProcessFam
 
       <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_350px]">
         <div className="space-y-5">
-          <Card className="p-5 sm:p-6">
-            <p className="text-xs font-medium text-[var(--text-tertiary)]">Definition</p>
-            <h2 className="mt-1 text-lg font-semibold text-[var(--text)]">Family details</h2>
-            <form action={updateAction} className="mt-5 space-y-5">
-              <FamilyIdentity context={context} />
-              <label className="block">
-                <FieldLabel>Family name</FieldLabel>
-                <Input defaultValue={context.name} disabled={context.status !== "active"} maxLength={255} name="name" required />
-              </label>
-              <label className="block">
-                <FieldLabel>Description</FieldLabel>
-                <textarea className={textareaClass} defaultValue={context.description ?? ""} disabled={context.status !== "active"} maxLength={5000} name="description" />
-              </label>
-              <ChangeFields today={today} />
-              <label className="block">
-                <FieldLabel>Reason</FieldLabel>
-                <textarea className={textareaClass} disabled={context.status !== "active"} maxLength={2000} name="reason" placeholder="Why is this Family definition changing?" required />
-              </label>
-              {updateState.status !== "idle" ? <Alert tone={updateState.status === "success" ? "success" : "error"}>{updateState.message}</Alert> : null}
-              <div className="flex justify-end">
-                <Button disabled={updatePending || context.status !== "active"} type="submit" variant="primary">{updatePending ? "Saving…" : "Save Family"}</Button>
-              </div>
-            </form>
-          </Card>
+          <FamilyDefinitionCard context={context} key={context.revision} today={today} />
 
           <Card className="p-5 sm:p-6">
             <p className="text-xs font-medium text-[var(--text-tertiary)]">Family grouping</p>
@@ -238,7 +310,20 @@ export function ProcessFamilyWorkspace({ context, today }: { context: ProcessFam
             <p className="mt-2 text-xs leading-5 text-[var(--text-tertiary)]">Broader and more specific Families create navigation context only. Processes remain direct members of the Family where they were explicitly recorded.</p>
 
             <section className="mt-5">
-              <h3 className="text-sm font-semibold text-[var(--text)]">Broader work contexts</h3>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-[var(--text)]">Broader work contexts</h3>
+                {context.status === "active" ? (
+                  <Link
+                    className="text-xs font-medium text-[var(--workspace-accent)] hover:underline"
+                    href={{
+                      pathname: "/studio/process-families/new",
+                      query: { relationshipIntent: "broader", sourceFamily: context.stableKey },
+                    }}
+                  >
+                    Create a broader Family
+                  </Link>
+                ) : null}
+              </div>
               <div className="mt-3 space-y-3">
                 {context.broaderFamilies.length > 0 ? context.broaderFamilies.map((relationship) => (
                   <RelatedFamilyCard context={context} key={relationship.relationshipStableKey} relationship={relationship} today={today} />
@@ -247,7 +332,20 @@ export function ProcessFamilyWorkspace({ context, today }: { context: ProcessFam
             </section>
 
             <section className="mt-6 border-t border-[var(--border)] pt-5">
-              <h3 className="text-sm font-semibold text-[var(--text)]">More specific Families</h3>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-[var(--text)]">More specific Families</h3>
+                {context.status === "active" ? (
+                  <Link
+                    className="text-xs font-medium text-[var(--workspace-accent)] hover:underline"
+                    href={{
+                      pathname: "/studio/process-families/new",
+                      query: { relationshipIntent: "narrower", sourceFamily: context.stableKey },
+                    }}
+                  >
+                    Create a more specific Family
+                  </Link>
+                ) : null}
+              </div>
               <div className="mt-3 space-y-3">
                 {context.narrowerFamilies.length > 0 ? context.narrowerFamilies.map((relationship) => (
                   <RelatedFamilyCard context={context} key={relationship.relationshipStableKey} relationship={relationship} today={today} />
@@ -256,12 +354,17 @@ export function ProcessFamilyWorkspace({ context, today }: { context: ProcessFam
             </section>
 
             {context.status === "active" ? (
-              <form action={addRelationshipAction} className="mt-6 space-y-4 border-t border-[var(--border)] pt-5">
+              <form action={addRelationshipAction} className="mt-6 space-y-4 border-t border-[var(--border)] pt-5" id="family-grouping-form">
                 <FamilyIdentity context={context} />
                 <h3 className="text-sm font-semibold text-[var(--text)]">Place this Family in a broader context</h3>
+                {suggestedBroaderFamilyStableKey ? (
+                  <Alert tone="success">
+                    The new Family is ready. Review this grouping and confirm it explicitly when the relationship is correct.
+                  </Alert>
+                ) : null}
                 <label className="block">
                   <FieldLabel>Broader Process Family</FieldLabel>
-                  <Select defaultValue="" name="broaderFamilyStableKey" required>
+                  <Select defaultValue={suggestedBroaderFamilyStableKey ?? ""} name="broaderFamilyStableKey" required>
                     <option disabled value="">Select a broader Family</option>
                     {context.broaderFamilyOptions.map((family) => (
                       <option disabled={family.disabledReason !== null} key={family.stableKey} value={family.stableKey}>{family.name}{family.disabledReason ? ` — ${family.disabledReason}` : ""}</option>
