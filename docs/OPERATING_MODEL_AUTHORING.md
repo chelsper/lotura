@@ -233,3 +233,39 @@ dependency, schema, database, migration, or role-administration authority.
 Family deactivation and membership ending are lifecycle updates with stable
 identity and append-only history. A Family with a current membership cannot be
 deactivated.
+
+## Process Family Relationships v0.1 privilege delta
+
+LAD-059 reuses the same dedicated Process administration credential and adds
+only the exact relationship lifecycle surface:
+
+```sql
+GRANT SELECT ON TABLE process_family_relationships
+TO <process_admin_role>;
+
+GRANT INSERT (
+  organization_id, relationship_type, broader_family_id,
+  narrower_family_id, status, effective_from
+) ON process_family_relationships TO <process_admin_role>;
+
+GRANT UPDATE (
+  status, effective_until, updated_at
+) ON process_family_relationships TO <process_admin_role>;
+
+GRANT INSERT (
+  organization_id, process_family_relationship_id,
+  process_family_relationship_stable_key, entity_type, target_reference,
+  change_kind, change_action, before_state, after_state, reason,
+  effective_at, actor_identifier
+) ON operating_model_changes TO <process_admin_role>;
+
+GRANT USAGE ON SEQUENCE process_family_relationships_id_seq
+TO <process_admin_role>;
+```
+
+The runtime role receives `SELECT` on `process_family_relationships` and no
+write privilege. The Process administration role receives no relationship
+`DELETE` or `TRUNCATE`, no history `UPDATE` or `DELETE`, no broader Process or
+Organization Structure authority, and no schema, database, migration, or role
+administration. Family relationship maintenance does not mutate Process
+membership, Process dependencies, or Process versions.

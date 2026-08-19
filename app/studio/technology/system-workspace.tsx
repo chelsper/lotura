@@ -32,6 +32,8 @@ const actionLabels: Record<TechnologySystemContext["history"][number]["action"],
   deactivate_process_family: "Process Family deactivated",
   add_process_family_membership: "Process added to Family",
   end_process_family_membership: "Process Family membership ended",
+  add_process_family_relationship: "Broader Process Family context added",
+  end_process_family_relationship: "Process Family relationship ended",
 };
 
 function utcDate(value: string) {

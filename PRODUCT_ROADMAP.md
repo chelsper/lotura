@@ -107,11 +107,14 @@ milestones:
    without a score, task workflow, or new persistence. JU acceptance confirmed
    evidence-backed Discovery questions, exact source navigation, no manufactured
    responsibility questions, and continued public-demo isolation.
-5. **Process Families (v0.1 implemented and live-validated)** — explicit Family
-   identity and many-to-many membership, with no primary Family, nesting, or
-   implied inheritance. JU validation confirmed one explicit Gift Processing
-   membership and append-only creation/membership history. The bounded contract is recorded in
-   [docs/PROCESS_FAMILIES_V0_1.md](docs/PROCESS_FAMILIES_V0_1.md).
+5. **Process Families (membership v0.1 implemented and live-validated;
+   relationships v0.1 authorized)** — explicit Family identity and
+   many-to-many Process membership, with no primary Family or implied
+   inheritance. LAD-059 adds the next bounded capability: a typed, acyclic,
+   many-to-many broader/narrower Family graph that remains distinct from direct
+   Process membership, composition, and dependency. The contracts are recorded
+   in [docs/PROCESS_FAMILIES_V0_1.md](docs/PROCESS_FAMILIES_V0_1.md) and
+   [docs/PROCESS_FAMILY_RELATIONSHIPS_V0_1.md](docs/PROCESS_FAMILY_RELATIONSHIPS_V0_1.md).
 6. **Question-Driven Discovery (Slice A implemented and live-validated under
    accepted LAD-056)** — begin with an organizational question and preserve why
    Discovery began before selecting a Process. Slice A adds durable inquiry

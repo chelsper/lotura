@@ -82,7 +82,7 @@ test("every Family mutation is stale-safe and atomically appends exact history",
   }
   assert.equal(
     (administration.match(/insert into operating_model_changes/g) ?? []).length,
-    5,
+    7,
   );
   assert.match(administration, /expectedFamilyRevision/g);
   assert.match(administration, /expectedMembershipRevision/);
@@ -114,8 +114,8 @@ test("Process Family UX remains explicit, conversational, and non-inheriting", a
   assert.match(workspace, /Append-only activity/);
   assert.equal(
     (workspace.match(/<ChangeFields today=\{today\} \/>/g) ?? []).length,
-    4,
-    "definition, membership add/end, and Family deactivation must preserve change classification",
+    6,
+    "definition, membership add/end, relationship add/end, and Family deactivation must preserve change classification",
   );
   assert.match(processes, /Family:/);
   assert.match(processDetail, /Process Family context/);

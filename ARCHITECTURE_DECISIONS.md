@@ -102,6 +102,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-055 | Process Families use explicit many-to-many, non-inheriting membership with separate history | Accepted — implementation authorized for Process Families v0.1 |
 | LAD-056 | Question-driven Discovery preserves an inquiry and requires explicit human routing | Accepted — implementation authorized for Question-Driven Discovery v0.1, Slice A; generic implementation complete and isolated fictional verification passed |
 | LAD-057 | Discovery may preserve evidence before a Process is selected without creating a placeholder Process | Accepted — generic implementation complete and isolated fictional verification passed |
+| LAD-059 | Broader and narrower Process Families form an explicit non-inheriting acyclic graph | Accepted — implementation authorized for Process Family Relationships v0.1 |
 
 ## Decision records
 
@@ -2160,6 +2161,99 @@ content. Human review of inquiry-scoped evidence, linking reviewed evidence to
 an existing Process, and proposing a new Draft Process remain subsequent
 bounded slices. A governed new-Process creation application requires a further
 decision extending LAD-036, LAD-037, and LAD-053 before implementation.
+
+### LAD-059 — Broader and narrower Process Families form an explicit non-inheriting acyclic graph
+
+**Status:** Accepted — implementation authorized for Process Family
+Relationships v0.1.
+
+**Context:** LAD-047 establishes that Family membership, executable Process
+composition, and operational dependency are distinct. LAD-055 implements
+first-class Process Families and many-to-many Process membership while
+deliberately deferring Family-to-Family relationships. The first live Family
+use now requires an honest grouping such as:
+
+```text
+Gift Processing
+└── Annual Fund Gift Processing
+    ├── Annual Fund Physical-Check Gift Processing
+    └── Annual Fund Credit-Card Gift Processing
+```
+
+`Annual Fund Gift Processing` is a narrower grouping context, not an executable
+Process. A single nullable parent field would force one tree, make later
+overlapping organizational contexts destructive, and invite accidental
+inheritance.
+
+**Decision:** Process Family Relationships v0.1 introduces one explicit,
+Organization-scoped, effective-dated relationship connecting a broader Family
+to a narrower Family. The relationship type is `broader_narrower` and is
+forward-expandable only through a later approved typed semantic. A Family may
+have multiple broader contexts and multiple narrower Families. Current
+relationships form a directed acyclic graph: self-relationships, duplicate
+current pairs, and cycles are rejected inside the database and re-checked in
+the serializable application transaction.
+
+The relationship is grouping and navigation context only. It does not provide
+or inherit a Family or Process name, purpose, Owner Role, Steps, responsible
+Roles, Systems, Exceptions, dependencies, governance, approval, confidence,
+evidence state, conclusion, or Process version. A Process belongs directly
+only to Families recorded in `ProcessFamilyMembership`; appearing beneath a
+narrower Family does not create another membership in any broader Family.
+Process composition and `ProcessDependency` remain separate concepts.
+
+Workspace Studio may show a Family's broader contexts, its directly narrower
+Families, and the direct member Processes recorded for each grouping. An
+authenticated Workspace Administrator may establish or end a relationship
+using server-derived Organization and actor identity, compare-and-set
+protection, same-Organization constraints, and one append-only
+`operating_model_changes` event in the same atomic transaction. Ending a
+relationship preserves the durable interval. A Family cannot be inactivated
+while it participates in any current broader/narrower relationship.
+
+Relationship history is operating-model grouping history, not approved
+Process-version history. The existing Process-admin credential may receive
+only exact SELECT, INSERT, lifecycle UPDATE, sequence, and target-specific
+history INSERT privileges for this table. Runtime may receive SELECT only.
+Public/demo mode cannot initialize or invoke authoring and receives no Family
+relationship fixture content.
+
+**Why:** A typed acyclic graph represents broad and specific work contexts
+without assuming one universal taxonomy. It preserves overlap while preventing
+meaningless loops, and it keeps direct Process membership distinguishable from
+navigation through a narrower Family.
+
+**Alternatives considered:** Add `parent_process_family_id`; allow exactly one
+parent; model the broader Family as a Process; infer grouping from names;
+duplicate Process memberships into every ancestor; reuse Process dependencies;
+or introduce a generic polymorphic relationship graph. These were rejected
+because they impose a tree, manufacture operating-model facts, collapse
+semantics, erase provenance, or weaken tenant-safe referential integrity. The
+no-change option would leave the approved grouping unrepresentable and would
+encourage a misleading direct-membership workaround.
+
+**Affected decisions:** This decision follows and extends LAD-003, LAD-004,
+LAD-007 through LAD-009, LAD-015, LAD-016, LAD-018, LAD-023, LAD-026, LAD-035
+through LAD-037, LAD-046, LAD-047, LAD-051, LAD-053, and LAD-055. It preserves
+LAD-055's identity, membership, history, authority, and non-inheritance
+boundaries and lifts only that decision's explicit v0.1 deferral of
+Family-to-Family relationships. It conflicts with and supersedes no accepted
+decision. LAD-057 evidence reuse remains a later, separately governed slice.
+
+**Consequences and deferrals:** The accepted implementation may add one
+forward-only Family relationship table, typed lifecycle and cycle constraints,
+target-specific operating-model history expansion, private Studio browsing and
+maintenance, the reviewed Process-admin/runtime privilege delta, and focused
+isolated tests described in
+[docs/PROCESS_FAMILY_RELATIONSHIPS_V0_1.md](docs/PROCESS_FAMILY_RELATIONSHIPS_V0_1.md).
+It performs no Process or existing Family backfill. Migration application,
+credential enablement, deployment, and the first JU relationship remain
+separately controlled release actions.
+
+Process inheritance, Process composition, a primary or canonical Family,
+automatic ancestor membership, transitive mutation, comparison conclusions,
+Reference Models, FLOW changes, Discovery evidence reuse, AI classification,
+and public fixture content remain deferred.
 
 ## Intentionally deferred ideas register
 

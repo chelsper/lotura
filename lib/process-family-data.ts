@@ -1,12 +1,14 @@
 import "server-only";
 
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import {
   operatingModelChange,
   process as processTable,
   processFamily,
   processFamilyMembership,
+  processFamilyRelationship,
 } from "@/db/schema";
 
 export type ProcessFamilyHistoryItem = {
@@ -15,7 +17,9 @@ export type ProcessFamilyHistoryItem = {
     | "update_process_family"
     | "deactivate_process_family"
     | "add_process_family_membership"
-    | "end_process_family_membership";
+    | "end_process_family_membership"
+    | "add_process_family_relationship"
+    | "end_process_family_relationship";
   actorIdentifier: string;
   changeKind: "correction" | "organizational_change";
   createdAt: string;
@@ -53,9 +57,30 @@ export type ProcessFamilyCatalog = {
   families: ProcessFamilySummary[];
 };
 
+export type ProcessFamilyRelationshipContext = {
+  directMemberCount: number;
+  effectiveFrom: string;
+  family: {
+    description: string | null;
+    name: string;
+    stableKey: string;
+    status: "active" | "inactive";
+  };
+  relationshipRevision: string;
+  relationshipStableKey: string;
+};
+
 export type ProcessFamilyContext = ProcessFamilySummary & {
+  activeRelationshipCount: number;
+  broaderFamilies: ProcessFamilyRelationshipContext[];
+  broaderFamilyOptions: Array<{
+    disabledReason: string | null;
+    name: string;
+    stableKey: string;
+  }>;
   history: ProcessFamilyHistoryItem[];
   members: ProcessFamilyMember[];
+  narrowerFamilies: ProcessFamilyRelationshipContext[];
   processOptions: Array<{
     id: string;
     name: string;
@@ -142,7 +167,66 @@ export async function loadProcessFamilyContext(
   stableKey: string,
 ): Promise<ProcessFamilyContext | null> {
   const { db } = await import("@/db");
-  const [families, members, processes, history] = await db.batch([
+  const broaderFamily = alias(processFamily, "broader_family");
+  const narrowerFamily = alias(processFamily, "narrower_family");
+  const [
+    relationships,
+    allActiveMemberships,
+    families,
+    members,
+    processes,
+    familyOptions,
+    history,
+  ] = await db.batch([
+    db
+      .select({
+        broaderDescription: broaderFamily.description,
+        broaderFamilyId: broaderFamily.id,
+        broaderName: broaderFamily.name,
+        broaderStableKey: broaderFamily.stableKey,
+        broaderStatus: broaderFamily.status,
+        effectiveFrom: processFamilyRelationship.effectiveFrom,
+        narrowerDescription: narrowerFamily.description,
+        narrowerFamilyId: narrowerFamily.id,
+        narrowerName: narrowerFamily.name,
+        narrowerStableKey: narrowerFamily.stableKey,
+        narrowerStatus: narrowerFamily.status,
+        relationshipStableKey: processFamilyRelationship.stableKey,
+        relationshipUpdatedAt: sql<string>`${processFamilyRelationship.updatedAt}::text`,
+      })
+      .from(processFamilyRelationship)
+      .innerJoin(
+        broaderFamily,
+        and(
+          eq(broaderFamily.id, processFamilyRelationship.broaderFamilyId),
+          eq(broaderFamily.organizationId, processFamilyRelationship.organizationId),
+        ),
+      )
+      .innerJoin(
+        narrowerFamily,
+        and(
+          eq(narrowerFamily.id, processFamilyRelationship.narrowerFamilyId),
+          eq(narrowerFamily.organizationId, processFamilyRelationship.organizationId),
+        ),
+      )
+      .where(
+        and(
+          eq(processFamilyRelationship.organizationId, organizationId),
+          eq(processFamilyRelationship.status, "active"),
+        ),
+      )
+      .orderBy(asc(broaderFamily.name), asc(narrowerFamily.name)),
+    db
+      .select({
+        processFamilyId: processFamilyMembership.processFamilyId,
+      })
+      .from(processFamilyMembership)
+      .where(
+        and(
+          eq(processFamilyMembership.organizationId, organizationId),
+          eq(processFamilyMembership.status, "active"),
+        ),
+      ),
     db
       .select({
         description: processFamily.description,
@@ -212,6 +296,20 @@ export async function loadProcessFamilyContext(
       .orderBy(asc(processTable.name), asc(processTable.id)),
     db
       .select({
+        id: processFamily.id,
+        name: processFamily.name,
+        stableKey: processFamily.stableKey,
+      })
+      .from(processFamily)
+      .where(
+        and(
+          eq(processFamily.organizationId, organizationId),
+          eq(processFamily.status, "active"),
+        ),
+      )
+      .orderBy(asc(processFamily.name), asc(processFamily.id)),
+    db
+      .select({
         action: operatingModelChange.changeAction,
         actorIdentifier: operatingModelChange.actorIdentifier,
         changeKind: operatingModelChange.changeKind,
@@ -221,10 +319,41 @@ export async function loadProcessFamilyContext(
         reason: operatingModelChange.reason,
       })
       .from(operatingModelChange)
+      .leftJoin(
+        processFamilyRelationship,
+        and(
+          eq(
+            processFamilyRelationship.id,
+            operatingModelChange.processFamilyRelationshipId,
+          ),
+          eq(
+            processFamilyRelationship.organizationId,
+            operatingModelChange.organizationId,
+          ),
+        ),
+      )
+      .leftJoin(
+        broaderFamily,
+        and(
+          eq(broaderFamily.id, processFamilyRelationship.broaderFamilyId),
+          eq(broaderFamily.organizationId, processFamilyRelationship.organizationId),
+        ),
+      )
+      .leftJoin(
+        narrowerFamily,
+        and(
+          eq(narrowerFamily.id, processFamilyRelationship.narrowerFamilyId),
+          eq(narrowerFamily.organizationId, processFamilyRelationship.organizationId),
+        ),
+      )
       .where(
         and(
           eq(operatingModelChange.organizationId, organizationId),
-          eq(operatingModelChange.processFamilyStableKey, stableKey),
+          or(
+            eq(operatingModelChange.processFamilyStableKey, stableKey),
+            eq(broaderFamily.stableKey, stableKey),
+            eq(narrowerFamily.stableKey, stableKey),
+          ),
         ),
       )
       .orderBy(desc(operatingModelChange.createdAt), desc(operatingModelChange.id)),
@@ -234,8 +363,77 @@ export async function loadProcessFamilyContext(
   if (!family) return null;
 
   const activeMemberCount = members.filter((item) => item.status === "active").length;
+  const activeMemberCounts = new Map<number, number>();
+  for (const membership of allActiveMemberships) {
+    activeMemberCounts.set(
+      membership.processFamilyId,
+      (activeMemberCounts.get(membership.processFamilyId) ?? 0) + 1,
+    );
+  }
+  const directBroaderFamilyIds = new Set(
+    relationships
+      .filter((item) => item.narrowerFamilyId === family.id)
+      .map((item) => item.broaderFamilyId),
+  );
+  const descendantFamilyIds = new Set<number>();
+  let frontier = [family.id];
+  while (frontier.length > 0) {
+    const next: number[] = [];
+    for (const relationship of relationships) {
+      if (
+        frontier.includes(relationship.broaderFamilyId) &&
+        !descendantFamilyIds.has(relationship.narrowerFamilyId)
+      ) {
+        descendantFamilyIds.add(relationship.narrowerFamilyId);
+        next.push(relationship.narrowerFamilyId);
+      }
+    }
+    frontier = next;
+  }
+  const broaderFamilies = relationships
+    .filter((item) => item.narrowerFamilyId === family.id)
+    .map((item) => ({
+      directMemberCount: activeMemberCounts.get(item.broaderFamilyId) ?? 0,
+      effectiveFrom: item.effectiveFrom.toISOString(),
+      family: {
+        description: item.broaderDescription,
+        name: item.broaderName,
+        stableKey: item.broaderStableKey,
+        status: item.broaderStatus,
+      },
+      relationshipRevision: exactRevision(item.relationshipUpdatedAt),
+      relationshipStableKey: item.relationshipStableKey,
+    }));
+  const narrowerFamilies = relationships
+    .filter((item) => item.broaderFamilyId === family.id)
+    .map((item) => ({
+      directMemberCount: activeMemberCounts.get(item.narrowerFamilyId) ?? 0,
+      effectiveFrom: item.effectiveFrom.toISOString(),
+      family: {
+        description: item.narrowerDescription,
+        name: item.narrowerName,
+        stableKey: item.narrowerStableKey,
+        status: item.narrowerStatus,
+      },
+      relationshipRevision: exactRevision(item.relationshipUpdatedAt),
+      relationshipStableKey: item.relationshipStableKey,
+    }));
   return {
     activeMemberCount,
+    activeRelationshipCount: broaderFamilies.length + narrowerFamilies.length,
+    broaderFamilies,
+    broaderFamilyOptions: familyOptions.map((candidate) => ({
+      disabledReason:
+        candidate.id === family.id
+          ? "This is the current Family."
+          : directBroaderFamilyIds.has(candidate.id)
+            ? "Already a broader context."
+            : descendantFamilyIds.has(candidate.id)
+              ? "This would create a loop."
+              : null,
+      name: candidate.name,
+      stableKey: candidate.stableKey,
+    })),
     description: family.description,
     memberProcessNames: members
       .filter((item) => item.status === "active")
@@ -264,6 +462,7 @@ export async function loadProcessFamilyContext(
       status: item.status,
     })),
     name: family.name,
+    narrowerFamilies,
     processOptions: processes.map((item) => ({
       id: `process:${item.id}`,
       name: item.name,

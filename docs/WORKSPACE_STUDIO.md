@@ -142,13 +142,16 @@ matching Studio stable-key route.
 - `/studio/process-families/new` — add a Family without placing Processes in
   it automatically; and
 - `/studio/process-families/[stableKey]` — maintain the Family definition,
-  add or end explicit Process memberships, review member Process context, and
-  read append-only Family activity.
+  add or end explicit Process memberships, place the Family in one or more
+  broader work contexts, review its directly narrower Families, and read
+  append-only Family activity.
 
-A Process may belong to more than one Family. Version 0.1 does not model a
-primary Family, nested Families, reusable subprocess composition, or inherited
-Steps, Roles, Systems, Exceptions, governance, or conclusions. Process Family
-membership and Process dependency remain different operating-model facts.
+A Process may belong to more than one Family, and a Family may have more than
+one broader context. Lotura does not choose a primary Family and does not turn
+the graph into automatic ancestor membership. Reusable subprocess composition
+and inherited Steps, Roles, Systems, Exceptions, governance, or conclusions
+remain outside this capability. Family relationships, Process membership, and
+Process dependency remain different operating-model facts.
 
 ### Technology & Exceptions Builder routes
 
