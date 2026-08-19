@@ -53,6 +53,16 @@ export const processFamilyMembershipStatus = pgEnum(
   ["active", "ended"],
 );
 
+export const processFamilyRelationshipType = pgEnum(
+  "process_family_relationship_type",
+  ["broader_narrower"],
+);
+
+export const processFamilyRelationshipStatus = pgEnum(
+  "process_family_relationship_status",
+  ["active", "ended"],
+);
+
 export const systemType = pgEnum("system_type", [
   "software",
   "external_service",
@@ -153,6 +163,7 @@ export const operatingModelChangeEntityType = pgEnum(
     "process_dependency",
     "process_family",
     "process_family_membership",
+    "process_family_relationship",
   ],
 );
 
@@ -181,6 +192,8 @@ export const operatingModelChangeAction = pgEnum(
     "deactivate_process_family",
     "add_process_family_membership",
     "end_process_family_membership",
+    "add_process_family_relationship",
+    "end_process_family_relationship",
   ],
 );
 
@@ -606,6 +619,85 @@ export const processFamilyMembership = pgTable(
     index("process_family_memberships_organization_process_status_idx").on(
       table.organizationId,
       table.processId,
+      table.status,
+    ),
+  ],
+);
+
+export const processFamilyRelationship = pgTable(
+  "process_family_relationships",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    relationshipType: processFamilyRelationshipType("relationship_type")
+      .default("broader_narrower")
+      .notNull(),
+    broaderFamilyId: integer("broader_family_id").notNull(),
+    narrowerFamilyId: integer("narrower_family_id").notNull(),
+    status: processFamilyRelationshipStatus("status")
+      .default("active")
+      .notNull(),
+    effectiveFrom: timestamp("effective_from", { withTimezone: true })
+      .notNull(),
+    effectiveUntil: timestamp("effective_until", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "process_family_relationships_broader_org_fk",
+      columns: [table.broaderFamilyId, table.organizationId],
+      foreignColumns: [processFamily.id, processFamily.organizationId],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "process_family_relationships_narrower_org_fk",
+      columns: [table.narrowerFamilyId, table.organizationId],
+      foreignColumns: [processFamily.id, processFamily.organizationId],
+    }).onDelete("restrict"),
+    unique("process_family_relationships_stable_key_unique").on(
+      table.stableKey,
+    ),
+    unique("process_family_relationships_identity_context_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.broaderFamilyId,
+      table.narrowerFamilyId,
+    ),
+    unique("process_family_relationships_id_org_stable_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+    ),
+    uniqueIndex("process_family_relationships_active_pair_unique")
+      .on(
+        table.organizationId,
+        table.relationshipType,
+        table.broaderFamilyId,
+        table.narrowerFamilyId,
+      )
+      .where(sql`${table.status} = 'active'`),
+    check(
+      "process_family_relationships_distinct_families_check",
+      sql`${table.broaderFamilyId} <> ${table.narrowerFamilyId}`,
+    ),
+    check(
+      "process_family_relationships_effective_shape_check",
+      sql`(${table.status} = 'active' and ${table.effectiveUntil} is null) or (${table.status} = 'ended' and ${table.effectiveUntil} is not null and ${table.effectiveUntil} >= ${table.effectiveFrom})`,
+    ),
+    index("process_family_relationships_org_broader_status_idx").on(
+      table.organizationId,
+      table.broaderFamilyId,
+      table.status,
+    ),
+    index("process_family_relationships_org_narrower_status_idx").on(
+      table.organizationId,
+      table.narrowerFamilyId,
       table.status,
     ),
   ],
@@ -2367,6 +2459,10 @@ export const operatingModelChange = pgTable(
     processFamilyMembershipStableKey: uuid(
       "process_family_membership_stable_key",
     ),
+    processFamilyRelationshipId: integer("process_family_relationship_id"),
+    processFamilyRelationshipStableKey: uuid(
+      "process_family_relationship_stable_key",
+    ),
     entityType: operatingModelChangeEntityType("entity_type").notNull(),
     targetReference: varchar("target_reference", { length: 255 }).notNull(),
     changeKind: operatingModelChangeKind("change_kind").notNull(),
@@ -2476,6 +2572,19 @@ export const operatingModelChange = pgTable(
         processFamilyMembership.processId,
       ],
     }).onDelete("restrict"),
+    foreignKey({
+      name: "operating_model_changes_family_relationship_context_fk",
+      columns: [
+        table.processFamilyRelationshipId,
+        table.organizationId,
+        table.processFamilyRelationshipStableKey,
+      ],
+      foreignColumns: [
+        processFamilyRelationship.id,
+        processFamilyRelationship.organizationId,
+        processFamilyRelationship.stableKey,
+      ],
+    }).onDelete("restrict"),
     unique("operating_model_changes_stable_key_unique").on(
       table.stableKey,
     ),
@@ -2501,7 +2610,90 @@ export const operatingModelChange = pgTable(
     ),
     check(
       "operating_model_changes_target_shape_check",
-      sql`(((${table.entityType} = 'process' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'process_step' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is not null and ${table.processStepStableKey} is not null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'system' and ${table.processId} is null and ${table.processStableKey} is null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is not null and ${table.systemStableKey} is not null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'process_system' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is not null and ${table.systemStableKey} is not null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'exception' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is not null and ${table.exceptionStableKey} is not null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null) or (${table.entityType} = 'process_dependency' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is not null and ${table.processDependencyStableKey} is not null)) and ${table.processFamilyId} is null and ${table.processFamilyStableKey} is null and ${table.processFamilyMembershipId} is null and ${table.processFamilyMembershipStableKey} is null) or (${table.entityType} = 'process_family' and ${table.processId} is null and ${table.processStableKey} is null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null and ${table.processFamilyId} is not null and ${table.processFamilyStableKey} is not null and ${table.processFamilyMembershipId} is null and ${table.processFamilyMembershipStableKey} is null) or (${table.entityType} = 'process_family_membership' and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processStepId} is null and ${table.processStepStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.exceptionId} is null and ${table.exceptionStableKey} is null and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null and ${table.processFamilyId} is not null and ${table.processFamilyStableKey} is not null and ${table.processFamilyMembershipId} is not null and ${table.processFamilyMembershipStableKey} is not null)`,
+      sql`case ${table.entityType}
+        when 'process' then
+          ${table.processId} is not null and ${table.processStableKey} is not null
+          and ${table.processStepId} is null and ${table.processStepStableKey} is null
+          and ${table.systemId} is null and ${table.systemStableKey} is null
+          and ${table.exceptionId} is null and ${table.exceptionStableKey} is null
+          and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null
+          and ${table.processFamilyId} is null and ${table.processFamilyStableKey} is null
+          and ${table.processFamilyMembershipId} is null and ${table.processFamilyMembershipStableKey} is null
+          and ${table.processFamilyRelationshipId} is null and ${table.processFamilyRelationshipStableKey} is null
+        when 'process_step' then
+          ${table.processId} is not null and ${table.processStableKey} is not null
+          and ${table.processStepId} is not null and ${table.processStepStableKey} is not null
+          and ${table.systemId} is null and ${table.systemStableKey} is null
+          and ${table.exceptionId} is null and ${table.exceptionStableKey} is null
+          and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null
+          and ${table.processFamilyId} is null and ${table.processFamilyStableKey} is null
+          and ${table.processFamilyMembershipId} is null and ${table.processFamilyMembershipStableKey} is null
+          and ${table.processFamilyRelationshipId} is null and ${table.processFamilyRelationshipStableKey} is null
+        when 'system' then
+          ${table.processId} is null and ${table.processStableKey} is null
+          and ${table.processStepId} is null and ${table.processStepStableKey} is null
+          and ${table.systemId} is not null and ${table.systemStableKey} is not null
+          and ${table.exceptionId} is null and ${table.exceptionStableKey} is null
+          and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null
+          and ${table.processFamilyId} is null and ${table.processFamilyStableKey} is null
+          and ${table.processFamilyMembershipId} is null and ${table.processFamilyMembershipStableKey} is null
+          and ${table.processFamilyRelationshipId} is null and ${table.processFamilyRelationshipStableKey} is null
+        when 'process_system' then
+          ${table.processId} is not null and ${table.processStableKey} is not null
+          and ${table.processStepId} is null and ${table.processStepStableKey} is null
+          and ${table.systemId} is not null and ${table.systemStableKey} is not null
+          and ${table.exceptionId} is null and ${table.exceptionStableKey} is null
+          and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null
+          and ${table.processFamilyId} is null and ${table.processFamilyStableKey} is null
+          and ${table.processFamilyMembershipId} is null and ${table.processFamilyMembershipStableKey} is null
+          and ${table.processFamilyRelationshipId} is null and ${table.processFamilyRelationshipStableKey} is null
+        when 'exception' then
+          ${table.processId} is not null and ${table.processStableKey} is not null
+          and ${table.processStepId} is null and ${table.processStepStableKey} is null
+          and ${table.systemId} is null and ${table.systemStableKey} is null
+          and ${table.exceptionId} is not null and ${table.exceptionStableKey} is not null
+          and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null
+          and ${table.processFamilyId} is null and ${table.processFamilyStableKey} is null
+          and ${table.processFamilyMembershipId} is null and ${table.processFamilyMembershipStableKey} is null
+          and ${table.processFamilyRelationshipId} is null and ${table.processFamilyRelationshipStableKey} is null
+        when 'process_dependency' then
+          ${table.processId} is not null and ${table.processStableKey} is not null
+          and ${table.processStepId} is null and ${table.processStepStableKey} is null
+          and ${table.systemId} is null and ${table.systemStableKey} is null
+          and ${table.exceptionId} is null and ${table.exceptionStableKey} is null
+          and ${table.processDependencyId} is not null and ${table.processDependencyStableKey} is not null
+          and ${table.processFamilyId} is null and ${table.processFamilyStableKey} is null
+          and ${table.processFamilyMembershipId} is null and ${table.processFamilyMembershipStableKey} is null
+          and ${table.processFamilyRelationshipId} is null and ${table.processFamilyRelationshipStableKey} is null
+        when 'process_family' then
+          ${table.processId} is null and ${table.processStableKey} is null
+          and ${table.processStepId} is null and ${table.processStepStableKey} is null
+          and ${table.systemId} is null and ${table.systemStableKey} is null
+          and ${table.exceptionId} is null and ${table.exceptionStableKey} is null
+          and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null
+          and ${table.processFamilyId} is not null and ${table.processFamilyStableKey} is not null
+          and ${table.processFamilyMembershipId} is null and ${table.processFamilyMembershipStableKey} is null
+          and ${table.processFamilyRelationshipId} is null and ${table.processFamilyRelationshipStableKey} is null
+        when 'process_family_membership' then
+          ${table.processId} is not null and ${table.processStableKey} is not null
+          and ${table.processStepId} is null and ${table.processStepStableKey} is null
+          and ${table.systemId} is null and ${table.systemStableKey} is null
+          and ${table.exceptionId} is null and ${table.exceptionStableKey} is null
+          and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null
+          and ${table.processFamilyId} is not null and ${table.processFamilyStableKey} is not null
+          and ${table.processFamilyMembershipId} is not null and ${table.processFamilyMembershipStableKey} is not null
+          and ${table.processFamilyRelationshipId} is null and ${table.processFamilyRelationshipStableKey} is null
+        when 'process_family_relationship' then
+          ${table.processId} is null and ${table.processStableKey} is null
+          and ${table.processStepId} is null and ${table.processStepStableKey} is null
+          and ${table.systemId} is null and ${table.systemStableKey} is null
+          and ${table.exceptionId} is null and ${table.exceptionStableKey} is null
+          and ${table.processDependencyId} is null and ${table.processDependencyStableKey} is null
+          and ${table.processFamilyId} is null and ${table.processFamilyStableKey} is null
+          and ${table.processFamilyMembershipId} is null and ${table.processFamilyMembershipStableKey} is null
+          and ${table.processFamilyRelationshipId} is not null and ${table.processFamilyRelationshipStableKey} is not null
+        else false
+      end`,
     ),
     index("operating_model_changes_org_created_idx").on(
       table.organizationId,
@@ -2540,6 +2732,11 @@ export const operatingModelChange = pgTable(
     index("operating_model_changes_family_membership_created_idx").on(
       table.organizationId,
       table.processFamilyMembershipStableKey,
+      table.createdAt,
+    ),
+    index("operating_model_changes_family_relationship_created_idx").on(
+      table.organizationId,
+      table.processFamilyRelationshipStableKey,
       table.createdAt,
     ),
   ],

@@ -136,15 +136,18 @@ example:
 
 ```text
 Gift Processing
-├── Annual Fund Physical-Check Gift Processing
-└── Annual Fund Credit Card Gift Processing
+└── Annual Fund Gift Processing
+    ├── Annual Fund Physical-Check Gift Processing
+    └── Annual Fund Credit-Card Gift Processing
 ```
 
 Family membership, reusable subprocess composition, and upstream/downstream
 dependency answer different questions and require different relationship
-semantics. A Process may belong to a broader family without inheriting the
-family's Steps, Roles, Systems, Exceptions, governance, or conclusions unless
-that inheritance is separately defined and approved.
+semantics. Broader/narrower Family relationships form an explicit graph rather
+than forcing one tree. A Process belongs directly only to Families with an
+explicit membership and inherits no Family Steps, Roles, Systems, Exceptions,
+governance, or conclusions unless that inheritance is separately defined and
+approved.
 
 A Reference Model represents a selected internal or external standard,
 framework, recommendation, prior approved version, or other comparison basis.

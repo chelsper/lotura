@@ -7,8 +7,10 @@ import type { ProcessFamilyContext } from "@/lib/process-family-data";
 
 import { Alert, Badge, Button, Card, FieldLabel, Input, Select } from "../../ui/primitives";
 import {
+  addProcessFamilyRelationshipAction,
   addProcessFamilyMembershipAction,
   deactivateProcessFamilyAction,
+  endProcessFamilyRelationshipAction,
   endProcessFamilyMembershipAction,
   updateProcessFamilyAction,
 } from "./actions";
@@ -23,6 +25,8 @@ const historyLabels: Record<ProcessFamilyContext["history"][number]["action"], s
   deactivate_process_family: "Process Family deactivated",
   add_process_family_membership: "Process added to Family",
   end_process_family_membership: "Process membership ended",
+  add_process_family_relationship: "Broader Family context added",
+  end_process_family_relationship: "Family relationship ended",
 };
 
 function utcDate(value: string) {
@@ -94,6 +98,64 @@ function MembershipEndForm({
   );
 }
 
+function RelationshipEndForm({
+  context,
+  relationship,
+  today,
+}: {
+  context: ProcessFamilyContext;
+  relationship: ProcessFamilyContext["broaderFamilies"][number];
+  today: string;
+}) {
+  const [state, action, pending] = useActionState(
+    endProcessFamilyRelationshipAction,
+    initialProcessFamilyActionState,
+  );
+  return (
+    <details className="mt-3 border-t border-[var(--border)] pt-3">
+      <summary className="cursor-pointer text-xs font-medium text-[var(--workspace-accent)]">End this Family relationship</summary>
+      <form action={action} className="mt-3 space-y-3">
+        <FamilyIdentity context={context} />
+        <input name="relationshipStableKey" type="hidden" value={relationship.relationshipStableKey} />
+        <input name="expectedRelationshipRevision" type="hidden" value={relationship.relationshipRevision} />
+        <ChangeFields today={today} />
+        <label className="block">
+          <FieldLabel>Reason</FieldLabel>
+          <textarea className={textareaClass} maxLength={2000} name="reason" placeholder="Why should these Families no longer be grouped this way?" required />
+        </label>
+        {state.status !== "idle" ? <Alert tone={state.status === "success" ? "success" : "error"}>{state.message}</Alert> : null}
+        <Button disabled={pending} size="sm" type="submit" variant="destructive">
+          {pending ? "Ending…" : "End relationship"}
+        </Button>
+      </form>
+    </details>
+  );
+}
+
+function RelatedFamilyCard({
+  context,
+  relationship,
+  today,
+}: {
+  context: ProcessFamilyContext;
+  relationship: ProcessFamilyContext["broaderFamilies"][number];
+  today: string;
+}) {
+  return (
+    <article className="rounded-[10px] border border-[var(--border)] p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <Link className="text-sm font-semibold text-[var(--text)] hover:text-[var(--workspace-accent)]" href={`/studio/process-families/${relationship.family.stableKey}`}>{relationship.family.name}</Link>
+          <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">{relationship.family.description ?? "Grouping context needs description."}</p>
+        </div>
+        <Badge tone="accent">{relationship.directMemberCount} direct {relationship.directMemberCount === 1 ? "Process" : "Processes"}</Badge>
+      </div>
+      <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">Effective {utcDate(relationship.effectiveFrom)} UTC</p>
+      {context.status === "active" ? <RelationshipEndForm context={context} relationship={relationship} today={today} /> : null}
+    </article>
+  );
+}
+
 export function ProcessFamilyWorkspace({ context, today }: { context: ProcessFamilyContext; today: string }) {
   const [updateState, updateAction, updatePending] = useActionState(
     updateProcessFamilyAction,
@@ -103,6 +165,10 @@ export function ProcessFamilyWorkspace({ context, today }: { context: ProcessFam
     addProcessFamilyMembershipAction,
     initialProcessFamilyActionState,
   );
+  const [addRelationshipState, addRelationshipAction, addRelationshipPending] = useActionState(
+    addProcessFamilyRelationshipAction,
+    initialProcessFamilyActionState,
+  );
   const [deactivateState, deactivateAction, deactivatePending] = useActionState(
     deactivateProcessFamilyAction,
     initialProcessFamilyActionState,
@@ -110,6 +176,9 @@ export function ProcessFamilyWorkspace({ context, today }: { context: ProcessFam
   const activeKeys = new Set(
     context.members.filter((item) => item.status === "active").map((item) => item.process.stableKey),
   );
+  const availableBroaderFamilyCount = context.broaderFamilyOptions.filter(
+    (item) => item.disabledReason === null,
+  ).length;
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -164,8 +233,55 @@ export function ProcessFamilyWorkspace({ context, today }: { context: ProcessFam
           </Card>
 
           <Card className="p-5 sm:p-6">
+            <p className="text-xs font-medium text-[var(--text-tertiary)]">Family grouping</p>
+            <h2 className="mt-1 text-lg font-semibold text-[var(--text)]">Where this Family fits</h2>
+            <p className="mt-2 text-xs leading-5 text-[var(--text-tertiary)]">Broader and more specific Families create navigation context only. Processes remain direct members of the Family where they were explicitly recorded.</p>
+
+            <section className="mt-5">
+              <h3 className="text-sm font-semibold text-[var(--text)]">Broader work contexts</h3>
+              <div className="mt-3 space-y-3">
+                {context.broaderFamilies.length > 0 ? context.broaderFamilies.map((relationship) => (
+                  <RelatedFamilyCard context={context} key={relationship.relationshipStableKey} relationship={relationship} today={today} />
+                )) : <p className="text-sm text-[var(--text-tertiary)]">No broader Process Family has been recorded.</p>}
+              </div>
+            </section>
+
+            <section className="mt-6 border-t border-[var(--border)] pt-5">
+              <h3 className="text-sm font-semibold text-[var(--text)]">More specific Families</h3>
+              <div className="mt-3 space-y-3">
+                {context.narrowerFamilies.length > 0 ? context.narrowerFamilies.map((relationship) => (
+                  <RelatedFamilyCard context={context} key={relationship.relationshipStableKey} relationship={relationship} today={today} />
+                )) : <p className="text-sm text-[var(--text-tertiary)]">No more specific Process Families have been recorded.</p>}
+              </div>
+            </section>
+
+            {context.status === "active" ? (
+              <form action={addRelationshipAction} className="mt-6 space-y-4 border-t border-[var(--border)] pt-5">
+                <FamilyIdentity context={context} />
+                <h3 className="text-sm font-semibold text-[var(--text)]">Place this Family in a broader context</h3>
+                <label className="block">
+                  <FieldLabel>Broader Process Family</FieldLabel>
+                  <Select defaultValue="" name="broaderFamilyStableKey" required>
+                    <option disabled value="">Select a broader Family</option>
+                    {context.broaderFamilyOptions.map((family) => (
+                      <option disabled={family.disabledReason !== null} key={family.stableKey} value={family.stableKey}>{family.name}{family.disabledReason ? ` — ${family.disabledReason}` : ""}</option>
+                    ))}
+                  </Select>
+                </label>
+                <ChangeFields today={today} />
+                <label className="block">
+                  <FieldLabel>Reason</FieldLabel>
+                  <textarea className={textareaClass} maxLength={2000} name="reason" placeholder="Why does this Family belong within that broader context?" required />
+                </label>
+                {addRelationshipState.status !== "idle" ? <Alert tone={addRelationshipState.status === "success" ? "success" : "error"}>{addRelationshipState.message}</Alert> : null}
+                <Button disabled={addRelationshipPending || availableBroaderFamilyCount === 0} type="submit" variant="primary">{addRelationshipPending ? "Adding…" : "Add broader context"}</Button>
+              </form>
+            ) : null}
+          </Card>
+
+          <Card className="p-5 sm:p-6">
             <p className="text-xs font-medium text-[var(--text-tertiary)]">Explicit membership</p>
-            <h2 className="mt-1 text-lg font-semibold text-[var(--text)]">Processes in this Family</h2>
+            <h2 className="mt-1 text-lg font-semibold text-[var(--text)]">Processes directly in this Family</h2>
             <p className="mt-2 text-xs leading-5 text-[var(--text-tertiary)]">A Process may belong to more than one Family. Lotura does not choose a primary Family.</p>
             <div className="mt-4 space-y-3">
               {context.members.length > 0 ? context.members.map((member) => (
@@ -213,14 +329,15 @@ export function ProcessFamilyWorkspace({ context, today }: { context: ProcessFam
           <Card className="p-5 sm:p-6">
             <p className="text-xs font-medium text-[var(--text-tertiary)]">Lifecycle</p>
             <h2 className="mt-1 text-lg font-semibold text-[var(--text)]">Deactivate this Family</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">Deactivation preserves the Family and its history. End every current Process membership first.</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">Deactivation preserves the Family and its history. End every current Process membership and broader or more-specific Family relationship first.</p>
             <form action={deactivateAction} className="mt-4 space-y-4">
               <FamilyIdentity context={context} />
               <ChangeFields today={today} />
               <label className="block"><FieldLabel>Reason</FieldLabel><textarea className={textareaClass} maxLength={2000} name="reason" placeholder="Why is this Family no longer current?" required /></label>
               {context.activeMemberCount > 0 ? <Alert tone="warning">End {context.activeMemberCount} current {context.activeMemberCount === 1 ? "membership" : "memberships"} before deactivation.</Alert> : null}
+              {context.activeRelationshipCount > 0 ? <Alert tone="warning">End {context.activeRelationshipCount} current Family {context.activeRelationshipCount === 1 ? "relationship" : "relationships"} before deactivation.</Alert> : null}
               {deactivateState.status !== "idle" ? <Alert tone={deactivateState.status === "success" ? "success" : "error"}>{deactivateState.message}</Alert> : null}
-              <Button disabled={deactivatePending || context.status !== "active" || context.activeMemberCount > 0} type="submit" variant="destructive">{deactivatePending ? "Deactivating…" : "Deactivate Family"}</Button>
+              <Button disabled={deactivatePending || context.status !== "active" || context.activeMemberCount > 0 || context.activeRelationshipCount > 0} type="submit" variant="destructive">{deactivatePending ? "Deactivating…" : "Deactivate Family"}</Button>
             </form>
           </Card>
         </div>

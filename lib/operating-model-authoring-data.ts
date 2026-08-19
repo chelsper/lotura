@@ -39,7 +39,9 @@ export type OperatingModelChangeSummary = {
     | "update_process_family"
     | "deactivate_process_family"
     | "add_process_family_membership"
-    | "end_process_family_membership";
+    | "end_process_family_membership"
+    | "add_process_family_relationship"
+    | "end_process_family_relationship";
   actorIdentifier: string;
   afterState: Record<string, unknown>;
   beforeState: Record<string, unknown>;

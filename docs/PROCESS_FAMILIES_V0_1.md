@@ -6,6 +6,12 @@ verification. Isolated database verification, merge, migration application,
 credential changes, environment changes, deployment, public-demo content, and
 JU data remain separately controlled release actions.
 
+**Later extension — August 18, 2026:** LAD-059 authorizes a separate typed,
+non-inheriting broader/narrower Family graph. That bounded extension is defined
+in [PROCESS_FAMILY_RELATIONSHIPS_V0_1.md](PROCESS_FAMILY_RELATIONSHIPS_V0_1.md).
+References below to deferred nesting or hierarchy describe the original
+membership release and are preserved as its historical implementation boundary.
+
 Process Families let an organization group related Processes without turning
 the grouping into an executable Process, a dependency, or a source of inherited
 facts. The initial product outcome is simple:

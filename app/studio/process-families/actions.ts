@@ -4,9 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
+  addProcessFamilyRelationship,
   addProcessFamilyMembership,
   createProcessFamily,
   deactivateProcessFamily,
+  endProcessFamilyRelationship,
   endProcessFamilyMembership,
   updateProcessFamily,
 } from "@/lib/process-family-administration";
@@ -111,6 +113,41 @@ export async function endProcessFamilyMembershipAction(
     ...identity,
     expectedMembershipRevision: text(formData, "expectedMembershipRevision"),
     membershipStableKey: text(formData, "membershipStableKey"),
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+  revalidateFamilies(identity.familyStableKey);
+  return { status: "success", message: result.message };
+}
+
+export async function addProcessFamilyRelationshipAction(
+  _previous: ProcessFamilyActionState,
+  formData: FormData,
+): Promise<ProcessFamilyActionState> {
+  const common = metadata(formData);
+  if (!common) return { status: "error", message: "Review the Family relationship details and try again." };
+  const identity = familyIdentity(formData);
+  const result = await addProcessFamilyRelationship({
+    ...common,
+    ...identity,
+    broaderFamilyStableKey: text(formData, "broaderFamilyStableKey"),
+  });
+  if (!result.ok) return { status: "error", message: result.message };
+  revalidateFamilies(identity.familyStableKey);
+  return { status: "success", message: result.message };
+}
+
+export async function endProcessFamilyRelationshipAction(
+  _previous: ProcessFamilyActionState,
+  formData: FormData,
+): Promise<ProcessFamilyActionState> {
+  const common = metadata(formData);
+  if (!common) return { status: "error", message: "Review the Family relationship details and try again." };
+  const identity = familyIdentity(formData);
+  const result = await endProcessFamilyRelationship({
+    ...common,
+    ...identity,
+    expectedRelationshipRevision: text(formData, "expectedRelationshipRevision"),
+    relationshipStableKey: text(formData, "relationshipStableKey"),
   });
   if (!result.ok) return { status: "error", message: result.message };
   revalidateFamilies(identity.familyStableKey);
