@@ -6,6 +6,9 @@ import { db } from "@/db";
 import {
   discoveryInquiry,
   discoveryInquiryObservation,
+  discoveryInquiryReview,
+  discoveryInquiryReviewOutcome,
+  discoveryInquiryReviewSource,
   discoveryInquiryRoute,
   discoveryInquirySession,
   discoveryObservation,
@@ -33,6 +36,9 @@ import type {
   DiscoveryMappingAction,
   DiscoveryMappingItemState,
 } from "./discovery-mapping-model.mjs";
+import type {
+  DiscoveryInquiryReviewOutcomeKind,
+} from "./discovery-inquiry-review-model.mjs";
 import type {
   DiscoveryProposalDisposition,
   DocumentedProcessSnapshot,
@@ -242,6 +248,32 @@ export type DiscoveryInquirySessionDetail = {
   scopeStatement: string;
   status: "in_progress" | "paused" | "ready_for_review" | "closed";
   updatedAt: string;
+};
+
+export type DiscoveryInquiryReviewOutcomeRecord = {
+  explanation: string | null;
+  id: string;
+  kind: DiscoveryInquiryReviewOutcomeKind;
+  processId: string | null;
+  processName: string | null;
+};
+
+export type DiscoveryInquiryReviewRecord = {
+  actorIdentifier: string;
+  completedAt: string;
+  id: string;
+  observations: DiscoveryObservationRecord[];
+  outcomes: DiscoveryInquiryReviewOutcomeRecord[];
+  reviewNote: string | null;
+  reviewedSessionRevision: number;
+  reviewSequence: number;
+  supersedesReviewId: string | null;
+};
+
+export type DiscoveryInquiryReviewProcess = {
+  id: string;
+  name: string;
+  status: "draft" | "active";
 };
 
 export type DiscoveryProposalDecisionRecord = {
@@ -616,6 +648,172 @@ export async function loadDiscoveryInquirySession(
       createdAt: observation.createdAt.toISOString(),
     })),
     updatedAt: session.updatedAt.toISOString(),
+  };
+}
+
+export async function loadDiscoveryInquiryReviewProcesses(
+  organizationId: number,
+): Promise<DiscoveryInquiryReviewProcess[]> {
+  const rows = await db
+    .select({
+      id: processTable.id,
+      name: processTable.name,
+      status: processTable.status,
+    })
+    .from(processTable)
+    .where(
+      and(
+        eq(processTable.organizationId, organizationId),
+        sql`${processTable.status} in ('draft', 'active')`,
+      ),
+    )
+    .orderBy(asc(processTable.name));
+
+  return rows.map((row) => ({
+    id: `process:${row.id}`,
+    name: row.name,
+    status: row.status as "draft" | "active",
+  }));
+}
+
+export async function loadDiscoveryInquiryReview(
+  organizationId: number,
+  inquiryStableKey: string,
+  sessionStableKey: string,
+  reviewStableKey?: string,
+): Promise<DiscoveryInquiryReviewRecord | null> {
+  const reviewWhere = reviewStableKey
+    ? and(
+        eq(discoveryInquiryReview.organizationId, organizationId),
+        eq(discoveryInquiry.stableKey, inquiryStableKey),
+        eq(discoveryInquirySession.stableKey, sessionStableKey),
+        eq(discoveryInquiryReview.stableKey, reviewStableKey),
+      )
+    : and(
+        eq(discoveryInquiryReview.organizationId, organizationId),
+        eq(discoveryInquiry.stableKey, inquiryStableKey),
+        eq(discoveryInquirySession.stableKey, sessionStableKey),
+      );
+  const reviews = await db
+    .select({
+      actorIdentifier: discoveryInquiryReview.actorIdentifier,
+      completedAt: discoveryInquiryReview.completedAt,
+      id: discoveryInquiryReview.stableKey,
+      reviewNote: discoveryInquiryReview.reviewNote,
+      reviewedSessionRevision: discoveryInquiryReview.reviewedSessionRevision,
+      reviewSequence: discoveryInquiryReview.reviewSequence,
+      supersedesReviewId:
+        discoveryInquiryReview.supersedesReviewStableKey,
+    })
+    .from(discoveryInquiryReview)
+    .innerJoin(
+      discoveryInquirySession,
+      and(
+        eq(discoveryInquirySession.organizationId, organizationId),
+        eq(discoveryInquirySession.id, discoveryInquiryReview.sessionId),
+        eq(
+          discoveryInquirySession.stableKey,
+          discoveryInquiryReview.sessionStableKey,
+        ),
+      ),
+    )
+    .innerJoin(
+      discoveryInquiry,
+      and(
+        eq(discoveryInquiry.organizationId, organizationId),
+        eq(discoveryInquiry.id, discoveryInquiryReview.inquiryId),
+        eq(
+          discoveryInquiry.stableKey,
+          discoveryInquiryReview.inquiryStableKey,
+        ),
+      ),
+    )
+    .where(reviewWhere)
+    .orderBy(desc(discoveryInquiryReview.reviewSequence))
+    .limit(1);
+  const review = reviews[0];
+  if (!review) return null;
+
+  const [outcomes, observations] = await Promise.all([
+    db
+      .select({
+        explanation: discoveryInquiryReviewOutcome.explanation,
+        id: discoveryInquiryReviewOutcome.stableKey,
+        kind: discoveryInquiryReviewOutcome.outcomeKind,
+        processId: processTable.id,
+        processName: processTable.name,
+      })
+      .from(discoveryInquiryReviewOutcome)
+      .leftJoin(
+        processTable,
+        and(
+          eq(processTable.organizationId, organizationId),
+          eq(processTable.id, discoveryInquiryReviewOutcome.processId),
+          eq(
+            processTable.stableKey,
+            discoveryInquiryReviewOutcome.processStableKey,
+          ),
+        ),
+      )
+      .where(
+        and(
+          eq(discoveryInquiryReviewOutcome.organizationId, organizationId),
+          eq(discoveryInquiryReviewOutcome.reviewStableKey, review.id),
+        ),
+      )
+      .orderBy(asc(discoveryInquiryReviewOutcome.id)),
+    db
+      .select({
+        actorIdentifier: discoveryInquiryObservation.actorIdentifier,
+        createdAt: discoveryInquiryObservation.createdAt,
+        epistemicState: discoveryInquiryObservation.epistemicState,
+        id: discoveryInquiryObservation.stableKey,
+        promptKey: discoveryInquiryObservation.promptKey,
+        promptText: discoveryInquiryObservation.promptText,
+        responseText: discoveryInquiryObservation.responseText,
+        sequence: discoveryInquiryObservation.sequence,
+        supersedesObservationId:
+          discoveryInquiryObservation.supersedesObservationStableKey,
+        topic: discoveryInquiryObservation.topic,
+      })
+      .from(discoveryInquiryReviewSource)
+      .innerJoin(
+        discoveryInquiryObservation,
+        and(
+          eq(
+            discoveryInquiryObservation.organizationId,
+            discoveryInquiryReviewSource.organizationId,
+          ),
+          eq(
+            discoveryInquiryObservation.sessionId,
+            discoveryInquiryReviewSource.sessionId,
+          ),
+          eq(
+            discoveryInquiryObservation.stableKey,
+            discoveryInquiryReviewSource.observationStableKey,
+          ),
+        ),
+      )
+      .where(
+        and(
+          eq(discoveryInquiryReviewSource.organizationId, organizationId),
+          eq(discoveryInquiryReviewSource.reviewStableKey, review.id),
+        ),
+      )
+      .orderBy(asc(discoveryInquiryObservation.sequence)),
+  ]);
+
+  return {
+    ...review,
+    completedAt: review.completedAt.toISOString(),
+    observations: observations.map((observation) => ({
+      ...observation,
+      createdAt: observation.createdAt.toISOString(),
+    })),
+    outcomes: outcomes.map((outcome) => ({
+      ...outcome,
+      processId: outcome.processId ? `process:${outcome.processId}` : null,
+    })),
   };
 }
 

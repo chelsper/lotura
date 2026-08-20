@@ -1,10 +1,11 @@
 # Inquiry Routing & Unbound Discovery v0.1
 
-**Status:** LAD-057 accepted. Generic Slice B implementation is complete and
-isolated fictional verification passed at migration journal `26/26`. JU
-migration, privilege enablement, configuration, deployment, and the first real
-inquiry-scoped interview remain separately controlled and are not authorized
-by this implementation approval.
+**Status:** LAD-057 accepted. Generic Slice B implementation, isolated
+fictional verification at migration journal `26/26`, JU migration and
+least-privilege enablement, exact-commit deployment, and the first real
+inquiry-scoped interview are complete. Accepted LAD-060 now defines the
+separate human Review and Knowledge Outcome slice. Its generic implementation
+and release remain separately verified and controlled.
 
 ## Product problem
 
@@ -103,7 +104,7 @@ generic entity reference, or a JSON target.
 
 ## Review outcomes after evidence exists
 
-Review is a later bounded slice. It may let a person conclude:
+Review is the accepted LAD-060 bounded slice. It may let a person conclude:
 
 - **Connect this understanding to an existing Process**
 - **Propose a new Process**
@@ -115,6 +116,10 @@ None of these outcomes is inferred from keywords or chosen by AI. Connecting
 evidence must preserve its inquiry provenance. Proposing a new Process must not
 create one directly; it must enter a separately approved proposal and
 application boundary. A resulting Process begins as a working draft.
+
+The durable review, exact evidence-source, typed conclusion, atomicity,
+least-privilege, UX, and verification contract is recorded in
+[INQUIRY_REVIEW_AND_KNOWLEDGE_OUTCOME_V0_1.md](INQUIRY_REVIEW_AND_KNOWLEDGE_OUTCOME_V0_1.md).
 
 ## Security and tenant boundary
 
@@ -172,7 +177,11 @@ canonical Process writes, and zero persisted fictional probe rows.
 
 ### Slice C — Review and Knowledge Outcome
 
-- review active inquiry-scoped observations;
+Accepted under LAD-060:
+
+- review the exact active inquiry-scoped observations without reclassifying
+  every answer;
+- freeze the reviewed evidence set and append one or more human conclusions;
 - preserve human choices and unresolved evidence;
 - produce an understandable outcome without requiring a proposal; and
 - explicitly choose whether evidence relates to an existing Process, may
@@ -222,9 +231,11 @@ Repository and isolated fictional verification must prove:
 - question, scope, and answers do not enter URLs or diagnostic output; and
 - zero fictional probe rows persist.
 
-JU migration, privilege enablement, Production configuration, deployment, and
-the first real inquiry-scoped interview remain separately controlled release
-actions after generic implementation and isolated review.
+Slice B's JU migration, privilege enablement, Production configuration,
+deployment, and first real inquiry-scoped interview are complete. Slice C's
+schema, generic implementation, and rollback-only isolated verification are
+also complete under LAD-060. Controlled rollout and the first real review
+remain separate actions.
 
 ## Explicit deferrals
 

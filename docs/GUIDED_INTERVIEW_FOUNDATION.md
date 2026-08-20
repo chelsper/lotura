@@ -315,6 +315,28 @@ GRANT INSERT (
 GRANT USAGE ON SEQUENCE discovery_inquiry_routes_id_seq,
   discovery_inquiry_sessions_id_seq,
   discovery_inquiry_observations_id_seq TO <discovery_role>;
+
+-- Added only when LAD-060 Inquiry Review & Knowledge Outcome Slice C is enabled:
+GRANT SELECT ON TABLE discovery_inquiry_reviews,
+  discovery_inquiry_review_sources, discovery_inquiry_review_outcomes
+  TO <discovery_role>;
+GRANT INSERT (
+  organization_id, inquiry_id, inquiry_stable_key, session_id,
+  session_stable_key, review_sequence, reviewed_session_revision,
+  supersedes_review_stable_key, review_note, actor_identifier
+) ON discovery_inquiry_reviews TO <discovery_role>;
+GRANT INSERT (
+  organization_id, review_id, review_stable_key, session_id,
+  session_stable_key, observation_stable_key
+) ON discovery_inquiry_review_sources TO <discovery_role>;
+GRANT INSERT (
+  organization_id, review_id, review_stable_key, session_id,
+  session_stable_key, outcome_kind, process_id, process_stable_key,
+  explanation
+) ON discovery_inquiry_review_outcomes TO <discovery_role>;
+GRANT USAGE ON SEQUENCE discovery_inquiry_reviews_id_seq,
+  discovery_inquiry_review_sources_id_seq,
+  discovery_inquiry_review_outcomes_id_seq TO <discovery_role>;
 ```
 
 The normal runtime role may receive `SELECT` on the two Discovery tables added
@@ -336,6 +358,15 @@ column-level inquiry lifecycle, route, session, and observation grants shown
 above. It still receives no inquiry question/identity update, route update or
 delete, inquiry-session identity update or delete, observation update or
 delete, Process/Family mutation, or operating-model write privilege.
+
+After LAD-060 Slice C is separately enabled, the normal runtime role receives
+`SELECT` only on the three inquiry-review tables. The Discovery role receives
+only the exact review-package inserts and sequence use shown above. It reuses
+the existing limited inquiry-session lifecycle `UPDATE` solely to close the
+reviewed evidence session in the same atomic transaction. It receives no
+review, source, or outcome `UPDATE`, `DELETE`, or `TRUNCATE`, and no new
+Process, Process Family, proposal, version, history, or operating-model write
+privilege.
 
 The Discovery role receives no write privilege on Process, Step, Role, System,
 Exception, dependency, Organization Structure, `operating_model_changes`, or
