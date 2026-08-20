@@ -102,7 +102,8 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-055 | Process Families use explicit many-to-many, non-inheriting membership with separate history | Accepted — implementation authorized for Process Families v0.1 |
 | LAD-056 | Question-driven Discovery preserves an inquiry and requires explicit human routing | Accepted — implementation authorized for Question-Driven Discovery v0.1, Slice A; generic implementation complete and isolated fictional verification passed |
 | LAD-057 | Discovery may preserve evidence before a Process is selected without creating a placeholder Process | Accepted — generic implementation complete and isolated fictional verification passed |
-| LAD-059 | Broader and narrower Process Families form an explicit non-inheriting acyclic graph | Accepted — implementation authorized for Process Family Relationships v0.1 |
+| LAD-059 | Broader and narrower Process Families form an explicit non-inheriting acyclic graph | Accepted — implementation complete, deployed, and JU live-validated |
+| LAD-060 | Inquiry-scoped evidence produces an immutable human Knowledge Outcome before any Process proposal | Accepted — generic implementation complete and isolated fictional verification passed |
 
 ## Decision records
 
@@ -2164,8 +2165,8 @@ decision extending LAD-036, LAD-037, and LAD-053 before implementation.
 
 ### LAD-059 — Broader and narrower Process Families form an explicit non-inheriting acyclic graph
 
-**Status:** Accepted — implementation authorized for Process Family
-Relationships v0.1.
+**Status:** Accepted — Process Family Relationships v0.1 is implemented,
+deployed, and JU live-validated.
 
 **Context:** LAD-047 establishes that Family membership, executable Process
 composition, and operational dependency are distinct. LAD-055 implements
@@ -2255,6 +2256,101 @@ automatic ancestor membership, transitive mutation, comparison conclusions,
 Reference Models, FLOW changes, Discovery evidence reuse, AI classification,
 and public fixture content remain deferred.
 
+### LAD-060 — Inquiry-scoped evidence produces an immutable human Knowledge Outcome before any Process proposal
+
+**Status:** Accepted — generic implementation complete and isolated fictional
+verification passed. Controlled rollout and any first real review remain
+separately authorized actions.
+
+**Context:** LAD-056 preserves why Question-Driven Discovery began, and LAD-057
+allows a person to gather durable evidence before selecting or creating a
+Process. The inquiry-scoped session can now reach **Ready for review**, but its
+route history, mutable lifecycle status, and append-only observations cannot
+historically establish which evidence revisions a person reviewed or what
+conclusions they explicitly reached. Process-bound proposal records cannot
+represent this case without first manufacturing the Process identity that the
+review is meant to clarify.
+
+LAD-051 establishes that no change is a successful Knowledge Outcome and that
+unresolved knowledge may remain unresolved. Inquiry-scoped review needs the
+same principle while preserving the different source identity and boundary
+approved by LAD-057.
+
+**Decision:** Inquiry Review & Knowledge Outcome v0.1 adds one immutable,
+Organization-scoped completed review package for an inquiry-scoped interview.
+It records the exact inquiry, session, reviewed session revision, authenticated
+Lotura actor, completion time, and optional link to a prior review it
+supersedes. Immutable source links freeze the exact active inquiry observations
+considered. Immutable typed outcome rows preserve one or more human
+conclusions:
+
+- connect this understanding to one existing Process;
+- this may be a new Process;
+- this crosses several Processes;
+- more validation is needed; or
+- no separate Process is needed.
+
+These conclusions may coexist and are never inferred from text, counts, match
+ranking, or AI. Only the existing-Process conclusion may contain a typed
+same-Organization Process target. That target supplies review context; it does
+not attach evidence to, change, approve, version, or establish the
+completeness of the Process.
+
+Viewing a review creates no record. Finishing the first review atomically
+inserts the complete review, its exact source links, and all selected outcomes,
+then closes the inquiry-scoped session. A later correction appends a complete
+superseding review rather than updating history. Review, source, and outcome
+rows are append-only; their stable identity and source context are immutable.
+If any source, conclusion, target, stale-write, or lifecycle check fails, no
+part of the package or session transition commits.
+
+The Knowledge Outcome is an explainable read projection over the frozen review
+package. Evidence-state counts are derived from the linked observations, while
+the conclusions are the human selections recorded in outcome rows. No outcome
+score, AI truth statement, approval, proposal, operating-model change, or
+Process version is created.
+
+**Why:** A completed review must remain attributable and reproducible even when
+it concludes that more validation is needed or no separate Process exists.
+Freezing the evidence set and human conclusions protects that history without
+forcing a Process, proposal, or change. It also preserves the Organizational
+Knowledge Lifecycle layers: route, evidence, reviewed interpretation,
+proposal, approval, and documented Process remain separate.
+
+**Alternatives considered:** Derive the outcome from the latest mutable session
+status and current observations; reuse inquiry routes; add outcome columns to
+the session; reuse a Process-bound `DiscoveryProposal`; create a placeholder
+Process; persist generated narrative; require one exclusive conclusion; or let
+AI select the outcome. These alternatives were rejected because they cannot
+reproduce the reviewed evidence set, collapse navigation with interpretation,
+erase simultaneous or superseding conclusions, manufacture later lifecycle
+objects, weaken typed tenant boundaries, or grant authority before human
+review.
+
+**Affected decisions:** This decision follows and extends LAD-002, LAD-008,
+LAD-015, LAD-016, LAD-018, LAD-021 through LAD-026, LAD-029, LAD-032, LAD-035
+through LAD-037, LAD-042, LAD-046, LAD-051, LAD-053, LAD-056, and LAD-057. It
+extends LAD-051's valid no-change outcome to the distinct inquiry-scoped
+evidence path and preserves LAD-057's prohibition on placeholder Processes. It
+conflicts with and supersedes no accepted decision.
+
+**Consequences and deferrals:** The bounded implementation may add
+one forward-only migration `0027`, one immutable review table, one immutable
+review-source table, one immutable typed-outcome table, exact tenant-safe
+references, deferred package-completeness protection, stale-write and
+append-only guards, a private conversational review and outcome experience,
+an exact Discovery/runtime privilege delta, and isolated fictional
+verification. The full proposed contract is recorded in
+[docs/INQUIRY_REVIEW_AND_KNOWLEDGE_OUTCOME_V0_1.md](docs/INQUIRY_REVIEW_AND_KNOWLEDGE_OUTCOME_V0_1.md).
+
+The decision does not authorize Process creation, Process mutation, evidence
+copying into Process-bound Discovery, structured mapping, proposal review,
+Process versioning, Family mutation, validation assignment, notifications,
+multi-person governance, AI interpretation, FLOW changes, scores, analytics,
+Reference Models, or public content. Governed candidate Process creation
+remains Slice D and requires a further architecture decision extending
+LAD-036, LAD-037, and LAD-053.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -2270,7 +2366,7 @@ The following ideas are recorded so postponement is visible and deliberate.
 | Conflict detection and consensus | Conflicts need identity, scope, lifecycle, privacy, and human resolution | Conflict and reconciliation schema decision |
 | Knowledge Gaps | Explainable gaps are product direction under LAD-046, but persistence is not justified until assignment, governance, or resolution history requires it | Derived projection rules first; later lifecycle, ownership, and history decision if persistence is needed |
 | Process Families and reusable subprocesses | LAD-055 authorizes bounded non-inheriting Family identity and membership; reusable composition remains distinct | Composition identity, cardinality, effective dating, governance, application, and comparison decision |
-| Question-driven Discovery routing | LAD-056 and Slice A preserve questions and transparent possible places; LAD-057 Slice B now implements typed inquiry-scoped evidence and deliberate human routing generically | Complete the separately controlled rollout, then define human outcome mapping without automatic Process creation |
+| Question-driven Discovery review | LAD-056 and LAD-057 are implemented and live; LAD-060's immutable human review package and valid no-change outcome are implemented and isolated-verified | Complete controlled rollout and live read-only QA before designing governed candidate Process creation |
 | Reference Models and practice comparison | LAD-048 preserves reference applicability and evidence-based comparison without automatic conclusions | Reference provenance, versioning, content rights, attachment, comparison snapshot, governance, and retention decision |
 | Job Descriptions and Job Drift | Position-linked descriptions may differ from responsibility and observed work, but HR sensitivity and interpretation require governance | Effective-dated description, HR source, access, evidence mapping, comparison, and review decision |
 | Operating-model drift | Drift requires approved versions, observations, comparison baselines, timing, and human classification | Version, baseline, evidence, classification, governance, and longitudinal comparison decision |

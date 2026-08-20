@@ -1,8 +1,10 @@
 # Process Family Relationships v0.1 — bounded product and architecture plan
 
-**Status:** Accepted under LAD-059 for generic implementation. Database
-rollout, credential changes, deployment, and institutional Family data remain
-separately controlled release actions.
+**Status:** Implemented, deployed, and JU live-validated under LAD-059.
+Migration `0026`, the reviewed Process-admin/runtime privilege boundaries,
+exact-commit deployment, authenticated read-only QA, and public isolation are
+complete. Rollout did not create an institutional Family relationship or infer
+any inherited operating-model fact.
 
 Process Family Relationships let Workspace Administrators place one Family in
 one or more broader work contexts without changing any Process or inheriting
@@ -160,10 +162,11 @@ Before any institutional rollout, isolated fictional verification must prove:
 10. public/disabled authoring failure; and
 11. zero persisted fictional probes.
 
-JU migration, role enablement, exact-commit deployment, and the first
-institutional Family relationship require separate authorization. The generic
-slice does not create **Annual Fund Gift Processing** or change any existing JU
-Family or membership.
+JU migration, role enablement, exact-commit deployment, and authenticated
+read-only QA are complete. The first institutional broader/narrower Family
+relationship remains a deliberate Workspace Administrator action. The rollout
+did not create **Annual Fund Gift Processing** or change an existing JU Family
+or membership automatically.
 
 ## Explicit deferrals
 

@@ -42,13 +42,21 @@ export default async function DiscoveryInquiryInterviewPage({
 
   const experience = await loadWorkspaceExperience();
   if (!experience.discovery.enabled) notFound();
-  const { loadDiscoveryInquirySession } = await import("@/lib/discovery-data");
+  const { loadDiscoveryInquiryReview, loadDiscoveryInquirySession } =
+    await import("@/lib/discovery-data");
   const session = await loadDiscoveryInquirySession(
     experience.discovery.organizationId,
     inquiryId,
     sessionId,
   );
   if (!session) notFound();
+  const latestReview = session.status === "closed"
+    ? await loadDiscoveryInquiryReview(
+        experience.discovery.organizationId,
+        inquiryId,
+        sessionId,
+      )
+    : null;
 
   const question = getDiscoveryInquiryQuestion(session.currentQuestionKey);
   const superseded = new Set(
@@ -151,7 +159,7 @@ export default async function DiscoveryInquiryInterviewPage({
             />
           </div>
         </Card>
-      ) : (
+      ) : session.status === "ready_for_review" ? (
         <section className="mt-6">
           <Badge tone="warning">Ready for human review</Badge>
           <h2 className="mt-3 text-2xl font-semibold tracking-[-0.035em] text-[var(--text)]">
@@ -159,16 +167,20 @@ export default async function DiscoveryInquiryInterviewPage({
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
             These answers remain connected to the original question without
-            claiming that they describe one existing Process. You can correct
-            wording or labels below. A later review slice will let a person
-            decide whether the evidence belongs with an existing Process, spans
-            several Processes, needs more validation, or may support a new
-            working draft.
+            claiming that they describe one existing Process. Correct wording
+            or labels below if needed, then review the answers together and
+            preserve what you concluded.
           </p>
           <Alert className="mt-4" tone="success">
             Reaching this point is a valid outcome. No Process was selected,
             created, proposed, approved, or changed.
           </Alert>
+          <Link
+            className="mt-4 inline-flex h-10 shrink-0 items-center justify-center rounded-[9px] bg-[var(--workspace-accent)] px-4 text-sm font-medium text-[var(--workspace-accent-foreground)] hover:bg-[var(--workspace-accent-hover)]"
+            href={`/studio/discovery/inquiries/${inquiryId}/interviews/${sessionId}/review`}
+          >
+            Review what you learned
+          </Link>
           <div className="mt-5 space-y-4">
             {session.observations.map((observation) => (
               <Card
@@ -222,6 +234,25 @@ export default async function DiscoveryInquiryInterviewPage({
             ))}
           </div>
         </section>
+      ) : (
+        <Card className="mt-6 p-5 sm:p-7">
+          <Badge tone="success">Review complete</Badge>
+          <h2 className="mt-3 text-xl font-semibold text-[var(--text)]">
+            This interview has a Knowledge Outcome
+          </h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
+            The reviewed answers and human conclusions remain preserved. No
+            Process was created, proposed, approved, or changed.
+          </p>
+          {latestReview ? (
+            <Link
+              className="mt-4 inline-flex h-10 shrink-0 items-center justify-center rounded-[9px] bg-[var(--workspace-accent)] px-4 text-sm font-medium text-[var(--workspace-accent-foreground)] hover:bg-[var(--workspace-accent-hover)]"
+              href={`/studio/discovery/inquiries/${inquiryId}/interviews/${sessionId}/outcomes/${latestReview.id}`}
+            >
+              View what you learned
+            </Link>
+          ) : null}
+        </Card>
       )}
     </WorkspaceShell>
   );

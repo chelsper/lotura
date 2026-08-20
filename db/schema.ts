@@ -248,6 +248,17 @@ export const discoveryObservationTopic = pgEnum(
   ],
 );
 
+export const discoveryInquiryReviewOutcomeKind = pgEnum(
+  "discovery_inquiry_review_outcome_kind",
+  [
+    "connect_existing_process",
+    "possible_new_process",
+    "spans_multiple_processes",
+    "additional_validation_required",
+    "no_separate_process_needed",
+  ],
+);
+
 export const discoveryProposalStatus = pgEnum("discovery_proposal_status", [
   "draft",
   "ready_for_review",
@@ -1205,6 +1216,250 @@ export const discoveryInquiryObservation = pgTable(
       table.organizationId,
       table.epistemicState,
       table.createdAt,
+    ),
+  ],
+);
+
+export const discoveryInquiryReview = pgTable(
+  "discovery_inquiry_reviews",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    inquiryId: integer("inquiry_id").notNull(),
+    inquiryStableKey: uuid("inquiry_stable_key").notNull(),
+    sessionId: integer("session_id").notNull(),
+    sessionStableKey: uuid("session_stable_key").notNull(),
+    reviewSequence: integer("review_sequence").notNull(),
+    reviewedSessionRevision: integer("reviewed_session_revision").notNull(),
+    supersedesReviewStableKey: uuid("supersedes_review_stable_key"),
+    reviewNote: text("review_note"),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_inquiry_reviews_session_context_fk",
+      columns: [
+        table.sessionId,
+        table.organizationId,
+        table.sessionStableKey,
+        table.inquiryId,
+        table.inquiryStableKey,
+      ],
+      foreignColumns: [
+        discoveryInquirySession.id,
+        discoveryInquirySession.organizationId,
+        discoveryInquirySession.stableKey,
+        discoveryInquirySession.inquiryId,
+        discoveryInquirySession.inquiryStableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_inquiry_reviews_supersedes_fk",
+      columns: [
+        table.supersedesReviewStableKey,
+        table.sessionId,
+        table.organizationId,
+      ],
+      foreignColumns: [
+        table.stableKey,
+        table.sessionId,
+        table.organizationId,
+      ],
+    }).onDelete("restrict"),
+    unique("discovery_inquiry_reviews_stable_key_unique").on(table.stableKey),
+    unique("discovery_inquiry_reviews_context_unique").on(
+      table.stableKey,
+      table.sessionId,
+      table.organizationId,
+    ),
+    unique("discovery_inquiry_reviews_identity_context_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.sessionId,
+      table.sessionStableKey,
+    ),
+    unique("discovery_inquiry_reviews_session_sequence_unique").on(
+      table.sessionId,
+      table.reviewSequence,
+    ),
+    check(
+      "discovery_inquiry_reviews_sequence_positive_check",
+      sql`${table.reviewSequence} >= 1`,
+    ),
+    check(
+      "discovery_inquiry_reviews_revision_positive_check",
+      sql`${table.reviewedSessionRevision} >= 1`,
+    ),
+    check(
+      "discovery_inquiry_reviews_supersedes_distinct_check",
+      sql`${table.supersedesReviewStableKey} is null or ${table.supersedesReviewStableKey} <> ${table.stableKey}`,
+    ),
+    check(
+      "discovery_inquiry_reviews_note_shape_check",
+      sql`${table.reviewNote} is null or (char_length(trim(${table.reviewNote})) > 0 and char_length(${table.reviewNote}) <= 2000)`,
+    ),
+    check(
+      "discovery_inquiry_reviews_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    index("discovery_inquiry_reviews_org_session_sequence_idx").on(
+      table.organizationId,
+      table.sessionStableKey,
+      table.reviewSequence,
+    ),
+  ],
+);
+
+export const discoveryInquiryReviewSource = pgTable(
+  "discovery_inquiry_review_sources",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    reviewId: integer("review_id").notNull(),
+    reviewStableKey: uuid("review_stable_key").notNull(),
+    sessionId: integer("session_id").notNull(),
+    sessionStableKey: uuid("session_stable_key").notNull(),
+    observationStableKey: uuid("observation_stable_key").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_inquiry_review_sources_review_context_fk",
+      columns: [
+        table.reviewId,
+        table.organizationId,
+        table.reviewStableKey,
+        table.sessionId,
+        table.sessionStableKey,
+      ],
+      foreignColumns: [
+        discoveryInquiryReview.id,
+        discoveryInquiryReview.organizationId,
+        discoveryInquiryReview.stableKey,
+        discoveryInquiryReview.sessionId,
+        discoveryInquiryReview.sessionStableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_inquiry_review_sources_observation_context_fk",
+      columns: [
+        table.observationStableKey,
+        table.sessionId,
+        table.organizationId,
+      ],
+      foreignColumns: [
+        discoveryInquiryObservation.stableKey,
+        discoveryInquiryObservation.sessionId,
+        discoveryInquiryObservation.organizationId,
+      ],
+    }).onDelete("restrict"),
+    unique("discovery_inquiry_review_sources_stable_key_unique").on(
+      table.stableKey,
+    ),
+    unique("discovery_inquiry_review_sources_identity_context_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+    ),
+    unique("discovery_inquiry_review_sources_review_observation_unique").on(
+      table.reviewId,
+      table.observationStableKey,
+    ),
+    index("discovery_inquiry_review_sources_org_review_idx").on(
+      table.organizationId,
+      table.reviewStableKey,
+    ),
+  ],
+);
+
+export const discoveryInquiryReviewOutcome = pgTable(
+  "discovery_inquiry_review_outcomes",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    reviewId: integer("review_id").notNull(),
+    reviewStableKey: uuid("review_stable_key").notNull(),
+    sessionId: integer("session_id").notNull(),
+    sessionStableKey: uuid("session_stable_key").notNull(),
+    outcomeKind: discoveryInquiryReviewOutcomeKind("outcome_kind").notNull(),
+    processId: integer("process_id"),
+    processStableKey: uuid("process_stable_key"),
+    explanation: text("explanation"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_inquiry_review_outcomes_review_context_fk",
+      columns: [
+        table.reviewId,
+        table.organizationId,
+        table.reviewStableKey,
+        table.sessionId,
+        table.sessionStableKey,
+      ],
+      foreignColumns: [
+        discoveryInquiryReview.id,
+        discoveryInquiryReview.organizationId,
+        discoveryInquiryReview.stableKey,
+        discoveryInquiryReview.sessionId,
+        discoveryInquiryReview.sessionStableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_inquiry_review_outcomes_process_context_fk",
+      columns: [
+        table.processId,
+        table.organizationId,
+        table.processStableKey,
+      ],
+      foreignColumns: [
+        process.id,
+        process.organizationId,
+        process.stableKey,
+      ],
+    }).onDelete("restrict"),
+    unique("discovery_inquiry_review_outcomes_stable_key_unique").on(
+      table.stableKey,
+    ),
+    unique("discovery_inquiry_review_outcomes_identity_context_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+    ),
+    unique("discovery_inquiry_review_outcomes_review_kind_unique").on(
+      table.reviewId,
+      table.outcomeKind,
+    ),
+    check(
+      "discovery_inquiry_review_outcomes_target_shape_check",
+      sql`(${table.outcomeKind} = 'connect_existing_process' and ${table.processId} is not null and ${table.processStableKey} is not null) or (${table.outcomeKind} <> 'connect_existing_process' and ${table.processId} is null and ${table.processStableKey} is null)`,
+    ),
+    check(
+      "discovery_inquiry_review_outcomes_explanation_shape_check",
+      sql`${table.explanation} is null or (char_length(trim(${table.explanation})) > 0 and char_length(${table.explanation}) <= 2000)`,
+    ),
+    check(
+      "discovery_inquiry_review_outcomes_required_explanation_check",
+      sql`${table.outcomeKind} not in ('possible_new_process', 'spans_multiple_processes', 'additional_validation_required') or ${table.explanation} is not null`,
+    ),
+    index("discovery_inquiry_review_outcomes_org_review_idx").on(
+      table.organizationId,
+      table.reviewStableKey,
+    ),
+    index("discovery_inquiry_review_outcomes_org_process_idx").on(
+      table.organizationId,
+      table.processStableKey,
     ),
   ],
 );

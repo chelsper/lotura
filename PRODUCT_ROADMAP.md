@@ -107,27 +107,33 @@ milestones:
    without a score, task workflow, or new persistence. JU acceptance confirmed
    evidence-backed Discovery questions, exact source navigation, no manufactured
    responsibility questions, and continued public-demo isolation.
-5. **Process Families (membership v0.1 implemented and live-validated;
-   relationships v0.1 authorized)** — explicit Family identity and
+5. **Process Families (membership and relationships v0.1 implemented,
+   deployed, and live-validated)** — explicit Family identity and
    many-to-many Process membership, with no primary Family or implied
-   inheritance. LAD-059 adds the next bounded capability: a typed, acyclic,
-   many-to-many broader/narrower Family graph that remains distinct from direct
-   Process membership, composition, and dependency. The contracts are recorded
-   in [docs/PROCESS_FAMILIES_V0_1.md](docs/PROCESS_FAMILIES_V0_1.md) and
+   inheritance. LAD-059's typed, acyclic, many-to-many broader/narrower Family
+   graph is also live and remains distinct from direct Process membership,
+   composition, and dependency. Migration `0026`, the Process-admin/runtime
+   privilege boundaries, exact-commit JU deployment, authenticated read-only
+   QA, no-op edit protection, and contextual creation entry points are
+   complete. No relationship or inherited operating-model fact was
+   manufactured during rollout. The contracts are recorded in
+   [docs/PROCESS_FAMILIES_V0_1.md](docs/PROCESS_FAMILIES_V0_1.md) and
    [docs/PROCESS_FAMILY_RELATIONSHIPS_V0_1.md](docs/PROCESS_FAMILY_RELATIONSHIPS_V0_1.md).
-6. **Question-Driven Discovery (Slice A implemented and live-validated under
-   accepted LAD-056)** — begin with an organizational question and preserve why
-   Discovery began before selecting a Process. Slice A adds durable inquiry
-   identity, a private question-first entry, and transparent deterministic
-   possible places to look. Migration `0024` and the inquiry-only
-   Discovery/runtime boundary passed isolated verification and are enabled in
-   JU at journal `25/25`. The first real inquiry showed that evidence may need
-   to be gathered before anyone can truthfully select or create a Process.
-   Accepted LAD-057 now has a generic, isolated-verified **Inquiry Routing &
-   Unbound Discovery** implementation: a separate typed inquiry-scoped
-   interview path, not a nullable Process reference or placeholder Process.
-   Its controlled rollout remains separate. Human review and any governed
-   proposal to create a Draft Process follow as later slices.
+6. **Question-Driven Discovery (Slices A and B live; Slice C implemented and
+   isolated-verified)** — begin with an organizational question and preserve why
+   Discovery began before selecting a Process. LAD-056 provides durable inquiry
+   identity and transparent possible places to look. LAD-057 provides an
+   inquiry-scoped guided interview when the Process boundary is still unknown,
+   without a nullable Process reference or placeholder Process. Migrations
+   `0024` and `0025`, the Discovery/runtime privilege boundary, JU deployment,
+   and the first real inquiry-scoped interview are complete. LAD-060 defines
+   **Slice C — Inquiry Review & Knowledge Outcome**: an immutable human review
+   of the exact inquiry evidence with no requirement to propose or create a
+   Process. Its generic implementation and rollback-only fictional verification
+   are complete; controlled rollout and the first real review remain separate.
+   Governed candidate Process creation remains a later Slice D requiring its
+   own decision. The Slice C contract is recorded in
+   [docs/INQUIRY_REVIEW_AND_KNOWLEDGE_OUTCOME_V0_1.md](docs/INQUIRY_REVIEW_AND_KNOWLEDGE_OUTCOME_V0_1.md).
 7. **AI Discovery Assistance** — suggest follow-up questions and structured
    mappings for human review; never approve or apply them.
 8. **Reference Models** — attach governed internal or external comparison bases

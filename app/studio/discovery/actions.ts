@@ -21,6 +21,12 @@ import {
   startInquiryDiscoverySession,
   startProcessDiscoverySessionFromInquiry,
 } from "@/lib/discovery-inquiry-administration";
+import {
+  finishDiscoveryInquiryReview,
+} from "@/lib/discovery-inquiry-review-administration";
+import {
+  isDiscoveryInquiryReviewOutcomeKind,
+} from "@/lib/discovery-inquiry-review-model.mjs";
 import { buildDiscoveryScopeStatement } from "@/lib/discovery-scope.mjs";
 import {
   changeDiscoveryMappingItemState,
@@ -225,6 +231,40 @@ export async function changeInquiryDiscoveryPauseAction(formData: FormData) {
   const path = `/studio/discovery/inquiries/${inquiryId}/interviews/${sessionId}`;
   revalidatePath(path);
   redirect(path);
+}
+
+export async function finishDiscoveryInquiryReviewAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const inquiryId = text(formData, "inquiryId");
+  const sessionId = text(formData, "sessionId");
+  const outcomeKinds = formData
+    .getAll("outcomeKind")
+    .filter((value): value is string => typeof value === "string")
+    .filter(isDiscoveryInquiryReviewOutcomeKind);
+  const result = await finishDiscoveryInquiryReview({
+    expectedRevision: revision(formData),
+    inquiryId,
+    outcomes: outcomeKinds.map((kind) => ({
+      explanation: text(formData, `explanation_${kind}`),
+      kind,
+      processKey: kind === "connect_existing_process"
+        ? text(formData, "processKey")
+        : "",
+    })),
+    reviewNote: text(formData, "reviewNote"),
+    sessionId,
+    supersedesReviewId: text(formData, "supersedesReviewId"),
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  const interviewPath =
+    `/studio/discovery/inquiries/${inquiryId}/interviews/${sessionId}`;
+  revalidatePath(interviewPath);
+  revalidatePath(`${interviewPath}/review`);
+  revalidatePath(`/studio/discovery/inquiries/${inquiryId}`);
+  revalidatePath("/studio/discovery");
+  redirect(`${interviewPath}/outcomes/${result.reviewId}`);
 }
 
 export async function startDiscoverySessionAction(

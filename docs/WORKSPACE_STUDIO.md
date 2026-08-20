@@ -187,8 +187,11 @@ maintenance, and deactivation preserve immutable identity and history.
 
 LAD-057 Slice B now implements **Explore before choosing a Process** as a
 private, typed inquiry-scoped interview that preserves evidence without
-selecting or creating a Process. Generic implementation and isolated
-verification are complete; workspace rollout remains separately controlled.
+selecting or creating a Process. Generic implementation, isolated
+verification, JU rollout, and the first real inquiry-scoped interview are
+complete. Accepted LAD-060 defines the separate human review and Knowledge
+Outcome step for bounded generic implementation and separately controlled
+release.
 
 Discovery uses conversational product language. Technical terms such as
 canonical record, epistemic state, and reconciliation package remain available

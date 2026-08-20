@@ -1,11 +1,10 @@
 # Question-Driven Discovery v0.1
 
-**Status:** LAD-056 accepted. Slice A is implemented, isolated-verified, and
-live-validated in JU at migration journal `25/25`. The first real inquiry
-confirmed that Discovery also needs a separate, typed way to gather evidence
-before a Process is selected. LAD-057 Slice B is now implemented generically
-and passed isolated fictional verification at journal `26/26`; JU rollout
-remains separately controlled.
+**Status:** LAD-056 and LAD-057 are accepted. Slices A and B are implemented,
+isolated-verified, deployed, and live-validated in JU. The first real
+inquiry-scoped interview confirmed the need for a separate human review before
+any Process is selected, proposed, or created. Accepted LAD-060 defines that
+Slice C boundary for bounded generic implementation.
 
 ## Product outcome
 
@@ -179,7 +178,7 @@ dormant: no route action or route-write privilege is part of Slice A.
 
 ### Slice B — Inquiry Routing & Unbound Discovery
 
-- implemented and isolated-verified under accepted LAD-057;
+- implemented, deployed, and live-validated under accepted LAD-057;
 - append-only Process, Family, interview, wait, finish, and inquiry-exploration
   route decisions;
 - typed inquiry-scoped sessions and append-only observations for the case where
@@ -190,7 +189,12 @@ dormant: no route action or route-write privilege is part of Slice A.
 
 ### Slice C — Human review and Knowledge Outcome
 
-- review inquiry-scoped evidence without inferring a Process boundary;
+Accepted under LAD-060 and detailed in
+[INQUIRY_REVIEW_AND_KNOWLEDGE_OUTCOME_V0_1.md](INQUIRY_REVIEW_AND_KNOWLEDGE_OUTCOME_V0_1.md):
+
+- review the exact inquiry-scoped evidence without inferring a Process
+  boundary or reclassifying every answer;
+- freeze the reviewed evidence set and append one or more human conclusions;
 - explicitly connect to an existing Process, preserve a cross-Process or
   unresolved boundary, identify a possible new Process, or conclude that no
   separate Process is needed;
@@ -284,11 +288,12 @@ Slice A completed the following separately controlled JU sequence:
 8. separately create and validate the first real inquiry without routing or
    changing the operating model.
 
-Slice B must repeat the target, baseline, migration, least-privilege,
-rollback, public-isolation, exact-commit deployment, and authenticated QA
-sequence under a new approval. Any first inquiry-scoped interview remains a
-separate human-approved live data action after LAD-057 implementation,
-isolated verification, and rollout.
+Slice B repeated the target, baseline, migration, least-privilege, rollback,
+public-isolation, exact-commit deployment, and authenticated QA sequence. Its
+first real inquiry-scoped interview is complete. Slice C's LAD-060 decision,
+generic implementation, and isolated fictional verification are complete. It
+must now repeat the controlled rollout sequence; its first real human review
+remains a separate live-data action.
 
 ## Explicit deferrals
 
