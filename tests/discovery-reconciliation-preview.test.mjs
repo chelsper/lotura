@@ -81,10 +81,11 @@ test("the comparison route authorizes before reads and preserves the proposal bo
   assert.match(interview, /Review and prepare an update/);
   assert.match(route, /Current documented Process/);
   assert.match(route, /Interview notes/);
-  assert.match(route, /Saving a choice records review work only/);
-  assert.match(route, /If another person or department must validate an answer, choose Leave for later/);
+  assert.match(route, /Did this interview reveal something the documented Process should change/);
+  assert.match(route, /uncertainty already recorded in the interview can remain for later/);
+  assert.match(route, /Review possible changes/);
   assert.match(route, /This answer is already marked/);
-  assert.match(route, /does not approve or apply it/);
+  assert.match(route, /does not approve or apply a change/);
   assert.doesNotMatch(route, /canonical/i);
   assert.doesNotMatch(route, /administration|insert into|update processes|delete from/i);
   assert.match(decisions, /LAD-044 — Discovery comparison/);

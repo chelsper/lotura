@@ -179,10 +179,11 @@ test("the review UX keeps interview evidence, human choices, readiness, and appr
   assert.match(route, /Nothing will move into structured proposed-change review/);
   assert.match(route, /Items left for later remain available for future validation/);
   assert.match(route, /proposalFinishedWithoutChanges/);
-  assert.match(route, /You do not need to append a correction first/);
-  assert.match(route, /choose Leave for later/);
-  assert.match(route, /No correction is required/);
-  assert.match(route, /does not turn free text into Steps, Roles, Systems, Exceptions, or dependencies/);
+  assert.match(route, /Did this interview reveal something the documented Process should change/);
+  assert.match(route, /FinishDiscoveryReviewByExceptionForm/);
+  assert.match(route, /Review possible changes/);
+  assert.match(route, /No correction or additional choice is required/);
+  assert.match(route, /does not approve or apply a change/);
   assert.match(route, /Earlier choices remain in history/);
   assert.doesNotMatch(`${controls}\n${route}`, /canonical|sanitized working draft/i);
   assert.doesNotMatch(`${controls}\n${route}`, /AI-generated|automatically apply/i);

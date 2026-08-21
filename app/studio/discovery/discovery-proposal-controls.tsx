@@ -10,6 +10,7 @@ import { DISCOVERY_PROPOSAL_DISPOSITION_LABELS } from "@/lib/discovery-proposal-
 import { Alert, Button, FieldLabel, Select } from "../../ui/primitives";
 import {
   finishDiscoveryProposalAction,
+  finishDiscoveryReviewByExceptionAction,
   saveDiscoveryProposalDecisionAction,
 } from "./actions";
 import { initialDiscoveryActionState } from "./action-state";
@@ -98,6 +99,43 @@ export function FinishDiscoveryProposalForm({
       {state.status === "error" ? <Alert tone="error">{state.message}</Alert> : null}
       <Button disabled={!canFinish || pending} type="submit" variant="primary">
         {pending ? "Finishing…" : "Finish proposed update"}
+      </Button>
+    </form>
+  );
+}
+
+export function FinishDiscoveryReviewByExceptionForm({
+  canFinish,
+  expectedProposalRevision,
+  mode,
+  sessionId,
+}: {
+  canFinish: boolean;
+  expectedProposalRevision: number;
+  mode: "no_changes" | "selected_changes";
+  sessionId: string;
+}) {
+  const [state, action, pending] = useActionState(
+    finishDiscoveryReviewByExceptionAction,
+    initialDiscoveryActionState,
+  );
+  const noChanges = mode === "no_changes";
+  return (
+    <form action={action} className="space-y-3">
+      <input name="sessionId" type="hidden" value={sessionId} />
+      <input name="reviewMode" type="hidden" value={mode} />
+      <input
+        name="expectedProposalRevision"
+        type="hidden"
+        value={expectedProposalRevision}
+      />
+      {state.status === "error" ? <Alert tone="error">{state.message}</Alert> : null}
+      <Button disabled={!canFinish || pending} type="submit" variant="primary">
+        {pending
+          ? "Finishing…"
+          : noChanges
+            ? "Finish with no changes"
+            : "Finish selected changes"}
       </Button>
     </form>
   );

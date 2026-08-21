@@ -17,6 +17,7 @@ import {
   currentDiscoveryProposalDecisions,
   DISCOVERY_PROPOSAL_DISPOSITION_LABELS,
   discoveryProposalReadiness,
+  discoveryReviewByExceptionSummary,
   type DocumentedProcessSnapshot,
 } from "@/lib/discovery-proposal-model.mjs";
 import { buildDiscoveryReconciliationEvidence } from "@/lib/discovery-reconciliation-preview.mjs";
@@ -25,7 +26,7 @@ import { loadWorkspaceExperience } from "@/lib/workspace-experience";
 
 import {
   DiscoveryProposalDecisionForm,
-  FinishDiscoveryProposalForm,
+  FinishDiscoveryReviewByExceptionForm,
 } from "../../../discovery-proposal-controls";
 import { Alert, Badge, Card } from "../../../../../ui/primitives";
 import { WorkspacePageHeader, WorkspaceShell } from "../../../../../workspace-shell";
@@ -372,11 +373,14 @@ function KnowledgeOutcomeSummary({
 
 export default async function DiscoveryReconciliationPreviewPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
+  searchParams: Promise<{ review?: string }>;
 }) {
   await connection();
   const { sessionId } = await params;
+  const query = await searchParams;
   const experience = await loadWorkspaceExperience();
   if (!experience.discovery.enabled) notFound();
 
@@ -410,6 +414,13 @@ export default async function DiscoveryReconciliationPreviewPage({
   const proposalFinished = proposal?.status === "ready_for_review";
   const proposalFinishedWithoutChanges = proposalFinished && readiness.included === 0;
   const activeObservations = activeDiscoveryObservations(session.observations);
+  const reviewByException = discoveryReviewByExceptionSummary(
+    activeObservations,
+    decisions,
+  );
+  const reviewingExceptions = !proposalFinished &&
+    (query.review === "changes" ||
+      (readiness.reviewed > 0 && query.review !== "summary"));
   const knowledgeOutcome = proposalFinished && proposal
     ? buildDiscoveryKnowledgeOutcome({
         completedAt: proposal.readyAt,
@@ -454,7 +465,7 @@ export default async function DiscoveryReconciliationPreviewPage({
           ? "Review complete — no changes proposed. The documented Process has not changed, and anything left for later remains available for future validation."
           : proposalFinished
             ? "Proposed update ready for review. It has not been approved or applied, and the documented Process has not changed."
-          : "Choose how each interview answer should be treated. You do not need to append a correction first. If another person or department must validate an answer, choose Leave for later. Saving a choice records review work only; it does not change the documented Process."}
+          : "Review what the interview revealed. You only need to open individual answers when something may need to change; uncertainty already recorded in the interview can remain for later."}
       </Alert>
       {proposalFinished && readiness.included > 0 ? (
         <div className="mt-4 flex justify-end">
@@ -465,6 +476,48 @@ export default async function DiscoveryReconciliationPreviewPage({
             Turn notes into specific changes
           </Link>
         </div>
+      ) : null}
+
+      {!proposalFinished ? (
+        <Card className="mt-5 p-5 sm:p-6" id="review-exceptions">
+          <p className="text-xs font-medium text-[var(--text-tertiary)]">Finish the interview review</p>
+          <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">
+            Did this interview reveal something the documented Process should change?
+          </h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
+            If not, finish here. Lotura will keep the {reviewByException.kept} {reviewByException.kept === 1 ? "answer" : "answers"} recorded as known with the current documentation and preserve {reviewByException.later} {reviewByException.later === 1 ? "answer" : "answers"} marked uncertain or needing validation for later. No Process change will be proposed or applied.
+          </p>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+            {reviewByException.canFinishNoChanges ? (
+              <FinishDiscoveryReviewByExceptionForm
+                canFinish
+                expectedProposalRevision={proposal?.revision ?? 0}
+                mode="no_changes"
+                sessionId={session.id}
+              />
+            ) : null}
+            {reviewingExceptions ? (
+              <Link
+                className="inline-flex h-10 items-center justify-center rounded-[10px] border border-[var(--border)] px-3.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-hover)]"
+                href={`/studio/discovery/interviews/${session.id}/reconcile?review=summary#review-exceptions`}
+              >
+                Close detailed review
+              </Link>
+            ) : (
+              <Link
+                className="inline-flex h-10 items-center justify-center rounded-[10px] border border-[var(--border)] px-3.5 text-sm font-medium text-[var(--text)] hover:bg-[var(--surface-hover)]"
+                href={`/studio/discovery/interviews/${session.id}/reconcile?review=changes#review-exceptions`}
+              >
+                Review possible changes
+              </Link>
+            )}
+          </div>
+          {reviewingExceptions ? (
+            <p className="mt-4 rounded-[8px] bg-[var(--surface-subtle)] px-3 py-2 text-xs leading-5 text-[var(--text-secondary)]">
+              Select <strong>Use in proposed update</strong> only for answers that may require a documented change. You do not need to save a choice for every other answer; Lotura will preserve them appropriately when you finish.
+            </p>
+          ) : null}
+        </Card>
       ) : null}
 
       <Card className="mt-5 p-5 sm:p-6">
@@ -501,7 +554,9 @@ export default async function DiscoveryReconciliationPreviewPage({
                   ? "No interview answer"
                   : section.evidence.every((item) => currentDecisions.has(item.id))
                     ? "Choices recorded"
-                    : "Still to review"}
+                    : reviewingExceptions
+                      ? "Review if a change is needed"
+                      : "Interview answer recorded"}
               </Badge>
             </div>
             <div className="grid xl:grid-cols-2">
@@ -530,7 +585,7 @@ export default async function DiscoveryReconciliationPreviewPage({
                         <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--text-secondary)]">{observation.responseText || "No response supplied; the answer is explicitly unknown."}</p>
                         {observation.epistemicState !== "known" ? (
                           <p className="mt-3 rounded-[8px] bg-[var(--warning-soft)] px-3 py-2 text-xs leading-5 text-[var(--warning)]">
-                            This answer is already marked {stateLabels[observation.epistemicState]}. No correction is required. Choose Leave for later when validation or clarification must come from someone else.
+                            This answer is already marked {stateLabels[observation.epistemicState]}. No correction or additional choice is required unless you want to propose a documented change.
                           </p>
                         ) : null}
                         {currentDecisions.get(observation.id)?.reviewNote ? (
@@ -543,7 +598,7 @@ export default async function DiscoveryReconciliationPreviewPage({
                             Earlier choices remain in history.
                           </p>
                         ) : null}
-                        {!proposalFinished ? (
+                        {reviewingExceptions ? (
                           <DiscoveryProposalDecisionForm
                             currentDecision={currentDecisions.get(observation.id) ?? null}
                             expectedProposalRevision={proposal?.revision ?? 0}
@@ -572,23 +627,31 @@ export default async function DiscoveryReconciliationPreviewPage({
       ) : (
         <section className="mt-7 border-t border-[var(--border)] pt-7">
           <p className="text-xs font-medium text-[var(--text-tertiary)]">
-            {proposalFinishedWithoutChanges ? "Review outcome" : "Proposed update"}
+            {proposalFinishedWithoutChanges ? "Review outcome" : "Review by exception"}
           </p>
         <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">
-          {proposalFinishedWithoutChanges ? "No changes proposed" : "Review your choices"}
+          {proposalFinishedWithoutChanges
+            ? "No changes proposed"
+            : reviewingExceptions
+              ? "Review the exceptions you selected"
+              : "No per-answer review is required"}
         </h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
           {proposalFinishedWithoutChanges
             ? "Every interview answer was kept as documented or left for later. Nothing will move into structured proposed-change review."
-            : "This summary records the exact interview notes you selected. It does not turn free text into Steps, Roles, Systems, Exceptions, or dependencies. Those structured changes require a later review."}
+            : reviewingExceptions
+              ? "Only answers you explicitly select will move toward a possible change. Finishing will keep the remaining known answers with the current documentation and preserve uncertain answers for later."
+              : "Use the finish choice above when the interview did not reveal a needed change. Open possible changes only when an answer should be considered for different documentation."}
         </p>
-        <div className="mt-5">
-          <ProposalChoiceSummary
-            decisions={currentDecisionList}
-            sequenceByObservation={sequenceByObservation}
-          />
-        </div>
-        <Card className="mt-5 p-5 sm:p-6">
+        {reviewingExceptions ? (
+          <div className="mt-5">
+            <ProposalChoiceSummary
+              decisions={currentDecisionList}
+              sequenceByObservation={sequenceByObservation}
+            />
+          </div>
+        ) : null}
+        {reviewingExceptions ? <Card className="mt-5 p-5 sm:p-6">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
               <p className="text-sm font-semibold text-[var(--text)]">
@@ -596,20 +659,23 @@ export default async function DiscoveryReconciliationPreviewPage({
                   ? "Review complete — no changes proposed"
                   : proposalFinished
                     ? "Ready for the next review"
-                  : readiness.remaining === 0
-                    ? "All interview answers have a choice"
-                    : `${readiness.remaining} ${readiness.remaining === 1 ? "answer" : "answers"} still need a choice`}
+                  : reviewByException.included === 0
+                    ? "No answers selected for change"
+                    : `${reviewByException.included} ${reviewByException.included === 1 ? "answer" : "answers"} selected for possible changes`}
               </p>
               <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
                 {proposalFinishedWithoutChanges
                   ? "No structured-change review is needed. Items left for later remain available for future validation."
-                  : "Finishing this proposed update does not approve or apply it."}
+                  : reviewByException.included === 0
+                    ? "Select only genuine exceptions, or finish with no changes above."
+                    : "Finishing preserves the selected evidence for structured change work. It does not approve or apply a change."}
               </p>
             </div>
             {!proposalFinished ? (
-              <FinishDiscoveryProposalForm
-                canFinish={readiness.canFinish}
+              <FinishDiscoveryReviewByExceptionForm
+                canFinish={reviewByException.canFinishSelectedChanges}
                 expectedProposalRevision={proposal?.revision ?? 0}
+                mode="selected_changes"
                 sessionId={session.id}
               />
             ) : (
@@ -618,7 +684,7 @@ export default async function DiscoveryReconciliationPreviewPage({
               </Badge>
             )}
           </div>
-        </Card>
+        </Card> : null}
         </section>
       )}
     </WorkspaceShell>

@@ -105,6 +105,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-059 | Broader and narrower Process Families form an explicit non-inheriting acyclic graph | Accepted — implementation complete, deployed, and JU live-validated |
 | LAD-060 | Inquiry-scoped evidence produces an immutable human Knowledge Outcome before any Process proposal | Accepted — implemented, deployed, and live read-validated |
 | LAD-061 | AI-assisted Discovery asks from bounded prior context without becoming evidence or authority | Accepted — Slice A complete and isolated fictional verification passed |
+| LAD-062 | Process-bound reconciliation is exception-driven and no change is the default valid outcome | Accepted — generic implementation complete and isolated fictional verification passed |
 
 ## Decision records
 
@@ -2471,6 +2472,80 @@ future domains. Inquiry-scoped Discovery may preserve evidence that spans
 several Processes, and AI may ask source-grounded questions about it, but
 LAD-061 does not authorize AI to create a Scenario, infer undocumented
 dependencies, or establish informal behavior as policy.
+
+### LAD-062 — Process-bound reconciliation is exception-driven and no change is the default valid outcome
+
+**Status:** Accepted — generic implementation complete and isolated fictional
+verification passed for Review by Exception v0.1.
+
+**Context:** The first private Process-bound interviews demonstrated that a
+participant can deliberately answer every question, record uncertainty while
+answering, and then be asked to classify every answer again during
+reconciliation. The second decision is technically about documentation rather
+than evidence certainty, but presenting nine required save operations makes a
+valid no-change outcome feel incomplete and encourages repetitive review work.
+LAD-043 already says Lotura should not ask a person to make the same review
+decision twice, while LAD-051 establishes that no change is a successful
+Knowledge Outcome.
+
+**Decision:** Process-bound reconciliation is **exception-driven**. The normal
+path asks one plain-language question: whether the interview revealed anything
+that should change in the documented Process. A reviewer may explicitly finish
+with no changes or open detailed review and select the exceptional answers that
+should support possible changes.
+
+At the reviewer's explicit finish action, Lotura may append a current treatment
+for every active observation that does not already have one. An observation
+marked **Known** defaults to **Keep what is documented**. An observation marked
+**Assumed**, **Unknown**, **Needs validation**, or **Conflicting observation**
+defaults to **Leave for later**. These defaults are a human-authorized review
+action, not an inference that the answer is true, aligned, approved, resolved,
+or complete. Existing current choices remain unchanged, and prior choices
+remain in append-only history.
+
+**Finish with no changes** is permitted only when no current observation is
+selected for a proposed update. **Finish selected changes** is permitted only
+when at least one current observation is explicitly selected for a proposed
+update. In either path, missing treatments and the finished review-package
+transition must commit atomically. The resulting Knowledge Outcome remains a
+projection of the exact evidence and append-only decisions. It creates no
+structured mapping when no evidence is selected and performs no Process,
+proposal-approval, Process-version, or canonical operating-model mutation.
+
+Detailed per-answer choices remain available for genuine exceptions and for
+correcting a prior review decision. The product must not hide uncertainty,
+silently resolve conflicting evidence, automatically select an answer for
+change, or require a person to manufacture an update to complete Discovery.
+
+**Why:** Reconciliation should focus attention where human judgment is needed.
+One explicit finish action respects the evidence states already supplied during
+the interview, produces the durable no-change outcome authorized by LAD-051,
+and keeps the proposed-change path available without making it compulsory.
+
+**Alternatives considered:** Keep nine mandatory per-answer saves; treat all
+answers as documented by default; automatically create a proposal when the
+interview ends; let AI classify the answers; silently finish a review when the
+last interview answer is saved; or overwrite existing decisions. These were
+rejected because they repeat work, erase uncertainty, manufacture change,
+remove explicit human authorization, collapse interview and review, or violate
+append-only provenance.
+
+**Affected decisions:** This decision follows and narrowly extends LAD-021,
+LAD-025, LAD-029, LAD-032, LAD-037, LAD-042 through LAD-046, LAD-049 through
+LAD-053, and LAD-061. It operationalizes LAD-043's protection against repeated
+decisions, LAD-045's append-only review package, and LAD-051's valid no-change
+outcome. It preserves LAD-061's rule that AI is not evidence or authority and
+conflicts with or supersedes no accepted decision.
+
+**Consequences and deferrals:** Review by Exception v0.1 requires no schema,
+migration, database privilege, credential, environment variable, AI provider,
+or canonical write. It may add one atomic server mutation over the existing
+proposal and decision tables, a deterministic default-disposition projection,
+plain-language reconciliation controls, documentation, and regression tests.
+AI-selected dispositions, automatic interview completion, cross-session
+reconciliation, validation assignment, notification, proposal mapping,
+approval, Process application, FLOW changes, scores, and analytics remain
+separately governed work.
 
 ## Intentionally deferred ideas register
 

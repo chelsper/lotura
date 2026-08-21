@@ -211,6 +211,16 @@ applied.
 **Product test:** Can an interview conclude successfully with useful knowledge,
 preserved uncertainty, and zero proposed changes?
 
+Review should focus attention where judgment is needed. After a participant has
+already recorded what is known and what remains uncertain, Lotura should not
+require a second save for every answer merely to reach a no-change outcome. An
+explicit review-by-exception action may preserve safe defaults, but it must not
+silently resolve uncertainty, select evidence for change, or overwrite a prior
+human decision.
+
+**Product test:** Can a person complete an accurate no-change review once while
+still opening individual answers when a real exception needs attention?
+
 ## 17. Name the layer that changed
 
 Lotura must keep four different events understandable:

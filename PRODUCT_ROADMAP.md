@@ -91,6 +91,10 @@ milestones:
    Confirmed documentation, unresolved knowledge, additional validation,
    structured changes, and no proposed change may coexist. A no-change outcome
    completes successfully and creates no empty structured-mapping workspace.
+   **Review by Exception v0.1 (implemented and isolated-verified under LAD-062)**
+   removes repeated per-answer saves from the normal Process-bound review while
+   preserving explicit human authorization, append-only decisions, uncertainty,
+   and the detailed exception path.
 2. **Proposal Review & Governance (implemented in v0.1)** — accountable people
    review, validate, and approve or reject exact proposed-item revisions within
    explicit scope. It applies only when structured proposed changes exist, and

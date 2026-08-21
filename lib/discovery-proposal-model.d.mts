@@ -24,6 +24,16 @@ export type DiscoveryProposalDecisionLike = {
   observationId: string;
 };
 
+export type DiscoveryReviewObservationLike = {
+  epistemicState:
+    | "assumed"
+    | "conflicting_observation"
+    | "known"
+    | "needs_validation"
+    | "unknown";
+  id: string;
+};
+
 export const DISCOVERY_PROPOSAL_DISPOSITIONS: DiscoveryProposalDisposition[];
 export const DISCOVERY_PROPOSAL_DISPOSITION_LABELS: Record<
   DiscoveryProposalDisposition,
@@ -37,6 +47,23 @@ export function buildDocumentedProcessSnapshot(
 export function currentDiscoveryProposalDecisions<
   T extends DiscoveryProposalDecisionLike,
 >(decisions: T[]): Map<string, T>;
+
+export function defaultDiscoveryReviewDisposition(
+  epistemicState: DiscoveryReviewObservationLike["epistemicState"],
+): Exclude<DiscoveryProposalDisposition, "use_in_proposal">;
+
+export function discoveryReviewByExceptionSummary(
+  observations: DiscoveryReviewObservationLike[],
+  decisions: DiscoveryProposalDecisionLike[],
+): {
+  canFinishNoChanges: boolean;
+  canFinishSelectedChanges: boolean;
+  included: number;
+  kept: number;
+  later: number;
+  remaining: number;
+  total: number;
+};
 
 export function discoveryProposalReadiness(
   observationIds: string[],

@@ -179,11 +179,14 @@ maintenance, and deactivation preserve immutable identity and history.
 - `/studio/discovery/interviews/[sessionId]` — answer questions, preserve
   uncertainty, append corrections, and review the saved interview; and
 - `/studio/discovery/interviews/[sessionId]/reconcile` — compare documented
-  Process information with active interview notes, record append-only human
-  choices, and finish with a durable Knowledge Outcome without approving or
-  changing the Process. When evidence supports specific changes, the same route
-  leads into the structured mapping workspace; when it does not, the review
-  ends successfully without an empty proposal experience.
+  Process information with active interview notes and finish through an
+  exception-driven review. A reviewer may complete a no-change Knowledge
+  Outcome in one explicit action or open per-answer choices only for possible
+  changes. Known answers without a separate choice stay with the current
+  documentation; uncertain answers remain for later. When evidence supports
+  specific changes, the same route leads into the structured mapping workspace;
+  when it does not, the review ends successfully without an empty proposal
+  experience or any change to the Process.
 
 LAD-057 Slice B now implements **Explore before choosing a Process** as a
 private, typed inquiry-scoped interview that preserves evidence without

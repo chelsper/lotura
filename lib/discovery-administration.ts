@@ -1042,3 +1042,231 @@ export async function finishDiscoveryProposal(input: {
     };
   }
 }
+
+export async function finishDiscoveryReviewByException(input: {
+  documentedProcessSnapshot: DocumentedProcessSnapshot;
+  expectedProposalRevision: number;
+  mode: "no_changes" | "selected_changes";
+  sessionId: string;
+}): Promise<DiscoveryMutationResult> {
+  const snapshot = proposalSnapshot(input.documentedProcessSnapshot);
+  if (
+    !validUuid(input.sessionId) ||
+    !Number.isSafeInteger(input.expectedProposalRevision) ||
+    input.expectedProposalRevision < 0 ||
+    !["no_changes", "selected_changes"].includes(input.mode) ||
+    !snapshot
+  ) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "The interview review reference is invalid.",
+    };
+  }
+  const context = await discoveryWriteContext();
+  if (!context) {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Guided Discovery is not enabled.",
+    };
+  }
+
+  try {
+    const effectiveRevision = input.expectedProposalRevision === 0
+      ? 1
+      : input.expectedProposalRevision;
+    const [, finishedRows] = await context.sql.transaction(
+      (transaction) => [
+        transaction.query(
+          `with selected_session as materialized (
+             select session.id, session.organization_id,
+               session.stable_key, session.process_id,
+               session.process_stable_key
+             from discovery_sessions session
+             where session.organization_id = $1::integer
+               and session.stable_key = $2::uuid
+               and session.status = 'ready_for_review'
+           )
+           insert into discovery_proposals (
+             organization_id, session_id, session_stable_key, process_id,
+             process_stable_key, documented_process_snapshot,
+             documented_process_fingerprint, actor_identifier
+           )
+           select organization_id, id, stable_key, process_id,
+             process_stable_key, $3::jsonb, $4::varchar(64),
+             $5::varchar(128)
+           from selected_session
+           where $6::integer = 0
+           returning 1`,
+          [
+            context.configuration.organizationId,
+            input.sessionId,
+            snapshot.serialized,
+            snapshot.fingerprint,
+            context.configuration.actorIdentifier,
+            input.expectedProposalRevision,
+          ],
+        ),
+        transaction.query(
+          `with selected_proposal as materialized (
+             select proposal.id, proposal.organization_id,
+               proposal.stable_key, proposal.session_id,
+               proposal.session_stable_key
+             from discovery_proposals proposal
+             join discovery_sessions session
+               on session.id = proposal.session_id
+              and session.organization_id = proposal.organization_id
+              and session.stable_key = proposal.session_stable_key
+              and session.process_id = proposal.process_id
+              and session.process_stable_key = proposal.process_stable_key
+             where proposal.organization_id = $1::integer
+               and proposal.session_stable_key = $2::uuid
+               and proposal.revision = $3::integer
+               and proposal.status = 'draft'
+               and session.status = 'ready_for_review'
+             for update of proposal
+           ), active_observations as materialized (
+             select observation.stable_key, observation.epistemic_state
+             from discovery_observations observation
+             join selected_proposal proposal
+               on proposal.session_id = observation.session_id
+              and proposal.organization_id = observation.organization_id
+              and proposal.session_stable_key = observation.session_stable_key
+             where not exists (
+               select 1
+               from discovery_observations later
+               where later.organization_id = observation.organization_id
+                 and later.session_id = observation.session_id
+                 and later.supersedes_observation_stable_key = observation.stable_key
+             )
+           ), current_decisions as materialized (
+             select distinct on (decision.observation_stable_key)
+               decision.observation_stable_key, decision.disposition
+             from discovery_proposal_decisions decision
+             join selected_proposal proposal
+               on proposal.id = decision.proposal_id
+              and proposal.organization_id = decision.organization_id
+              and proposal.stable_key = decision.proposal_stable_key
+             join active_observations observation
+               on observation.stable_key = decision.observation_stable_key
+             order by decision.observation_stable_key,
+               decision.decision_sequence desc
+           ), validation as materialized (
+             select 1 / case when
+               (select count(*) from selected_proposal) = 1
+               and (select count(*) from active_observations) > 0
+               and (
+                 ($5::text = 'no_changes' and not exists (
+                   select 1 from current_decisions
+                   where disposition = 'use_in_proposal'
+                 ))
+                 or ($5::text = 'selected_changes' and exists (
+                   select 1 from current_decisions
+                   where disposition = 'use_in_proposal'
+                 ))
+               )
+               then 1 else 0 end as allowed
+           ), missing_observations as (
+             select observation.stable_key, observation.epistemic_state
+             from active_observations observation
+             where not exists (
+               select 1 from current_decisions decision
+               where decision.observation_stable_key = observation.stable_key
+             )
+           ), inserted_defaults as (
+             insert into discovery_proposal_decisions (
+               organization_id, proposal_id, proposal_stable_key, session_id,
+               session_stable_key, observation_stable_key, decision_sequence,
+               disposition, review_note, actor_identifier
+             )
+             select proposal.organization_id, proposal.id, proposal.stable_key,
+               proposal.session_id, proposal.session_stable_key,
+               observation.stable_key, 1,
+               case when observation.epistemic_state = 'known'
+                 then 'keep_documented'::discovery_proposal_disposition
+                 else 'leave_for_later'::discovery_proposal_disposition
+               end,
+               case when observation.epistemic_state = 'known'
+                 then 'Finished through review by exception; no documentation change was selected.'
+                 else 'Preserved for later through review by exception.'
+               end,
+               $4::varchar(128)
+             from selected_proposal proposal
+             cross join missing_observations observation
+             cross join validation
+             returning observation_stable_key, disposition
+           ), finished_decisions as (
+             select observation_stable_key, disposition from current_decisions
+             union all
+             select observation_stable_key, disposition from inserted_defaults
+           ), summary as materialized (
+             select
+               (select count(*)::int from active_observations) as observation_count,
+               (select count(*)::int from finished_decisions) as decision_count,
+               (select count(*)::int from inserted_defaults) as default_count,
+               (select count(*)::int from finished_decisions
+                 where disposition = 'use_in_proposal') as included_count
+           ), advanced as (
+             update discovery_proposals
+             set status = 'ready_for_review',
+               revision = revision + 1,
+               ready_at = transaction_timestamp(),
+               ready_by_actor = $4::varchar(128),
+               updated_at = transaction_timestamp()
+             where id = (select id from selected_proposal)
+               and (select observation_count from summary) =
+                 (select decision_count from summary)
+               and (select allowed from validation) = 1
+             returning 1
+           )
+           select summary.observation_count, summary.decision_count,
+             summary.default_count, summary.included_count,
+             (select count(*)::int from advanced) as advanced_count
+           from summary`,
+          [
+            context.configuration.organizationId,
+            input.sessionId,
+            effectiveRevision,
+            context.configuration.actorIdentifier,
+            input.mode,
+          ],
+        ),
+      ],
+      { isolationLevel: "Serializable", readOnly: false },
+    );
+    const row = finishedRows[0];
+    if (!row || Number(row.advanced_count) !== 1) {
+      return {
+        ok: false,
+        code: "conflict",
+        message: "This interview review changed after the page loaded. Reload before finishing.",
+      };
+    }
+    const included = Number(row.included_count);
+    return {
+      ok: true,
+      message: included === 0
+        ? "Interview review complete. No changes were proposed, and unresolved information remains available for later."
+        : "Selected interview notes are ready to become specific proposed changes. The documented Process has not changed.",
+      sessionId: input.sessionId,
+    };
+  } catch (error) {
+    logDiscoveryDatabaseFailure("finish_review_by_exception", error);
+    const code = typeof error === "object" && error !== null
+      ? String((error as Record<string, unknown>).code ?? "")
+      : "";
+    if (code === "22012" || code === "23505") {
+      return {
+        ok: false,
+        code: "conflict",
+        message: "This interview review changed after the page loaded. Reload before finishing.",
+      };
+    }
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Lotura could not finish this review safely. No partial change was retained.",
+    };
+  }
+}
