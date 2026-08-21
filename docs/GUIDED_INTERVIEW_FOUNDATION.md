@@ -226,6 +226,19 @@ GRANT INSERT (
 GRANT USAGE ON SEQUENCE discovery_sessions_id_seq,
   discovery_observations_id_seq TO <discovery_role>;
 
+-- Added only when LAD-061 AI-Assisted Discovery Slice A is enabled:
+GRANT SELECT ON TABLE discovery_observation_confirmations
+  TO <discovery_role>;
+GRANT INSERT (
+  organization_id, process_id, process_stable_key,
+  confirmation_session_id, confirmation_session_stable_key,
+  confirmation_observation_stable_key, source_session_id,
+  source_session_stable_key, source_observation_stable_key, prompt_key,
+  actor_identifier
+) ON discovery_observation_confirmations TO <discovery_role>;
+GRANT USAGE ON SEQUENCE discovery_observation_confirmations_id_seq
+  TO <discovery_role>;
+
 -- Added only when Discovery Proposed Update v0.1 is enabled:
 GRANT SELECT ON TABLE discovery_proposals, discovery_proposal_decisions
   TO <discovery_role>;
@@ -368,6 +381,14 @@ review, source, or outcome `UPDATE`, `DELETE`, or `TRUNCATE`, and no new
 Process, Process Family, proposal, version, history, or operating-model write
 privilege.
 
+After LAD-061 Slice A is enabled, the normal runtime role receives `SELECT`
+only on `discovery_observation_confirmations`. The Discovery role receives the
+exact `SELECT`, column-specific `INSERT`, and sequence privilege shown above.
+It receives no confirmation `UPDATE`, `DELETE`, or `TRUNCATE`; no broader
+observation or session write; and no operating-model authority. A confirmation
+must create the current observation and its exact prior-source link in the
+same transaction.
+
 The Discovery role receives no write privilege on Process, Step, Role, System,
 Exception, dependency, Organization Structure, `operating_model_changes`, or
 any unrelated table. It receives no schema, database, role, migration,
@@ -436,8 +457,13 @@ package ready for its next human review. It does not approve or apply anything.
 - Every session update advances the compare-and-set revision exactly once.
 - Lifecycle transitions are constrained by a database trigger.
 - Observations are append-only through a database trigger.
+- Cross-interview confirmations are append-only and reference exact earlier
+  observations from the same Organization, Process, and question.
 - Observation append and session advance occur in one SQL statement. A failure
   retains neither half.
+- Prior-answer confirmation appends its current observation, immutable source
+  link, and session advance atomically; it never changes the source observation
+  or documented Process.
 - Corrections reference an earlier observation in the same session and
   Organization.
 - The actor is the authenticated Lotura application identity at capture time;
@@ -446,16 +472,17 @@ package ready for its next human review. It does not approve or apply anything.
 ## Intentionally deferred
 
 Multiple participants, interviewing on behalf of another Person, Contributor
-access, consent records, uploads, source artifacts, AI, dynamic follow-up
-selection, proposal-review governance, approval, application to the Process,
-Process versioning, completed-package withdrawal or rebasing, export, retention
-automation, and deletion require later decisions.
+access, consent records, uploads, source artifacts, model-generated follow-up
+selection, provider access, proposal-review governance, approval, application
+to the Process, Process versioning, completed-package withdrawal or rebasing,
+export, retention automation, and deletion require later decisions. LAD-061
+Slice A adds deterministic context and explicit prior-answer confirmation only.
 Refresh-safe server persistence exists for submitted observations and proposal
 choices; unsent form text remains browser-local and may be lost.
 
 Slices 1 and 2 establish manual structured proposed-change mapping for the
 approved Process definition and connected operating-model targets. Human
 proposal review, approval, and atomic application to a versioned Process remain
-later, separate boundaries. AI may not suggest or automate this path until the
-manual mapping, approval, and version-application semantics are proven.
+later, separate boundaries. LAD-061 does not authorize AI to suggest or
+automate this path.
 Human approval and atomic application are never implied by a finished mapping.

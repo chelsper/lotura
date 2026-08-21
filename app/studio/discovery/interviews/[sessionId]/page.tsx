@@ -7,6 +7,9 @@ import {
   getDiscoveryQuestion,
 } from "@/lib/discovery-questions.mjs";
 import {
+  buildDocumentedQuestionContext,
+} from "@/lib/discovery-known-context.mjs";
+import {
   discoveryProposalReadiness,
 } from "@/lib/discovery-proposal-model.mjs";
 import {
@@ -20,6 +23,7 @@ import { WorkspacePageHeader, WorkspaceShell } from "../../../../workspace-shell
 import { changeDiscoveryPauseAction } from "../../actions";
 import { DiscoveryAnswerForm } from "../../discovery-answer-form";
 import { DiscoveryCorrectionForm } from "../../discovery-correction-form";
+import { DiscoveryPriorObservationForm } from "../../discovery-prior-observation-form";
 
 const stateLabels = {
   assumed: "Assumed",
@@ -28,6 +32,10 @@ const stateLabels = {
   needs_validation: "Needs validation",
   unknown: "Unknown",
 };
+
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  dateStyle: "medium",
+});
 
 export default async function DiscoveryInterviewPage({
   params,
@@ -46,6 +54,12 @@ export default async function DiscoveryInterviewPage({
   if (!session) notFound();
 
   const question = getDiscoveryQuestion(session.currentQuestionKey);
+  const documentedProcess = experience.data.processes.find(
+    (process) => process.id === session.processId,
+  );
+  const documentedContext = question
+    ? buildDocumentedQuestionContext(documentedProcess, question.key)
+    : null;
   const superseded = new Set(
     session.observations
       .map((observation) => observation.supersedesObservationId)
@@ -118,17 +132,102 @@ export default async function DiscoveryInterviewPage({
           <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">Existing observations remain preserved. Resume when you are ready to continue from the current question.</p>
         </Card>
       ) : question && session.status === "in_progress" ? (
-        <Card className="mt-6 p-5 sm:p-7">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <Badge tone="accent">Question {progress} of {DISCOVERY_QUESTIONS.length}</Badge>
-            <span className="text-xs font-medium text-[var(--text-tertiary)]">{question.label}</span>
-          </div>
-          <h2 className="mt-5 max-w-3xl text-2xl font-semibold tracking-[-0.035em] text-[var(--text)] sm:text-3xl">{question.prompt}</h2>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">{question.helper}</p>
-          <div className="mt-7 border-t border-[var(--border)] pt-6">
-            <DiscoveryAnswerForm promptKey={question.key} revision={session.revision} sessionId={session.id} />
-          </div>
-        </Card>
+        <section className="mt-6 space-y-5">
+          <Card className="p-5 sm:p-7">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <Badge tone="neutral">Existing knowledge</Badge>
+                <h2 className="mt-3 text-xl font-semibold text-[var(--text)]">
+                  What Lotura already knows
+                </h2>
+              </div>
+              <span className="text-xs text-[var(--text-tertiary)]">
+                Source-linked · No AI
+              </span>
+            </div>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
+              Review the current documentation and earlier interview answers before writing anything again. Confirm an earlier answer only if it still describes this interview.
+            </p>
+
+            {documentedContext ? (
+              <div className="mt-5 rounded-[10px] border border-[var(--border)] bg-[var(--surface-subtle)] p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
+                  {documentedContext.heading}
+                </p>
+                <div className="mt-2 space-y-1">
+                  {documentedContext.lines.map((line) => (
+                    <p className="text-sm leading-6 text-[var(--text-secondary)]" key={line}>
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="mt-5 rounded-[10px] border border-[var(--border)] bg-[var(--surface-subtle)] p-4 text-sm leading-6 text-[var(--text-secondary)]">
+                The documented Process does not contain a separate answer to this question yet.
+              </p>
+            )}
+
+            {session.priorObservations.length > 0 ? (
+              <div className="mt-5 space-y-3">
+                <p className="text-sm font-semibold text-[var(--text)]">
+                  Earlier answers about this topic
+                </p>
+                {session.priorObservations.map((observation) => (
+                  <div
+                    className="rounded-[10px] border border-[var(--border)] p-4"
+                    key={observation.id}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <Badge tone={observation.epistemicState === "known" ? "neutral" : "warning"}>
+                        {stateLabels[observation.epistemicState]}
+                      </Badge>
+                      <span className="text-xs text-[var(--text-tertiary)]">
+                        {dateFormatter.format(new Date(observation.createdAt))} · {observation.scopeStatement}
+                      </span>
+                    </div>
+                    <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[var(--text-secondary)]">
+                      {observation.responseText || "This answer was explicitly unknown."}
+                    </p>
+                    <p className="mt-2 text-xs text-[var(--text-tertiary)]">
+                      Recorded by {observation.actorIdentifier}
+                    </p>
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <DiscoveryPriorObservationForm
+                        promptKey={question.key}
+                        revision={session.revision}
+                        sessionId={session.id}
+                        sourceObservationId={observation.id}
+                      />
+                      <a
+                        className="inline-flex h-9 items-center justify-center rounded-[9px] border border-[var(--border-strong)] px-3 text-xs font-medium text-[var(--text)] hover:bg-[var(--surface-subtle)]"
+                        href="#new-answer"
+                      >
+                        Something changed
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-5 text-sm leading-6 text-[var(--text-secondary)]">
+                No active answer from an earlier interview is available for this exact question.
+              </p>
+            )}
+          </Card>
+
+          <Card className="scroll-mt-5 p-5 sm:p-7" id="new-answer">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Badge tone="accent">Question {progress} of {DISCOVERY_QUESTIONS.length}</Badge>
+              <span className="text-xs font-medium text-[var(--text-tertiary)]">{question.label}</span>
+            </div>
+            <h2 className="mt-5 max-w-3xl text-2xl font-semibold tracking-[-0.035em] text-[var(--text)] sm:text-3xl">{question.prompt}</h2>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">{question.helper}</p>
+            <div className="mt-7 border-t border-[var(--border)] pt-6">
+              <DiscoveryAnswerForm promptKey={question.key} revision={session.revision} sessionId={session.id} />
+            </div>
+          </Card>
+        </section>
       ) : (
         <section className="mt-6">
           <div className="mb-5">
@@ -205,6 +304,11 @@ export default async function DiscoveryInterviewPage({
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--text-secondary)]">{observation.responseText || "No response supplied; the answer is explicitly unknown."}</p>
                 {observation.supersedesObservationId ? (
                   <p className="mt-3 text-xs text-[var(--text-tertiary)]">This observation corrects an earlier record without erasing it.</p>
+                ) : null}
+                {observation.confirmedFrom ? (
+                  <p className="mt-3 text-xs leading-5 text-[var(--text-tertiary)]">
+                    Confirmed from an earlier interview dated {dateFormatter.format(new Date(observation.confirmedFrom.createdAt))}: {observation.confirmedFrom.scopeStatement}. The earlier answer remains preserved as the source.
+                  </p>
                 ) : null}
                 {!superseded.has(observation.id) && observation.epistemicState !== "known" ? (
                   <p className="mt-3 text-xs leading-5 text-[var(--text-tertiary)]">

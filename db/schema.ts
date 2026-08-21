@@ -1519,6 +1519,12 @@ export const discoveryObservation = pgTable(
       table.sessionId,
       table.organizationId,
     ),
+    unique("discovery_observations_prompt_context_unique").on(
+      table.stableKey,
+      table.sessionId,
+      table.organizationId,
+      table.promptKey,
+    ),
     unique("discovery_observations_session_sequence_unique").on(
       table.sessionId,
       table.sequence,
@@ -1556,6 +1562,131 @@ export const discoveryObservation = pgTable(
       table.organizationId,
       table.epistemicState,
       table.createdAt,
+    ),
+  ],
+);
+
+export const discoveryObservationConfirmation = pgTable(
+  "discovery_observation_confirmations",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    processId: integer("process_id").notNull(),
+    processStableKey: uuid("process_stable_key").notNull(),
+    confirmationSessionId: integer("confirmation_session_id").notNull(),
+    confirmationSessionStableKey: uuid(
+      "confirmation_session_stable_key",
+    ).notNull(),
+    confirmationObservationStableKey: uuid(
+      "confirmation_observation_stable_key",
+    ).notNull(),
+    sourceSessionId: integer("source_session_id").notNull(),
+    sourceSessionStableKey: uuid("source_session_stable_key").notNull(),
+    sourceObservationStableKey: uuid(
+      "source_observation_stable_key",
+    ).notNull(),
+    promptKey: varchar("prompt_key", { length: 64 }).notNull(),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_confirmation_current_session_fk",
+      columns: [
+        table.confirmationSessionId,
+        table.organizationId,
+        table.confirmationSessionStableKey,
+        table.processId,
+        table.processStableKey,
+      ],
+      foreignColumns: [
+        discoverySession.id,
+        discoverySession.organizationId,
+        discoverySession.stableKey,
+        discoverySession.processId,
+        discoverySession.processStableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_confirmation_source_session_fk",
+      columns: [
+        table.sourceSessionId,
+        table.organizationId,
+        table.sourceSessionStableKey,
+        table.processId,
+        table.processStableKey,
+      ],
+      foreignColumns: [
+        discoverySession.id,
+        discoverySession.organizationId,
+        discoverySession.stableKey,
+        discoverySession.processId,
+        discoverySession.processStableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_confirmation_current_observation_fk",
+      columns: [
+        table.confirmationObservationStableKey,
+        table.confirmationSessionId,
+        table.organizationId,
+        table.promptKey,
+      ],
+      foreignColumns: [
+        discoveryObservation.stableKey,
+        discoveryObservation.sessionId,
+        discoveryObservation.organizationId,
+        discoveryObservation.promptKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_confirmation_source_observation_fk",
+      columns: [
+        table.sourceObservationStableKey,
+        table.sourceSessionId,
+        table.organizationId,
+        table.promptKey,
+      ],
+      foreignColumns: [
+        discoveryObservation.stableKey,
+        discoveryObservation.sessionId,
+        discoveryObservation.organizationId,
+        discoveryObservation.promptKey,
+      ],
+    }).onDelete("restrict"),
+    unique("discovery_observation_confirmations_stable_key_unique").on(
+      table.stableKey,
+    ),
+    unique("discovery_confirmation_observation_unique").on(
+      table.confirmationObservationStableKey,
+    ),
+    check(
+      "discovery_confirmation_sessions_distinct_check",
+      sql`${table.confirmationSessionId} <> ${table.sourceSessionId}`,
+    ),
+    check(
+      "discovery_confirmation_observations_distinct_check",
+      sql`${table.confirmationObservationStableKey} <> ${table.sourceObservationStableKey}`,
+    ),
+    check(
+      "discovery_confirmation_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    check(
+      "discovery_confirmation_prompt_not_blank_check",
+      sql`char_length(trim(${table.promptKey})) > 0`,
+    ),
+    index("discovery_confirmation_current_session_idx").on(
+      table.organizationId,
+      table.confirmationSessionStableKey,
+      table.createdAt,
+    ),
+    index("discovery_confirmation_source_observation_idx").on(
+      table.organizationId,
+      table.sourceObservationStableKey,
     ),
   ],
 );

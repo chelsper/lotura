@@ -347,6 +347,180 @@ export async function answerDiscoveryQuestion(input: {
   }
 }
 
+export async function confirmPriorDiscoveryObservation(input: {
+  expectedRevision: number;
+  promptKey: string;
+  sessionId: string;
+  sourceObservationId: string;
+}): Promise<DiscoveryMutationResult> {
+  const question = getDiscoveryQuestion(input.promptKey);
+  const nextQuestionKey = question
+    ? getNextDiscoveryQuestionKey(question.key)
+    : null;
+  if (
+    !validUuid(input.sessionId) ||
+    !validUuid(input.sourceObservationId) ||
+    !Number.isSafeInteger(input.expectedRevision) ||
+    input.expectedRevision < 1 ||
+    !question ||
+    !nextQuestionKey
+  ) {
+    return {
+      ok: false,
+      code: "invalid",
+      message: "The earlier answer or interview reference is invalid.",
+    };
+  }
+
+  const context = await discoveryWriteContext();
+  if (!context) {
+    return {
+      ok: false,
+      code: "unavailable",
+      message: "Guided Discovery is not enabled.",
+    };
+  }
+
+  try {
+    const rows = await context.sql.query(
+      `with selected_session as materialized (
+         select id, organization_id, stable_key, process_id, process_stable_key
+         from discovery_sessions
+         where organization_id = $1::integer
+           and stable_key = $2::uuid
+           and actor_identifier = $3::varchar(128)
+           and revision = $4::integer
+           and status = 'in_progress'
+           and current_question_key = $5::varchar(64)
+         for update
+       ), source_observation as materialized (
+         select observation.stable_key, observation.response_text,
+           observation.epistemic_state, source_session.id as session_id,
+           source_session.stable_key as session_stable_key
+         from discovery_observations observation
+         inner join discovery_sessions source_session
+           on source_session.id = observation.session_id
+          and source_session.organization_id = observation.organization_id
+          and source_session.stable_key = observation.session_stable_key
+         inner join selected_session current_session
+           on current_session.organization_id = source_session.organization_id
+          and current_session.process_id = source_session.process_id
+          and current_session.process_stable_key = source_session.process_stable_key
+          and source_session.id < current_session.id
+         where observation.organization_id = $1::integer
+           and observation.stable_key = $6::uuid
+           and observation.prompt_key = $5::varchar(64)
+           and not exists (
+             select 1
+             from discovery_observations superseding
+             where superseding.organization_id = observation.organization_id
+               and superseding.session_id = observation.session_id
+               and superseding.supersedes_observation_stable_key = observation.stable_key
+           )
+       ), next_sequence as (
+         select coalesce(max(sequence), 0) + 1 as value
+         from discovery_observations
+         where organization_id = $1::integer
+           and session_stable_key = $2::uuid
+       ), inserted_observation as (
+         insert into discovery_observations (
+           organization_id, session_id, session_stable_key, sequence,
+           prompt_key, prompt_text, topic, response_text, epistemic_state,
+           actor_identifier
+         )
+         select current_session.organization_id, current_session.id,
+           current_session.stable_key, next_sequence.value,
+           $5::varchar(64), $7::text, $8::discovery_observation_topic,
+           source_observation.response_text,
+           source_observation.epistemic_state, $3::varchar(128)
+         from selected_session current_session
+         cross join source_observation
+         cross join next_sequence
+         returning stable_key
+       ), inserted_confirmation as (
+         insert into discovery_observation_confirmations (
+           organization_id, process_id, process_stable_key,
+           confirmation_session_id, confirmation_session_stable_key,
+           confirmation_observation_stable_key, source_session_id,
+           source_session_stable_key, source_observation_stable_key, prompt_key,
+           actor_identifier
+         )
+         select current_session.organization_id, current_session.process_id,
+           current_session.process_stable_key, current_session.id,
+           current_session.stable_key, inserted_observation.stable_key,
+           source_observation.session_id,
+           source_observation.session_stable_key,
+           source_observation.stable_key, $5::varchar(64), $3::varchar(128)
+         from selected_session current_session
+         cross join source_observation
+         cross join inserted_observation
+         returning 1
+       ), advanced as (
+         update discovery_sessions
+         set current_question_key = $9::varchar(64),
+           status = case when $9::varchar(64) = $10::varchar(64)
+             then 'ready_for_review'::discovery_session_status
+             else 'in_progress'::discovery_session_status end,
+           revision = revision + 1,
+           updated_at = transaction_timestamp()
+         where id = (select id from selected_session)
+           and exists (select 1 from inserted_observation)
+           and exists (select 1 from inserted_confirmation)
+         returning stable_key
+       )
+       select
+         (select count(*)::int from selected_session) as selected_count,
+         (select count(*)::int from source_observation) as source_count,
+         (select count(*)::int from inserted_observation) as observation_count,
+         (select count(*)::int from inserted_confirmation) as confirmation_count,
+         (select count(*)::int from advanced) as advanced_count`,
+      [
+        context.configuration.organizationId,
+        input.sessionId,
+        context.configuration.actorIdentifier,
+        input.expectedRevision,
+        question.key,
+        input.sourceObservationId,
+        question.prompt,
+        question.topic,
+        nextQuestionKey,
+        DISCOVERY_REVIEW_KEY,
+      ],
+    );
+    const row = rows[0];
+    if (
+      !row ||
+      Number(row.selected_count) !== 1 ||
+      Number(row.source_count) !== 1 ||
+      Number(row.observation_count) !== 1 ||
+      Number(row.confirmation_count) !== 1 ||
+      Number(row.advanced_count) !== 1
+    ) {
+      return {
+        ok: false,
+        code: "conflict",
+        message:
+          "This interview or earlier answer changed after the page loaded. Reload before continuing.",
+      };
+    }
+    return {
+      ok: true,
+      message: nextQuestionKey === DISCOVERY_REVIEW_KEY
+        ? "Earlier answer confirmed. The interview is ready for review."
+        : "Earlier answer confirmed for this interview.",
+      sessionId: input.sessionId,
+    };
+  } catch (error) {
+    logDiscoveryDatabaseFailure("confirm_prior_observation", error);
+    return {
+      ok: false,
+      code: "unavailable",
+      message:
+        "Lotura could not confirm this earlier answer safely. No partial change was retained.",
+    };
+  }
+}
+
 export async function setDiscoverySessionPaused(input: {
   expectedRevision: number;
   paused: boolean;

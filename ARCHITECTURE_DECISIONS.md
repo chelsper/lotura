@@ -103,7 +103,8 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-056 | Question-driven Discovery preserves an inquiry and requires explicit human routing | Accepted — implementation authorized for Question-Driven Discovery v0.1, Slice A; generic implementation complete and isolated fictional verification passed |
 | LAD-057 | Discovery may preserve evidence before a Process is selected without creating a placeholder Process | Accepted — generic implementation complete and isolated fictional verification passed |
 | LAD-059 | Broader and narrower Process Families form an explicit non-inheriting acyclic graph | Accepted — implementation complete, deployed, and JU live-validated |
-| LAD-060 | Inquiry-scoped evidence produces an immutable human Knowledge Outcome before any Process proposal | Accepted — generic implementation complete and isolated fictional verification passed |
+| LAD-060 | Inquiry-scoped evidence produces an immutable human Knowledge Outcome before any Process proposal | Accepted — implemented, deployed, and live read-validated |
+| LAD-061 | AI-assisted Discovery asks from bounded prior context without becoming evidence or authority | Accepted — Slice A complete and isolated fictional verification passed |
 
 ## Decision records
 
@@ -2351,6 +2352,126 @@ Reference Models, or public content. Governed candidate Process creation
 remains Slice D and requires a further architecture decision extending
 LAD-036, LAD-037, and LAD-053.
 
+### LAD-061 — AI-assisted Discovery asks from bounded prior context without becoming evidence or authority
+
+**Status:** Accepted — generic Slice A implementation complete and isolated
+fictional verification passed at migration journal `29/29`. The deterministic
+known-context brief, explicit prior-observation confirmation, one append-only
+confirmation-provenance table, and existing fixed-catalog fallback are
+implemented. This does not authorize a provider, model, package, credential,
+environment change, JU migration or data change, deployment, or infrastructure
+change. Slices B through D remain separately gated.
+
+**Context:** The complete manual path from interview evidence through human
+review, a valid no-change Knowledge Outcome, typed proposed changes, approval,
+and atomic Process version application is implemented. Process-bound and
+inquiry-bound Discovery both preserve append-only observations, but each still
+advances through a fixed nine-question catalog. In practice, a participant may
+be asked to restate knowledge that Lotura already holds, while generic prompts
+fail to focus on the gaps, disagreements, changes, and participant-specific
+context that need attention.
+
+The fixed catalog proved the lifecycle and remains a safe fallback. It should
+no longer define the primary experience once bounded assistance is available.
+LAD-043 already prohibits asking a person to make the same review decision
+twice; the same respect should apply to evidence that remains relevant across
+interviews.
+
+**Decision:** AI-Assisted Discovery v0.1 is a bounded contextual question and
+clarity assistant. The server first creates a deterministic, Organization-scoped,
+user-visible context packet from the exact Discovery session, current
+documented Process where applicable, selected prior observations, human
+Knowledge Outcomes, and unresolved evidence. The model receives only this
+allowlisted packet, has no database or application tool access, and may suggest
+a small number of plain-language next questions with source-linked reasons.
+
+The participant chooses whether to use, edit, or skip each suggestion. The
+participant authors or explicitly confirms the answer and selects its evidence
+state. Only that human action may create an append-only observation. AI output
+is an attributable assistance artifact; it is not an observation, evidence
+state, interpretation, Knowledge Outcome, route, proposal, approval, Process
+version, or operating-model fact.
+
+Relevant prior evidence is shown before new questions. A person may explicitly
+confirm that an exact prior observation remains accurate for the current
+interview without retyping it. That confirmation preserves the prior source,
+new actor, scope, and time; Lotura never carries evidence forward silently.
+"Something changed," "not relevant," a standard question, pause, and finish
+for now remain available.
+
+Model provenance, bounded source context, suggested wording, and the human
+use/edit/skip decision must be durably attributable before a model-suggested
+question can be associated with a saved observation. Assistance history is
+append-only and Organization-scoped. The existing fixed catalogs remain the
+deterministic fallback whenever AI is disabled, declined, unavailable, unsafe,
+or invalid.
+
+At a participant's explicit request, AI may also offer a plain-language clarity
+draft for hurried notes. The original participant text, model draft, human
+use/edit/reject decision, and final submitted wording remain distinguishable
+and attributable. A clarity draft cannot remove uncertainty, resolve conflict,
+infer policy or ownership, change the evidence state, or overwrite a documented
+Process. Any operating-model wording change still follows the structured
+proposal, review, approval, and atomic-application boundaries.
+
+Real provider use requires a separately approved server-only adapter, pinned
+model, versioned prompt policy, Organization enablement, participant
+disclosure, context preview, data-use and retention terms, credential boundary,
+and fictional evaluation. Public Northstar remains AI-disabled and receives no
+private context or assistance records.
+
+**Why:** A useful interviewer should ask from what is already known rather than
+rewarding repetition, and it should help people communicate clearly without
+turning polished language into false authority. Durable provenance and explicit
+human control let Lotura improve the conversation and presentation without
+allowing probabilistic output to become organizational truth. Deterministic
+context selection also makes the model's scope visible, testable, and
+revocable.
+
+**Alternatives considered:** Keep the fixed catalog as the primary interview;
+add an unrestricted workspace chatbot; let the model query the database;
+silently prefill prior answers; copy prior observations without confirmation;
+store only the final human answer; keep AI requests only in provider or
+application logs; let AI choose evidence states or outcomes; or allow AI to
+prepare and apply changes in the same milestone. These were rejected because
+they preserve the current repetition, create disconnected or unbounded access,
+erase provenance, misrepresent old evidence as newly observed, prevent audit
+and evaluation, or collapse the knowledge lifecycle's human authority
+boundaries.
+
+**Affected decisions:** This decision follows LAD-002, LAD-003, LAD-008,
+LAD-015 through LAD-018, LAD-021, LAD-022, LAD-025, LAD-026, LAD-029, LAD-032,
+LAD-035 through LAD-037, LAD-042 through LAD-046, LAD-049 through LAD-053,
+LAD-056, LAD-057, and LAD-060. It extends LAD-025's assistance boundary,
+LAD-042 and LAD-057's interview models, and LAD-043's protection against
+repeated decisions. It preserves the no-change outcomes in LAD-051 and LAD-060
+and the separate proposal, approval, and application boundaries in LAD-049
+through LAD-053. It conflicts with and supersedes no accepted decision.
+
+**Consequences and deferrals:** Implementation proceeds in four separately
+controlled slices. The first—deterministic known-context and evidence reuse—is
+complete and isolated-verified. The remaining slices are not authorized:
+attributable question suggestions with a mocked provider; controlled
+provider evaluation; and an explicitly authorized private pilot. The smallest
+durable model must preserve immutable assistance runs, typed context sources,
+question suggestions, human decisions, and exact links to any resulting or
+confirmed observation. The full staged boundary is recorded in
+[docs/AI_ASSISTED_DISCOVERY_V0_1.md](docs/AI_ASSISTED_DISCOVERY_V0_1.md).
+
+AI-authored or silently substituted participant answers, automatic evidence
+states, automatic routing, AI-selected Knowledge Outcomes, AI-created Processes
+or Families, structured mapping suggestions, proposal review, approval, atomic
+application, unrestricted workspace search, cross-Organization learning,
+Reference Models, FLOW changes, scores, analytics, public content, and
+autonomous operation remain deferred.
+
+Recurring Operational Scenarios, Seasonal Operations, lessons learned,
+Organizational Impact Analysis, and approved operational plans remain separate
+future domains. Inquiry-scoped Discovery may preserve evidence that spans
+several Processes, and AI may ask source-grounded questions about it, but
+LAD-061 does not authorize AI to create a Scenario, infer undocumented
+dependencies, or establish informal behavior as policy.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -2360,7 +2481,7 @@ The following ideas are recorded so postponement is visible and deliberate.
 | Full authentication and authorization | A replaceable temporary provider now prepares one private administrator; durable deployment protection and enterprise identity remain unresolved | SSO, multiple identities, provisioning, recovery, roles/permissions, audit, and access review |
 | Governance and Stewardship engine | Dimensions, profiles, and Stewardship direction are accepted, but scope, delegation, effective timing, proposals, approval routing, and policy enforcement are unresolved | Governance domain, authorization, workflow, audit, retention, and identity decisions |
 | Broader observations and provenance | LAD-042 proposes a bounded guided self-interview observation model; documents, external sources, multi-participant evidence, retention automation, and generalized provenance remain unresolved | Source/artifact lifecycle, evidence access, privacy, retention, and reconciliation decision |
-| AI interviewing | Manual guided self-interviews are bounded by LAD-042; AI requires consent, approved scope, disclosure, model provenance, evaluation, data-use controls, and human review | AI interview, participant privacy, provider, retention, evaluation, and authorization decisions |
+| AI interviewing | LAD-061 Slice A deterministic context and evidence reuse are complete and isolated-verified; model suggestions, provider use, and private enablement remain unapproved | Separately approve the mocked-provider schema/adapter before Slice B, then separately approve participant privacy, retention, evaluation, credentials, environment enablement, and rollout |
 | Uploads, imports, Visio/PDF/flowchart parsing | Requires malware handling, source permissions, artifact retention, provenance, and conflict treatment | Artifact architecture, storage, security, and extraction decision |
 | Whiteboard and collaborative capture | Draft contribution, authorship, reconciliation, and conversion to structured knowledge are undefined | Collaboration, observation, and approval decision |
 | Conflict detection and consensus | Conflicts need identity, scope, lifecycle, privacy, and human resolution | Conflict and reconciliation schema decision |
@@ -2372,6 +2493,8 @@ The following ideas are recorded so postponement is visible and deliberate.
 | Operating-model drift | Drift requires approved versions, observations, comparison baselines, timing, and human classification | Version, baseline, evidence, classification, governance, and longitudinal comparison decision |
 | Continuous Improvement | Initiative lifecycle, affected Systems, measures, repeated observations, and sustainment need design | Improvement domain and evidence decision |
 | Restructuring scenarios | Hypothetical state, baseline, sensitive access, and approval boundaries are unresolved | Scenario model, authorization, and retention decision |
+| Operational Scenarios and Seasonal Operations | Recurring cross-Process situations such as semester start, parking overflow, technology migrations, outages, and move-in carry organizational memory but are not necessarily Processes, policies, or projects | Scenario identity, recurrence and time window, typed Process/Unit/Role/System relationships, observations, lessons, plan and policy distinctions, governance, retention, and history decision |
+| Organizational Impact Analysis | A proposed technology, policy, structure, or operating change may affect connected knowledge, but undocumented connections and AI inference cannot be presented as established impact | Explicit change subject, evidence-backed relationship traversal, visible direct/potential boundaries, scenario integration, review authority, and versioned outcome decision |
 | Relationship canvas | The comprehension direction is accepted, but graph scope, layout, accessibility, evidence language, and performance need validation after the core builders exist | Focused graph projection and interaction decision |
 | Yesterday / Today / Tomorrow comparison | Audit events alone cannot establish approved historical or proposed operating-model states | Version, effective-time, proposal, scenario, and comparison decision |
 | Tasks, comments, and notifications | Could turn Lotura into generic workflow/collaboration software | Product-purpose and lifecycle decision; no implementation by default |

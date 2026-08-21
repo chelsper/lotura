@@ -1,6 +1,7 @@
 import "server-only";
 
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, lt, notExists, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@/db";
 import {
@@ -12,6 +13,7 @@ import {
   discoveryInquiryRoute,
   discoveryInquirySession,
   discoveryObservation,
+  discoveryObservationConfirmation,
   discoveryProposalMapping,
   discoveryProposalMappingItem,
   discoveryProposalMappingSource,
@@ -229,10 +231,29 @@ export type DiscoveryObservationRecord = {
     | "exceptions"
     | "dependencies_handoffs"
     | "unresolved_questions";
+  confirmedFrom?: {
+    actorIdentifier: string;
+    createdAt: string;
+    observationId: string;
+    scopeStatement: string;
+    sessionId: string;
+  } | null;
+};
+
+export type PriorDiscoveryObservationRecord = {
+  actorIdentifier: string;
+  createdAt: string;
+  epistemicState: DiscoveryObservationRecord["epistemicState"];
+  id: string;
+  promptText: string;
+  responseText: string | null;
+  scopeStatement: string;
+  sessionId: string;
 };
 
 export type DiscoverySessionDetail = DiscoverySessionSummary & {
   observations: DiscoveryObservationRecord[];
+  priorObservations: PriorDiscoveryObservationRecord[];
 };
 
 export type DiscoveryInquirySessionDetail = {
@@ -645,6 +666,7 @@ export async function loadDiscoveryInquirySession(
     observationCount: observations.length,
     observations: observations.map((observation) => ({
       ...observation,
+      confirmedFrom: null,
       createdAt: observation.createdAt.toISOString(),
     })),
     updatedAt: session.updatedAt.toISOString(),
@@ -827,8 +849,11 @@ export async function loadDiscoverySession(
       createdAt: discoverySession.createdAt,
       currentQuestionKey: discoverySession.currentQuestionKey,
       id: discoverySession.stableKey,
+      internalProcessId: discoverySession.processId,
+      internalSessionId: discoverySession.id,
       processId: processTable.id,
       processName: processTable.name,
+      processStableKey: discoverySession.processStableKey,
       revision: discoverySession.revision,
       scopeStatement: discoverySession.scopeStatement,
       status: discoverySession.status,
@@ -853,38 +878,165 @@ export async function loadDiscoverySession(
   const session = sessions[0];
   if (!session) return null;
 
-  const observations = await db
-    .select({
-      actorIdentifier: discoveryObservation.actorIdentifier,
-      createdAt: discoveryObservation.createdAt,
-      epistemicState: discoveryObservation.epistemicState,
-      id: discoveryObservation.stableKey,
-      promptKey: discoveryObservation.promptKey,
-      promptText: discoveryObservation.promptText,
-      responseText: discoveryObservation.responseText,
-      sequence: discoveryObservation.sequence,
-      supersedesObservationId:
-        discoveryObservation.supersedesObservationStableKey,
-      topic: discoveryObservation.topic,
-    })
-    .from(discoveryObservation)
-    .where(
-      and(
-        eq(discoveryObservation.organizationId, organizationId),
-        eq(discoveryObservation.sessionStableKey, stableKey),
+  const sourceSession = alias(discoverySession, "source_discovery_session");
+  const supersedingObservation = alias(
+    discoveryObservation,
+    "superseding_discovery_observation",
+  );
+
+  const [observations, confirmations, priorObservations] = await Promise.all([
+    db
+      .select({
+        actorIdentifier: discoveryObservation.actorIdentifier,
+        createdAt: discoveryObservation.createdAt,
+        epistemicState: discoveryObservation.epistemicState,
+        id: discoveryObservation.stableKey,
+        promptKey: discoveryObservation.promptKey,
+        promptText: discoveryObservation.promptText,
+        responseText: discoveryObservation.responseText,
+        sequence: discoveryObservation.sequence,
+        supersedesObservationId:
+          discoveryObservation.supersedesObservationStableKey,
+        topic: discoveryObservation.topic,
+      })
+      .from(discoveryObservation)
+      .where(
+        and(
+          eq(discoveryObservation.organizationId, organizationId),
+          eq(discoveryObservation.sessionStableKey, stableKey),
+        ),
+      )
+      .orderBy(asc(discoveryObservation.sequence)),
+    db
+      .select({
+        confirmationObservationId:
+          discoveryObservationConfirmation.confirmationObservationStableKey,
+        sourceActorIdentifier: sourceSession.actorIdentifier,
+        sourceCreatedAt: sourceSession.createdAt,
+        sourceObservationId:
+          discoveryObservationConfirmation.sourceObservationStableKey,
+        sourceScopeStatement: sourceSession.scopeStatement,
+        sourceSessionId: sourceSession.stableKey,
+      })
+      .from(discoveryObservationConfirmation)
+      .innerJoin(
+        sourceSession,
+        and(
+          eq(sourceSession.organizationId, organizationId),
+          eq(
+            sourceSession.id,
+            discoveryObservationConfirmation.sourceSessionId,
+          ),
+          eq(
+            sourceSession.stableKey,
+            discoveryObservationConfirmation.sourceSessionStableKey,
+          ),
+        ),
+      )
+      .where(
+        and(
+          eq(discoveryObservationConfirmation.organizationId, organizationId),
+          eq(
+            discoveryObservationConfirmation.confirmationSessionStableKey,
+            stableKey,
+          ),
+        ),
       ),
-    )
-    .orderBy(asc(discoveryObservation.sequence));
+    session.status === "in_progress"
+      ? db
+          .select({
+            actorIdentifier: sourceSession.actorIdentifier,
+            createdAt: discoveryObservation.createdAt,
+            epistemicState: discoveryObservation.epistemicState,
+            id: discoveryObservation.stableKey,
+            promptText: discoveryObservation.promptText,
+            responseText: discoveryObservation.responseText,
+            scopeStatement: sourceSession.scopeStatement,
+            sessionId: sourceSession.stableKey,
+          })
+          .from(discoveryObservation)
+          .innerJoin(
+            sourceSession,
+            and(
+              eq(sourceSession.organizationId, organizationId),
+              eq(sourceSession.id, discoveryObservation.sessionId),
+              eq(
+                sourceSession.stableKey,
+                discoveryObservation.sessionStableKey,
+              ),
+            ),
+          )
+          .where(
+            and(
+              eq(discoveryObservation.organizationId, organizationId),
+              eq(sourceSession.processId, session.internalProcessId),
+              eq(sourceSession.processStableKey, session.processStableKey),
+              lt(sourceSession.id, session.internalSessionId),
+              eq(
+                discoveryObservation.promptKey,
+                session.currentQuestionKey,
+              ),
+              notExists(
+                db
+                  .select({ id: supersedingObservation.id })
+                  .from(supersedingObservation)
+                  .where(
+                    and(
+                      eq(
+                        supersedingObservation.organizationId,
+                        organizationId,
+                      ),
+                      eq(
+                        supersedingObservation.sessionId,
+                        discoveryObservation.sessionId,
+                      ),
+                      eq(
+                        supersedingObservation.supersedesObservationStableKey,
+                        discoveryObservation.stableKey,
+                      ),
+                    ),
+                  ),
+              ),
+            ),
+          )
+          .orderBy(desc(discoveryObservation.createdAt))
+          .limit(3)
+      : Promise.resolve([]),
+  ]);
+
+  const confirmationByObservation = new Map(
+    confirmations.map((confirmation) => [
+      confirmation.confirmationObservationId,
+      {
+        actorIdentifier: confirmation.sourceActorIdentifier,
+        createdAt: confirmation.sourceCreatedAt.toISOString(),
+        observationId: confirmation.sourceObservationId,
+        scopeStatement: confirmation.sourceScopeStatement,
+        sessionId: confirmation.sourceSessionId,
+      },
+    ]),
+  );
 
   return {
-    ...session,
+    actorIdentifier: session.actorIdentifier,
     createdAt: session.createdAt.toISOString(),
+    currentQuestionKey: session.currentQuestionKey,
+    id: session.id,
     observationCount: observations.length,
     observations: observations.map((observation) => ({
+      ...observation,
+      confirmedFrom: confirmationByObservation.get(observation.id) ?? null,
+      createdAt: observation.createdAt.toISOString(),
+    })),
+    priorObservations: priorObservations.map((observation) => ({
       ...observation,
       createdAt: observation.createdAt.toISOString(),
     })),
     processId: `process:${session.processId}`,
+    processName: session.processName,
+    revision: session.revision,
+    scopeStatement: session.scopeStatement,
+    status: session.status,
     updatedAt: session.updatedAt.toISOString(),
   };
 }

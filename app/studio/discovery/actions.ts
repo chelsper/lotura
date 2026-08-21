@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import {
   answerDiscoveryQuestion,
   appendDiscoveryCorrection,
+  confirmPriorDiscoveryObservation,
   createDiscoveryInquiry,
   createDiscoverySession,
   finishDiscoveryProposal,
@@ -301,6 +302,22 @@ export async function answerDiscoveryQuestionAction(
     promptKey: text(formData, "promptKey"),
     responseText: text(formData, "responseText"),
     sessionId,
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  revalidatePath(`/studio/discovery/interviews/${sessionId}`);
+  redirect(`/studio/discovery/interviews/${sessionId}`);
+}
+
+export async function confirmPriorDiscoveryObservationAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const sessionId = text(formData, "sessionId");
+  const result = await confirmPriorDiscoveryObservation({
+    expectedRevision: revision(formData),
+    promptKey: text(formData, "promptKey"),
+    sessionId,
+    sourceObservationId: text(formData, "sourceObservationId"),
   });
   if (!result.ok) return { message: result.message, status: "error" };
   revalidatePath(`/studio/discovery/interviews/${sessionId}`);
