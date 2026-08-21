@@ -10,6 +10,7 @@ import {
   createDiscoveryInquiry,
   createDiscoverySession,
   finishDiscoveryProposal,
+  finishDiscoveryReviewByException,
   saveDiscoveryProposalDecision,
   setDiscoverySessionPaused,
   type DiscoveryEpistemicState,
@@ -400,6 +401,47 @@ export async function finishDiscoveryProposalAction(
     expectedProposalRevision: Number(
       text(formData, "expectedProposalRevision"),
     ),
+    sessionId,
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  revalidatePath(`/studio/discovery/interviews/${sessionId}`);
+  revalidatePath(`/studio/discovery/interviews/${sessionId}/reconcile`);
+  redirect(`/studio/discovery/interviews/${sessionId}/reconcile`);
+}
+
+export async function finishDiscoveryReviewByExceptionAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const sessionId = text(formData, "sessionId");
+  const mode = text(formData, "reviewMode");
+  if (mode !== "no_changes" && mode !== "selected_changes") {
+    return { message: "Choose how to finish this review.", status: "error" };
+  }
+  const experience = await loadWorkspaceExperience();
+  if (!experience.discovery.enabled) {
+    return { message: "Guided Discovery is not enabled.", status: "error" };
+  }
+  const { loadDiscoverySession } = await import("@/lib/discovery-data");
+  const session = await loadDiscoverySession(
+    experience.discovery.organizationId,
+    sessionId,
+  );
+  const process = session
+    ? experience.data.processes.find((item) => item.id === session.processId)
+    : null;
+  if (!session || session.status !== "ready_for_review" || !process) {
+    return {
+      message: "The interview or documented Process is no longer available for review.",
+      status: "error",
+    };
+  }
+  const result = await finishDiscoveryReviewByException({
+    documentedProcessSnapshot: buildDocumentedProcessSnapshot(process),
+    expectedProposalRevision: Number(
+      text(formData, "expectedProposalRevision"),
+    ),
+    mode,
     sessionId,
   });
   if (!result.ok) return { message: result.message, status: "error" };

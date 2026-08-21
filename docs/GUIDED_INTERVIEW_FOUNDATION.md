@@ -96,6 +96,24 @@ approval. Superseded answers remain visible in the interview history but are
 not presented as current notes. The interface uses conversational language;
 precise internal model terms remain in technical documentation where necessary.
 
+### Review by exception
+
+Under LAD-062, the normal reconciliation path does not require a second save for
+every interview answer. The reviewer first answers whether the interview
+revealed anything that should change in the documented Process.
+
+- **Finish with no changes** keeps unanswered review items marked **Known**
+  with the current documentation and preserves **Assumed**, **Unknown**,
+  **Needs validation**, and **Conflicting observation** items for later.
+- **Review possible changes** reveals the existing per-answer choices so the
+  reviewer can select only genuine exceptions for a possible update.
+- **Finish selected changes** applies the same safe defaults to every remaining
+  unanswered review item and preserves the explicitly selected evidence.
+
+The finish action is explicit, append-only, and atomic. Existing choices are
+not overwritten. These defaults do not decide that evidence is true, resolve
+uncertainty, approve a proposal, or change the documented Process.
+
 ## Proposed update package
 
 Under LAD-045, a Workspace Administrator can record how each current interview
@@ -112,7 +130,8 @@ Choices are append-only. Changing a choice records a new decision instead of
 erasing the earlier one. The package also freezes the documented Process
 snapshot used for the comparison. Finishing the package means only that every
 current interview answer has a treatment and the package is ready for another
-review. It does not approve or change the Process.
+review. Treatments may be recorded individually or through the explicit
+Review-by-Exception finish action. It does not approve or change the Process.
 
 While a package is Draft, a new append-only interview correction can be
 reviewed and given its own treatment. Once the package is Ready for review,
