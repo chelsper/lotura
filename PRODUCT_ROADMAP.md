@@ -119,8 +119,8 @@ milestones:
    manufactured during rollout. The contracts are recorded in
    [docs/PROCESS_FAMILIES_V0_1.md](docs/PROCESS_FAMILIES_V0_1.md) and
    [docs/PROCESS_FAMILY_RELATIONSHIPS_V0_1.md](docs/PROCESS_FAMILY_RELATIONSHIPS_V0_1.md).
-6. **Question-Driven Discovery (Slices A and B live; Slice C implemented and
-   isolated-verified)** — begin with an organizational question and preserve why
+6. **Question-Driven Discovery (Slices A and B live; Slice C deployed and
+   live read-validated)** — begin with an organizational question and preserve why
    Discovery began before selecting a Process. LAD-056 provides durable inquiry
    identity and transparent possible places to look. LAD-057 provides an
    inquiry-scoped guided interview when the Process boundary is still unknown,
@@ -129,13 +129,27 @@ milestones:
    and the first real inquiry-scoped interview are complete. LAD-060 defines
    **Slice C — Inquiry Review & Knowledge Outcome**: an immutable human review
    of the exact inquiry evidence with no requirement to propose or create a
-   Process. Its generic implementation and rollback-only fictional verification
-   are complete; controlled rollout and the first real review remain separate.
+   Process. Its migration, least-privilege boundary, exact-commit deployment,
+   and authenticated read-only QA are complete. No real review was manufactured
+   during rollout; the first human inquiry review remains an ordinary product
+   action.
    Governed candidate Process creation remains a later Slice D requiring its
    own decision. The Slice C contract is recorded in
    [docs/INQUIRY_REVIEW_AND_KNOWLEDGE_OUTCOME_V0_1.md](docs/INQUIRY_REVIEW_AND_KNOWLEDGE_OUTCOME_V0_1.md).
-7. **AI Discovery Assistance** — suggest follow-up questions and structured
-   mappings for human review; never approve or apply them.
+7. **AI Discovery Assistance (Slice A implemented and isolated-verified)** —
+   Process-bound interviews now show deterministic documented context and up
+   to three active earlier answers for the same question. A participant may
+   explicitly confirm an exact earlier answer or describe what changed; the
+   confirmation preserves its source, actor, time, scope, and evidence state
+   without changing the documented Process. Inquiry-first interviews show
+   their original question and saved context without assuming a Process.
+   Migration `0028` passed isolated fictional verification at journal `29/29`.
+   A later, separately approved slice may suggest a small number of contextual
+   follow-up questions for human use, editing, or rejection. The fixed catalog
+   remains a deterministic fallback. Structured-mapping suggestions remain a
+   later slice; AI may never approve or apply them. The accepted staged boundary and
+   staged provider gate are recorded in
+   [docs/AI_ASSISTED_DISCOVERY_V0_1.md](docs/AI_ASSISTED_DISCOVERY_V0_1.md).
 8. **Reference Models** — attach governed internal or external comparison bases
    to Processes or Process Families.
 9. **Practice Comparison** — compare documented knowledge, observed reality,
@@ -147,6 +161,15 @@ milestones:
     observations, responsibility, and Technology over time.
 12. **Continuous Improvement** — connect evidence, approved change,
     implementation, measurement, and sustainment.
+
+**Future cross-Process capability — Operational Scenarios and Organizational
+Impact Analysis.** Preserve recurring or consequential situations that span
+Processes, Units, Roles, Systems, and time periods, including semester start,
+move-in, parking overflow, outages, emergencies, and technology migrations.
+Scenarios may preserve observations, lessons, unresolved issues, and future
+plans without treating informal behavior as policy. Their sequence relative to
+Reference Models and drift should be decided after AI Discovery Assistance is
+evaluated; no Scenario schema is implied by the current roadmap.
 
 Structured Proposed Changes Slice 1 provides the mapping foundation. Slice 2
 adds explicit typed proposals for Steps, responsibility, Systems, Exceptions,
@@ -380,7 +403,7 @@ This register makes intentional postponement visible so ideas are neither mistak
 | Editing and knowledge stewardship | Phase 2 | Capture requires provenance, observation status, review meaning, and organizational authorization. |
 | JU Pilot with institutional information | Phase 2 | Pilot use requires private authenticated access and explicit data approval. |
 | Guided interviews | Phase 2 | Manual guided interviewing requires approved scope, disclosure, provenance, observation preservation, and human review. |
-| AI-assisted interviews and mappings | Milestone 7 | AI assistance follows the now-implemented manual structured-proposal, approval, application, and version-history path. |
+| AI-assisted interviews and mappings | Milestone 7 | LAD-061 Slice A deterministic prior-evidence reuse is implemented and isolated-verified. Contextual model questions, human-reviewed clarity drafts, provider/privacy approval, and rollout remain separately gated. |
 | Conflict detection, reconciliation, and consensus | Phase 2 | Lotura must preserve conflicting observations before stewards establish an approved definition. |
 | Approval workflow and process version history | Phase 2 | Observation, proposal, consensus, approval, effective timing, and supersession must remain distinct. |
 | Change requests and continuous improvement | Phase 2 and 3 | Phase 2 captures the reason for change; Phase 3 evaluates implementation, measurement, result, and sustainment. |
@@ -390,6 +413,8 @@ This register makes intentional postponement visible so ideas are neither mistak
 | Reference Models and Practice Comparison | Milestones 8–9 | Provenance, version, applicability, content rights, governance, and evidence-based comparison must be designed. |
 | Job Descriptions and Job Drift | Milestone 10 | HR sensitivity, effective dating, authoritative sources, access, and human interpretation require governance. |
 | Operating-Model Drift | Milestone 11 | Drift requires approved versions, comparison baselines, observations, timing, and human classification. |
+| Operational Scenarios and Seasonal Operations | After Milestone 7; exact sequence unassigned | Scenario identity, recurrence, cross-Process relationships, lessons, plan and policy distinctions, governance, retention, and history require a separate decision. |
+| Organizational Impact Analysis | After explicit Scenario and relationship foundations | Suggested impact must come from visible modeled relationships or attributable evidence, not an AI assertion. |
 | Tasks, comments, and notifications | Unscheduled | They should be added only where they serve operating-model stewardship or improvement, not as generic collaboration features. |
 | Workflow execution | Unscheduled | Lotura's core purpose is organizational intelligence, not replacing operational execution systems. |
 | External integrations and imports | Phase 3 or 5 | Identity matching, provenance, permissions, conflicts, and data ownership must be safe first. |

@@ -6,6 +6,7 @@ import {
   DISCOVERY_INQUIRY_QUESTIONS,
   getDiscoveryInquiryQuestion,
 } from "@/lib/discovery-inquiry-questions.mjs";
+import { buildInquiryKnownContext } from "@/lib/discovery-known-context.mjs";
 import { loadWorkspaceExperience } from "@/lib/workspace-experience";
 
 import { Alert, Badge, Button, Card } from "../../../../../../ui/primitives";
@@ -59,6 +60,14 @@ export default async function DiscoveryInquiryInterviewPage({
     : null;
 
   const question = getDiscoveryInquiryQuestion(session.currentQuestionKey);
+  const knownContext = question
+    ? buildInquiryKnownContext({
+        currentPromptKey: question.key,
+        observations: session.observations,
+        questionText: session.questionText,
+        scopeStatement: session.scopeStatement,
+      })
+    : null;
   const superseded = new Set(
     session.observations
       .map((observation) => observation.supersedesObservationId)
@@ -134,8 +143,70 @@ export default async function DiscoveryInquiryInterviewPage({
             continue from the current question.
           </p>
         </Card>
-      ) : question && session.status === "in_progress" ? (
-        <Card className="mt-6 p-5 sm:p-7">
+      ) : question && session.status === "in_progress" && knownContext ? (
+        <section className="mt-6 space-y-5">
+          <Card className="p-5 sm:p-7">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <Badge tone="neutral">Existing context</Badge>
+                <h2 className="mt-3 text-xl font-semibold text-[var(--text)]">
+                  What Lotura already knows
+                </h2>
+              </div>
+              <span className="text-xs text-[var(--text-tertiary)]">
+                Saved context · No AI
+              </span>
+            </div>
+            <dl className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
+                  Original question
+                </dt>
+                <dd className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
+                  {knownContext.questionText}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
+                  Interview focus
+                </dt>
+                <dd className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
+                  {knownContext.scopeStatement}
+                </dd>
+              </div>
+            </dl>
+            {knownContext.savedAnswers.length > 0 ? (
+              <div className="mt-5 border-t border-[var(--border)] pt-4">
+                <p className="text-sm font-semibold text-[var(--text)]">
+                  Recent saved answers
+                </p>
+                <div className="mt-3 space-y-3">
+                  {knownContext.savedAnswers.map((answer) => (
+                    <div
+                      className="rounded-[10px] bg-[var(--surface-subtle)] p-4"
+                      key={answer.id}
+                    >
+                      <p className="text-xs font-medium text-[var(--text-tertiary)]">
+                        {answer.label}
+                      </p>
+                      <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[var(--text-secondary)]">
+                        {answer.text}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="mt-5 text-sm leading-6 text-[var(--text-secondary)]">
+                No earlier answers have been saved in this exploration yet.
+              </p>
+            )}
+            <p className="mt-4 text-xs leading-5 text-[var(--text-tertiary)]">
+              This context stays attached to the original question. Lotura is not assuming that it belongs to an existing Process.
+            </p>
+          </Card>
+
+          <Card className="p-5 sm:p-7">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Badge tone="accent">
               Question {progress} of {DISCOVERY_INQUIRY_QUESTIONS.length}
@@ -158,7 +229,8 @@ export default async function DiscoveryInquiryInterviewPage({
               sessionId={sessionId}
             />
           </div>
-        </Card>
+          </Card>
+        </section>
       ) : session.status === "ready_for_review" ? (
         <section className="mt-6">
           <Badge tone="warning">Ready for human review</Badge>

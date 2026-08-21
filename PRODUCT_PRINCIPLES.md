@@ -233,6 +233,35 @@ context.
 interpreted existing evidence differently, updated documentation, or observed
 that organizational reality itself changed?
 
+## 18. Clear presentation must preserve the source
+
+People should be able to record knowledge quickly and ask Lotura to make it
+easier to read. AI may suggest clearer wording, structure, headings, or a concise
+summary, but the original participant source, model draft, human decision, and
+final presentation must remain distinguishable and attributable.
+
+Polish must never upgrade uncertainty into certainty, merge disagreement into
+consensus, infer an owner or policy, remove important qualifications, or bypass
+the governed path for changing the operating model.
+
+**Product test:** Can a reader inspect what the person originally supplied,
+what AI suggested, what the person accepted or edited, and which wording—if
+any—became reviewed or documented knowledge?
+
+## 19. Not every recurring situation is a Process
+
+Organizations also remember recurring or consequential situations that span
+Processes, Units, Roles, Systems, and time periods. Semester start, move-in,
+parking overflow, outages, emergencies, and technology migrations may require
+an Operational Scenario rather than one artificial Process boundary.
+
+Observed Scenario behavior is not automatically policy, and a recommendation
+is not an approved operational plan. Lotura should preserve those distinctions
+and use explicit evidence-backed relationships before presenting impact.
+
+**Product test:** Can Lotura preserve useful cross-Process knowledge without
+manufacturing a Process, policy, ownership claim, or proven impact?
+
 ## Discovery through documentation
 
 **Discovery is an expected outcome of documentation.**

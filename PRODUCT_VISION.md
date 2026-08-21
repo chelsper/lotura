@@ -112,6 +112,49 @@ the documented model. Process Families, Reference Models, Job Descriptions,
 and drift describe how knowledge is grouped, related, or compared. A feature
 in one dimension must not collapse the states or semantics of the other.
 
+## Organizational Memory and Operational Scenarios
+
+Lotura should help an organization remember not only its documented Processes,
+but also what people observed, what happened in recurring situations, what was
+learned, what remained unresolved, and which plans or practices were later
+approved. Organizational memory is the accumulated, attributable knowledge
+around the digital twin. It is not a new label that turns every recollection
+into truth.
+
+Some important organizational situations span several Processes and should not
+be forced into one of them. Examples include semester start, residence-hall
+move-in, parking overflow, commencement, a power or ERP outage, hurricane
+preparation, construction, and a technology migration such as moving from
+physical to digital student IDs.
+
+A future **Operational Scenario** may connect:
+
+- observed behavior and timing;
+- participating Units, Positions, Roles, and people;
+- affected Processes and Process Families;
+- enabling or constrained Systems;
+- exceptions, handoffs, and undocumented dependencies;
+- lessons learned and unresolved issues; and
+- recommendations or a separately approved future operational plan.
+
+A Scenario is not automatically a Process, project, policy, incident, or
+approved plan. For example, evidence that Security usually pauses parking
+enforcement at semester start may be important organizational memory without
+establishing that behavior as institutional policy. Lotura must preserve that
+difference.
+
+Future Organizational Impact Analysis may use explicit operating-model and
+Scenario relationships to ask what else should be reviewed when a technology,
+policy, structure, or practice changes. An inferred connection is a review
+question, not proof of impact. The product should never claim that a digital-ID
+change affects a particular service unless documented relationships or
+attributable evidence support that conclusion.
+
+Question-Driven Discovery is the current entry point for knowledge whose
+Process boundary is unknown or cross-cutting. Operational Scenario identity,
+recurrence, seasonality, lessons, plans, governance, and history remain future
+domain work and must not be represented only as opaque AI narrative.
+
 ## The operating model
 
 Processes, Roles, Systems, Exceptions, Dependencies, and Assignments together form the organization's operating model.
@@ -266,6 +309,12 @@ As continuous improvement matures, FLOW Analysis should keep four perspectives d
 These perspectives may be connected, but they must never be silently collapsed into one another. A proposal is not current truth, implementation is not proof of benefit, and a superseded operating model remains part of the organization's history.
 
 AI may assist users with discovery, drafting, organization, comparison, and questions. It should never silently generate operational truth. AI-generated suggestions must remain distinguishable from approved organizational records, traceable to their source context, and subject to explicit human review before they become authoritative.
+
+AI may also help turn hurried notes into a readable draft. The original source,
+model-produced wording, human edits, and final approved presentation must
+remain distinguishable. Clearer prose must not erase uncertainty, disagreement,
+scope, provenance, or the difference between observed practice and approved
+policy.
 
 ## Environment strategy
 
