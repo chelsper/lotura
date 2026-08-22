@@ -107,7 +107,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-061 | AI-assisted Discovery asks from bounded prior context without becoming evidence or authority | Accepted — Slice A complete and isolated fictional verification passed |
 | LAD-062 | Process-bound reconciliation is exception-driven and no change is the default valid outcome | Accepted — generic implementation complete and isolated fictional verification passed |
 | LAD-063 | Mocked AI assistance is an attributable artifact, never evidence or authority | Accepted — Slice B generic implementation complete and isolated fictional verification passed; no real provider authorized |
-| LAD-064 | External AI evaluation is fictional, stateless, tool-free, and separate from private use | Accepted — foundation offline-verified and one controlled fictional provider evaluation passed automated and human review; private use remains unauthorized |
+| LAD-064 | External AI evaluation is fictional, stateless, tool-free, and separate from private use | Accepted — one controlled fictional provider evaluation passed; prompt policy v2's single-best-question refinement is offline-only; private use remains unauthorized |
 
 ## Decision records
 
@@ -2574,6 +2574,15 @@ contract for OpenAI. The initial candidate is `gpt-5.6-terra` with low reasoning
 under prompt policy `lad-064-eval-v1`. The candidate is an evaluation choice,
 not a private-workspace approval or permanent production default. A different
 model or prompt-policy version creates a new attributable evaluation basis.
+
+The first controlled evaluation showed that two individually valid questions
+can still feel like unnecessary interview work when one is materially more
+useful. Prompt policy `lad-064-eval-v2` is therefore the current repository
+evaluation basis. It requires exactly one question suggestion: the short,
+conversational question that best advances the highest-value unresolved gap in
+the supplied sources. Version 1 remains the attributable historical basis for
+the August 22 evaluation; version 2 must be evaluated independently before any
+private use.
 
 The contract uses the Responses API shape with `store: false`, background
 processing disabled, no conversation or previous-response state, no tools,

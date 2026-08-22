@@ -377,7 +377,7 @@ persisted.
 **Repository-only foundation implemented under LAD-064:**
 
 - encode OpenAI `gpt-5.6-terra`, low reasoning, and prompt policy
-  `lad-064-eval-v1` as an attributable evaluation basis rather than a Production
+  `lad-064-eval-v2` as an attributable evaluation basis rather than a Production
   default;
 - build stateless Responses API requests with `store: false`, no background or
   conversation state, no tools, strict JSON Schema output, and bounded output;
@@ -389,6 +389,13 @@ persisted.
   conversational-language, non-repetition, and source-fidelity review; and
 - prove unavailable, invalid, and slow transport paths return the deterministic
   manual fallback without logging content.
+
+Prompt policy `lad-064-eval-v2` is a measured refinement of the evaluated
+version 1 policy. It requires exactly one question suggestion and tells the
+model to choose the short, conversational question that best advances the
+highest-value unresolved gap. It does not change the Slice B mocked-provider
+contract, which may still produce up to three suggestions for deterministic UX
+testing. Version 2 has not been sent to an external provider.
 
 The repository foundation contains no credential lookup, provider SDK, live
 transport, external request, environment setting, migration, private data, or
@@ -417,7 +424,8 @@ useful unresolved follow-up when additional questions add little. See
 **Still separately gated:**
 
 - verify the exact provider project data-use and retention configuration;
-- decide whether another fictional case or prompt-policy revision is necessary;
+- evaluate prompt policy `lad-064-eval-v2` against fictional cases if a second
+  external request is separately authorized;
 - enable one isolated private test environment before any JU request; and
 - require separate authorization for JU configuration and real use.
 

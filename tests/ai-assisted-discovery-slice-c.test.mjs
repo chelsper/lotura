@@ -77,7 +77,7 @@ test("the OpenAI evaluation request is pinned, stateless, tool-free, and strictl
   assert.deepEqual(OPENAI_DISCOVERY_EVALUATION_CONTRACT, {
     dataClassification: "fictional",
     modelIdentifier: "gpt-5.6-terra",
-    promptPolicyVersion: "lad-064-eval-v1",
+    promptPolicyVersion: "lad-064-eval-v2",
     providerKey: "openai",
     reasoningEffort: "low",
   });
@@ -89,6 +89,9 @@ test("the OpenAI evaluation request is pinned, stateless, tool-free, and strictl
   assert.deepEqual(request.tools, []);
   assert.equal(request.text.format.type, "json_schema");
   assert.equal(request.text.format.strict, true);
+  assert.equal(request.text.format.schema.properties.suggestions.maxItems, 1);
+  assert.match(request.input[0].content[0].text, /return exactly one short, conversational question/i);
+  assert.match(request.input[0].content[0].text, /highest-value unresolved gap/i);
   assert.ok(request.max_output_tokens <= 1200);
   assert.equal("conversation" in request, false);
   assert.equal("previous_response_id" in request, false);
@@ -156,6 +159,13 @@ test("structured output cannot cross the question, topic, or assistance-kind bou
       }),
     ),
     /crossed the bounded evaluation context/,
+  );
+  assert.throws(
+    () => parseOpenAIDiscoveryEvaluationOutput(
+      fictionalInput,
+      JSON.stringify({ suggestions: [suggestions[0], suggestions[0]] }),
+    ),
+    /invalid assistance suggestion|requires exactly one suggestion/,
   );
 });
 
