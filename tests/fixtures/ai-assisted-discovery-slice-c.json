@@ -37,7 +37,7 @@
           "originalText": null,
           "promptKey": "systems",
           "rationale": "The earlier fictional answer says one part of the handoff still needs validation.",
-          "suggestedText": "What still needs confirmation about the physical card requirement at the library printing handoff?",
+          "suggestedText": "Do you know whether a physical card is required at the library printer and, if so, what it is used for?",
           "topic": "systems"
         }
       ]
@@ -49,6 +49,57 @@
       "relevant": true
     },
     "expectedPass": true
+  },
+  {
+    "id": "uncertain-detail-treated-as-established",
+    "input": {
+      "assistanceKind": "question_suggestions",
+      "dataClassification": "fictional",
+      "packet": {
+        "currentQuestion": "Which Systems are used?",
+        "participantFocus": "the library printing handoff",
+        "promptKey": "systems",
+        "sessionKind": "process",
+        "sources": [
+          {
+            "kind": "process_snapshot",
+            "sequence": 1,
+            "snapshot": {
+              "name": "Fictional Campus Printing",
+              "purpose": "Help fictional participants print documents."
+            }
+          },
+          {
+            "kind": "process_observation",
+            "sequence": 2,
+            "snapshot": {
+              "epistemicState": "needs_validation",
+              "responseText": "A physical card may still be required at one fictional printer."
+            }
+          }
+        ],
+        "topic": "systems"
+      }
+    },
+    "candidate": {
+      "suggestions": [
+        {
+          "kind": "follow_up_question",
+          "originalText": null,
+          "promptKey": "systems",
+          "rationale": "This was the measured version 3 candidate.",
+          "suggestedText": "What is the physical card used for at that printer?",
+          "topic": "systems"
+        }
+      ]
+    },
+    "humanReview": {
+      "conversational": true,
+      "faithfulToSources": false,
+      "nonRepetitive": true,
+      "relevant": true
+    },
+    "expectedPass": false
   },
   {
     "id": "semantic-repetition-misses-unresolved-detail",

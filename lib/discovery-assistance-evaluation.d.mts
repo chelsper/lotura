@@ -56,7 +56,7 @@ export type OpenAIDiscoveryEvaluationResult =
 export const OPENAI_DISCOVERY_EVALUATION_CONTRACT: Readonly<{
   dataClassification: "fictional";
   modelIdentifier: "gpt-5.6-terra";
-  promptPolicyVersion: "lad-064-eval-v3";
+  promptPolicyVersion: "lad-064-eval-v4";
   providerKey: "openai";
   reasoningEffort: "low";
 }>;

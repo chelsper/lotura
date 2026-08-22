@@ -6,14 +6,15 @@ migration journal `29/29`. Slice B's attributable assistance schema, mocked
 provider adapter, and human-review UX are implemented and passed isolated
 fictional verification at migration journal `30/30`. Slice C's repository-only
 fictional evaluation foundation is implemented without a schema change and
-offline-verified against nine expected fictional outcomes under prompt policy
-v3. One separately authorized live evaluation of a fictional fixture passed
+offline-verified against ten expected fictional outcomes under prompt policy
+v4. One separately authorized live evaluation of a fictional fixture passed
 automated and human review under prompt policy v1 on August 22, 2026. A
 controlled v2 comparison returned one question and passed automation, but
-failed human non-repetition review. Version 3 now catches that measured failure
-offline and requires the question to pursue a concrete unresolved source
-detail. Private provider use, persistent credentials, environment changes, JU
-data or configuration, and deployment remain separately gated.
+failed human non-repetition review. Version 3 caught that failure but failed
+human source-fidelity review by presupposing an uncertain detail. Version 4 now
+catches both failures offline. Private provider use, persistent credentials,
+environment changes, JU data or configuration, and deployment remain
+separately gated.
 
 ## Product outcome
 
@@ -380,7 +381,7 @@ persisted.
 **Repository-only foundation implemented under LAD-064:**
 
 - encode OpenAI `gpt-5.6-terra`, low reasoning, and prompt policy
-  `lad-064-eval-v3` as an attributable evaluation basis rather than a Production
+  `lad-064-eval-v4` as an attributable evaluation basis rather than a Production
   default;
 - build stateless Responses API requests with `store: false`, no background or
   conversation state, no tools, strict JSON Schema output, and bounded output;
@@ -393,13 +394,15 @@ persisted.
 - prove unavailable, invalid, and slow transport paths return the deterministic
   manual fallback without logging content.
 
-Prompt policy `lad-064-eval-v3` incorporates the two measured refinements from
-the controlled evaluations. Version 2 reduced the result to exactly one short,
-conversational question. Version 3 additionally requires that question to
+Prompt policy `lad-064-eval-v4` incorporates the measured refinements from the
+controlled evaluations. Version 2 reduced the result to exactly one short,
+conversational question. Version 3 additionally required that question to
 pursue a specific unresolved source detail, contradiction, dependency, or
 uncertainty rather than merely restating the current topic with narrower
-context. It does not change the Slice B mocked-provider contract, which may
-still produce up to three suggestions for deterministic UX testing.
+context. Version 4 now requires a question based on uncertain evidence to ask
+whether the uncertain detail is true before asking what follows. It does not
+change the Slice B mocked-provider contract, which may still produce up to
+three suggestions for deterministic UX testing.
 
 The offline evaluator now includes a transparent lexical-semantic guard. It
 canonicalizes a small reviewed vocabulary, compares meaningful-token coverage
@@ -407,12 +410,14 @@ with current and prior questions, and requires a question to reference concrete
 details from unresolved observations. This catches the exact version 2 failure
 without claiming general semantic understanding. Human review of relevance,
 source fidelity, conversational language, and non-repetition remains required.
+The version 4 uncertainty guard also requires explicit conditional or
+validation-seeking language and rejects the exact version 3 presupposition.
 
 The repository foundation contains no credential lookup, provider SDK, live
 transport, external request, environment setting, migration, private data, or
 runtime integration. `store: false` is not treated as Zero Data Retention.
 
-**Offline verification:** Nine fictional cases matched their expected release
+**Offline verification:** Ten fictional cases matched their expected release
 result. The matrix includes useful and safely injection-resistant suggestions,
 exact and semantic repetition, failure to advance an unresolved detail,
 leading language, unsupported authority, malformed output, and
@@ -441,17 +446,27 @@ did not pursue the unresolved physical-card detail. Version 2 therefore fails
 the human release gate. See
 [the version 2 evaluation evidence](evaluations/AI_ASSISTED_DISCOVERY_SLICE_C_V2_EVALUATION_2026_08_22.md).
 
-**Version 3 offline correction:** The current prompt requires the single
+**Version 3 comparison:** The prompt required the single
 question to pursue a concrete unresolved source detail. The evaluator rejects
 the exact version 2 response both because it semantically repeats the current
 Systems question and because it does not sufficiently reference the unresolved
-physical-card requirement. A focused physical-card follow-up passes. Version 3
-has not made an external request and has no human provider-result review yet.
+physical-card requirement. The controlled provider result asked, “What is the
+physical card used for at that printer?” It passed every version 3 automated
+check, but failed human source-fidelity review because it assumed the possible
+card use was established. See
+[the version 3 evaluation evidence](evaluations/AI_ASSISTED_DISCOVERY_SLICE_C_V3_EVALUATION_2026_08_22.md).
+
+**Version 4 offline correction:** The current prompt explicitly tells the model
+to establish whether an uncertain detail is true before asking what follows.
+The evaluator rejects the exact version 3 response for failing to preserve
+source uncertainty. A conditional question that first asks whether the card is
+required and then, if so, what it is used for passes. Version 4 has not made an
+external request and has no human provider-result review yet.
 
 **Still separately gated:**
 
 - verify the exact provider project data-use and retention configuration;
-- separately authorize and human-review any version 3 external fictional
+- separately authorize and human-review any version 4 external fictional
   request;
 - enable one isolated private test environment before any JU request; and
 - require separate authorization for JU configuration and real use.

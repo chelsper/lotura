@@ -107,7 +107,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-061 | AI-assisted Discovery asks from bounded prior context without becoming evidence or authority | Accepted — Slice A complete and isolated fictional verification passed |
 | LAD-062 | Process-bound reconciliation is exception-driven and no change is the default valid outcome | Accepted — generic implementation complete and isolated fictional verification passed |
 | LAD-063 | Mocked AI assistance is an attributable artifact, never evidence or authority | Accepted — Slice B generic implementation complete and isolated fictional verification passed; no real provider authorized |
-| LAD-064 | External AI evaluation is fictional, stateless, tool-free, and separate from private use | Accepted — v1 passed one controlled fictional case; v2 failed human non-repetition review; v3 is offline-verified and private use remains unauthorized |
+| LAD-064 | External AI evaluation is fictional, stateless, tool-free, and separate from private use | Accepted — v1 passed one controlled fictional case; v2 and v3 exposed distinct human-review failures; v4 is offline-verified and private use remains unauthorized |
 
 ## Decision records
 
@@ -2554,9 +2554,10 @@ retention, consent, credential, context-preview, and evaluation requirements.
 ### LAD-064 — External AI evaluation is fictional, stateless, tool-free, and separate from private use
 
 **Status:** Accepted — the repository-only AI-Assisted Discovery Slice C
-evaluation foundation and version 3 refinement are implemented and
-offline-verified against nine expected outcomes, including the measured
-version 2 semantic repetition failure. On August 22, 2026, one separately authorized,
+evaluation foundation and version 4 refinement are implemented and
+offline-verified against ten expected outcomes, including the measured version
+2 semantic repetition and version 3 uncertainty-presupposition failures. On
+August 22, 2026, one separately authorized,
 credential-scoped `gpt-5.6-terra` evaluation of the fictional Campus Printing
 case passed every automated check and the four required human-review criteria.
 No private Organization content, persistent credential, environment
@@ -2578,8 +2579,8 @@ model or prompt-policy version creates a new attributable evaluation basis.
 
 The first controlled evaluation showed that two individually valid questions
 can still feel like unnecessary interview work when one is materially more
-useful. Prompt policy `lad-064-eval-v2` is therefore the current repository
-evaluation basis. It requires exactly one question suggestion: the short,
+useful. Prompt policy `lad-064-eval-v2` therefore became the next repository
+evaluation basis. It required exactly one question suggestion: the short,
 conversational question that best advances the highest-value unresolved gap in
 the supplied sources. Version 1 remains the attributable historical basis for
 the first August 22 evaluation. Version 2 was then evaluated independently on
@@ -2588,7 +2589,7 @@ check, but human review found that the question still substantially repeated
 the current Systems question instead of pursuing the unresolved physical-card
 detail. Version 2 therefore does not pass the human release gate.
 
-Prompt policy `lad-064-eval-v3` is the current repository evaluation basis. It
+Prompt policy `lad-064-eval-v3` was the next repository evaluation basis. It
 still returns exactly one question, but requires that question to pursue a
 specific unresolved source detail, contradiction, dependency, or uncertainty
 instead of merely restating the current topic with narrower context. A
@@ -2597,7 +2598,19 @@ vocabulary, compares meaningful-token coverage with current and prior
 questions, and requires overlap with concrete unresolved observation details.
 This deterministic guard catches the measured version 2 failure; it does not
 claim general semantic understanding and does not replace required human
-review. Version 3 has not been evaluated through an external provider.
+review. The controlled version 3 evaluation pursued the physical-card detail
+but asked what the card was used for, thereby presupposing that the uncertain
+card use was true. Version 3 therefore fails human source-fidelity review.
+
+Prompt policy `lad-064-eval-v4` is the current repository evaluation basis. It
+requires a question derived from uncertain evidence to establish whether the
+uncertain detail is true before asking what follows. The offline uncertainty
+guard requires explicit conditional or validation-seeking question language.
+It rejects the exact version 3 response while accepting a question that first
+asks whether the physical card is required and then, if so, what it is used
+for. This guard is a transparent release check, not a claim that phrasing alone
+establishes source fidelity; human review remains required. Version 4 has not
+been evaluated through an external provider.
 
 The contract uses the Responses API shape with `store: false`, background
 processing disabled, no conversation or previous-response state, no tools,
@@ -2621,8 +2634,9 @@ The evaluation set covers useful, repetitive, leading, unsupported, unsafe,
 and malformed suggestions; uncertainty-preserving clarity help; prompt
 injection embedded in evidence; secret rejection; and unavailable or slow
 provider fallback. It also includes a direct regression for topic-level
-paraphrase that fails to pursue the unresolved source detail. Release criteria
-are explicit pass/fail checks, not a
+paraphrase that fails to pursue the unresolved source detail and a regression
+for a question that turns an uncertain detail into a presupposition. Release
+criteria are explicit pass/fail checks, not a
 user-facing confidence or organizational-health score. Syntactic validity,
 tenant and prompt consistency, secret rejection, no authority claims, safe
 fallback, and human judgments of relevance, conversational wording,
@@ -2683,13 +2697,22 @@ non-repetition criterion failed. Its sanitized evidence is recorded in
 
 Version 3 was then implemented and verified offline only. Its prompt and
 deterministic evaluator now require a concrete unresolved-detail advance and
-reject the exact version 2 response as semantic repetition. No credential or
-external request was used for this refinement.
+reject the exact version 2 response as semantic repetition. The separately
+authorized version 3 request then used 463 input tokens and 83 output tokens.
+All automated checks passed, but human source-fidelity review failed because
+the question treated possible physical-card use as established. Its sanitized
+evidence is recorded in
+[AI_ASSISTED_DISCOVERY_SLICE_C_V3_EVALUATION_2026_08_22.md](docs/evaluations/AI_ASSISTED_DISCOVERY_SLICE_C_V3_EVALUATION_2026_08_22.md).
 
-Neither one-case result authorizes private use. Provider-account data-use
-and retention acceptance, a private context preview, participant disclosure,
-Organization enablement, JU configuration or data, Vercel or Neon changes,
-Production deployment, and the Slice D private pilot remain separately gated.
+Version 4 was implemented and verified offline only. Its prompt and
+deterministic uncertainty guard reject the exact version 3 response. No
+credential or external request was used for the version 4 refinement.
+
+None of these controlled one-case results authorizes private use.
+Provider-account data-use and retention acceptance, a private context preview,
+participant disclosure, Organization enablement, JU configuration or data,
+Vercel or Neon changes, Production deployment, and the Slice D private pilot
+remain separately gated.
 
 ### LAD-062 — Process-bound reconciliation is exception-driven and no change is the default valid outcome
 

@@ -50,7 +50,7 @@ const validOutput = JSON.stringify({
       originalText: null,
       promptKey: "systems",
       rationale: "The earlier fictional answer still needs validation.",
-      suggestedText: "What still needs confirmation about the physical card requirement at the fictional printing handoff?",
+      suggestedText: "Do you know whether a physical card is required at the fictional printing handoff and, if so, what it is used for?",
       topic: "systems",
     },
   ],
@@ -70,9 +70,11 @@ test("LAD-064 records fictional evaluations without authorizing private use", as
   assert.match(decision, /Version 2 therefore does not pass the human release gate/);
   assert.match(decision, /Prompt policy `lad-064-eval-v3`/);
   assert.match(decision, /transparent lexical-semantic repetition guard/);
+  assert.match(decision, /Prompt policy `lad-064-eval-v4`/);
+  assert.match(decision, /uncertain detail is true before asking what follows/);
   assert.match(decision, /required human\s+non-repetition criterion failed/);
-  assert.match(decision, /Neither one-case result authorizes private use/);
-  assert.match(decision, /Provider-account data-use[\s\S]*Slice D private pilot remain separately gated/);
+  assert.match(decision, /None of these controlled one-case results authorizes private use/);
+  assert.match(decision, /Provider-account data-use[\s\S]*Slice D private pilot\s+remain separately gated/);
   assert.match(decision, /conflicts with\s+and supersedes no accepted decision/);
 });
 
@@ -81,7 +83,7 @@ test("the OpenAI evaluation request is pinned, stateless, tool-free, and strictl
   assert.deepEqual(OPENAI_DISCOVERY_EVALUATION_CONTRACT, {
     dataClassification: "fictional",
     modelIdentifier: "gpt-5.6-terra",
-    promptPolicyVersion: "lad-064-eval-v3",
+    promptPolicyVersion: "lad-064-eval-v4",
     providerKey: "openai",
     reasoningEffort: "low",
   });
@@ -97,6 +99,7 @@ test("the OpenAI evaluation request is pinned, stateless, tool-free, and strictl
   assert.match(request.input[0].content[0].text, /return exactly one short, conversational question/i);
   assert.match(request.input[0].content[0].text, /specific unresolved fact, contradiction, dependency, or uncertainty/i);
   assert.match(request.input[0].content[0].text, /Do not merely restate the current topic/i);
+  assert.match(request.input[0].content[0].text, /ask whether it is true before asking what follows/i);
   assert.ok(request.max_output_tokens <= 1200);
   assert.equal("conversation" in request, false);
   assert.equal("previous_response_id" in request, false);
@@ -143,6 +146,45 @@ test("v3 catches the measured semantic repetition and requires the unresolved so
   assert.equal(focusedDetail.automatedChecks.nonRepetitive, true);
   assert.equal(focusedDetail.automatedChecks.advancesUnresolvedDetail, true);
   assert.equal(focusedDetail.passesReleaseGate, true);
+});
+
+test("v4 rejects a question that turns uncertain source evidence into a presupposition", () => {
+  const presupposed = evaluateDiscoveryAssistanceCandidate({
+    humanReview: {
+      conversational: true,
+      faithfulToSources: true,
+      nonRepetitive: true,
+      relevant: true,
+    },
+    input: fictionalInput,
+    outputText: JSON.stringify({
+      suggestions: [{
+        kind: "follow_up_question",
+        originalText: null,
+        promptKey: "systems",
+        rationale: "This was the measured version 3 candidate.",
+        suggestedText: "What is the physical card used for at that printer?",
+        topic: "systems",
+      }],
+    }),
+  });
+  assert.equal(presupposed.automatedChecks.advancesUnresolvedDetail, true);
+  assert.equal(presupposed.automatedChecks.nonRepetitive, true);
+  assert.equal(presupposed.automatedChecks.preservesUncertainty, false);
+  assert.equal(presupposed.passesReleaseGate, false);
+
+  const conditional = evaluateDiscoveryAssistanceCandidate({
+    humanReview: {
+      conversational: true,
+      faithfulToSources: true,
+      nonRepetitive: true,
+      relevant: true,
+    },
+    input: fictionalInput,
+    outputText: validOutput,
+  });
+  assert.equal(conditional.automatedChecks.preservesUncertainty, true);
+  assert.equal(conditional.passesReleaseGate, true);
 });
 
 test("fictional classification and deterministic secret rejection run before transport", async () => {
