@@ -107,7 +107,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-061 | AI-assisted Discovery asks from bounded prior context without becoming evidence or authority | Accepted — Slice A complete and isolated fictional verification passed |
 | LAD-062 | Process-bound reconciliation is exception-driven and no change is the default valid outcome | Accepted — generic implementation complete and isolated fictional verification passed |
 | LAD-063 | Mocked AI assistance is an attributable artifact, never evidence or authority | Accepted — Slice B generic implementation complete and isolated fictional verification passed; no real provider authorized |
-| LAD-064 | External AI evaluation is fictional, stateless, tool-free, and separate from private use | Accepted — repository-only Slice C evaluation foundation implemented and offline-verified; no credential, external request, or private use authorized |
+| LAD-064 | External AI evaluation is fictional, stateless, tool-free, and separate from private use | Accepted — foundation offline-verified and one controlled fictional provider evaluation passed automated and human review; private use remains unauthorized |
 
 ## Decision records
 
@@ -2555,9 +2555,11 @@ retention, consent, credential, context-preview, and evaluation requirements.
 
 **Status:** Accepted — the repository-only AI-Assisted Discovery Slice C
 evaluation foundation is implemented and offline-verified against eight
-fictional expected outcomes. No API credential, external provider request,
-private Organization content, environment configuration, deployment, or
-database change is authorized.
+fictional expected outcomes. On August 22, 2026, one separately authorized,
+credential-scoped `gpt-5.6-terra` evaluation of the fictional Campus Printing
+case passed every automated check and the four required human-review criteria.
+No private Organization content, persistent credential, environment
+configuration, deployment, or database change was authorized or used.
 
 **Context:** LAD-063 proved that Lotura can preserve bounded sources, model
 suggestions, human decisions, and any resulting human observation without
@@ -2638,12 +2640,19 @@ migration because LAD-063's append-only assistance model already preserves the
 necessary provider, model, prompt-policy, context, suggestion, and human-decision
 provenance.
 
-A real API credential, provider call, SDK or live transport, billable request,
-test-environment secret, recorded external evaluation, private context preview,
-participant disclosure, Organization enablement, JU configuration or data,
-Vercel or Neon change, Production deployment, and Slice D private pilot remain
-separately gated. Before a first external fictional request, the completed
-repository harness and exact credential-handling procedure must be reviewed.
+The first external evaluation used an ephemeral hidden credential and a
+temporary live transport outside the repository. The credential was never
+written to disk, source, terminal history, or the recorded evidence. The first
+attempt returned `insufficient_quota` with no model output and exercised the
+safe fallback. After the user enabled API quota, one successful request used
+414 input tokens and 178 output tokens. The sanitized result and human review
+are recorded in
+[AI_ASSISTED_DISCOVERY_SLICE_C_EVALUATION_2026_08_22.md](docs/evaluations/AI_ASSISTED_DISCOVERY_SLICE_C_EVALUATION_2026_08_22.md).
+
+This one-case result does not authorize private use. Provider-account data-use
+and retention acceptance, a private context preview, participant disclosure,
+Organization enablement, JU configuration or data, Vercel or Neon changes,
+Production deployment, and the Slice D private pilot remain separately gated.
 
 ### LAD-062 — Process-bound reconciliation is exception-driven and no change is the default valid outcome
 

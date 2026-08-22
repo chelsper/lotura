@@ -6,9 +6,11 @@ migration journal `29/29`. Slice B's attributable assistance schema, mocked
 provider adapter, and human-review UX are implemented and passed isolated
 fictional verification at migration journal `30/30`. Slice C's repository-only
 fictional evaluation foundation is implemented without a schema change and
-offline-verified against eight expected fictional outcomes. External provider
-requests, credentials, environment changes, JU data or configuration, and
-deployment remain separately gated.
+offline-verified against eight expected fictional outcomes. One separately
+authorized live evaluation of a fictional fixture passed automated and human
+review on August 22, 2026. Private provider use, persistent credentials,
+environment changes, JU data or configuration, and deployment remain
+separately gated.
 
 ## Product outcome
 
@@ -401,12 +403,21 @@ strict prompt/topic boundaries, one-call behavior, and deterministic fallback
 for invalid, unavailable, and slow transport results. This verifies the harness,
 not an external model.
 
+**Controlled external verification:** One `gpt-5.6-terra` request evaluated the
+`useful-system-follow-up` fictional Campus Printing case. The request used low
+reasoning, prompt policy `lad-064-eval-v1`, `store: false`, no background state,
+and no tools. All schema/context, authority, leading-language, repetition,
+uncertainty, and content-safety checks passed. Human review found the two
+questions conversational, faithful to the supplied sources, non-repetitive,
+and relevant. The second question was more useful because it focused on the
+printer access step; future prompt refinement should prefer the single most
+useful unresolved follow-up when additional questions add little. See
+[the dated evaluation evidence](evaluations/AI_ASSISTED_DISCOVERY_SLICE_C_EVALUATION_2026_08_22.md).
+
 **Still separately gated:**
 
-- review the completed harness and credential-handling procedure;
-- authorize one credential-scoped, billable evaluation using fictional cases;
 - verify the exact provider project data-use and retention configuration;
-- record and review the resulting pass/fail evidence;
+- decide whether another fictional case or prompt-policy revision is necessary;
 - enable one isolated private test environment before any JU request; and
 - require separate authorization for JU configuration and real use.
 

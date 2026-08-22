@@ -56,7 +56,7 @@ const validOutput = JSON.stringify({
   ],
 });
 
-test("LAD-064 authorizes only a repository-only fictional evaluation foundation", async () => {
+test("LAD-064 records one fictional evaluation without authorizing private use", async () => {
   const decisions = await read("ARCHITECTURE_DECISIONS.md");
   const start = decisions.indexOf("### LAD-064");
   const end = decisions.indexOf("### LAD-062", start);
@@ -65,7 +65,10 @@ test("LAD-064 authorizes only a repository-only fictional evaluation foundation"
   assert.match(decision, /Every evaluation input is explicitly classified as fictional/);
   assert.match(decision, /injected transport and cannot read a provider credential or\s+make a network request on its own/);
   assert.match(decision, /requires no schema\s+migration/);
-  assert.match(decision, /real API credential, provider call, SDK or live transport[\s\S]*remain\s+separately gated/);
+  assert.match(decision, /one separately authorized,\s+credential-scoped `gpt-5\.6-terra` evaluation/);
+  assert.match(decision, /ephemeral hidden credential/);
+  assert.match(decision, /This one-case result does not authorize private use/);
+  assert.match(decision, /Provider-account data-use[\s\S]*Slice D private pilot remain separately gated/);
   assert.match(decision, /conflicts with\s+and supersedes no accepted decision/);
 });
 
