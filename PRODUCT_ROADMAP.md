@@ -140,7 +140,7 @@ milestones:
    Governed candidate Process creation remains a later Slice D requiring its
    own decision. The Slice C contract is recorded in
    [docs/INQUIRY_REVIEW_AND_KNOWLEDGE_OUTCOME_V0_1.md](docs/INQUIRY_REVIEW_AND_KNOWLEDGE_OUTCOME_V0_1.md).
-7. **AI Discovery Assistance (Slices A and B implemented and isolated-verified)** —
+7. **AI Discovery Assistance (Slices A and B implemented; Slice C evaluation foundation offline-verified)** —
    Process-bound interviews now show deterministic documented context and up
    to three active earlier answers for the same question. A participant may
    explicitly confirm an exact earlier answer or describe what changed; the
@@ -154,8 +154,13 @@ milestones:
    choice, and resulting human observation remains separately attributable.
    Requesting assistance creates no evidence and never advances the interview.
    Migration `0029` passed isolated fictional verification at journal `30/30`.
-   The fixed catalog remains a deterministic fallback. Real provider use is a
-   later privacy, retention, consent, credential, and evaluation decision.
+   The fixed catalog remains a deterministic fallback. LAD-064's repository-
+   only, fictional, stateless, tool-free OpenAI evaluation contract and
+   transparent release criteria are implemented and offline-verified. It does
+   not authorize an API credential, external request, private Organization
+   content, environment change, or JU enablement. A reviewed real fictional
+   evaluation and any later private use remain separate privacy, retention,
+   consent, credential, and rollout gates.
    Structured-mapping suggestions remain later; AI may never approve or apply
    them. The accepted staged boundary and provider gate are recorded in
    [docs/AI_ASSISTED_DISCOVERY_V0_1.md](docs/AI_ASSISTED_DISCOVERY_V0_1.md).
@@ -412,7 +417,7 @@ This register makes intentional postponement visible so ideas are neither mistak
 | Editing and knowledge stewardship | Phase 2 | Capture requires provenance, observation status, review meaning, and organizational authorization. |
 | JU Pilot with institutional information | Phase 2 | Pilot use requires private authenticated access and explicit data approval. |
 | Guided interviews | Phase 2 | Manual guided interviewing requires approved scope, disclosure, provenance, observation preservation, and human review. |
-| AI-assisted interviews and mappings | Milestone 7 | LAD-061 Slice A deterministic prior-evidence reuse and LAD-063 Slice B attributable mocked question/clarity suggestions are implemented and isolated-verified. External provider/privacy approval and rollout remain separately gated. |
+| AI-assisted interviews and mappings | Milestone 7 | LAD-061 Slice A deterministic prior-evidence reuse and LAD-063 Slice B attributable mocked question/clarity suggestions are implemented and isolated-verified. LAD-064's repository-only fictional evaluation foundation is implemented and offline-verified. Credentials, external calls, private data, provider-account retention acceptance, and rollout remain separately gated. |
 | Conflict detection, reconciliation, and consensus | Phase 2 | Lotura must preserve conflicting observations before stewards establish an approved definition. |
 | Approval workflow and process version history | Phase 2 | Observation, proposal, consensus, approval, effective timing, and supersession must remain distinct. |
 | Change requests and continuous improvement | Phase 2 and 3 | Phase 2 captures the reason for change; Phase 3 evaluates implementation, measurement, result, and sustainment. |

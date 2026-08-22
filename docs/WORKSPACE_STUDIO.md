@@ -423,9 +423,12 @@ the available data.
 AI-assisted Discovery Slice A is implemented and isolated-verified. LAD-063
 authorizes a private mocked-provider Slice B for testing attributable question
 and clarity suggestions. Its generic implementation and isolated fictional
-verification are complete; external provider use, credentials, and private
-rollout remain separately gated. The relationship canvas remains a later
-capability. Neither is a prerequisite for a useful Workspace Studio v1.
+verification are complete. LAD-064's fictional, stateless, tool-free Slice C
+evaluation foundation is also implemented and offline-verified, but it is not
+wired into Studio and contains no credential or live transport. External
+provider evaluation, credentials, and private rollout remain separately gated.
+The relationship canvas remains a later capability. Neither is a prerequisite
+for a useful Workspace Studio v1.
 
 ## Slice 1 implementation boundary
 

@@ -1,12 +1,14 @@
 # AI-Assisted Discovery v0.1
 
-**Status:** LAD-061 and LAD-063 accepted. Slice A deterministic context and
+**Status:** LAD-061, LAD-063, and LAD-064 accepted. Slice A deterministic context and
 evidence reuse are implemented and passed isolated fictional verification at
 migration journal `29/29`. Slice B's attributable assistance schema, mocked
 provider adapter, and human-review UX are implemented and passed isolated
-fictional verification at migration journal `30/30`. External provider access,
-credentials, environment changes, JU migration or data changes, and deployment
-remain separately gated.
+fictional verification at migration journal `30/30`. Slice C's repository-only
+fictional evaluation foundation is implemented without a schema change and
+offline-verified against eight expected fictional outcomes. External provider
+requests, credentials, environment changes, JU data or configuration, and
+deployment remain separately gated.
 
 ## Product outcome
 
@@ -370,12 +372,42 @@ persisted.
 
 ### Slice C — Controlled provider evaluation
 
-- approve provider, model, data-use, retention, consent, and credential
-  decisions;
-- run a fictional evaluation set covering useful, repetitive, leading,
-  unsupported, unsafe, and malformed questions;
-- establish quality and safety release criteria;
-- enable one private test environment before any JU request;
+**Repository-only foundation implemented under LAD-064:**
+
+- encode OpenAI `gpt-5.6-terra`, low reasoning, and prompt policy
+  `lad-064-eval-v1` as an attributable evaluation basis rather than a Production
+  default;
+- build stateless Responses API requests with `store: false`, no background or
+  conversation state, no tools, strict JSON Schema output, and bounded output;
+- require explicit fictional classification, deterministic secret rejection,
+  and the existing allowlisted context packet before the injected transport;
+- validate fictional cases covering useful, repetitive, leading, unsupported,
+  unsafe, malformed, and uncertainty-preserving outputs;
+- keep automated safety checks separate from explicit human relevance,
+  conversational-language, non-repetition, and source-fidelity review; and
+- prove unavailable, invalid, and slow transport paths return the deterministic
+  manual fallback without logging content.
+
+The repository foundation contains no credential lookup, provider SDK, live
+transport, external request, environment setting, migration, private data, or
+runtime integration. `store: false` is not treated as Zero Data Retention.
+
+**Offline verification:** Eight fictional cases matched their expected release
+result. The matrix includes useful and safely injection-resistant suggestions,
+repetition, leading language, unsupported authority, malformed output, and
+clarity drafts that preserve or erase uncertainty. Focused tests also prove
+explicit fictional classification, secret and oversized-context rejection,
+strict prompt/topic boundaries, one-call behavior, and deterministic fallback
+for invalid, unavailable, and slow transport results. This verifies the harness,
+not an external model.
+
+**Still separately gated:**
+
+- review the completed harness and credential-handling procedure;
+- authorize one credential-scoped, billable evaluation using fictional cases;
+- verify the exact provider project data-use and retention configuration;
+- record and review the resulting pass/fail evidence;
+- enable one isolated private test environment before any JU request; and
 - require separate authorization for JU configuration and real use.
 
 ### Slice D — Bounded private pilot
@@ -413,22 +445,20 @@ answers that changed, conflicting accounts, unknowns, another-department
 validation, prompt-injection text inside evidence, and a valid no-change
 Knowledge Outcome.
 
-## Expected repository impact after authorization
+## Repository impact
 
-Likely implementation areas include:
+Slices A and B already supplied the durable assistance model and private human-
+review UX. The LAD-064 repository-only foundation adds:
 
-- one forward-only migration and matching `db/schema.ts` additions;
-- a provider-neutral Discovery assistance domain/service layer;
-- deterministic context selection and redaction utilities;
-- Process-bound and inquiry-bound interview adapters;
-- private Studio interview UI and server actions;
-- exact least-privilege role and rollout verification artifacts;
-- unit, integration, privilege, and fictional provider-evaluation tests; and
-- updates to Discovery, Workspace Studio, security, and deployment documents.
+- a pure OpenAI evaluation request/response and safety contract;
+- a server-only boundary that accepts an injected transport but cannot read a
+  credential or make a request by itself;
+- fictional evaluation fixtures and an offline evaluator;
+- focused contract, redaction, injection, fallback, and release-gate tests; and
+- architecture and roadmap documentation.
 
 No provider package, credential, environment variable, real Organization data,
-deployment, or migration should be introduced during the architecture-only
-step.
+deployment, database privilege, or migration is required or authorized.
 
 ## Affected architecture decisions
 
@@ -458,6 +488,11 @@ LAD-063 follows and narrowly extends LAD-061 and follows the same tenant,
 evidence, lifecycle, and authority decisions listed above, plus LAD-062. It
 adds attributable mocked assistance without changing those decisions and
 conflicts with or supersedes none of them.
+
+LAD-064 follows and narrowly extends LAD-061 and LAD-063. It permits only a
+fictional, stateless, tool-free, repository-only evaluation foundation. It does
+not lift any credential, external-request, private-data, environment,
+deployment, public-demo, approval, or autonomous-AI prohibition.
 
 Operational Scenarios, Seasonal Operations, lessons learned, Organizational
 Impact Analysis, and policy or plan approval remain separately deferred; AI

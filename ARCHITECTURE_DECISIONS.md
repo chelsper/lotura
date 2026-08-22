@@ -107,6 +107,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-061 | AI-assisted Discovery asks from bounded prior context without becoming evidence or authority | Accepted — Slice A complete and isolated fictional verification passed |
 | LAD-062 | Process-bound reconciliation is exception-driven and no change is the default valid outcome | Accepted — generic implementation complete and isolated fictional verification passed |
 | LAD-063 | Mocked AI assistance is an attributable artifact, never evidence or authority | Accepted — Slice B generic implementation complete and isolated fictional verification passed; no real provider authorized |
+| LAD-064 | External AI evaluation is fictional, stateless, tool-free, and separate from private use | Accepted — repository-only Slice C evaluation foundation implemented and offline-verified; no credential, external request, or private use authorized |
 
 ## Decision records
 
@@ -2549,6 +2550,100 @@ AI-selected evidence state or outcome, AI routing, structured mapping,
 approval, operating-model mutation, Scenario creation, unrestricted search,
 score, or analytics. Slice C must separately decide provider, privacy,
 retention, consent, credential, context-preview, and evaluation requirements.
+
+### LAD-064 — External AI evaluation is fictional, stateless, tool-free, and separate from private use
+
+**Status:** Accepted — the repository-only AI-Assisted Discovery Slice C
+evaluation foundation is implemented and offline-verified against eight
+fictional expected outcomes. No API credential, external provider request,
+private Organization content, environment configuration, deployment, or
+database change is authorized.
+
+**Context:** LAD-063 proved that Lotura can preserve bounded sources, model
+suggestions, human decisions, and any resulting human observation without
+confusing assistance with evidence. The deterministic mock cannot establish
+whether an external model asks useful, conversational, non-repetitive questions
+or preserves uncertainty when improving hurried notes. Evaluating those
+behaviors introduces provider data-use, retention, credential, cost, prompt,
+and failure-mode concerns that must remain separate from JU use.
+
+**Decision:** Slice C begins with a repository-only, fictional evaluation
+contract for OpenAI. The initial candidate is `gpt-5.6-terra` with low reasoning
+under prompt policy `lad-064-eval-v1`. The candidate is an evaluation choice,
+not a private-workspace approval or permanent production default. A different
+model or prompt-policy version creates a new attributable evaluation basis.
+
+The contract uses the Responses API shape with `store: false`, background
+processing disabled, no conversation or previous-response state, no tools,
+strict JSON Schema output, a bounded output limit, and one request timeout.
+`store: false` limits Responses application-state storage; it does not by itself
+establish Zero Data Retention or eliminate provider abuse-monitoring retention.
+Before any private use, Lotura must verify and explicitly accept the exact
+provider account or project data controls, contractual terms, retention,
+geographic requirements, and institutional policy.
+
+Every evaluation input is explicitly classified as fictional. The adapter
+receives only the existing allowlisted assistance packet and optional fictional
+rough notes. Deterministic field allowlisting and secret-pattern rejection run
+before transport. Source text is delimited and treated as untrusted evidence,
+never instructions. The model receives no database credential, browser, file,
+web, MCP, application tool, or canonical-write capability. The repository
+foundation uses an injected transport and cannot read a provider credential or
+make a network request on its own.
+
+The evaluation set covers useful, repetitive, leading, unsupported, unsafe,
+and malformed suggestions; uncertainty-preserving clarity help; prompt
+injection embedded in evidence; secret rejection; and unavailable or slow
+provider fallback. Release criteria are explicit pass/fail checks, not a
+user-facing confidence or organizational-health score. Syntactic validity,
+tenant and prompt consistency, secret rejection, no authority claims, safe
+fallback, and human judgments of relevance, conversational wording,
+non-repetition, and source fidelity remain distinguishable.
+
+Provider output remains an assistance artifact. It cannot select an evidence
+state, answer for a participant, create an observation, establish a Knowledge
+Outcome, route an inquiry, propose or approve a change, mutate the operating
+model, create a Scenario, or become policy. The fixed catalog remains available
+when assistance is declined, disabled, unavailable, invalid, or unsafe.
+
+**Why:** A live model should be introduced through representative, inspectable
+fictional cases before any institution supplies private context. Stateless,
+tool-free requests and strict response validation minimize the provider surface;
+an injected transport makes the request contract and fallbacks testable without
+a credential. Separating evaluation from enablement prevents a promising model
+result from silently becoming permission to process JU information.
+
+**Alternatives considered:** Enable OpenAI directly in JU; treat `store: false`
+as equivalent to Zero Data Retention; send real interviews to improve the
+evaluation; allow tools or provider-managed conversation state; log prompts and
+answers for debugging; accept free-form model text; use an aggregate quality
+score; or let the external model replace the deterministic fallback. These were
+rejected because they broaden disclosure, overstate retention protections,
+weaken reproducibility and validation, expose private content, or obscure why a
+candidate passed.
+
+**Affected decisions:** LAD-064 follows and narrowly extends LAD-061 and
+LAD-063. It also follows LAD-002, LAD-003, LAD-008, LAD-015 through LAD-018,
+LAD-020 through LAD-022, LAD-025, LAD-026, LAD-029, LAD-032, LAD-035 through
+LAD-037, LAD-042 through LAD-046, LAD-049 through LAD-053, LAD-056, LAD-057,
+LAD-060, and LAD-062. It preserves public/private and environment isolation,
+append-only provenance, human epistemic authority, valid no-change outcomes,
+and separate proposal, approval, and application boundaries. It conflicts with
+and supersedes no accepted decision.
+
+**Consequences and deferrals:** The repository-only foundation may add a pure
+request/response contract, a server-only injected-transport boundary, fictional
+fixtures, an offline evaluator, tests, and documentation. It requires no schema
+migration because LAD-063's append-only assistance model already preserves the
+necessary provider, model, prompt-policy, context, suggestion, and human-decision
+provenance.
+
+A real API credential, provider call, SDK or live transport, billable request,
+test-environment secret, recorded external evaluation, private context preview,
+participant disclosure, Organization enablement, JU configuration or data,
+Vercel or Neon change, Production deployment, and Slice D private pilot remain
+separately gated. Before a first external fictional request, the completed
+repository harness and exact credential-handling procedure must be reviewed.
 
 ### LAD-062 — Process-bound reconciliation is exception-driven and no change is the default valid outcome
 

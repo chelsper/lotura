@@ -52,3 +52,6 @@ export function createMockClarityDraft(
 export function validateMockSuggestions(
   suggestions: unknown,
 ): suggestions is DiscoveryAssistanceSuggestion[];
+export function validateAssistanceSuggestions(
+  suggestions: unknown,
+): suggestions is DiscoveryAssistanceSuggestion[];
