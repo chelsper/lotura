@@ -1,7 +1,7 @@
 # AI-Assisted Discovery non-confidential pilot authorization
 
 **Decision basis:** LAD-066
-**Status:** Contract accepted; repository-only D1 authorization foundation implemented; activation and rollout not authorized
+**Status:** Contract accepted; repository-only D1 authorization and inactive transport foundations implemented; activation and rollout not authorized
 **Provider documentation reviewed:** August 22, 2026
 
 ## Purpose
@@ -103,12 +103,30 @@ The approved repository foundation now provides:
   conversation-free, previous-response-free structured request builder; and
 - deterministic fallback to the regular interview questions.
 
-The foundation intentionally contains no provider transport, SDK, credential
-lookup, `process.env` access, environment value, database migration, runtime
-route activation, Vercel change, Neon change, or JU data change. The existing
+The repository also contains a disconnected server-only OpenAI transport that:
+
+- accepts its credential and fetch implementation only through explicit server
+  injection and performs no `process.env` lookup;
+- requires the enabled exact Organization, environment, and reviewed OpenAI
+  project configuration before transport;
+- sends one POST only to the Responses endpoint with the reviewed project
+  header and the pinned `gpt-5.6-terra` / `lad-064-v4` contract;
+- uses one bounded timeout and abort with no retry;
+- bounds and validates the outer provider response, exact model, completed
+  assistant message, optional reasoning item, structured suggestion, and
+  absence of tool output;
+- exposes only permitted model, project, prompt-policy, token-count, request-
+  count, and status metadata; and
+- returns content-safe manual fallback reasons without logging provider,
+  participant, or error content.
+
+The foundation intentionally contains no SDK, credential lookup, `process.env`
+access, environment value, database migration, runtime route activation, Vercel
+change, Neon change, or JU data change. The injected transport has made no real
+provider request and cannot run through an application route. The existing
 deterministic mocked provider remains the only active application provider.
-This means the interface component and authorization functions can be reviewed
-and tested without making external assistance available.
+This means the interface, authorization functions, and transport failure modes
+can be reviewed and tested without making external assistance available.
 
 The implementation follows LAD-002, LAD-003, LAD-008, LAD-015 through LAD-018,
 LAD-020, LAD-021, LAD-025, LAD-029, LAD-037, LAD-042, LAD-046, LAD-051, LAD-060,
@@ -148,12 +166,13 @@ authorization.
 - [ ] Prove the provider cannot create evidence or write any canonical,
       proposal, review, Structure, history, or policy record.
 
-The repository-only foundation implements the static parts of this gate, but
-the boxes remain open until an exact runtime configuration and transport are
-separately reviewed. Timeout, no-retry transport behavior, provider-project
-identity, content-safe operational logging, persistence provenance, and write-
-denial behavior must be proven against that exact runtime before any box is
-closed.
+The repository-only foundation implements the static boundary and an injected,
+fictional-verified transport. The boxes remain open until an exact provider
+project, credential target, runtime configuration, route integration, and
+deployment are separately reviewed. Timeout, no-retry behavior, provider-
+project identity, content-safe operational logging, persistence provenance,
+and write-denial behavior must still be proven against that exact runtime
+before any box is closed.
 
 ## Gate 3 — Bounded rollout
 

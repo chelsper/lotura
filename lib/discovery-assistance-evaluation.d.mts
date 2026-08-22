@@ -70,6 +70,22 @@ export function parseOpenAIDiscoveryEvaluationOutput(
   outputText: string,
 ): DiscoveryAssistanceSuggestion[];
 
+export function evaluateDiscoveryAssistanceSafety(
+  input: Pick<
+    FictionalDiscoveryEvaluationInput,
+    "assistanceKind" | "originalText" | "packet"
+  >,
+  suggestions: DiscoveryAssistanceSuggestion[],
+): {
+  advancesUnresolvedDetail: boolean;
+  noAuthorityClaim: boolean;
+  nonLeading: boolean;
+  nonRepetitive: boolean;
+  preservesUncertainty: boolean;
+  safeContent: boolean;
+  schemaAndContextValid: boolean;
+};
+
 export function evaluateDiscoveryAssistanceCandidate(input: {
   humanReview?: DiscoveryAssistanceHumanReview | null;
   input: FictionalDiscoveryEvaluationInput;

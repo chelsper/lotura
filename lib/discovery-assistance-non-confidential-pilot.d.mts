@@ -1,5 +1,6 @@
 import type {
   DiscoveryAssistancePacket,
+  DiscoveryAssistanceSuggestion,
 } from "./discovery-assistance-model.mjs";
 
 export type NonConfidentialPilotConfiguration =
@@ -14,6 +15,7 @@ export type NonConfidentialPilotConfiguration =
       enabled: true;
       organizationId: number;
       providerKey: "openai";
+      providerProjectId: string;
     };
 
 export type NonConfidentialPilotPreview = {
@@ -43,6 +45,12 @@ export type NonConfidentialPilotInput = {
 };
 
 export const NON_CONFIDENTIAL_PILOT_DISCLOSURE: string;
+export const NON_CONFIDENTIAL_PILOT_CONTRACT: Readonly<{
+  modelIdentifier: "gpt-5.6-terra";
+  promptPolicyVersion: "lad-064-v4";
+  providerKey: "openai";
+  reasoningEffort: "low";
+}>;
 export const NON_CONFIDENTIAL_PILOT_AFFIRMATIONS: ReadonlyArray<{
   key: string;
   label: string;
@@ -81,6 +89,11 @@ export function authorizeNonConfidentialPilotRequest(
   };
   request: Record<string, unknown>;
 };
+
+export function parseNonConfidentialPilotOutput(
+  input: NonConfidentialPilotInput,
+  outputText: string,
+): DiscoveryAssistanceSuggestion[];
 
 export function nonConfidentialPilotFallback(reason?: string): {
   fallback: "standard_questions";

@@ -178,9 +178,11 @@ milestones:
    Its repository-only D1 authorization foundation now implements participant
    disclosure, exact context review, two confirmations, fail-closed Organization
    and environment allowlists, prohibited-content checks, a default-engaged kill
-   switch, stateless request construction, and manual fallback. It contains no
-   live transport, credential, environment activation, migration, runtime route,
-   deployment, or JU data change. Provider-project configuration, transport,
+   switch, stateless request construction, and manual fallback. A disconnected,
+   injected transport now adds a single bounded Responses call, timeout and
+   abort, no retry, strict outer-response validation, and content-safe fallback.
+   It contains no credential lookup, environment activation, migration, runtime
+   route, deployment, or JU data change. Provider-project configuration,
    isolated runtime verification, and the first request remain separately gated.
    Structured-mapping suggestions remain later; AI may never approve or apply
    them. The accepted staged boundary and provider gate are recorded in
@@ -438,7 +440,7 @@ This register makes intentional postponement visible so ideas are neither mistak
 | Editing and knowledge stewardship | Phase 2 | Capture requires provenance, observation status, review meaning, and organizational authorization. |
 | JU Pilot with institutional information | Phase 2 | Pilot use requires private authenticated access and explicit data approval. |
 | Guided interviews | Phase 2 | Manual guided interviewing requires approved scope, disclosure, provenance, observation preservation, and human review. |
-| AI-assisted interviews and mappings | Milestone 7 | LAD-061 Slice A deterministic prior-evidence reuse and LAD-063 Slice B attributable mocked question/clarity suggestions are implemented and isolated-verified. LAD-064's prompt policy v4 is offline-verified against eleven fictional outcomes after v2 failed human non-repetition review and v3 failed human source-fidelity review. Controlled v1 and v4 fictional cases pass. LAD-065 retains the ZDR gate for confidential use. LAD-066 permits a bounded non-confidential pilot under accepted standard retention. Its repository-only D1 authorization foundation is implemented without live transport or runtime activation; provider-project, credential, isolated runtime, deployment, and first-request gates remain incomplete. |
+| AI-assisted interviews and mappings | Milestone 7 | LAD-061 Slice A deterministic prior-evidence reuse and LAD-063 Slice B attributable mocked question/clarity suggestions are implemented and isolated-verified. LAD-064's prompt policy v4 is offline-verified against eleven fictional outcomes after v2 failed human non-repetition review and v3 failed human source-fidelity review. Controlled v1 and v4 fictional cases pass. LAD-065 retains the ZDR gate for confidential use. LAD-066 permits a bounded non-confidential pilot under accepted standard retention. Its repository-only D1 authorization and disconnected transport foundations are implemented without a credential, runtime activation, route, or provider request; provider-project, isolated runtime, deployment, and first-request gates remain incomplete. |
 | Conflict detection, reconciliation, and consensus | Phase 2 | Lotura must preserve conflicting observations before stewards establish an approved definition. |
 | Approval workflow and process version history | Phase 2 | Observation, proposal, consensus, approval, effective timing, and supersession must remain distinct. |
 | Change requests and continuous improvement | Phase 2 and 3 | Phase 2 captures the reason for change; Phase 3 evaluates implementation, measurement, result, and sustainment. |

@@ -22,8 +22,10 @@ LAD-066 separately permits a bounded non-confidential test path under standard
 provider retention. Its repository-only D1 authorization foundation now
 provides the disclosure, exact context preview, two confirmations, fail-closed
 allowlists, prohibited-content checks, request boundary, kill switch, and
-manual fallback without adding a live transport. Provider-project, credential,
-runtime, deployment, and first-request gates remain incomplete.
+manual fallback. A disconnected injected transport adds one bounded Responses
+request, abort, no-retry behavior, strict response validation, and content-safe
+fallback without activating a provider. Provider-project, credential, runtime,
+deployment, and first-request gates remain incomplete.
 
 ## Product outcome
 
@@ -496,7 +498,7 @@ complete evidence and approval sequence is recorded in
 
 ### Slice D1 — Bounded non-confidential pilot
 
-**Repository-only authorization foundation implemented:**
+**Repository-only authorization and inactive transport foundations implemented:**
 
 - server-only, disabled-by-default pilot policy with an independently
   default-engaged kill switch;
@@ -510,10 +512,17 @@ complete evidence and approval sequence is recorded in
   background or provider state, strict output, and one suggestion; and
 - deterministic standard-question fallback.
 
-This foundation is deliberately dormant. It has no provider transport, SDK,
-credential lookup, environment activation, database migration, runtime route,
-deployment, or JU data change. The current product continues to use only the
-deterministic mocked provider.
+The disconnected transport additionally pins the official Responses endpoint,
+reviewed OpenAI project header, `gpt-5.6-terra`, and `lad-064-v4`; authorizes
+before transport; makes at most one request; applies one timeout and abort;
+rejects unexpected model, tool, message, size, or structured-output shapes; and
+returns only safe fallback categories and permitted non-content metadata.
+
+This foundation is deliberately dormant. It has no SDK, credential lookup,
+environment activation, database migration, runtime route, deployment, or JU
+data change. The transport accepts an injected fictional credential in tests
+only and has made no external request. The current product continues to use
+only the deterministic mocked provider.
 
 **Still required before activation:**
 

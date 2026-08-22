@@ -72,6 +72,7 @@ const enabledConfiguration = {
   enabled: true,
   organizationId: 17,
   providerKey: "openai",
+  providerProjectId: "proj_fictional_pilot",
 };
 
 test("LAD-066 authorizes only an explicitly non-confidential bounded pilot", async () => {
@@ -120,6 +121,7 @@ test("enablement requires the exact authenticated Organization and environment",
     LOTURA_AI_ASSISTANCE_PILOT_ENVIRONMENT: "production",
     LOTURA_AI_ASSISTANCE_PILOT_KILL_SWITCH: "off",
     LOTURA_AI_ASSISTANCE_PILOT_MODE: "non_confidential_pilot",
+    LOTURA_AI_ASSISTANCE_PILOT_OPENAI_PROJECT_ID: "proj_fictional_pilot",
     LOTURA_AI_ASSISTANCE_PILOT_ORGANIZATION_ID: "17",
   };
   assert.deepEqual(
@@ -130,6 +132,7 @@ test("enablement requires the exact authenticated Organization and environment",
       enabled: true,
       organizationId: 17,
       providerKey: "openai",
+      providerProjectId: "proj_fictional_pilot",
     },
   );
 
@@ -234,6 +237,14 @@ test("an authorized request remains foreground, stateless, tool-free, and strict
   assert.equal(request.text.format.schema.properties.suggestions.maxItems, 1);
   assert.equal("conversation" in request, false);
   assert.equal("previous_response_id" in request, false);
+  assert.match(
+    request.input[0].content[0].text,
+    /specific unresolved fact, contradiction, dependency, or uncertainty/i,
+  );
+  assert.match(
+    request.input[0].content[0].text,
+    /ask whether it is true before asking what follows/i,
+  );
   assert.deepEqual(
     JSON.parse(request.input[1].content[0].text),
     preview.providerContext,
@@ -246,6 +257,12 @@ test("obvious secrets, personal identifiers, disallowed fields, and unlisted fie
       const input = structuredClone(boundedInput);
       input.packet.sources[0].snapshot.purpose =
         "Use postgresql://owner:secret@example.invalid/workspace";
+      return input;
+    })(),
+    (() => {
+      const input = structuredClone(boundedInput);
+      input.packet.sources[1].snapshot.responseText =
+        "Use sk-proj-not-a-real-secret-1234567890";
       return input;
     })(),
     (() => {
@@ -289,25 +306,32 @@ test("the participant-facing authorization is plain-language, exact-context, and
   assert.doesNotMatch(component, /canonical|sanitized working draft/i);
 });
 
-test("the D1 repository boundary has no live transport, credential, schema, or runtime activation", async () => {
-  const [contract, wrapper, provider, journal, documentation] =
+test("the D1 authorization boundary has no credential, schema, route wiring, or runtime activation", async () => {
+  const [contract, wrapper, transport, transportWrapper, provider, journal, documentation] =
     await Promise.all([
       read("lib/discovery-assistance-non-confidential-pilot.mjs"),
       read("lib/discovery-assistance-non-confidential-pilot.ts"),
+      read("lib/discovery-assistance-openai-pilot-transport.mjs"),
+      read("lib/discovery-assistance-openai-pilot-transport.ts"),
       read("lib/discovery-assistance-provider.ts"),
       read("drizzle/meta/_journal.json"),
       read("docs/AI_ASSISTED_DISCOVERY_NON_CONFIDENTIAL_PILOT_AUTHORIZATION.md"),
     ]);
   assert.match(wrapper, /import "server-only"/);
+  assert.match(transportWrapper, /import "server-only"/);
   assert.doesNotMatch(
     contract,
     /OPENAI_API_KEY|api\.openai\.com|\bfetch\s*\(|process\.env/,
+  );
+  assert.doesNotMatch(
+    transport,
+    /OPENAI_API_KEY|process\.env|console\.|\blog\s*\(/,
   );
   assert.match(provider, /key: "mocked_provider"/);
   assert.match(journal, /"idx": 29/);
   assert.doesNotMatch(journal, /"idx": 30/);
   assert.match(
     documentation,
-    /no provider transport, SDK, credential\s+lookup, `process\.env` access, environment value/,
+    /no SDK, credential lookup, `process\.env`\s+access, environment value/,
   );
 });

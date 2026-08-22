@@ -109,7 +109,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-063 | Mocked AI assistance is an attributable artifact, never evidence or authority | Accepted — Slice B generic implementation complete and isolated fictional verification passed; no real provider authorized |
 | LAD-064 | External AI evaluation is fictional, stateless, tool-free, and separate from private use | Accepted — v1 and v4 passed controlled fictional cases; v2 and v3 exposed distinct human-review failures; private use remains unauthorized |
 | LAD-065 | Private external AI assistance is Organization-opt-in and requires verified provider data controls | Accepted — private-pilot authorization contract; implementation and JU use remain separately gated |
-| LAD-066 | An explicitly non-confidential AI pilot may operate under standard provider retention | Accepted — repository-only D1 authorization foundation implemented; activation and rollout remain separately gated |
+| LAD-066 | An explicitly non-confidential AI pilot may operate under standard provider retention | Accepted — repository-only D1 authorization and inactive transport foundations implemented; activation and rollout remain separately gated |
 
 ## Decision records
 
@@ -2822,9 +2822,9 @@ AI-suggested structured mappings remain deferred.
 ### LAD-066 — An explicitly non-confidential AI pilot may operate under standard provider retention
 
 **Status:** Accepted — the non-confidential pilot contract is approved and its
-repository-only D1 authorization foundation is implemented. A credential,
-external request, environment configuration, deployment, or JU rollout remains
-separately gated.
+repository-only D1 authorization and inactive transport foundations are
+implemented. A credential, external request, environment configuration,
+deployment, or JU rollout remains separately gated.
 
 **Context:** LAD-065 was approved after confirming that `store: false` is not
 equivalent to Zero Data Retention. Its initial wording treated a private,
@@ -2916,11 +2916,19 @@ allowlists; a default-engaged manual kill switch; deterministic manual
 fallback; allowlisted context construction; secret and obvious prohibited-
 content rejection; an exact context-review component; two required participant
 confirmations; a stale-context fingerprint guard; and a stateless, foreground,
-tool-free request builder. The implementation contains no transport, credential
-lookup, provider SDK, environment activation, database change, or runtime route
-wiring. A dedicated provider project, server-only credential, cost controls,
-transport timeout, logging verification, exact-commit deployment, isolated
-runtime verification, and first-request review remain incomplete rollout gates.
+tool-free request builder. An additional server-only wrapper now exposes an
+injected transport fixed to the Responses endpoint, reviewed OpenAI project,
+model, and prompt policy. It authorizes before transport, makes at most one
+request, applies one bounded timeout and abort, rejects tool-shaped, wrong-model,
+malformed, or oversized responses while accepting the documented optional
+reasoning item, returns only content-safe fallback reasons, and retains only
+permitted non-content metadata in its result. The approved v4
+prompt policy is shared by the pilot request rather than weakened for runtime.
+The implementation contains no credential lookup, provider SDK, environment
+activation, database change, runtime route wiring, or automatic retry. A
+dedicated provider project, server-only credential configuration, cost controls,
+logging verification, exact-commit deployment, isolated runtime verification,
+and first-request review remain incomplete rollout gates.
 Confidential information, broader Organization enablement, files, images,
 audio, tools, background mode, provider-managed state, and AI-suggested
 structured mappings remain deferred.
