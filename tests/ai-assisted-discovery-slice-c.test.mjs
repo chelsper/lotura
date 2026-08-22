@@ -50,7 +50,7 @@ const validOutput = JSON.stringify({
       originalText: null,
       promptKey: "systems",
       rationale: "The earlier fictional answer still needs validation.",
-      suggestedText: "At the fictional printing handoff, what technology is used and what still needs confirmation?",
+      suggestedText: "What still needs confirmation about the physical card requirement at the fictional printing handoff?",
       topic: "systems",
     },
   ],
@@ -68,6 +68,8 @@ test("LAD-064 records fictional evaluations without authorizing private use", as
   assert.match(decision, /one separately authorized,\s+credential-scoped `gpt-5\.6-terra` evaluation/);
   assert.match(decision, /ephemeral hidden credential/);
   assert.match(decision, /Version 2 therefore does not pass the human release gate/);
+  assert.match(decision, /Prompt policy `lad-064-eval-v3`/);
+  assert.match(decision, /transparent lexical-semantic repetition guard/);
   assert.match(decision, /required human\s+non-repetition criterion failed/);
   assert.match(decision, /Neither one-case result authorizes private use/);
   assert.match(decision, /Provider-account data-use[\s\S]*Slice D private pilot remain separately gated/);
@@ -79,7 +81,7 @@ test("the OpenAI evaluation request is pinned, stateless, tool-free, and strictl
   assert.deepEqual(OPENAI_DISCOVERY_EVALUATION_CONTRACT, {
     dataClassification: "fictional",
     modelIdentifier: "gpt-5.6-terra",
-    promptPolicyVersion: "lad-064-eval-v2",
+    promptPolicyVersion: "lad-064-eval-v3",
     providerKey: "openai",
     reasoningEffort: "low",
   });
@@ -93,7 +95,8 @@ test("the OpenAI evaluation request is pinned, stateless, tool-free, and strictl
   assert.equal(request.text.format.strict, true);
   assert.equal(request.text.format.schema.properties.suggestions.maxItems, 1);
   assert.match(request.input[0].content[0].text, /return exactly one short, conversational question/i);
-  assert.match(request.input[0].content[0].text, /highest-value unresolved gap/i);
+  assert.match(request.input[0].content[0].text, /specific unresolved fact, contradiction, dependency, or uncertainty/i);
+  assert.match(request.input[0].content[0].text, /Do not merely restate the current topic/i);
   assert.ok(request.max_output_tokens <= 1200);
   assert.equal("conversation" in request, false);
   assert.equal("previous_response_id" in request, false);
@@ -101,6 +104,45 @@ test("the OpenAI evaluation request is pinned, stateless, tool-free, and strictl
   const boundedInput = JSON.parse(request.input[1].content[0].text);
   assert.equal(boundedInput.dataClassification, "fictional");
   assert.deepEqual(boundedInput.packet, fictionalInput.packet);
+});
+
+test("v3 catches the measured semantic repetition and requires the unresolved source detail", () => {
+  const repeatedTopic = evaluateDiscoveryAssistanceCandidate({
+    humanReview: {
+      conversational: true,
+      faithfulToSources: true,
+      nonRepetitive: true,
+      relevant: true,
+    },
+    input: fictionalInput,
+    outputText: JSON.stringify({
+      suggestions: [{
+        kind: "follow_up_question",
+        originalText: null,
+        promptKey: "systems",
+        rationale: "This was the measured version 2 candidate.",
+        suggestedText: "What tools or systems do you use when handing off a print job?",
+        topic: "systems",
+      }],
+    }),
+  });
+  assert.equal(repeatedTopic.automatedChecks.nonRepetitive, false);
+  assert.equal(repeatedTopic.automatedChecks.advancesUnresolvedDetail, false);
+  assert.equal(repeatedTopic.passesReleaseGate, false);
+
+  const focusedDetail = evaluateDiscoveryAssistanceCandidate({
+    humanReview: {
+      conversational: true,
+      faithfulToSources: true,
+      nonRepetitive: true,
+      relevant: true,
+    },
+    input: fictionalInput,
+    outputText: validOutput,
+  });
+  assert.equal(focusedDetail.automatedChecks.nonRepetitive, true);
+  assert.equal(focusedDetail.automatedChecks.advancesUnresolvedDetail, true);
+  assert.equal(focusedDetail.passesReleaseGate, true);
 });
 
 test("fictional classification and deterministic secret rejection run before transport", async () => {

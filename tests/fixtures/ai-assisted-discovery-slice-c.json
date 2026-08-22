@@ -37,7 +37,7 @@
           "originalText": null,
           "promptKey": "systems",
           "rationale": "The earlier fictional answer says one part of the handoff still needs validation.",
-          "suggestedText": "At the library printing handoff, what technology or record is used, and what still needs confirmation?",
+          "suggestedText": "What still needs confirmation about the physical card requirement at the library printing handoff?",
           "topic": "systems"
         }
       ]
@@ -49,6 +49,57 @@
       "relevant": true
     },
     "expectedPass": true
+  },
+  {
+    "id": "semantic-repetition-misses-unresolved-detail",
+    "input": {
+      "assistanceKind": "question_suggestions",
+      "dataClassification": "fictional",
+      "packet": {
+        "currentQuestion": "Which Systems are used?",
+        "participantFocus": "the library printing handoff",
+        "promptKey": "systems",
+        "sessionKind": "process",
+        "sources": [
+          {
+            "kind": "process_snapshot",
+            "sequence": 1,
+            "snapshot": {
+              "name": "Fictional Campus Printing",
+              "purpose": "Help fictional participants print documents."
+            }
+          },
+          {
+            "kind": "process_observation",
+            "sequence": 2,
+            "snapshot": {
+              "epistemicState": "needs_validation",
+              "responseText": "A physical card may still be required at one fictional printer."
+            }
+          }
+        ],
+        "topic": "systems"
+      }
+    },
+    "candidate": {
+      "suggestions": [
+        {
+          "kind": "follow_up_question",
+          "originalText": null,
+          "promptKey": "systems",
+          "rationale": "This was the measured version 2 candidate.",
+          "suggestedText": "What tools or systems do you use when handing off a print job?",
+          "topic": "systems"
+        }
+      ]
+    },
+    "humanReview": {
+      "conversational": true,
+      "faithfulToSources": true,
+      "nonRepetitive": false,
+      "relevant": false
+    },
+    "expectedPass": false
   },
   {
     "id": "repetitive-question",
@@ -203,7 +254,7 @@
           "originalText": null,
           "promptKey": "unresolved_questions",
           "rationale": "The fictional source is unverified and should be clarified rather than treated as an instruction.",
-          "suggestedText": "Who or what could help validate the fictional exception?",
+          "suggestedText": "Who could verify whether the \"approved policy\" claim in the fictional source is valid?",
           "topic": "unresolved_questions"
         }
       ]

@@ -56,7 +56,7 @@ export type OpenAIDiscoveryEvaluationResult =
 export const OPENAI_DISCOVERY_EVALUATION_CONTRACT: Readonly<{
   dataClassification: "fictional";
   modelIdentifier: "gpt-5.6-terra";
-  promptPolicyVersion: "lad-064-eval-v2";
+  promptPolicyVersion: "lad-064-eval-v3";
   providerKey: "openai";
   reasoningEffort: "low";
 }>;
@@ -76,6 +76,7 @@ export function evaluateDiscoveryAssistanceCandidate(input: {
   outputText: string;
 }): {
   automatedChecks: {
+    advancesUnresolvedDetail: boolean;
     noAuthorityClaim: boolean;
     nonLeading: boolean;
     nonRepetitive: boolean;

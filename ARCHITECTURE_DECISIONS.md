@@ -107,7 +107,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-061 | AI-assisted Discovery asks from bounded prior context without becoming evidence or authority | Accepted — Slice A complete and isolated fictional verification passed |
 | LAD-062 | Process-bound reconciliation is exception-driven and no change is the default valid outcome | Accepted — generic implementation complete and isolated fictional verification passed |
 | LAD-063 | Mocked AI assistance is an attributable artifact, never evidence or authority | Accepted — Slice B generic implementation complete and isolated fictional verification passed; no real provider authorized |
-| LAD-064 | External AI evaluation is fictional, stateless, tool-free, and separate from private use | Accepted — v1 passed one controlled fictional case; v2 passed automation but failed human non-repetition review; private use remains unauthorized |
+| LAD-064 | External AI evaluation is fictional, stateless, tool-free, and separate from private use | Accepted — v1 passed one controlled fictional case; v2 failed human non-repetition review; v3 is offline-verified and private use remains unauthorized |
 
 ## Decision records
 
@@ -2554,8 +2554,9 @@ retention, consent, credential, context-preview, and evaluation requirements.
 ### LAD-064 — External AI evaluation is fictional, stateless, tool-free, and separate from private use
 
 **Status:** Accepted — the repository-only AI-Assisted Discovery Slice C
-evaluation foundation is implemented and offline-verified against eight
-fictional expected outcomes. On August 22, 2026, one separately authorized,
+evaluation foundation and version 3 refinement are implemented and
+offline-verified against nine expected outcomes, including the measured
+version 2 semantic repetition failure. On August 22, 2026, one separately authorized,
 credential-scoped `gpt-5.6-terra` evaluation of the fictional Campus Printing
 case passed every automated check and the four required human-review criteria.
 No private Organization content, persistent credential, environment
@@ -2587,6 +2588,17 @@ check, but human review found that the question still substantially repeated
 the current Systems question instead of pursuing the unresolved physical-card
 detail. Version 2 therefore does not pass the human release gate.
 
+Prompt policy `lad-064-eval-v3` is the current repository evaluation basis. It
+still returns exactly one question, but requires that question to pursue a
+specific unresolved source detail, contradiction, dependency, or uncertainty
+instead of merely restating the current topic with narrower context. A
+transparent lexical-semantic repetition guard canonicalizes a small reviewed
+vocabulary, compares meaningful-token coverage with current and prior
+questions, and requires overlap with concrete unresolved observation details.
+This deterministic guard catches the measured version 2 failure; it does not
+claim general semantic understanding and does not replace required human
+review. Version 3 has not been evaluated through an external provider.
+
 The contract uses the Responses API shape with `store: false`, background
 processing disabled, no conversation or previous-response state, no tools,
 strict JSON Schema output, a bounded output limit, and one request timeout.
@@ -2608,7 +2620,9 @@ make a network request on its own.
 The evaluation set covers useful, repetitive, leading, unsupported, unsafe,
 and malformed suggestions; uncertainty-preserving clarity help; prompt
 injection embedded in evidence; secret rejection; and unavailable or slow
-provider fallback. Release criteria are explicit pass/fail checks, not a
+provider fallback. It also includes a direct regression for topic-level
+paraphrase that fails to pursue the unresolved source detail. Release criteria
+are explicit pass/fail checks, not a
 user-facing confidence or organizational-health score. Syntactic validity,
 tenant and prompt consistency, secret rejection, no authority claims, safe
 fallback, and human judgments of relevance, conversational wording,
@@ -2666,6 +2680,11 @@ model, reasoning effort, and request boundary. It used 436 input tokens and 86
 output tokens. All automated checks passed, but the required human
 non-repetition criterion failed. Its sanitized evidence is recorded in
 [AI_ASSISTED_DISCOVERY_SLICE_C_V2_EVALUATION_2026_08_22.md](docs/evaluations/AI_ASSISTED_DISCOVERY_SLICE_C_V2_EVALUATION_2026_08_22.md).
+
+Version 3 was then implemented and verified offline only. Its prompt and
+deterministic evaluator now require a concrete unresolved-detail advance and
+reject the exact version 2 response as semantic repetition. No credential or
+external request was used for this refinement.
 
 Neither one-case result authorizes private use. Provider-account data-use
 and retention acceptance, a private context preview, participant disclosure,
