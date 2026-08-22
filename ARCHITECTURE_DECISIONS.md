@@ -106,6 +106,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-060 | Inquiry-scoped evidence produces an immutable human Knowledge Outcome before any Process proposal | Accepted — implemented, deployed, and live read-validated |
 | LAD-061 | AI-assisted Discovery asks from bounded prior context without becoming evidence or authority | Accepted — Slice A complete and isolated fictional verification passed |
 | LAD-062 | Process-bound reconciliation is exception-driven and no change is the default valid outcome | Accepted — generic implementation complete and isolated fictional verification passed |
+| LAD-063 | Mocked AI assistance is an attributable artifact, never evidence or authority | Accepted — Slice B generic implementation complete and isolated fictional verification passed; no real provider authorized |
 
 ## Decision records
 
@@ -2359,9 +2360,11 @@ LAD-036, LAD-037, and LAD-053.
 fictional verification passed at migration journal `29/29`. The deterministic
 known-context brief, explicit prior-observation confirmation, one append-only
 confirmation-provenance table, and existing fixed-catalog fallback are
-implemented. This does not authorize a provider, model, package, credential,
+implemented. LAD-061 does not authorize a provider, model, package, credential,
 environment change, JU migration or data change, deployment, or infrastructure
-change. Slices B through D remain separately gated.
+change. LAD-063 separately authorizes a deterministic mocked provider and
+attributable Slice B artifacts and UX, but no external provider or credential.
+Slices C and D remain separately gated.
 
 **Context:** The complete manual path from interview evidence through human
 review, a valid no-change Knowledge Outcome, typed proposed changes, approval,
@@ -2451,9 +2454,10 @@ through LAD-053. It conflicts with and supersedes no accepted decision.
 
 **Consequences and deferrals:** Implementation proceeds in four separately
 controlled slices. The first—deterministic known-context and evidence reuse—is
-complete and isolated-verified. The remaining slices are not authorized:
-attributable question suggestions with a mocked provider; controlled
-provider evaluation; and an explicitly authorized private pilot. The smallest
+complete and isolated-verified. Slice B's attributable question suggestions
+with a mocked provider are separately authorized by LAD-063. Controlled
+provider evaluation and an explicitly authorized private pilot remain
+unauthorized. The smallest
 durable model must preserve immutable assistance runs, typed context sources,
 question suggestions, human decisions, and exact links to any resulting or
 confirmed observation. The full staged boundary is recorded in
@@ -2472,6 +2476,79 @@ future domains. Inquiry-scoped Discovery may preserve evidence that spans
 several Processes, and AI may ask source-grounded questions about it, but
 LAD-061 does not authorize AI to create a Scenario, infer undocumented
 dependencies, or establish informal behavior as policy.
+
+### LAD-063 — Mocked AI assistance is an attributable artifact, never evidence or authority
+
+**Status:** Accepted — AI-Assisted Discovery Slice B generic implementation is
+complete and isolated fictional verification passed at migration journal
+`30/30`. No real provider, credential, environment enablement, JU rollout, or
+public-demo capability is authorized.
+
+**Context:** Slice A reduced repetition by showing documented context and
+allowing a participant to confirm an exact prior observation. It did not yet
+test the durable boundary required for a contextual question or readability
+draft produced by a model. A model suggestion must remain distinguishable from
+the human answer that may follow it, including when the suggestion is skipped,
+edited, or rejected. Provider logs or browser state cannot supply the durable,
+Organization-scoped attribution Lotura requires.
+
+**Decision:** Slice B introduces four append-only concepts: an assistance run,
+its allowlisted typed context sources, one to three suggestions, and an
+explicit human decision about each suggestion. A run belongs to exactly one
+Process-bound or inquiry-bound interview and its exact revision. It records a
+provider key, pinned model identifier, prompt-policy version, context
+fingerprint, actor, and time. Every source is a typed same-Organization link
+with the exact bounded JSON projection and fingerprint used by the adapter.
+
+The only provider in this slice is a deterministic server-only mock behind a
+provider-neutral contract. It may suggest a follow-up question or, only when a
+participant explicitly supplies rough notes, a clarity draft. The interface
+shows the source wording and proposed wording separately. The participant may
+use, edit, skip, or reject the suggestion and must independently choose the
+evidence state. Accepting or editing atomically appends the human observation,
+the exact decision and observation link, and the session advance. Skipping or
+rejecting appends only the decision and leaves the standard question
+available. A suggestion alone never advances an interview or becomes
+evidence.
+
+Assistance history is immutable. The adapter receives only a deterministic,
+allowlisted context packet selected by the application. It receives no
+database access and cannot choose its sources. Process and inquiry references
+remain typed rather than collapsed into a generic target. The fixed manual
+question catalog remains available before, during, and after assistance.
+
+**Why:** This is the smallest reversible step that lets Lotura evaluate the
+human-control and provenance experience before sending organizational content
+to an external provider. It makes suggestions historically explainable while
+preserving the crucial distinction between model output and participant
+evidence.
+
+**Alternatives considered:** Keep suggestions only in browser state or logs;
+store only accepted wording; let the mock insert observations immediately;
+reuse a generic polymorphic reference; allow the adapter to query the
+workspace; or enable a real provider at the same time. These were rejected
+because they erase skipped or edited history, confuse suggestions with
+evidence, weaken tenant and target integrity, broaden model access, or combine
+an unproven product interaction with an external privacy and credential
+decision.
+
+**Affected decisions:** LAD-063 follows and narrowly extends LAD-061. It also
+follows LAD-002, LAD-003, LAD-008, LAD-015 through LAD-018, LAD-021, LAD-022,
+LAD-025, LAD-026, LAD-029, LAD-032, LAD-035 through LAD-037, LAD-042 through
+LAD-046, LAD-049 through LAD-053, LAD-056, LAD-057, LAD-060, and LAD-062. It
+preserves LAD-051 and LAD-060's valid no-change outcomes and LAD-062's
+exception-driven human review. It conflicts with or supersedes no accepted
+decision.
+
+**Consequences and deferrals:** Slice B may add one forward-only migration,
+typed schema objects, a provider-neutral service with deterministic mock,
+private Studio request/review controls, least-privilege grants, documentation,
+and tests. It authorizes no external model request, provider SDK, secret,
+Organization setting, JU data change, deployment, public Northstar behavior,
+AI-selected evidence state or outcome, AI routing, structured mapping,
+approval, operating-model mutation, Scenario creation, unrestricted search,
+score, or analytics. Slice C must separately decide provider, privacy,
+retention, consent, credential, context-preview, and evaluation requirements.
 
 ### LAD-062 — Process-bound reconciliation is exception-driven and no change is the default valid outcome
 
@@ -2556,7 +2633,7 @@ The following ideas are recorded so postponement is visible and deliberate.
 | Full authentication and authorization | A replaceable temporary provider now prepares one private administrator; durable deployment protection and enterprise identity remain unresolved | SSO, multiple identities, provisioning, recovery, roles/permissions, audit, and access review |
 | Governance and Stewardship engine | Dimensions, profiles, and Stewardship direction are accepted, but scope, delegation, effective timing, proposals, approval routing, and policy enforcement are unresolved | Governance domain, authorization, workflow, audit, retention, and identity decisions |
 | Broader observations and provenance | LAD-042 proposes a bounded guided self-interview observation model; documents, external sources, multi-participant evidence, retention automation, and generalized provenance remain unresolved | Source/artifact lifecycle, evidence access, privacy, retention, and reconciliation decision |
-| AI interviewing | LAD-061 Slice A deterministic context and evidence reuse are complete and isolated-verified; model suggestions, provider use, and private enablement remain unapproved | Separately approve the mocked-provider schema/adapter before Slice B, then separately approve participant privacy, retention, evaluation, credentials, environment enablement, and rollout |
+| AI interviewing | LAD-061 Slice A and LAD-063 Slice B's attributable mocked-provider schema, adapter, and human-review UX are complete and isolated-verified; real provider use and private enablement remain unapproved | Separately approve participant privacy, retention, evaluation, credentials, environment enablement, and rollout before any external-provider slice |
 | Uploads, imports, Visio/PDF/flowchart parsing | Requires malware handling, source permissions, artifact retention, provenance, and conflict treatment | Artifact architecture, storage, security, and extraction decision |
 | Whiteboard and collaborative capture | Draft contribution, authorship, reconciliation, and conversion to structured knowledge are undefined | Collaboration, observation, and approval decision |
 | Conflict detection and consensus | Conflicts need identity, scope, lifecycle, privacy, and human resolution | Conflict and reconciliation schema decision |

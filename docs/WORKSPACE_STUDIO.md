@@ -177,7 +177,10 @@ maintenance, and deactivation preserve immutable identity and history.
   question and transparent text-based possible places to look without creating
   a route, interview, evidence, or documented change;
 - `/studio/discovery/interviews/[sessionId]` — answer questions, preserve
-  uncertainty, append corrections, and review the saved interview; and
+  uncertainty, append corrections, and review the saved interview. Under
+  LAD-063's private Slice B boundary, the page may also show optional,
+  attributable mocked question suggestions and clarity drafts that a person
+  can edit, skip, or reject without losing the standard question; and
 - `/studio/discovery/interviews/[sessionId]/reconcile` — compare documented
   Process information with active interview notes and finish through an
   exception-driven review. A reviewer may complete a no-change Knowledge
@@ -417,8 +420,12 @@ Complete the Studio home, Workspace Health questions, combined Activity view,
 and the honest read-only Governance and Discovery entry points supported by
 the available data.
 
-AI-assisted Discovery and the relationship canvas remain later capabilities;
-they are not prerequisites for a useful Workspace Studio v1.
+AI-assisted Discovery Slice A is implemented and isolated-verified. LAD-063
+authorizes a private mocked-provider Slice B for testing attributable question
+and clarity suggestions. Its generic implementation and isolated fictional
+verification are complete; external provider use, credentials, and private
+rollout remain separately gated. The relationship canvas remains a later
+capability. Neither is a prerequisite for a useful Workspace Studio v1.
 
 ## Slice 1 implementation boundary
 

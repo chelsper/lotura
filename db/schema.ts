@@ -248,6 +248,36 @@ export const discoveryObservationTopic = pgEnum(
   ],
 );
 
+export const discoveryAssistanceSessionKind = pgEnum(
+  "discovery_assistance_session_kind",
+  ["process", "inquiry"],
+);
+
+export const discoveryAssistanceKind = pgEnum(
+  "discovery_assistance_kind",
+  ["question_suggestions", "clarity_draft"],
+);
+
+export const discoveryAssistanceSourceKind = pgEnum(
+  "discovery_assistance_source_kind",
+  [
+    "process_snapshot",
+    "process_observation",
+    "inquiry_context",
+    "inquiry_observation",
+  ],
+);
+
+export const discoveryAssistanceSuggestionKind = pgEnum(
+  "discovery_assistance_suggestion_kind",
+  ["follow_up_question", "clarity_draft"],
+);
+
+export const discoveryAssistanceDisposition = pgEnum(
+  "discovery_assistance_disposition",
+  ["used_as_written", "edited", "skipped", "rejected"],
+);
+
 export const discoveryInquiryReviewOutcomeKind = pgEnum(
   "discovery_inquiry_review_outcome_kind",
   [
@@ -1687,6 +1717,475 @@ export const discoveryObservationConfirmation = pgTable(
     index("discovery_confirmation_source_observation_idx").on(
       table.organizationId,
       table.sourceObservationStableKey,
+    ),
+  ],
+);
+
+export const discoveryAssistanceRun = pgTable(
+  "discovery_assistance_runs",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    sessionKind: discoveryAssistanceSessionKind("session_kind").notNull(),
+    discoverySessionId: integer("discovery_session_id"),
+    discoverySessionStableKey: uuid("discovery_session_stable_key"),
+    inquirySessionId: integer("inquiry_session_id"),
+    inquirySessionStableKey: uuid("inquiry_session_stable_key"),
+    requestedSessionRevision: integer("requested_session_revision").notNull(),
+    promptKey: varchar("prompt_key", { length: 64 }).notNull(),
+    assistanceKind: discoveryAssistanceKind("assistance_kind").notNull(),
+    providerKey: varchar("provider_key", { length: 64 }).notNull(),
+    modelIdentifier: varchar("model_identifier", { length: 128 }).notNull(),
+    promptPolicyVersion: varchar("prompt_policy_version", { length: 64 })
+      .notNull(),
+    contextFingerprint: varchar("context_fingerprint", { length: 64 })
+      .notNull(),
+    participantFocus: text("participant_focus"),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_assistance_runs_process_session_fk",
+      columns: [
+        table.discoverySessionId,
+        table.organizationId,
+        table.discoverySessionStableKey,
+      ],
+      foreignColumns: [
+        discoverySession.id,
+        discoverySession.organizationId,
+        discoverySession.stableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_assistance_runs_inquiry_session_fk",
+      columns: [
+        table.inquirySessionId,
+        table.organizationId,
+        table.inquirySessionStableKey,
+      ],
+      foreignColumns: [
+        discoveryInquirySession.id,
+        discoveryInquirySession.organizationId,
+        discoveryInquirySession.stableKey,
+      ],
+    }).onDelete("restrict"),
+    unique("discovery_assistance_runs_stable_key_unique").on(table.stableKey),
+    unique("discovery_assistance_runs_source_context_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+    ),
+    unique("discovery_assistance_runs_context_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.sessionKind,
+    ),
+    check(
+      "discovery_assistance_runs_session_shape_check",
+      sql`(${table.sessionKind} = 'process' and ${table.discoverySessionId} is not null and ${table.discoverySessionStableKey} is not null and ${table.inquirySessionId} is null and ${table.inquirySessionStableKey} is null) or (${table.sessionKind} = 'inquiry' and ${table.discoverySessionId} is null and ${table.discoverySessionStableKey} is null and ${table.inquirySessionId} is not null and ${table.inquirySessionStableKey} is not null)`,
+    ),
+    check(
+      "discovery_assistance_runs_revision_positive_check",
+      sql`${table.requestedSessionRevision} >= 1`,
+    ),
+    check(
+      "discovery_assistance_runs_prompt_not_blank_check",
+      sql`char_length(trim(${table.promptKey})) > 0`,
+    ),
+    check(
+      "discovery_assistance_runs_provider_shape_check",
+      sql`char_length(trim(${table.providerKey})) > 0 and char_length(trim(${table.modelIdentifier})) > 0 and char_length(trim(${table.promptPolicyVersion})) > 0`,
+    ),
+    check(
+      "discovery_assistance_runs_fingerprint_check",
+      sql`${table.contextFingerprint} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "discovery_assistance_runs_focus_shape_check",
+      sql`${table.participantFocus} is null or (char_length(trim(${table.participantFocus})) > 0 and char_length(${table.participantFocus}) <= 2000)`,
+    ),
+    check(
+      "discovery_assistance_runs_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    index("discovery_assistance_runs_process_idx").on(
+      table.organizationId,
+      table.discoverySessionStableKey,
+      table.requestedSessionRevision,
+      table.createdAt,
+    ),
+    index("discovery_assistance_runs_inquiry_idx").on(
+      table.organizationId,
+      table.inquirySessionStableKey,
+      table.requestedSessionRevision,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const discoveryAssistanceSource = pgTable(
+  "discovery_assistance_sources",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    runId: integer("run_id").notNull(),
+    runStableKey: uuid("run_stable_key").notNull(),
+    sourceSequence: integer("source_sequence").notNull(),
+    sourceKind: discoveryAssistanceSourceKind("source_kind").notNull(),
+    processId: integer("process_id"),
+    processStableKey: uuid("process_stable_key"),
+    discoverySessionId: integer("discovery_session_id"),
+    discoverySessionStableKey: uuid("discovery_session_stable_key"),
+    discoveryObservationStableKey: uuid("discovery_observation_stable_key"),
+    inquiryId: integer("inquiry_id"),
+    inquiryStableKey: uuid("inquiry_stable_key"),
+    inquirySessionId: integer("inquiry_session_id"),
+    inquirySessionStableKey: uuid("inquiry_session_stable_key"),
+    inquiryObservationStableKey: uuid(
+      "inquiry_observation_stable_key",
+    ),
+    sourceSnapshot: jsonb("source_snapshot").notNull(),
+    sourceFingerprint: varchar("source_fingerprint", { length: 64 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_assistance_sources_run_fk",
+      columns: [table.runId, table.organizationId, table.runStableKey],
+      foreignColumns: [
+        discoveryAssistanceRun.id,
+        discoveryAssistanceRun.organizationId,
+        discoveryAssistanceRun.stableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_assistance_sources_process_fk",
+      columns: [table.processId, table.organizationId, table.processStableKey],
+      foreignColumns: [process.id, process.organizationId, process.stableKey],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_assistance_sources_process_session_fk",
+      columns: [
+        table.discoverySessionId,
+        table.organizationId,
+        table.discoverySessionStableKey,
+        table.processId,
+        table.processStableKey,
+      ],
+      foreignColumns: [
+        discoverySession.id,
+        discoverySession.organizationId,
+        discoverySession.stableKey,
+        discoverySession.processId,
+        discoverySession.processStableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_assistance_sources_process_observation_fk",
+      columns: [
+        table.discoveryObservationStableKey,
+        table.discoverySessionId,
+        table.organizationId,
+      ],
+      foreignColumns: [
+        discoveryObservation.stableKey,
+        discoveryObservation.sessionId,
+        discoveryObservation.organizationId,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_assistance_sources_inquiry_session_fk",
+      columns: [
+        table.inquirySessionId,
+        table.organizationId,
+        table.inquirySessionStableKey,
+        table.inquiryId,
+        table.inquiryStableKey,
+      ],
+      foreignColumns: [
+        discoveryInquirySession.id,
+        discoveryInquirySession.organizationId,
+        discoveryInquirySession.stableKey,
+        discoveryInquirySession.inquiryId,
+        discoveryInquirySession.inquiryStableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_assistance_sources_inquiry_observation_fk",
+      columns: [
+        table.inquiryObservationStableKey,
+        table.inquirySessionId,
+        table.organizationId,
+      ],
+      foreignColumns: [
+        discoveryInquiryObservation.stableKey,
+        discoveryInquiryObservation.sessionId,
+        discoveryInquiryObservation.organizationId,
+      ],
+    }).onDelete("restrict"),
+    unique("discovery_assistance_sources_stable_key_unique").on(
+      table.stableKey,
+    ),
+    unique("discovery_assistance_sources_run_sequence_unique").on(
+      table.runId,
+      table.sourceSequence,
+    ),
+    check(
+      "discovery_assistance_sources_sequence_positive_check",
+      sql`${table.sourceSequence} >= 1`,
+    ),
+    check(
+      "discovery_assistance_sources_shape_check",
+      sql`(
+        ${table.sourceKind} = 'process_snapshot'
+        and ${table.processId} is not null and ${table.processStableKey} is not null
+        and ${table.discoverySessionId} is null and ${table.discoverySessionStableKey} is null
+        and ${table.discoveryObservationStableKey} is null
+        and ${table.inquiryId} is null and ${table.inquiryStableKey} is null
+        and ${table.inquirySessionId} is null and ${table.inquirySessionStableKey} is null
+        and ${table.inquiryObservationStableKey} is null
+      ) or (
+        ${table.sourceKind} = 'process_observation'
+        and ${table.processId} is not null and ${table.processStableKey} is not null
+        and ${table.discoverySessionId} is not null and ${table.discoverySessionStableKey} is not null
+        and ${table.discoveryObservationStableKey} is not null
+        and ${table.inquiryId} is null and ${table.inquiryStableKey} is null
+        and ${table.inquirySessionId} is null and ${table.inquirySessionStableKey} is null
+        and ${table.inquiryObservationStableKey} is null
+      ) or (
+        ${table.sourceKind} = 'inquiry_context'
+        and ${table.processId} is null and ${table.processStableKey} is null
+        and ${table.discoverySessionId} is null and ${table.discoverySessionStableKey} is null
+        and ${table.discoveryObservationStableKey} is null
+        and ${table.inquiryId} is not null and ${table.inquiryStableKey} is not null
+        and ${table.inquirySessionId} is not null and ${table.inquirySessionStableKey} is not null
+        and ${table.inquiryObservationStableKey} is null
+      ) or (
+        ${table.sourceKind} = 'inquiry_observation'
+        and ${table.processId} is null and ${table.processStableKey} is null
+        and ${table.discoverySessionId} is null and ${table.discoverySessionStableKey} is null
+        and ${table.discoveryObservationStableKey} is null
+        and ${table.inquiryId} is not null and ${table.inquiryStableKey} is not null
+        and ${table.inquirySessionId} is not null and ${table.inquirySessionStableKey} is not null
+        and ${table.inquiryObservationStableKey} is not null
+      )`,
+    ),
+    check(
+      "discovery_assistance_sources_snapshot_shape_check",
+      sql`jsonb_typeof(${table.sourceSnapshot}) = 'object'`,
+    ),
+    check(
+      "discovery_assistance_sources_fingerprint_check",
+      sql`${table.sourceFingerprint} ~ '^[0-9a-f]{64}$'`,
+    ),
+    index("discovery_assistance_sources_run_idx").on(
+      table.organizationId,
+      table.runStableKey,
+      table.sourceSequence,
+    ),
+  ],
+);
+
+export const discoveryAssistanceSuggestion = pgTable(
+  "discovery_assistance_suggestions",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    runId: integer("run_id").notNull(),
+    runStableKey: uuid("run_stable_key").notNull(),
+    suggestionSequence: integer("suggestion_sequence").notNull(),
+    suggestionKind: discoveryAssistanceSuggestionKind("suggestion_kind")
+      .notNull(),
+    promptKey: varchar("prompt_key", { length: 64 }).notNull(),
+    topic: discoveryObservationTopic("topic").notNull(),
+    suggestedText: text("suggested_text").notNull(),
+    rationale: text("rationale").notNull(),
+    originalText: text("original_text"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_assistance_suggestions_run_fk",
+      columns: [table.runId, table.organizationId, table.runStableKey],
+      foreignColumns: [
+        discoveryAssistanceRun.id,
+        discoveryAssistanceRun.organizationId,
+        discoveryAssistanceRun.stableKey,
+      ],
+    }).onDelete("restrict"),
+    unique("discovery_assistance_suggestions_stable_key_unique").on(
+      table.stableKey,
+    ),
+    unique("discovery_assistance_suggestions_context_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+      table.runId,
+      table.runStableKey,
+    ),
+    unique("discovery_assistance_suggestions_run_sequence_unique").on(
+      table.runId,
+      table.suggestionSequence,
+    ),
+    check(
+      "discovery_assistance_suggestions_sequence_positive_check",
+      sql`${table.suggestionSequence} >= 1`,
+    ),
+    check(
+      "discovery_assistance_suggestions_prompt_not_blank_check",
+      sql`char_length(trim(${table.promptKey})) > 0`,
+    ),
+    check(
+      "discovery_assistance_suggestions_text_shape_check",
+      sql`char_length(trim(${table.suggestedText})) > 0 and char_length(${table.suggestedText}) <= 2000 and char_length(trim(${table.rationale})) > 0 and char_length(${table.rationale}) <= 1000`,
+    ),
+    check(
+      "discovery_assistance_suggestions_original_shape_check",
+      sql`(${table.suggestionKind} = 'follow_up_question' and ${table.originalText} is null) or (${table.suggestionKind} = 'clarity_draft' and ${table.originalText} is not null and char_length(trim(${table.originalText})) > 0 and char_length(${table.originalText}) <= 10000)`,
+    ),
+    index("discovery_assistance_suggestions_run_idx").on(
+      table.organizationId,
+      table.runStableKey,
+      table.suggestionSequence,
+    ),
+  ],
+);
+
+export const discoveryAssistanceDecision = pgTable(
+  "discovery_assistance_decisions",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    runId: integer("run_id").notNull(),
+    runStableKey: uuid("run_stable_key").notNull(),
+    suggestionId: integer("suggestion_id").notNull(),
+    suggestionStableKey: uuid("suggestion_stable_key").notNull(),
+    sessionKind: discoveryAssistanceSessionKind("session_kind").notNull(),
+    disposition: discoveryAssistanceDisposition("disposition").notNull(),
+    selectedText: text("selected_text"),
+    discoverySessionId: integer("discovery_session_id"),
+    discoveryObservationStableKey: uuid("discovery_observation_stable_key"),
+    inquirySessionId: integer("inquiry_session_id"),
+    inquiryObservationStableKey: uuid(
+      "inquiry_observation_stable_key",
+    ),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_assistance_decisions_run_fk",
+      columns: [
+        table.runId,
+        table.organizationId,
+        table.runStableKey,
+        table.sessionKind,
+      ],
+      foreignColumns: [
+        discoveryAssistanceRun.id,
+        discoveryAssistanceRun.organizationId,
+        discoveryAssistanceRun.stableKey,
+        discoveryAssistanceRun.sessionKind,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_assistance_decisions_suggestion_fk",
+      columns: [
+        table.suggestionId,
+        table.organizationId,
+        table.suggestionStableKey,
+        table.runId,
+        table.runStableKey,
+      ],
+      foreignColumns: [
+        discoveryAssistanceSuggestion.id,
+        discoveryAssistanceSuggestion.organizationId,
+        discoveryAssistanceSuggestion.stableKey,
+        discoveryAssistanceSuggestion.runId,
+        discoveryAssistanceSuggestion.runStableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_assistance_decisions_process_observation_fk",
+      columns: [
+        table.discoveryObservationStableKey,
+        table.discoverySessionId,
+        table.organizationId,
+      ],
+      foreignColumns: [
+        discoveryObservation.stableKey,
+        discoveryObservation.sessionId,
+        discoveryObservation.organizationId,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_assistance_decisions_inquiry_observation_fk",
+      columns: [
+        table.inquiryObservationStableKey,
+        table.inquirySessionId,
+        table.organizationId,
+      ],
+      foreignColumns: [
+        discoveryInquiryObservation.stableKey,
+        discoveryInquiryObservation.sessionId,
+        discoveryInquiryObservation.organizationId,
+      ],
+    }).onDelete("restrict"),
+    unique("discovery_assistance_decisions_stable_key_unique").on(
+      table.stableKey,
+    ),
+    unique("discovery_assistance_decisions_suggestion_unique").on(
+      table.suggestionStableKey,
+    ),
+    unique("discovery_assistance_decisions_process_observation_unique").on(
+      table.discoveryObservationStableKey,
+    ),
+    unique("discovery_assistance_decisions_inquiry_observation_unique").on(
+      table.inquiryObservationStableKey,
+    ),
+    check(
+      "discovery_assistance_decisions_shape_check",
+      sql`(
+        ${table.disposition} in ('used_as_written', 'edited')
+        and ${table.selectedText} is not null and char_length(trim(${table.selectedText})) > 0
+        and (
+          (${table.sessionKind} = 'process' and ${table.discoverySessionId} is not null and ${table.discoveryObservationStableKey} is not null and ${table.inquirySessionId} is null and ${table.inquiryObservationStableKey} is null)
+          or (${table.sessionKind} = 'inquiry' and ${table.discoverySessionId} is null and ${table.discoveryObservationStableKey} is null and ${table.inquirySessionId} is not null and ${table.inquiryObservationStableKey} is not null)
+        )
+      ) or (
+        ${table.disposition} in ('skipped', 'rejected')
+        and ${table.selectedText} is null
+        and ${table.discoverySessionId} is null and ${table.discoveryObservationStableKey} is null
+        and ${table.inquirySessionId} is null and ${table.inquiryObservationStableKey} is null
+      )`,
+    ),
+    check(
+      "discovery_assistance_decisions_selected_text_check",
+      sql`${table.selectedText} is null or char_length(${table.selectedText}) <= 10000`,
+    ),
+    check(
+      "discovery_assistance_decisions_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    index("discovery_assistance_decisions_run_idx").on(
+      table.organizationId,
+      table.runStableKey,
+      table.createdAt,
     ),
   ],
 );

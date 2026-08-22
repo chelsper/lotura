@@ -21,6 +21,8 @@ import { loadWorkspaceExperience } from "@/lib/workspace-experience";
 import { Alert, Badge, Button, Card } from "../../../../ui/primitives";
 import { WorkspacePageHeader, WorkspaceShell } from "../../../../workspace-shell";
 import { changeDiscoveryPauseAction } from "../../actions";
+import { DiscoveryAssistanceRequestForm } from "../../discovery-assistance-request-form";
+import { DiscoveryAssistanceSuggestionForm } from "../../discovery-assistance-suggestion-form";
 import { DiscoveryAnswerForm } from "../../discovery-answer-form";
 import { DiscoveryCorrectionForm } from "../../discovery-correction-form";
 import { DiscoveryPriorObservationForm } from "../../discovery-prior-observation-form";
@@ -46,6 +48,7 @@ export default async function DiscoveryInterviewPage({
   const { sessionId } = await params;
   const experience = await loadWorkspaceExperience();
   if (!experience.discovery.enabled) notFound();
+  const discoveryOrganizationId = experience.discovery.organizationId;
   const { loadDiscoveryProposal, loadDiscoverySession } = await import("@/lib/discovery-data");
   const [session, proposal] = await Promise.all([
     loadDiscoverySession(experience.discovery.organizationId, sessionId),
@@ -54,6 +57,17 @@ export default async function DiscoveryInterviewPage({
   if (!session) notFound();
 
   const question = getDiscoveryQuestion(session.currentQuestionKey);
+  const assistance = question && session.status === "in_progress"
+    ? await import("@/lib/discovery-assistance-data").then(
+        ({ loadProcessDiscoveryAssistance }) =>
+          loadProcessDiscoveryAssistance(
+            discoveryOrganizationId,
+            session.id,
+            session.revision,
+            question.key,
+          ),
+      )
+    : null;
   const documentedProcess = experience.data.processes.find(
     (process) => process.id === session.processId,
   );
@@ -213,6 +227,67 @@ export default async function DiscoveryInterviewPage({
               <p className="mt-5 text-sm leading-6 text-[var(--text-secondary)]">
                 No active answer from an earlier interview is available for this exact question.
               </p>
+            )}
+          </Card>
+
+          <Card className="p-5 sm:p-7">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <Badge tone="accent">Optional assistance</Badge>
+                <h2 className="mt-3 text-xl font-semibold text-[var(--text)]">
+                  Get help with this part of the conversation
+                </h2>
+              </div>
+              <span className="text-xs text-[var(--text-tertiary)]">
+                Human review required
+              </span>
+            </div>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
+              Ask Lotura for a more focused question or a clearer draft. You can edit, skip, or reject every suggestion. The regular interview question remains available below.
+            </p>
+            <Alert className="mt-4" tone="info">
+              This slice uses a deterministic mocked provider so the review and provenance controls can be tested safely. It does not call an external AI service.
+            </Alert>
+            {assistance ? (
+              <div className="mt-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-[var(--text)]">
+                    Review Lotura&apos;s suggestions
+                  </p>
+                  <span className="text-xs text-[var(--text-tertiary)]">
+                    {assistance.sourceCount} attributable {assistance.sourceCount === 1 ? "source" : "sources"}
+                  </span>
+                </div>
+                {assistance.suggestions.map((suggestion) => (
+                  <DiscoveryAssistanceSuggestionForm
+                    key={suggestion.id}
+                    revision={session.revision}
+                    sessionId={session.id}
+                    sessionKind="process"
+                    standardPromptText={question.prompt}
+                    suggestion={suggestion}
+                  />
+                ))}
+                {assistance.suggestions.every((suggestion) => suggestion.decision) ? (
+                  <div className="border-t border-[var(--border)] pt-5">
+                    <DiscoveryAssistanceRequestForm
+                      promptKey={question.key}
+                      revision={session.revision}
+                      sessionId={session.id}
+                      sessionKind="process"
+                    />
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <div className="mt-5">
+                <DiscoveryAssistanceRequestForm
+                  promptKey={question.key}
+                  revision={session.revision}
+                  sessionId={session.id}
+                  sessionKind="process"
+                />
+              </div>
             )}
           </Card>
 

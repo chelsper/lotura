@@ -16,6 +16,13 @@ import {
   type DiscoveryEpistemicState,
 } from "@/lib/discovery-administration";
 import {
+  decideInquiryDiscoverySuggestion,
+  decideProcessDiscoverySuggestion,
+  dismissDiscoverySuggestion,
+  requestInquiryDiscoveryAssistance,
+  requestProcessDiscoveryAssistance,
+} from "@/lib/discovery-assistance-administration";
+import {
   answerInquiryDiscoveryQuestion,
   appendInquiryDiscoveryCorrection,
   routeDiscoveryInquiry,
@@ -201,6 +208,53 @@ export async function answerInquiryDiscoveryQuestionAction(
   redirect(path);
 }
 
+export async function requestInquiryDiscoveryAssistanceAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const inquiryId = text(formData, "inquiryId");
+  const sessionId = text(formData, "sessionId");
+  const assistanceKind = text(formData, "assistanceKind");
+  if (assistanceKind !== "question_suggestions" && assistanceKind !== "clarity_draft") {
+    return { message: "Choose the kind of help you want.", status: "error" };
+  }
+  const result = await requestInquiryDiscoveryAssistance({
+    assistanceKind,
+    expectedRevision: revision(formData),
+    focus: text(formData, "focus"),
+    inquiryId,
+    originalText: text(formData, "originalText"),
+    promptKey: text(formData, "promptKey"),
+    sessionId,
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  const path = `/studio/discovery/inquiries/${inquiryId}/interviews/${sessionId}`;
+  revalidatePath(path);
+  redirect(path);
+}
+
+export async function decideInquiryDiscoverySuggestionAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const inquiryId = text(formData, "inquiryId");
+  const sessionId = text(formData, "sessionId");
+  const result = await decideInquiryDiscoverySuggestion({
+    epistemicState: state(formData),
+    expectedRevision: revision(formData),
+    finalPromptText: text(formData, "finalPromptText"),
+    finalResponseText: text(formData, "finalResponseText"),
+    inquiryId,
+    promptKey: text(formData, "promptKey"),
+    sessionId,
+    suggestionId: text(formData, "suggestionId"),
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  const path = `/studio/discovery/inquiries/${inquiryId}/interviews/${sessionId}`;
+  revalidatePath(path);
+  redirect(path);
+}
+
 export async function correctInquiryDiscoveryObservationAction(
   _previousState: DiscoveryActionState,
   formData: FormData,
@@ -307,6 +361,77 @@ export async function answerDiscoveryQuestionAction(
   if (!result.ok) return { message: result.message, status: "error" };
   revalidatePath(`/studio/discovery/interviews/${sessionId}`);
   redirect(`/studio/discovery/interviews/${sessionId}`);
+}
+
+export async function requestProcessDiscoveryAssistanceAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const sessionId = text(formData, "sessionId");
+  const assistanceKind = text(formData, "assistanceKind");
+  if (assistanceKind !== "question_suggestions" && assistanceKind !== "clarity_draft") {
+    return { message: "Choose the kind of help you want.", status: "error" };
+  }
+  const result = await requestProcessDiscoveryAssistance({
+    assistanceKind,
+    expectedRevision: revision(formData),
+    focus: text(formData, "focus"),
+    originalText: text(formData, "originalText"),
+    promptKey: text(formData, "promptKey"),
+    sessionId,
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  const path = `/studio/discovery/interviews/${sessionId}`;
+  revalidatePath(path);
+  redirect(path);
+}
+
+export async function decideProcessDiscoverySuggestionAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const sessionId = text(formData, "sessionId");
+  const result = await decideProcessDiscoverySuggestion({
+    epistemicState: state(formData),
+    expectedRevision: revision(formData),
+    finalPromptText: text(formData, "finalPromptText"),
+    finalResponseText: text(formData, "finalResponseText"),
+    promptKey: text(formData, "promptKey"),
+    sessionId,
+    suggestionId: text(formData, "suggestionId"),
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  const path = `/studio/discovery/interviews/${sessionId}`;
+  revalidatePath(path);
+  redirect(path);
+}
+
+export async function dismissDiscoverySuggestionAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const sessionKind = text(formData, "sessionKind");
+  const disposition = text(formData, "disposition");
+  if ((sessionKind !== "process" && sessionKind !== "inquiry") || (disposition !== "skipped" && disposition !== "rejected")) {
+    return { message: "The assistance choice is invalid.", status: "error" };
+  }
+  const inquiryId = text(formData, "inquiryId");
+  const sessionId = text(formData, "sessionId");
+  const result = await dismissDiscoverySuggestion({
+    disposition,
+    expectedRevision: revision(formData),
+    inquiryId: sessionKind === "inquiry" ? inquiryId : undefined,
+    promptKey: text(formData, "promptKey"),
+    sessionId,
+    sessionKind,
+    suggestionId: text(formData, "suggestionId"),
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  const path = sessionKind === "inquiry"
+    ? `/studio/discovery/inquiries/${inquiryId}/interviews/${sessionId}`
+    : `/studio/discovery/interviews/${sessionId}`;
+  revalidatePath(path);
+  redirect(path);
 }
 
 export async function confirmPriorDiscoveryObservationAction(

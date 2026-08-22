@@ -258,6 +258,42 @@ GRANT INSERT (
 GRANT USAGE ON SEQUENCE discovery_observation_confirmations_id_seq
   TO <discovery_role>;
 
+-- Added only when LAD-063 AI-Assisted Discovery Slice B is enabled:
+GRANT SELECT ON TABLE discovery_assistance_runs,
+  discovery_assistance_sources, discovery_assistance_suggestions,
+  discovery_assistance_decisions TO <discovery_role>;
+GRANT INSERT (
+  organization_id, session_kind, discovery_session_id,
+  discovery_session_stable_key, inquiry_session_id,
+  inquiry_session_stable_key, requested_session_revision, prompt_key,
+  assistance_kind,
+  provider_key, model_identifier, prompt_policy_version,
+  context_fingerprint, participant_focus, actor_identifier
+) ON discovery_assistance_runs TO <discovery_role>;
+GRANT INSERT (
+  organization_id, run_id, run_stable_key, source_sequence, source_kind,
+  process_id, process_stable_key, discovery_session_id,
+  discovery_session_stable_key, discovery_observation_stable_key,
+  inquiry_id, inquiry_stable_key, inquiry_session_id,
+  inquiry_session_stable_key, inquiry_observation_stable_key,
+  source_snapshot, source_fingerprint
+) ON discovery_assistance_sources TO <discovery_role>;
+GRANT INSERT (
+  organization_id, run_id, run_stable_key, suggestion_sequence,
+  suggestion_kind, prompt_key, topic, suggested_text, rationale,
+  original_text
+) ON discovery_assistance_suggestions TO <discovery_role>;
+GRANT INSERT (
+  organization_id, run_id, run_stable_key, suggestion_id,
+  suggestion_stable_key, session_kind, disposition, selected_text,
+  discovery_session_id, discovery_observation_stable_key,
+  inquiry_session_id, inquiry_observation_stable_key, actor_identifier
+) ON discovery_assistance_decisions TO <discovery_role>;
+GRANT USAGE ON SEQUENCE discovery_assistance_runs_id_seq,
+  discovery_assistance_sources_id_seq,
+  discovery_assistance_suggestions_id_seq,
+  discovery_assistance_decisions_id_seq TO <discovery_role>;
+
 -- Added only when Discovery Proposed Update v0.1 is enabled:
 GRANT SELECT ON TABLE discovery_proposals, discovery_proposal_decisions
   TO <discovery_role>;
@@ -407,6 +443,16 @@ It receives no confirmation `UPDATE`, `DELETE`, or `TRUNCATE`; no broader
 observation or session write; and no operating-model authority. A confirmation
 must create the current observation and its exact prior-source link in the
 same transaction.
+
+After LAD-063 Slice B is enabled, the normal runtime role receives `SELECT`
+only on the four assistance tables. The Discovery role receives the exact
+`SELECT`, column-specific `INSERT`, and sequence privileges shown above. It
+receives no assistance-history `UPDATE`, `DELETE`, or `TRUNCATE` and no new
+operating-model authority. Requesting assistance inserts only the run, bounded
+typed sources, and suggestions. A used or edited suggestion must append the
+human observation, decision, exact observation link, and session advance in
+one transaction. Skip or reject appends only the decision. The fixed interview
+path remains available without any assistance record.
 
 The Discovery role receives no write privilege on Process, Step, Role, System,
 Exception, dependency, Organization Structure, `operating_model_changes`, or
