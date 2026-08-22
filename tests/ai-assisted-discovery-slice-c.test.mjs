@@ -72,6 +72,9 @@ test("LAD-064 records fictional evaluations without authorizing private use", as
   assert.match(decision, /transparent lexical-semantic repetition guard/);
   assert.match(decision, /Prompt policy `lad-064-eval-v4`/);
   assert.match(decision, /uncertain detail is true before asking what follows/);
+  assert.match(decision, /neutral verification question/);
+  assert.match(decision, /passed every automated and human criterion/);
+  assert.match(decision, /V4_EVALUATION_2026_08_22/);
   assert.match(decision, /required human\s+non-repetition criterion failed/);
   assert.match(decision, /None of these controlled one-case results authorizes private use/);
   assert.match(decision, /Provider-account data-use[\s\S]*Slice D private pilot\s+remain separately gated/);
@@ -185,6 +188,28 @@ test("v4 rejects a question that turns uncertain source evidence into a presuppo
   });
   assert.equal(conditional.automatedChecks.preservesUncertainty, true);
   assert.equal(conditional.passesReleaseGate, true);
+
+  const neutralVerification = evaluateDiscoveryAssistanceCandidate({
+    humanReview: {
+      conversational: true,
+      faithfulToSources: true,
+      nonRepetitive: true,
+      relevant: true,
+    },
+    input: fictionalInput,
+    outputText: JSON.stringify({
+      suggestions: [{
+        kind: "follow_up_question",
+        originalText: null,
+        promptKey: "systems",
+        rationale: "This is the unchanged controlled version 4 provider result.",
+        suggestedText: "Is a physical card still required at that printer?",
+        topic: "systems",
+      }],
+    }),
+  });
+  assert.equal(neutralVerification.automatedChecks.preservesUncertainty, true);
+  assert.equal(neutralVerification.passesReleaseGate, true);
 });
 
 test("fictional classification and deterministic secret rejection run before transport", async () => {
@@ -316,7 +341,7 @@ test("the fictional evaluation matrix distinguishes safety checks from human rev
   const fixtures = JSON.parse(
     await read("tests/fixtures/ai-assisted-discovery-slice-c.json"),
   );
-  assert.ok(fixtures.length >= 8);
+  assert.ok(fixtures.length >= 11);
   for (const fixture of fixtures) {
     const outputText = fixture.malformedOutput ?? JSON.stringify(fixture.candidate);
     const result = evaluateDiscoveryAssistanceCandidate({

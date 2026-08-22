@@ -6,15 +6,16 @@ migration journal `29/29`. Slice B's attributable assistance schema, mocked
 provider adapter, and human-review UX are implemented and passed isolated
 fictional verification at migration journal `30/30`. Slice C's repository-only
 fictional evaluation foundation is implemented without a schema change and
-offline-verified against ten expected fictional outcomes under prompt policy
+offline-verified against eleven expected fictional outcomes under prompt policy
 v4. One separately authorized live evaluation of a fictional fixture passed
 automated and human review under prompt policy v1 on August 22, 2026. A
-controlled v2 comparison returned one question and passed automation, but
-failed human non-repetition review. Version 3 caught that failure but failed
-human source-fidelity review by presupposing an uncertain detail. Version 4 now
-catches both failures offline. Private provider use, persistent credentials,
-environment changes, JU data or configuration, and deployment remain
-separately gated.
+controlled v2 comparison failed human non-repetition review. Version 3 caught
+that failure but failed human source-fidelity review by presupposing an
+uncertain detail. Version 4 caught both failures and passed human review. Its original automated
+uncertainty result was a false negative; the unchanged result passed offline
+after the transparent detector correction. Private provider use, persistent
+credentials, environment changes, JU data or configuration, and deployment
+remain separately gated.
 
 ## Product outcome
 
@@ -411,13 +412,14 @@ details from unresolved observations. This catches the exact version 2 failure
 without claiming general semantic understanding. Human review of relevance,
 source fidelity, conversational language, and non-repetition remains required.
 The version 4 uncertainty guard also requires explicit conditional or
-validation-seeking language and rejects the exact version 3 presupposition.
+validation-seeking language, accepts neutral verification questions, and
+rejects the exact version 3 presupposition.
 
 The repository foundation contains no credential lookup, provider SDK, live
 transport, external request, environment setting, migration, private data, or
 runtime integration. `store: false` is not treated as Zero Data Retention.
 
-**Offline verification:** Ten fictional cases matched their expected release
+**Offline verification:** Eleven fictional cases matched their expected release
 result. The matrix includes useful and safely injection-resistant suggestions,
 exact and semantic repetition, failure to advance an unresolved detail,
 leading language, unsupported authority, malformed output, and
@@ -456,18 +458,26 @@ check, but failed human source-fidelity review because it assumed the possible
 card use was established. See
 [the version 3 evaluation evidence](evaluations/AI_ASSISTED_DISCOVERY_SLICE_C_V3_EVALUATION_2026_08_22.md).
 
-**Version 4 offline correction:** The current prompt explicitly tells the model
-to establish whether an uncertain detail is true before asking what follows.
+**Version 4 comparison and detector correction:** The current prompt explicitly
+tells the model to establish whether an uncertain detail is true before asking
+what follows.
 The evaluator rejects the exact version 3 response for failing to preserve
 source uncertainty. A conditional question that first asks whether the card is
-required and then, if so, what it is used for passes. Version 4 has not made an
-external request and has no human provider-result review yet.
+required and then, if so, what it is used for passes. The controlled provider
+result asked, “Is a physical card still required at that printer?” Human review
+found it conversational, faithful, non-repetitive, relevant, and
+uncertainty-preserving. The evaluated detector incorrectly failed the question
+because it did not recognize neutral “Is …?” verification wording. The detector
+was broadened to accept reviewed auxiliary-led questions, and the unchanged
+provider output passed every automated and human criterion on offline replay.
+No additional provider request was made. See
+[the version 4 evaluation evidence](evaluations/AI_ASSISTED_DISCOVERY_SLICE_C_V4_EVALUATION_2026_08_22.md).
 
 **Still separately gated:**
 
 - verify the exact provider project data-use and retention configuration;
-- separately authorize and human-review any version 4 external fictional
-  request;
+- preserve the accepted v4 case and require a new attributable evaluation basis
+  for any future model or prompt change;
 - enable one isolated private test environment before any JU request; and
 - require separate authorization for JU configuration and real use.
 

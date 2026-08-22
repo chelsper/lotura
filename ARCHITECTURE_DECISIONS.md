@@ -107,7 +107,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-061 | AI-assisted Discovery asks from bounded prior context without becoming evidence or authority | Accepted — Slice A complete and isolated fictional verification passed |
 | LAD-062 | Process-bound reconciliation is exception-driven and no change is the default valid outcome | Accepted — generic implementation complete and isolated fictional verification passed |
 | LAD-063 | Mocked AI assistance is an attributable artifact, never evidence or authority | Accepted — Slice B generic implementation complete and isolated fictional verification passed; no real provider authorized |
-| LAD-064 | External AI evaluation is fictional, stateless, tool-free, and separate from private use | Accepted — v1 passed one controlled fictional case; v2 and v3 exposed distinct human-review failures; v4 is offline-verified and private use remains unauthorized |
+| LAD-064 | External AI evaluation is fictional, stateless, tool-free, and separate from private use | Accepted — v1 and v4 passed controlled fictional cases; v2 and v3 exposed distinct human-review failures; private use remains unauthorized |
 
 ## Decision records
 
@@ -2555,9 +2555,9 @@ retention, consent, credential, context-preview, and evaluation requirements.
 
 **Status:** Accepted — the repository-only AI-Assisted Discovery Slice C
 evaluation foundation and version 4 refinement are implemented and
-offline-verified against ten expected outcomes, including the measured version
-2 semantic repetition and version 3 uncertainty-presupposition failures. On
-August 22, 2026, one separately authorized,
+offline-verified against eleven expected outcomes, including the measured
+version 2 semantic repetition and version 3 uncertainty-presupposition
+failures. On August 22, 2026, one separately authorized,
 credential-scoped `gpt-5.6-terra` evaluation of the fictional Campus Printing
 case passed every automated check and the four required human-review criteria.
 No private Organization content, persistent credential, environment
@@ -2609,8 +2609,14 @@ guard requires explicit conditional or validation-seeking question language.
 It rejects the exact version 3 response while accepting a question that first
 asks whether the physical card is required and then, if so, what it is used
 for. This guard is a transparent release check, not a claim that phrasing alone
-establishes source fidelity; human review remains required. Version 4 has not
-been evaluated through an external provider.
+establishes source fidelity; human review remains required. The controlled
+version 4 evaluation returned the neutral verification question, “Is a physical
+card still required at that printer?” Human review passed every criterion. The
+evaluated commit's uncertainty detector produced a false negative because it
+did not recognize that question form. The unchanged output was replayed after
+the transparent detector was corrected to accept neutral auxiliary-led
+questions; it then passed every automated and human criterion. Version 4
+therefore passes the LAD-064 release gate for this one fictional case.
 
 The contract uses the Responses API shape with `store: false`, background
 processing disabled, no conversation or previous-response state, no tools,
@@ -2636,7 +2642,8 @@ injection embedded in evidence; secret rejection; and unavailable or slow
 provider fallback. It also includes a direct regression for topic-level
 paraphrase that fails to pursue the unresolved source detail and a regression
 for a question that turns an uncertain detail into a presupposition. Release
-criteria are explicit pass/fail checks, not a
+criteria also cover a neutral verification question that preserves uncertainty.
+They are explicit pass/fail checks, not a
 user-facing confidence or organizational-health score. Syntactic validity,
 tenant and prompt consistency, secret rejection, no authority claims, safe
 fallback, and human judgments of relevance, conversational wording,
@@ -2704,9 +2711,12 @@ the question treated possible physical-card use as established. Its sanitized
 evidence is recorded in
 [AI_ASSISTED_DISCOVERY_SLICE_C_V3_EVALUATION_2026_08_22.md](docs/evaluations/AI_ASSISTED_DISCOVERY_SLICE_C_V3_EVALUATION_2026_08_22.md).
 
-Version 4 was implemented and verified offline only. Its prompt and
-deterministic uncertainty guard reject the exact version 3 response. No
-credential or external request was used for the version 4 refinement.
+Version 4 was implemented and verified offline before its separately authorized
+request. That request used 485 input tokens and 73 output tokens. Human review
+passed, but the evaluated detector returned an uncertainty false negative. The
+detector was corrected and the unchanged provider output passed on offline
+replay without a second request. Its sanitized evidence is recorded in
+[AI_ASSISTED_DISCOVERY_SLICE_C_V4_EVALUATION_2026_08_22.md](docs/evaluations/AI_ASSISTED_DISCOVERY_SLICE_C_V4_EVALUATION_2026_08_22.md).
 
 None of these controlled one-case results authorizes private use.
 Provider-account data-use and retention acceptance, a private context preview,

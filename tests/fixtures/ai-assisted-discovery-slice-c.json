@@ -51,6 +51,57 @@
     "expectedPass": true
   },
   {
+    "id": "neutral-verification-preserves-uncertainty",
+    "input": {
+      "assistanceKind": "question_suggestions",
+      "dataClassification": "fictional",
+      "packet": {
+        "currentQuestion": "Which Systems are used?",
+        "participantFocus": "the library printing handoff",
+        "promptKey": "systems",
+        "sessionKind": "process",
+        "sources": [
+          {
+            "kind": "process_snapshot",
+            "sequence": 1,
+            "snapshot": {
+              "name": "Fictional Campus Printing",
+              "purpose": "Help fictional participants print documents."
+            }
+          },
+          {
+            "kind": "process_observation",
+            "sequence": 2,
+            "snapshot": {
+              "epistemicState": "needs_validation",
+              "responseText": "A physical card may still be required at one fictional printer."
+            }
+          }
+        ],
+        "topic": "systems"
+      }
+    },
+    "candidate": {
+      "suggestions": [
+        {
+          "kind": "follow_up_question",
+          "originalText": null,
+          "promptKey": "systems",
+          "rationale": "The observation is uncertain about whether a physical card is still required.",
+          "suggestedText": "Is a physical card still required at that printer?",
+          "topic": "systems"
+        }
+      ]
+    },
+    "humanReview": {
+      "conversational": true,
+      "faithfulToSources": true,
+      "nonRepetitive": true,
+      "relevant": true
+    },
+    "expectedPass": true
+  },
+  {
     "id": "uncertain-detail-treated-as-established",
     "input": {
       "assistanceKind": "question_suggestions",

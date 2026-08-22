@@ -165,8 +165,9 @@ milestones:
    lexical-semantic repetition guard and requires the single question to pursue
    a concrete unresolved source detail, but its provider result failed human
    source-fidelity review by assuming the uncertain detail was true. Version 4
-   now catches that presupposition offline. Another external fictional
-   evaluation requires separate authorization and human review. This does not authorize a
+   catches that presupposition and its controlled provider result passed human
+   review. A false-negative uncertainty check was corrected transparently, and
+   the unchanged result passed the offline replay. This does not authorize a
    persistent API credential, private Organization content, environment change,
    or JU enablement. Any later private use remains subject to separate privacy,
    retention, consent, credential, and rollout gates.
@@ -426,7 +427,7 @@ This register makes intentional postponement visible so ideas are neither mistak
 | Editing and knowledge stewardship | Phase 2 | Capture requires provenance, observation status, review meaning, and organizational authorization. |
 | JU Pilot with institutional information | Phase 2 | Pilot use requires private authenticated access and explicit data approval. |
 | Guided interviews | Phase 2 | Manual guided interviewing requires approved scope, disclosure, provenance, observation preservation, and human review. |
-| AI-assisted interviews and mappings | Milestone 7 | LAD-061 Slice A deterministic prior-evidence reuse and LAD-063 Slice B attributable mocked question/clarity suggestions are implemented and isolated-verified. LAD-064's prompt policy v4 is offline-verified against ten fictional outcomes after v2 failed human non-repetition review and v3 failed human source-fidelity review; v1 remains the only controlled external case to pass. Persistent credentials, private data, provider-account retention acceptance, and rollout remain separately gated. |
+| AI-assisted interviews and mappings | Milestone 7 | LAD-061 Slice A deterministic prior-evidence reuse and LAD-063 Slice B attributable mocked question/clarity suggestions are implemented and isolated-verified. LAD-064's prompt policy v4 is offline-verified against eleven fictional outcomes after v2 failed human non-repetition review and v3 failed human source-fidelity review. Controlled v1 and v4 fictional cases pass; persistent credentials, private data, provider-account retention acceptance, and rollout remain separately gated. |
 | Conflict detection, reconciliation, and consensus | Phase 2 | Lotura must preserve conflicting observations before stewards establish an approved definition. |
 | Approval workflow and process version history | Phase 2 | Observation, proposal, consensus, approval, effective timing, and supersession must remain distinct. |
 | Change requests and continuous improvement | Phase 2 and 3 | Phase 2 captures the reason for change; Phase 3 evaluates implementation, measurement, result, and sustainment. |
