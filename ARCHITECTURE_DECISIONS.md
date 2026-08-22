@@ -107,7 +107,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-061 | AI-assisted Discovery asks from bounded prior context without becoming evidence or authority | Accepted — Slice A complete and isolated fictional verification passed |
 | LAD-062 | Process-bound reconciliation is exception-driven and no change is the default valid outcome | Accepted — generic implementation complete and isolated fictional verification passed |
 | LAD-063 | Mocked AI assistance is an attributable artifact, never evidence or authority | Accepted — Slice B generic implementation complete and isolated fictional verification passed; no real provider authorized |
-| LAD-064 | External AI evaluation is fictional, stateless, tool-free, and separate from private use | Accepted — one controlled fictional provider evaluation passed; prompt policy v2's single-best-question refinement is offline-only; private use remains unauthorized |
+| LAD-064 | External AI evaluation is fictional, stateless, tool-free, and separate from private use | Accepted — v1 passed one controlled fictional case; v2 passed automation but failed human non-repetition review; private use remains unauthorized |
 
 ## Decision records
 
@@ -2581,8 +2581,11 @@ useful. Prompt policy `lad-064-eval-v2` is therefore the current repository
 evaluation basis. It requires exactly one question suggestion: the short,
 conversational question that best advances the highest-value unresolved gap in
 the supplied sources. Version 1 remains the attributable historical basis for
-the August 22 evaluation; version 2 must be evaluated independently before any
-private use.
+the first August 22 evaluation. Version 2 was then evaluated independently on
+the same fictional case. It returned one question and passed every automated
+check, but human review found that the question still substantially repeated
+the current Systems question instead of pursuing the unresolved physical-card
+detail. Version 2 therefore does not pass the human release gate.
 
 The contract uses the Responses API shape with `store: false`, background
 processing disabled, no conversation or previous-response state, no tools,
@@ -2658,7 +2661,13 @@ safe fallback. After the user enabled API quota, one successful request used
 are recorded in
 [AI_ASSISTED_DISCOVERY_SLICE_C_EVALUATION_2026_08_22.md](docs/evaluations/AI_ASSISTED_DISCOVERY_SLICE_C_EVALUATION_2026_08_22.md).
 
-This one-case result does not authorize private use. Provider-account data-use
+The separately authorized version 2 comparison used the same fictional case,
+model, reasoning effort, and request boundary. It used 436 input tokens and 86
+output tokens. All automated checks passed, but the required human
+non-repetition criterion failed. Its sanitized evidence is recorded in
+[AI_ASSISTED_DISCOVERY_SLICE_C_V2_EVALUATION_2026_08_22.md](docs/evaluations/AI_ASSISTED_DISCOVERY_SLICE_C_V2_EVALUATION_2026_08_22.md).
+
+Neither one-case result authorizes private use. Provider-account data-use
 and retention acceptance, a private context preview, participant disclosure,
 Organization enablement, JU configuration or data, Vercel or Neon changes,
 Production deployment, and the Slice D private pilot remain separately gated.

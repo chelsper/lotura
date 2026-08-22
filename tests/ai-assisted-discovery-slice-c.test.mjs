@@ -56,7 +56,7 @@ const validOutput = JSON.stringify({
   ],
 });
 
-test("LAD-064 records one fictional evaluation without authorizing private use", async () => {
+test("LAD-064 records fictional evaluations without authorizing private use", async () => {
   const decisions = await read("ARCHITECTURE_DECISIONS.md");
   const start = decisions.indexOf("### LAD-064");
   const end = decisions.indexOf("### LAD-062", start);
@@ -67,7 +67,9 @@ test("LAD-064 records one fictional evaluation without authorizing private use",
   assert.match(decision, /requires no schema\s+migration/);
   assert.match(decision, /one separately authorized,\s+credential-scoped `gpt-5\.6-terra` evaluation/);
   assert.match(decision, /ephemeral hidden credential/);
-  assert.match(decision, /This one-case result does not authorize private use/);
+  assert.match(decision, /Version 2 therefore does not pass the human release gate/);
+  assert.match(decision, /required human\s+non-repetition criterion failed/);
+  assert.match(decision, /Neither one-case result authorizes private use/);
   assert.match(decision, /Provider-account data-use[\s\S]*Slice D private pilot remain separately gated/);
   assert.match(decision, /conflicts with\s+and supersedes no accepted decision/);
 });

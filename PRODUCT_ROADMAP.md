@@ -158,12 +158,14 @@ milestones:
    The fixed catalog remains a deterministic fallback. LAD-064's repository-
    only, fictional, stateless, tool-free OpenAI evaluation contract and
    transparent release criteria are implemented and offline-verified. One
-   controlled version 1 fictional provider case passed; prompt policy v2 now
-   prefers one strongest unresolved follow-up and remains offline pending a
-   separately authorized evaluation. It does not authorize a persistent API
-   credential, private Organization content, environment change, or JU
-   enablement. Any later private use remains subject to separate privacy,
-   retention, consent, credential, and rollout gates.
+   controlled version 1 fictional provider case passed. Version 2 returned one
+   question and passed automation, but failed human non-repetition review
+   because it restated the current topic instead of pursuing the unresolved
+   detail. Semantic repetition handling must improve offline before another
+   external evaluation. This does not authorize a persistent API credential,
+   private Organization content, environment change, or JU enablement. Any
+   later private use remains subject to separate privacy, retention, consent,
+   credential, and rollout gates.
    Structured-mapping suggestions remain later; AI may never approve or apply
    them. The accepted staged boundary and provider gate are recorded in
    [docs/AI_ASSISTED_DISCOVERY_V0_1.md](docs/AI_ASSISTED_DISCOVERY_V0_1.md).

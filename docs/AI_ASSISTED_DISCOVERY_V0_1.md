@@ -8,9 +8,10 @@ fictional verification at migration journal `30/30`. Slice C's repository-only
 fictional evaluation foundation is implemented without a schema change and
 offline-verified against eight expected fictional outcomes. One separately
 authorized live evaluation of a fictional fixture passed automated and human
-review on August 22, 2026. Private provider use, persistent credentials,
-environment changes, JU data or configuration, and deployment remain
-separately gated.
+review under prompt policy v1 on August 22, 2026. A controlled v2 comparison
+returned one question and passed automation, but failed human non-repetition
+review. Private provider use, persistent credentials, environment changes, JU
+data or configuration, and deployment remain separately gated.
 
 ## Product outcome
 
@@ -395,7 +396,9 @@ version 1 policy. It requires exactly one question suggestion and tells the
 model to choose the short, conversational question that best advances the
 highest-value unresolved gap. It does not change the Slice B mocked-provider
 contract, which may still produce up to three suggestions for deterministic UX
-testing. Version 2 has not been sent to an external provider.
+testing. Version 2 was later evaluated on the same fictional case. It returned
+one question but did not pass human non-repetition review because its wording
+still substantially repeated the current Systems question.
 
 The repository foundation contains no credential lookup, provider SDK, live
 transport, external request, environment setting, migration, private data, or
@@ -421,11 +424,19 @@ printer access step; future prompt refinement should prefer the single most
 useful unresolved follow-up when additional questions add little. See
 [the dated evaluation evidence](evaluations/AI_ASSISTED_DISCOVERY_SLICE_C_EVALUATION_2026_08_22.md).
 
+**Version 2 comparison:** The same model, reasoning effort, fictional case, and
+request boundary produced one question under `lad-064-eval-v2`. Automated
+checks passed, but human review found “What tools or systems do you use when
+handing off a print job?” substantially repeated “Which Systems are used?” and
+did not pursue the unresolved physical-card detail. Version 2 therefore fails
+the human release gate. See
+[the version 2 evaluation evidence](evaluations/AI_ASSISTED_DISCOVERY_SLICE_C_V2_EVALUATION_2026_08_22.md).
+
 **Still separately gated:**
 
 - verify the exact provider project data-use and retention configuration;
-- evaluate prompt policy `lad-064-eval-v2` against fictional cases if a second
-  external request is separately authorized;
+- refine and offline-test semantic repetition handling before another external
+  fictional request;
 - enable one isolated private test environment before any JU request; and
 - require separate authorization for JU configuration and real use.
 

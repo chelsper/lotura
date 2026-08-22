@@ -426,9 +426,10 @@ and clarity suggestions. Its generic implementation and isolated fictional
 verification are complete. LAD-064's fictional, stateless, tool-free Slice C
 evaluation foundation is also implemented and offline-verified, but it is not
 wired into Studio and contains no credential or live transport. One controlled
-fictional provider case was run outside Studio and passed automated and human
-review. Persistent credentials, provider-account retention acceptance, and
-private rollout remain separately gated.
+fictional version 1 provider case was run outside Studio and passed automated
+and human review. A version 2 comparison returned one question but failed human
+non-repetition review. Persistent credentials, provider-account retention
+acceptance, and private rollout remain separately gated.
 The relationship canvas remains a later capability. Neither is a prerequisite
 for a useful Workspace Studio v1.
 
