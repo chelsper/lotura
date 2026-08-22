@@ -1,6 +1,6 @@
 # AI-Assisted Discovery v0.1
 
-**Status:** LAD-061, LAD-063, and LAD-064 accepted. Slice A deterministic context and
+**Status:** LAD-061, LAD-063, LAD-064, LAD-065, and LAD-066 accepted. Slice A deterministic context and
 evidence reuse are implemented and passed isolated fictional verification at
 migration journal `29/29`. Slice B's attributable assistance schema, mocked
 provider adapter, and human-review UX are implemented and passed isolated
@@ -15,7 +15,15 @@ uncertain detail. Version 4 caught both failures and passed human review. Its or
 uncertainty result was a false negative; the unchanged result passed offline
 after the transparent detector correction. Private provider use, persistent
 credentials, environment changes, JU data or configuration, and deployment
-remain separately gated.
+remain separately gated. LAD-065 now defines the evidence required before a
+bounded private pilot; accepting that contract does not authorize a provider
+credential, private request, environment change, JU enablement, or deployment.
+LAD-066 separately permits a bounded non-confidential test path under standard
+provider retention. Its repository-only D1 authorization foundation now
+provides the disclosure, exact context preview, two confirmations, fail-closed
+allowlists, prohibited-content checks, request boundary, kill switch, and
+manual fallback without adding a live transport. Provider-project, credential,
+runtime, deployment, and first-request gates remain incomplete.
 
 ## Product outcome
 
@@ -481,8 +489,51 @@ No additional provider request was made. See
 - enable one isolated private test environment before any JU request; and
 - require separate authorization for JU configuration and real use.
 
-### Slice D — Bounded private pilot
+LAD-065 requires Zero Data Retention on a dedicated provider project for the
+initial JU pilot. Modified Abuse Monitoring requires a separate exception. The
+complete evidence and approval sequence is recorded in
+[AI-Assisted Discovery private-pilot authorization](AI_ASSISTED_DISCOVERY_PRIVATE_PILOT_AUTHORIZATION.md).
 
+### Slice D1 — Bounded non-confidential pilot
+
+**Repository-only authorization foundation implemented:**
+
+- server-only, disabled-by-default pilot policy with an independently
+  default-engaged kill switch;
+- exact authenticated Organization and deployment-environment allowlists with
+  public Northstar rejected;
+- an exact bounded context review, two participant confirmations, and a
+  fingerprint that forces re-review after any context change;
+- field allowlisting, size limits, secret rejection, and obvious prohibited-
+  content rejection before authorization;
+- a stateless foreground request builder with `store: false`, no tools, no
+  background or provider state, strict output, and one suggestion; and
+- deterministic standard-question fallback.
+
+This foundation is deliberately dormant. It has no provider transport, SDK,
+credential lookup, environment activation, database migration, runtime route,
+deployment, or JU data change. The current product continues to use only the
+deterministic mocked provider.
+
+**Still required before activation:**
+
+- complete every LAD-066 provider-project, transport, logging, cost,
+  configuration, isolated-runtime, and rollout gate;
+- use only affirmatively non-confidential Process and procedure test content;
+- accept standard provider abuse-monitoring retention explicitly;
+- preserve the implemented `store: false`, no-tools, no-background, no-provider-
+  state, and no-content-logging boundary in the exact runtime;
+- prove one timeout, no silent retry, provenance, and database/canonical write
+  denials against the eventual transport; and
+- review one separately authorized request before broader testing.
+
+See
+[AI-Assisted Discovery non-confidential pilot authorization](AI_ASSISTED_DISCOVERY_NON_CONFIDENTIAL_PILOT_AUTHORIZATION.md).
+
+### Slice D2 — Bounded confidential pilot
+
+- complete every LAD-065 provider, institutional, isolated-verification, and
+  rollout gate before transmitting private content;
 - Production-only private enablement for an approved Organization;
 - explicit participant disclosure and context preview;
 - monitored accept/edit/skip outcomes without answer-content logging;

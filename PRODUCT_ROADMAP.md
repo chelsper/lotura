@@ -141,7 +141,7 @@ milestones:
    own decision. The Slice C contract is recorded in
    [docs/INQUIRY_REVIEW_AND_KNOWLEDGE_OUTCOME_V0_1.md](docs/INQUIRY_REVIEW_AND_KNOWLEDGE_OUTCOME_V0_1.md).
 7. **AI Discovery Assistance (Slices A and B implemented; Slice C prompt policy
-   v4 offline-verified)** —
+   v4 offline-verified; bounded pilot contracts accepted)** —
    Process-bound interviews now show deterministic documented context and up
    to three active earlier answers for the same question. A participant may
    explicitly confirm an exact earlier answer or describe what changed; the
@@ -169,8 +169,19 @@ milestones:
    review. A false-negative uncertainty check was corrected transparently, and
    the unchanged result passed the offline replay. This does not authorize a
    persistent API credential, private Organization content, environment change,
-   or JU enablement. Any later private use remains subject to separate privacy,
-   retention, consent, credential, and rollout gates.
+   or JU enablement. LAD-065 now requires a dedicated provider project with
+   verified Zero Data Retention, Organization opt-in, participant disclosure,
+   exact context preview, isolated sanitized verification, a kill switch, and
+   separate JU rollout authorization before private use. Accepting the contract
+   authorizes none of those later actions by itself. LAD-066 separately permits
+   a bounded non-confidential test under accepted standard provider retention.
+   Its repository-only D1 authorization foundation now implements participant
+   disclosure, exact context review, two confirmations, fail-closed Organization
+   and environment allowlists, prohibited-content checks, a default-engaged kill
+   switch, stateless request construction, and manual fallback. It contains no
+   live transport, credential, environment activation, migration, runtime route,
+   deployment, or JU data change. Provider-project configuration, transport,
+   isolated runtime verification, and the first request remain separately gated.
    Structured-mapping suggestions remain later; AI may never approve or apply
    them. The accepted staged boundary and provider gate are recorded in
    [docs/AI_ASSISTED_DISCOVERY_V0_1.md](docs/AI_ASSISTED_DISCOVERY_V0_1.md).
@@ -427,7 +438,7 @@ This register makes intentional postponement visible so ideas are neither mistak
 | Editing and knowledge stewardship | Phase 2 | Capture requires provenance, observation status, review meaning, and organizational authorization. |
 | JU Pilot with institutional information | Phase 2 | Pilot use requires private authenticated access and explicit data approval. |
 | Guided interviews | Phase 2 | Manual guided interviewing requires approved scope, disclosure, provenance, observation preservation, and human review. |
-| AI-assisted interviews and mappings | Milestone 7 | LAD-061 Slice A deterministic prior-evidence reuse and LAD-063 Slice B attributable mocked question/clarity suggestions are implemented and isolated-verified. LAD-064's prompt policy v4 is offline-verified against eleven fictional outcomes after v2 failed human non-repetition review and v3 failed human source-fidelity review. Controlled v1 and v4 fictional cases pass; persistent credentials, private data, provider-account retention acceptance, and rollout remain separately gated. |
+| AI-assisted interviews and mappings | Milestone 7 | LAD-061 Slice A deterministic prior-evidence reuse and LAD-063 Slice B attributable mocked question/clarity suggestions are implemented and isolated-verified. LAD-064's prompt policy v4 is offline-verified against eleven fictional outcomes after v2 failed human non-repetition review and v3 failed human source-fidelity review. Controlled v1 and v4 fictional cases pass. LAD-065 retains the ZDR gate for confidential use. LAD-066 permits a bounded non-confidential pilot under accepted standard retention. Its repository-only D1 authorization foundation is implemented without live transport or runtime activation; provider-project, credential, isolated runtime, deployment, and first-request gates remain incomplete. |
 | Conflict detection, reconciliation, and consensus | Phase 2 | Lotura must preserve conflicting observations before stewards establish an approved definition. |
 | Approval workflow and process version history | Phase 2 | Observation, proposal, consensus, approval, effective timing, and supersession must remain distinct. |
 | Change requests and continuous improvement | Phase 2 and 3 | Phase 2 captures the reason for change; Phase 3 evaluates implementation, measurement, result, and sustainment. |

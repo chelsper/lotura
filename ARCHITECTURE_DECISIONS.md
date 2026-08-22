@@ -108,6 +108,8 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-062 | Process-bound reconciliation is exception-driven and no change is the default valid outcome | Accepted — generic implementation complete and isolated fictional verification passed |
 | LAD-063 | Mocked AI assistance is an attributable artifact, never evidence or authority | Accepted — Slice B generic implementation complete and isolated fictional verification passed; no real provider authorized |
 | LAD-064 | External AI evaluation is fictional, stateless, tool-free, and separate from private use | Accepted — v1 and v4 passed controlled fictional cases; v2 and v3 exposed distinct human-review failures; private use remains unauthorized |
+| LAD-065 | Private external AI assistance is Organization-opt-in and requires verified provider data controls | Accepted — private-pilot authorization contract; implementation and JU use remain separately gated |
+| LAD-066 | An explicitly non-confidential AI pilot may operate under standard provider retention | Accepted — repository-only D1 authorization foundation implemented; activation and rollout remain separately gated |
 
 ## Decision records
 
@@ -2723,6 +2725,205 @@ Provider-account data-use and retention acceptance, a private context preview,
 participant disclosure, Organization enablement, JU configuration or data,
 Vercel or Neon changes, Production deployment, and the Slice D private pilot
 remain separately gated.
+
+### LAD-065 — Private external AI assistance is Organization-opt-in and requires verified provider data controls
+
+**Status:** Accepted — the private-pilot authorization contract and evidence
+checklist are approved. This decision authorizes documentation and isolated
+fictional or explicitly sanitized verification only. It does not authorize a
+provider credential, private Organization content, environment configuration,
+external request, JU enablement, deployment, or infrastructure change.
+
+**Context:** LAD-064 established that `store: false` limits Responses API
+application-state storage but does not establish Zero Data Retention or remove
+the default abuse-monitoring path. Current official OpenAI documentation says
+API data is not used to train OpenAI models unless a customer opts in, while
+abuse-monitoring logs may contain prompts and responses and are retained for up
+to 30 days by default, subject to stated legal and safety exceptions. Modified
+Abuse Monitoring and Zero Data Retention require prior OpenAI approval and
+configuration for the exact API Organization or project. Zero Data Retention
+also forces `store: false` for Responses and Chat Completions. Data residency is
+a separate per-project control and does not automatically cover system data.
+
+These provider controls are materially different. A request parameter cannot
+prove the account-level retention contract, and a successful fictional model
+evaluation cannot authorize disclosure of private institutional knowledge.
+
+**Decision:** Private external AI assistance is disabled unless an Organization
+has explicitly opted in and every gate in
+[AI_ASSISTED_DISCOVERY_PRIVATE_PILOT_AUTHORIZATION.md](docs/AI_ASSISTED_DISCOVERY_PRIVATE_PILOT_AUTHORIZATION.md)
+has evidence for the exact provider Organization, project, endpoint, model,
+credential boundary, Lotura Organization, environment, and participant
+experience.
+
+The initial JU private pilot requires OpenAI Zero Data Retention on a dedicated
+API project before any private JU content is transmitted. Modified Abuse
+Monitoring is not treated as equivalent and may be used only through a later,
+separately approved exception that records why its different provider-side
+storage behavior is institutionally acceptable. The exact project must also
+have voluntary data sharing disabled. The selected geographic processing and
+storage posture must be documented; data residency is required only when JU's
+approved policy requires it and must not be confused with retention control.
+
+Lotura must continue to send foreground, text-only Responses requests with
+`store: false`, `background: false`, no tools, no provider-managed conversation
+or previous-response state, strict structured output, bounded allowlisted
+context, and deterministic secret and prohibited-field rejection. These
+request controls remain defense in depth even when ZDR is configured at the
+provider project.
+
+The private pilot must begin in one isolated non-JU environment with fictional
+or explicitly sanitized operational text. Before any JU request, an accountable
+institutional owner must approve the permitted and prohibited data categories,
+participant disclosure, exact context preview, incident owner, credential
+owner, cost boundary, logging exclusions, manual kill switch, and deterministic
+fallback. The first JU request, if later approved, requires a separate
+authorization after the isolated evidence is reviewed.
+
+Provider output remains an attributable assistance artifact under LAD-063. It
+cannot create evidence, answer for a participant, select an evidence state,
+establish a Knowledge Outcome, propose or approve a change, mutate the operating
+model, create a Scenario, or become policy. No prompt, participant answer, or
+provider response content may enter URLs, analytics, ordinary application
+logs, or error output.
+
+**Why:** Private institutional knowledge can contain sensitive context even
+when it is not a formal student, donor, HR, or financial record. Requiring an
+exact project-level retention contract, explicit Organization authorization,
+visible disclosure, and a reversible rollout keeps provider use consistent
+with Lotura's tenant isolation, least privilege, provenance, and human-authority
+principles. ZDR provides a provider-side fail-closed complement to Lotura's
+request-level `store: false` control.
+
+**Alternatives considered:** Treat API no-training defaults as sufficient;
+treat `store: false` as Zero Data Retention; accept default 30-day abuse
+monitoring for the first JU pilot; use Modified Abuse Monitoring without a
+separate institutional exception; reuse a personal provider project or key;
+enable JU before an isolated private test; conceal provider use from
+participants; or log request content for debugging. These were rejected because
+they conflate separate data controls, weaken attribution and revocation, or
+expose private organizational knowledge without explicit accountable approval.
+
+**Affected decisions:** LAD-065 follows and narrows the private-use path left
+open by LAD-064. It also follows LAD-002, LAD-003, LAD-008, LAD-015 through
+LAD-018, LAD-020, LAD-021, LAD-025, LAD-029, LAD-037, LAD-042, LAD-046,
+LAD-051, LAD-060, LAD-061, and LAD-063. It does not change LAD-063's schema or
+privileges and conflicts with or supersedes no accepted decision.
+
+**Consequences and deferrals:** No schema migration is required to record this
+authorization contract. Live transport, a server-only credential, environment
+flags, participant disclosure UX, context preview, kill switch, isolated
+private deployment, JU configuration, and the first real request remain later
+implementation or rollout actions. Each action must cite the completed
+checklist evidence and receive the authorization required there. Broad private
+AI, tools, files, images, hosted state, provider conversation objects, and
+AI-suggested structured mappings remain deferred.
+
+### LAD-066 — An explicitly non-confidential AI pilot may operate under standard provider retention
+
+**Status:** Accepted — the non-confidential pilot contract is approved and its
+repository-only D1 authorization foundation is implemented. A credential,
+external request, environment configuration, deployment, or JU rollout remains
+separately gated.
+
+**Context:** LAD-065 was approved after confirming that `store: false` is not
+equivalent to Zero Data Retention. Its initial wording treated a private,
+authenticated JU workspace as though every item in that workspace were
+confidential. The pilot owner then clarified that the Processes and procedures
+currently being tested are deliberately non-confidential and that no
+confidential or regulated information is being stored or submitted.
+
+Workspace visibility and information classification are separate concerns. A
+private workspace can contain non-confidential test material, while a public
+source can still contain personal or otherwise restricted information. The
+provider control should therefore follow the content classification and
+approved use, not the route label alone.
+
+Current official OpenAI documentation says API data is not used to train
+OpenAI models unless the customer opts in. With standard retention controls,
+abuse-monitoring logs may contain prompts and responses for up to 30 days,
+subject to stated legal and safety exceptions. For Responses, `store: false`
+prevents the normal stored response record, but standard accounts may still use
+encrypted prompt caching with a documented expiration. These behaviors are
+acceptable only for this explicitly non-confidential test boundary.
+
+**Decision:** Lotura may prepare a bounded external-AI pilot without ZDR when
+every submitted source and participant entry is affirmatively classified as
+non-confidential test information and the accountable pilot owner explicitly
+accepts the documented standard provider retention behavior. The approved
+contract is recorded in
+[AI_ASSISTED_DISCOVERY_NON_CONFIDENTIAL_PILOT_AUTHORIZATION.md](docs/AI_ASSISTED_DISCOVERY_NON_CONFIDENTIAL_PILOT_AUTHORIZATION.md).
+
+The participant must see, immediately before requesting assistance, that the
+displayed context will be sent to OpenAI and may be retained in provider
+abuse-monitoring systems for up to 30 days. Two participant confirmations are
+required: one that the displayed context contains only non-confidential test
+information the participant is authorized to share, and one that the
+participant accepts the stated provider retention and wants assistance.
+Declining either confirmation must make no provider request and must leave the
+ordinary manual interview path fully available.
+
+The request remains server-only, foreground, text-only, `store: false`,
+`background: false`, tool-free, independent of provider conversation and
+previous-response state, strictly structured, bounded, allowlisted, and subject
+to deterministic secret and prohibited-content rejection before transport.
+Lotura must not add a separate prompt or response content log. Public Northstar
+must remain unable to initialize external assistance.
+
+The pilot uses a dedicated provider project and project-scoped credential with
+a spending limit, rotation and revocation ownership, an exact Organization and
+environment allowlist, a manual kill switch, deterministic fallback, and one
+reviewed first request before broader non-confidential testing. The pilot may
+record provider and request metadata plus the existing LAD-063 human-decision
+provenance, but not a provider-debug copy of participant or model content.
+
+LAD-066 does not authorize confidential or regulated content. If the content
+classification changes, external assistance must stop and the LAD-065 ZDR and
+institutional-authorization gates apply before another request. A user cannot
+waive this boundary merely by selecting a checkbox when the content contains a
+prohibited category.
+
+Provider output remains an assistance artifact under LAD-063 and cannot become
+evidence, answer for a participant, establish a Knowledge Outcome, propose or
+approve a change, mutate the operating model, create a Scenario, or become
+policy.
+
+**Why:** Requiring enterprise-grade retention controls for deliberately
+non-confidential product testing would prevent a proportionate individual-led
+evaluation without improving protection for the information actually in scope.
+An explicit classification, understandable disclosure, narrow request surface,
+technical rejection, and reversible rollout make the accepted standard
+retention visible without weakening the future confidential-data boundary.
+
+**Alternatives considered:** Continue requiring ZDR for all authenticated
+workspaces; silently relax LAD-065; treat every Process as inherently public;
+rely only on the participant checkbox; permit personal information when the
+participant considers it harmless; or enable the provider for public
+Northstar. These were rejected because they conflate workspace access with data
+classification, erase the earlier decision, or weaken enforceable content and
+environment boundaries.
+
+**Affected decisions:** LAD-066 follows and clarifies LAD-064 and LAD-065
+without superseding either. It also follows LAD-002, LAD-003, LAD-008, LAD-015
+through LAD-018, LAD-020, LAD-021, LAD-025, LAD-029, LAD-037, LAD-042, LAD-046,
+LAD-051, LAD-060, LAD-061, and LAD-063. It preserves the public/private
+environment boundary while separating it from information classification.
+
+**Consequences and deferrals:** ZDR approval is not a prerequisite for the
+explicitly non-confidential pilot. The repository now contains a server-only,
+disabled-by-default authorization policy; exact Organization and environment
+allowlists; a default-engaged manual kill switch; deterministic manual
+fallback; allowlisted context construction; secret and obvious prohibited-
+content rejection; an exact context-review component; two required participant
+confirmations; a stale-context fingerprint guard; and a stateless, foreground,
+tool-free request builder. The implementation contains no transport, credential
+lookup, provider SDK, environment activation, database change, or runtime route
+wiring. A dedicated provider project, server-only credential, cost controls,
+transport timeout, logging verification, exact-commit deployment, isolated
+runtime verification, and first-request review remain incomplete rollout gates.
+Confidential information, broader Organization enablement, files, images,
+audio, tools, background mode, provider-managed state, and AI-suggested
+structured mappings remain deferred.
 
 ### LAD-062 — Process-bound reconciliation is exception-driven and no change is the default valid outcome
 
