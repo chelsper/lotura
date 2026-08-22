@@ -15,6 +15,8 @@ import {
   WorkspaceShell,
 } from "../../../../../../workspace-shell";
 import { changeInquiryDiscoveryPauseAction } from "../../../../actions";
+import { DiscoveryAssistanceRequestForm } from "../../../../discovery-assistance-request-form";
+import { DiscoveryAssistanceSuggestionForm } from "../../../../discovery-assistance-suggestion-form";
 import { DiscoveryInquiryAnswerForm } from "../../../../discovery-inquiry-answer-form";
 import { DiscoveryInquiryCorrectionForm } from "../../../../discovery-inquiry-correction-form";
 
@@ -43,6 +45,7 @@ export default async function DiscoveryInquiryInterviewPage({
 
   const experience = await loadWorkspaceExperience();
   if (!experience.discovery.enabled) notFound();
+  const discoveryOrganizationId = experience.discovery.organizationId;
   const { loadDiscoveryInquiryReview, loadDiscoveryInquirySession } =
     await import("@/lib/discovery-data");
   const session = await loadDiscoveryInquirySession(
@@ -60,6 +63,18 @@ export default async function DiscoveryInquiryInterviewPage({
     : null;
 
   const question = getDiscoveryInquiryQuestion(session.currentQuestionKey);
+  const assistance = question && session.status === "in_progress"
+    ? await import("@/lib/discovery-assistance-data").then(
+        ({ loadInquiryDiscoveryAssistance }) =>
+          loadInquiryDiscoveryAssistance(
+            discoveryOrganizationId,
+            inquiryId,
+            session.id,
+            session.revision,
+            question.key,
+          ),
+      )
+    : null;
   const knownContext = question
     ? buildInquiryKnownContext({
         currentPromptKey: question.key,
@@ -204,6 +219,70 @@ export default async function DiscoveryInquiryInterviewPage({
             <p className="mt-4 text-xs leading-5 text-[var(--text-tertiary)]">
               This context stays attached to the original question. Lotura is not assuming that it belongs to an existing Process.
             </p>
+          </Card>
+
+          <Card className="p-5 sm:p-7">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <Badge tone="accent">Optional assistance</Badge>
+                <h2 className="mt-3 text-xl font-semibold text-[var(--text)]">
+                  Get help exploring this question
+                </h2>
+              </div>
+              <span className="text-xs text-[var(--text-tertiary)]">
+                Human review required
+              </span>
+            </div>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
+              Ask Lotura for a focused follow-up or a clearer version of rough notes. The original organizational question and the regular interview question remain available.
+            </p>
+            <Alert className="mt-4" tone="info">
+              This slice uses a deterministic mocked provider so the review and provenance controls can be tested safely. It does not call an external AI service.
+            </Alert>
+            {assistance ? (
+              <div className="mt-5 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-[var(--text)]">
+                    Review Lotura&apos;s suggestions
+                  </p>
+                  <span className="text-xs text-[var(--text-tertiary)]">
+                    {assistance.sourceCount} attributable {assistance.sourceCount === 1 ? "source" : "sources"}
+                  </span>
+                </div>
+                {assistance.suggestions.map((suggestion) => (
+                  <DiscoveryAssistanceSuggestionForm
+                    inquiryId={inquiryId}
+                    key={suggestion.id}
+                    revision={session.revision}
+                    sessionId={session.id}
+                    sessionKind="inquiry"
+                    standardPromptText={question.prompt}
+                    suggestion={suggestion}
+                  />
+                ))}
+                {assistance.suggestions.every((suggestion) => suggestion.decision) ? (
+                  <div className="border-t border-[var(--border)] pt-5">
+                    <DiscoveryAssistanceRequestForm
+                      inquiryId={inquiryId}
+                      promptKey={question.key}
+                      revision={session.revision}
+                      sessionId={session.id}
+                      sessionKind="inquiry"
+                    />
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <div className="mt-5">
+                <DiscoveryAssistanceRequestForm
+                  inquiryId={inquiryId}
+                  promptKey={question.key}
+                  revision={session.revision}
+                  sessionId={session.id}
+                  sessionKind="inquiry"
+                />
+              </div>
+            )}
           </Card>
 
           <Card className="p-5 sm:p-7">

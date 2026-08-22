@@ -1,9 +1,12 @@
 # AI-Assisted Discovery v0.1
 
-**Status:** LAD-061 accepted. Slice A deterministic context and evidence reuse
-are implemented and passed isolated fictional verification at migration
-journal `29/29`. Provider access, model suggestions, credentials, environment
-changes, JU migration or data changes, and deployment remain separately gated.
+**Status:** LAD-061 and LAD-063 accepted. Slice A deterministic context and
+evidence reuse are implemented and passed isolated fictional verification at
+migration journal `29/29`. Slice B's attributable assistance schema, mocked
+provider adapter, and human-review UX are implemented and passed isolated
+fictional verification at migration journal `30/30`. External provider access,
+credentials, environment changes, JU migration or data changes, and deployment
+remain separately gated.
 
 ## Product outcome
 
@@ -346,6 +349,25 @@ until a human connects the inquiry to a Process.
   separation;
 - no real provider credential or Organization enablement.
 
+**Authorized contract (LAD-063):** A deterministic mocked provider receives
+only the application-selected, Organization-scoped context packet. Requesting
+help appends a run, its exact typed sources, and one to three suggestions; it
+does not create evidence or advance the interview. A participant may edit and
+use a question, edit and use a clarity draft, skip a question, reject a draft,
+or continue with the standard catalog. Use/edit atomically appends the human
+observation, the decision and exact observation link, and the session advance.
+Skip/reject appends only the decision. Original rough notes, proposed wording,
+final wording, evidence state, provider/model/prompt-policy provenance, and
+bounded sources remain distinguishable. No external provider call occurs in
+Slice B.
+
+**Verification:** The exact isolated fictional target passed Process-bound and
+inquiry-bound context probes, request-without-evidence behavior, human
+use/edit/skip attribution, stale-revision and wrong-question safeguards,
+append-only history, runtime read-only access, canonical-write denials, and
+rollback cleanup at migration journal `30/30`. No fictional probe row
+persisted.
+
 ### Slice C — Controlled provider evaluation
 
 - approve provider, model, data-use, retention, consent, and credential
@@ -431,6 +453,11 @@ It extends:
 
 It conflicts with and supersedes no accepted decision. It does not lift any
 approval, application, public-demo, or autonomous-AI prohibition.
+
+LAD-063 follows and narrowly extends LAD-061 and follows the same tenant,
+evidence, lifecycle, and authority decisions listed above, plus LAD-062. It
+adds attributable mocked assistance without changing those decisions and
+conflicts with or supersedes none of them.
 
 Operational Scenarios, Seasonal Operations, lessons learned, Organizational
 Impact Analysis, and policy or plan approval remain separately deferred; AI
