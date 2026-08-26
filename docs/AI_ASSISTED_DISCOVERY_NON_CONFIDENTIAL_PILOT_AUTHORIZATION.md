@@ -156,6 +156,9 @@ available.
 - Prompt policy: `lad-064-v4`
 - API call logging: **Enabled per call**; every constructed request sets
   `store: false`
+- Voluntary provider sharing: **Disabled** for response feedback,
+  evaluation/fine-tuning data, and API inputs and outputs; verified in the
+  OpenAI organization data controls on August 25, 2026
 - Cost control: pilot usage alert configured; application request count remains
   bounded to one request with no retry
 
@@ -171,7 +174,7 @@ authorization.
 
 - [x] Create or select a dedicated OpenAI API project for the Lotura
       non-confidential pilot.
-- [ ] Confirm voluntary API data sharing is disabled.
+- [x] Confirm voluntary API data sharing is disabled.
 - [x] Use a project-scoped server credential with a named owner and documented
       rotation and revocation path.
 - [x] Configure a spending limit and usage alert appropriate to the pilot.
