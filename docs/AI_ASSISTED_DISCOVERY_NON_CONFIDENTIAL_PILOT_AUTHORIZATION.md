@@ -1,7 +1,7 @@
 # AI-Assisted Discovery non-confidential pilot authorization
 
 **Decision basis:** LAD-066
-**Status:** Contract accepted; repository-only D1 authorization and inactive transport foundations implemented; activation and rollout not authorized
+**Status:** Contract accepted; inactive authorization, transport, and server-only credential boundaries implemented; activation and rollout not authorized
 **Provider documentation reviewed:** August 22, 2026
 
 ## Purpose
@@ -86,7 +86,7 @@ The participant must affirm both:
 Declining, leaving, or failing either confirmation makes no request, creates no
 evidence, and leaves the manual interview path available.
 
-## Repository-only D1 implementation evidence
+## Inactive implementation evidence
 
 The approved repository foundation now provides:
 
@@ -120,13 +120,47 @@ The repository also contains a disconnected server-only OpenAI transport that:
 - returns content-safe manual fallback reasons without logging provider,
   participant, or error content.
 
-The foundation intentionally contains no SDK, credential lookup, `process.env`
-access, environment value, database migration, runtime route activation, Vercel
-change, Neon change, or JU data change. The injected transport has made no real
-provider request and cannot run through an application route. The existing
-deterministic mocked provider remains the only active application provider.
-This means the interface, authorization functions, and transport failure modes
-can be reviewed and tested without making external assistance available.
+The repository now also contains a server-only credential boundary. It reads
+only `LOTURA_AI_ASSISTANCE_PILOT_OPENAI_API_KEY`, and only after the mode,
+kill-switch, authenticated-workspace, Organization, deployment-environment, and
+reviewed-provider-project checks all pass. It never falls back to
+`OPENAI_API_KEY`, never exposes the value through a `NEXT_PUBLIC_` variable,
+never returns the value, and never logs the value. Disabled and kill-switch
+paths do not require the credential.
+
+No application route imports it, so this boundary remains inactive. The
+repository contains no provider SDK, configured credential value, environment
+activation, database migration, runtime route activation, Vercel change, Neon
+change, or JU data change. The injected transport has made no real provider
+request and cannot run through an application route. The existing deterministic
+mocked provider remains the only active application provider. This means the
+interface, authorization functions, credential failure modes, and transport
+failure modes can be reviewed and tested without making external assistance
+available.
+
+## Reviewed provider project record
+
+- OpenAI project: **Lotura Non-Confidential Pilot**
+- Project ID: `proj_FOHjzH1JYJR7OTn6Hu0KOcuk`
+- Service account: `lotura-ai-assistance-preview`
+- Assigned role: **Lotura AI Responses Writer**
+- Approved permission: `api.responses.write`
+- Credential owner: pilot owner
+- Local pre-activation storage: macOS Keychain; the value is not recorded in
+  Git, this document, chat, or Lotura configuration
+- Rotation and revocation: create and verify a replacement project-scoped
+  service-account credential, deploy it through the approved secret workflow,
+  then revoke the prior credential from the OpenAI project
+- Endpoint: `https://api.openai.com/v1/responses`
+- Model: `gpt-5.6-terra`, low reasoning
+- Prompt policy: `lad-064-v4`
+- API call logging: **Enabled per call**; every constructed request sets
+  `store: false`
+- Cost control: pilot usage alert configured; application request count remains
+  bounded to one request with no retry
+
+The credential remains only in the pilot owner's Keychain. It has not been
+added to Vercel and the application has no active provider route.
 
 The implementation follows LAD-002, LAD-003, LAD-008, LAD-015 through LAD-018,
 LAD-020, LAD-021, LAD-025, LAD-029, LAD-037, LAD-042, LAD-046, LAD-051, LAD-060,
@@ -135,44 +169,42 @@ authorization.
 
 ## Gate 1 — Provider project and ownership
 
-- [ ] Create or select a dedicated OpenAI API project for the Lotura
+- [x] Create or select a dedicated OpenAI API project for the Lotura
       non-confidential pilot.
 - [ ] Confirm voluntary API data sharing is disabled.
-- [ ] Use a project-scoped server credential with a named owner and documented
+- [x] Use a project-scoped server credential with a named owner and documented
       rotation and revocation path.
-- [ ] Configure a spending limit and usage alert appropriate to the pilot.
-- [ ] Record the exact endpoint, model, prompt-policy version, and provider
+- [x] Configure a spending limit and usage alert appropriate to the pilot.
+- [x] Record the exact endpoint, model, prompt-policy version, and provider
       project identity without recording the credential.
-- [ ] Keep API call logging **Enabled per call** or stricter and prove every
+- [x] Keep API call logging **Enabled per call** or stricter and prove every
       Lotura request sets `store: false`.
 
 ## Gate 2 — Technical boundary
 
-- [ ] Keep the adapter server-only and disabled by default.
-- [ ] Require the exact Lotura Organization and environment allowlist.
-- [ ] Prevent public Northstar from initializing or calling the adapter.
+- [x] Keep the adapter server-only and disabled by default.
+- [x] Require the exact Lotura Organization and environment allowlist.
+- [x] Prevent public Northstar from initializing or calling the adapter.
 - [ ] Send foreground, text-only Responses requests with `store: false`,
       `background: false`, no tools, no conversation, and no previous response.
-- [ ] Preserve strict structured output, output bounds, one timeout, and no
+- [x] Preserve strict structured output, output bounds, one timeout, and no
       silent retry.
-- [ ] Run field allowlisting, size limits, secret rejection, and prohibited
+- [x] Run field allowlisting, size limits, secret rejection, and prohibited
       content rejection before transport.
-- [ ] Add the exact context preview and two participant confirmations above.
-- [ ] Add a manual kill switch and deterministic standard-question fallback.
-- [ ] Keep prompt, answer, and suggestion content out of URLs, analytics,
+- [x] Add the exact context preview and two participant confirmations above.
+- [x] Add a manual kill switch and deterministic standard-question fallback.
+- [x] Keep prompt, answer, and suggestion content out of URLs, analytics,
       ordinary logs, and error output.
 - [ ] Preserve LAD-063 source, suggestion, and human-decision provenance without
       creating a provider-debug content copy.
 - [ ] Prove the provider cannot create evidence or write any canonical,
       proposal, review, Structure, history, or policy record.
 
-The repository-only foundation implements the static boundary and an injected,
-fictional-verified transport. The boxes remain open until an exact provider
-project, credential target, runtime configuration, route integration, and
-deployment are separately reviewed. Timeout, no-retry behavior, provider-
-project identity, content-safe operational logging, persistence provenance,
-and write-denial behavior must still be proven against that exact runtime
-before any box is closed.
+The repository foundation implements the static boundary, injected transport,
+and inactive server-only credential loader. The remaining boxes stay open until
+the exact route integration and deployment are separately reviewed. The checked
+items have repository-level proof; they must still be re-verified against the
+exact runtime before the first provider request.
 
 ## Gate 3 — Bounded rollout
 

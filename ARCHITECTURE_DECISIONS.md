@@ -109,7 +109,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-063 | Mocked AI assistance is an attributable artifact, never evidence or authority | Accepted — Slice B generic implementation complete and isolated fictional verification passed; no real provider authorized |
 | LAD-064 | External AI evaluation is fictional, stateless, tool-free, and separate from private use | Accepted — v1 and v4 passed controlled fictional cases; v2 and v3 exposed distinct human-review failures; private use remains unauthorized |
 | LAD-065 | Private external AI assistance is Organization-opt-in and requires verified provider data controls | Accepted — private-pilot authorization contract; implementation and JU use remain separately gated |
-| LAD-066 | An explicitly non-confidential AI pilot may operate under standard provider retention | Accepted — repository-only D1 authorization and inactive transport foundations implemented; activation and rollout remain separately gated |
+| LAD-066 | An explicitly non-confidential AI pilot may operate under standard provider retention | Accepted — inactive authorization, transport, and server-only credential boundaries implemented; activation and rollout remain separately gated |
 
 ## Decision records
 
@@ -2822,8 +2822,8 @@ AI-suggested structured mappings remain deferred.
 ### LAD-066 — An explicitly non-confidential AI pilot may operate under standard provider retention
 
 **Status:** Accepted — the non-confidential pilot contract is approved and its
-repository-only D1 authorization and inactive transport foundations are
-implemented. A credential, external request, environment configuration,
+inactive authorization, transport, and server-only credential boundaries are
+implemented. A credential value, external request, environment activation,
 deployment, or JU rollout remains separately gated.
 
 **Context:** LAD-065 was approved after confirming that `store: false` is not
@@ -2924,11 +2924,17 @@ malformed, or oversized responses while accepting the documented optional
 reasoning item, returns only content-safe fallback reasons, and retains only
 permitted non-content metadata in its result. The approved v4
 prompt policy is shared by the pilot request rather than weakened for runtime.
-The implementation contains no credential lookup, provider SDK, environment
-activation, database change, runtime route wiring, or automatic retry. A
-dedicated provider project, server-only credential configuration, cost controls,
-logging verification, exact-commit deployment, isolated runtime verification,
-and first-request review remain incomplete rollout gates.
+A separate server-only runtime boundary now reads only the dedicated
+`LOTURA_AI_ASSISTANCE_PILOT_OPENAI_API_KEY` variable after every existing mode,
+kill-switch, authentication, Organization, environment, and provider-project
+check passes. Disabled and kill-switch paths do not require the credential. The
+credential is never returned, logged, accepted through a `NEXT_PUBLIC_`
+variable, or substituted from a generic `OPENAI_API_KEY`. No application route
+imports the runtime boundary, so the implemented credential path remains
+inactive. The implementation contains no provider SDK, environment activation,
+database change, runtime route wiring, or automatic retry. Exact environment
+configuration, exact-commit deployment, isolated runtime verification, and the
+first-request review remain incomplete rollout gates.
 Confidential information, broader Organization enablement, files, images,
 audio, tools, background mode, provider-managed state, and AI-suggested
 structured mappings remain deferred.

@@ -306,19 +306,21 @@ test("the participant-facing authorization is plain-language, exact-context, and
   assert.doesNotMatch(component, /canonical|sanitized working draft/i);
 });
 
-test("the D1 authorization boundary has no credential, schema, route wiring, or runtime activation", async () => {
-  const [contract, wrapper, transport, transportWrapper, provider, journal, documentation] =
+test("the authorization policy and transport stay isolated from credential access and route activation", async () => {
+  const [contract, wrapper, transport, transportWrapper, runtimeWrapper, provider, journal, documentation] =
     await Promise.all([
       read("lib/discovery-assistance-non-confidential-pilot.mjs"),
       read("lib/discovery-assistance-non-confidential-pilot.ts"),
       read("lib/discovery-assistance-openai-pilot-transport.mjs"),
       read("lib/discovery-assistance-openai-pilot-transport.ts"),
+      read("lib/discovery-assistance-openai-pilot-runtime.ts"),
       read("lib/discovery-assistance-provider.ts"),
       read("drizzle/meta/_journal.json"),
       read("docs/AI_ASSISTED_DISCOVERY_NON_CONFIDENTIAL_PILOT_AUTHORIZATION.md"),
     ]);
   assert.match(wrapper, /import "server-only"/);
   assert.match(transportWrapper, /import "server-only"/);
+  assert.match(runtimeWrapper, /import "server-only"/);
   assert.doesNotMatch(
     contract,
     /OPENAI_API_KEY|api\.openai\.com|\bfetch\s*\(|process\.env/,
@@ -332,6 +334,6 @@ test("the D1 authorization boundary has no credential, schema, route wiring, or 
   assert.doesNotMatch(journal, /"idx": 30/);
   assert.match(
     documentation,
-    /no SDK, credential lookup, `process\.env`\s+access, environment value/,
+    /No application route imports it/,
   );
 });
