@@ -306,14 +306,15 @@ test("the participant-facing authorization is plain-language, exact-context, and
   assert.doesNotMatch(component, /canonical|sanitized working draft/i);
 });
 
-test("the authorization policy and transport stay isolated from credential access and route activation", async () => {
-  const [contract, wrapper, transport, transportWrapper, runtimeWrapper, provider, journal, documentation] =
+test("the authorization policy stays isolated while the authenticated route remains inactive", async () => {
+  const [contract, wrapper, transport, transportWrapper, runtimeWrapper, administration, provider, journal, documentation] =
     await Promise.all([
       read("lib/discovery-assistance-non-confidential-pilot.mjs"),
       read("lib/discovery-assistance-non-confidential-pilot.ts"),
       read("lib/discovery-assistance-openai-pilot-transport.mjs"),
       read("lib/discovery-assistance-openai-pilot-transport.ts"),
       read("lib/discovery-assistance-openai-pilot-runtime.ts"),
+      read("lib/discovery-assistance-administration.ts"),
       read("lib/discovery-assistance-provider.ts"),
       read("drizzle/meta/_journal.json"),
       read("docs/AI_ASSISTED_DISCOVERY_NON_CONFIDENTIAL_PILOT_AUTHORIZATION.md"),
@@ -329,11 +330,13 @@ test("the authorization policy and transport stay isolated from credential acces
     transport,
     /OPENAI_API_KEY|process\.env|console\.|\blog\s*\(/,
   );
+  assert.match(administration, /executeOpenAINonConfidentialPilotFromServer/);
+  assert.match(administration, /buildNonConfidentialPilotPreview/);
   assert.match(provider, /key: "mocked_provider"/);
   assert.match(journal, /"idx": 29/);
   assert.doesNotMatch(journal, /"idx": 30/);
   assert.match(
     documentation,
-    /No application route imports it/,
+    /route remains inactive/,
   );
 });

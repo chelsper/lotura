@@ -311,11 +311,12 @@ test("provider, model, tool-shaped, and malformed failures return only safe fall
   }
 });
 
-test("the server-only transport is injected, content-silent, unwired, and migration-free", async () => {
-  const [transport, wrapper, provider, processPage, inquiryPage, journal] =
+test("the server-only transport is injected, content-silent, narrowly wired, and migration-free", async () => {
+  const [transport, wrapper, administration, provider, processPage, inquiryPage, journal] =
     await Promise.all([
       read("lib/discovery-assistance-openai-pilot-transport.mjs"),
       read("lib/discovery-assistance-openai-pilot-transport.ts"),
+      read("lib/discovery-assistance-administration.ts"),
       read("lib/discovery-assistance-provider.ts"),
       read("app/studio/discovery/interviews/[sessionId]/page.tsx"),
       read("app/studio/discovery/inquiries/[inquiryId]/interviews/[sessionId]/page.tsx"),
@@ -328,6 +329,9 @@ test("the server-only transport is injected, content-silent, unwired, and migrat
     transport,
     /OPENAI_API_KEY|process\.env|console\.|JSON\.stringify\(error/,
   );
+  assert.match(administration, /executeOpenAINonConfidentialPilotFromServer/);
+  assert.match(administration, /prepareProcessDiscoveryAssistancePilot/);
+  assert.match(administration, /prepareInquiryDiscoveryAssistancePilot/);
   assert.match(provider, /key: "mocked_provider"/);
   assert.doesNotMatch(processPage, /openai-pilot-transport/);
   assert.doesNotMatch(inquiryPage, /openai-pilot-transport/);

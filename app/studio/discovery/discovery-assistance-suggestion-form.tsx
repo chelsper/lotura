@@ -22,6 +22,7 @@ const states = [
 
 type Props = {
   inquiryId?: string;
+  providerKey: string;
   revision: number;
   sessionId: string;
   sessionKind: "process" | "inquiry";
@@ -31,6 +32,7 @@ type Props = {
 
 export function DiscoveryAssistanceSuggestionForm({
   inquiryId,
+  providerKey,
   revision,
   sessionId,
   sessionKind,
@@ -73,7 +75,7 @@ export function DiscoveryAssistanceSuggestionForm({
           Suggested by Lotura
         </p>
         <span className="text-[11px] text-[var(--text-tertiary)]">
-          Mocked assistance · review required
+          {providerKey === "openai" ? "OpenAI assistance" : "Mocked assistance"} · review required
         </span>
       </div>
       <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">

@@ -6,12 +6,22 @@ import { requireWorkspaceAccess } from "./authentication";
 import {
   fingerprintAssistanceValue,
   normalizeParticipantFocus,
-  validateMockSuggestions,
+  validateAssistanceSuggestions,
   type DiscoveryAssistancePacket,
   type DiscoveryAssistanceSource,
   type DiscoveryAssistanceSuggestion,
   type DiscoveryAssistanceTopic,
 } from "./discovery-assistance-model.mjs";
+import {
+  buildNonConfidentialPilotPreview,
+  NON_CONFIDENTIAL_PILOT_CONTRACT,
+  resolveNonConfidentialPilotConfiguration,
+  type NonConfidentialPilotInput,
+  type NonConfidentialPilotPreview,
+} from "./discovery-assistance-non-confidential-pilot.mjs";
+import {
+  executeOpenAINonConfidentialPilotFromServer,
+} from "./discovery-assistance-openai-pilot-runtime";
 import { discoveryAssistanceProvider } from "./discovery-assistance-provider";
 import { resolveDiscoveryConfiguration } from "./discovery-policy.mjs";
 import {
@@ -41,6 +51,33 @@ type AssistanceDecisionResult =
       message: string;
       ok: false;
     };
+
+export type AssistancePilotPreparationResult =
+  | {
+      mode: "mocked";
+      ok: true;
+    }
+  | {
+      mode: "external_review";
+      ok: true;
+      preview: NonConfidentialPilotPreview;
+    }
+  | {
+      code: "conflict" | "invalid" | "unavailable";
+      message: string;
+      ok: false;
+    };
+
+type AssistanceProviderAttribution = {
+  key: string;
+  modelIdentifier: string;
+  promptPolicyVersion: string;
+};
+
+type EnabledPilotConfiguration = Extract<
+  ReturnType<typeof resolveNonConfidentialPilotConfiguration>,
+  { enabled: true }
+>;
 
 type ProcessSource = DiscoveryAssistanceSource & {
   discoveryObservationStableKey?: string;
@@ -112,6 +149,7 @@ async function assistanceWriteContext() {
   if (!configuration.enabled) return null;
   return {
     configuration,
+    runtimeAccess,
     sql: neon(configuration.databaseUrl, {
       isolationLevel: "Serializable",
       readOnly: false,
@@ -142,8 +180,8 @@ function assistancePacket(input: {
 }
 
 function suggestionPayload(suggestions: DiscoveryAssistanceSuggestion[]) {
-  if (!validateMockSuggestions(suggestions)) {
-    throw new Error("The mocked assistance response did not match the reviewed contract.");
+  if (!validateAssistanceSuggestions(suggestions)) {
+    throw new Error("The assistance response did not match the reviewed contract.");
   }
   return suggestions.map((suggestion, index) => ({
     original_text: suggestion.originalText ?? null,
@@ -399,9 +437,11 @@ function sourcePayload(sources: Array<ProcessSource | InquirySource>) {
 
 async function persistProcessRun(input: {
   assistanceKind: "question_suggestions" | "clarity_draft";
+  contextFingerprint: string;
   expectedRevision: number;
   focus: string | null;
   packet: DiscoveryAssistancePacket;
+  provider: AssistanceProviderAttribution;
   sessionId: string;
   sources: ProcessSource[];
   suggestions: DiscoveryAssistanceSuggestion[];
@@ -490,10 +530,10 @@ async function persistProcessRun(input: {
       input.expectedRevision,
       input.packet.promptKey,
       input.assistanceKind,
-      discoveryAssistanceProvider.key,
-      discoveryAssistanceProvider.modelIdentifier,
-      discoveryAssistanceProvider.promptPolicyVersion,
-      fingerprintAssistanceValue(input.packet),
+      input.provider.key,
+      input.provider.modelIdentifier,
+      input.provider.promptPolicyVersion,
+      input.contextFingerprint,
       input.focus,
       JSON.stringify(sourcePayload(input.sources)),
       JSON.stringify(suggestionPayload(input.suggestions)),
@@ -503,10 +543,12 @@ async function persistProcessRun(input: {
 
 async function persistInquiryRun(input: {
   assistanceKind: "question_suggestions" | "clarity_draft";
+  contextFingerprint: string;
   expectedRevision: number;
   focus: string | null;
   inquiryId: string;
   packet: DiscoveryAssistancePacket;
+  provider: AssistanceProviderAttribution;
   sessionId: string;
   sources: InquirySource[];
   suggestions: DiscoveryAssistanceSuggestion[];
@@ -597,15 +639,344 @@ async function persistInquiryRun(input: {
       input.expectedRevision,
       input.packet.promptKey,
       input.assistanceKind,
-      discoveryAssistanceProvider.key,
-      discoveryAssistanceProvider.modelIdentifier,
-      discoveryAssistanceProvider.promptPolicyVersion,
-      fingerprintAssistanceValue(input.packet),
+      input.provider.key,
+      input.provider.modelIdentifier,
+      input.provider.promptPolicyVersion,
+      input.contextFingerprint,
       input.focus,
       JSON.stringify(sourcePayload(input.sources)),
       JSON.stringify(suggestionPayload(input.suggestions)),
     ],
   );
+}
+
+function nonConfidentialPilotInput(input: {
+  assistanceKind: "question_suggestions" | "clarity_draft";
+  configuration: EnabledPilotConfiguration;
+  confirmedContextFingerprint?: string;
+  nonConfidentialAuthorized?: boolean;
+  originalText: string;
+  packet: DiscoveryAssistancePacket;
+  providerRetentionAccepted?: boolean;
+  sessionId: string;
+  sessionRevision: number;
+}): NonConfidentialPilotInput {
+  return {
+    assistanceKind: input.assistanceKind,
+    confirmedContextFingerprint: input.confirmedContextFingerprint,
+    dataClassification: "non_confidential_test",
+    deploymentEnvironment: input.configuration.deploymentEnvironment,
+    nonConfidentialAuthorized: input.nonConfidentialAuthorized,
+    organizationId: input.configuration.organizationId,
+    originalText: input.originalText,
+    packet: input.packet,
+    providerRetentionAccepted: input.providerRetentionAccepted,
+    sessionId: input.sessionId,
+    sessionRevision: input.sessionRevision,
+  };
+}
+
+function pilotPacket(input: {
+  assistanceKind: "question_suggestions" | "clarity_draft";
+  focus: string;
+  originalText: string;
+  packet: DiscoveryAssistancePacket;
+}) {
+  return {
+    originalText: input.assistanceKind === "clarity_draft"
+      ? input.originalText
+      : "",
+    packet: input.packet,
+  };
+}
+
+export async function prepareProcessDiscoveryAssistancePilot(input: {
+  assistanceKind: "question_suggestions" | "clarity_draft";
+  expectedRevision: number;
+  focus: string;
+  originalText: string;
+  promptKey: string;
+  sessionId: string;
+}): Promise<AssistancePilotPreparationResult> {
+  if (!validUuid(input.sessionId) || !validRevision(input.expectedRevision)) {
+    return { code: "invalid", message: "The interview reference is invalid.", ok: false };
+  }
+  try {
+    const loaded = await processContext(input);
+    if (!loaded) {
+      return { code: "unavailable", message: "Discovery assistance is not enabled.", ok: false };
+    }
+    if (!loaded.session) {
+      return { code: "conflict", message: "This interview changed. Reload before asking for help.", ok: false };
+    }
+    const configuration = resolveNonConfidentialPilotConfiguration(
+      process.env,
+      loaded.context.runtimeAccess,
+    );
+    if (!configuration.enabled) return { mode: "mocked", ok: true };
+    const packet = assistancePacket({
+      currentQuestion: loaded.question.prompt,
+      focus: input.focus,
+      promptKey: loaded.question.key,
+      sessionKind: "process",
+      sources: loaded.sources,
+      topic: loaded.question.topic,
+    });
+    const bounded = pilotPacket({ ...input, packet });
+    return {
+      mode: "external_review",
+      ok: true,
+      preview: buildNonConfidentialPilotPreview(nonConfidentialPilotInput({
+        assistanceKind: input.assistanceKind,
+        configuration,
+        originalText: bounded.originalText,
+        packet: bounded.packet,
+        sessionId: input.sessionId,
+        sessionRevision: input.expectedRevision,
+      })),
+    };
+  } catch (error) {
+    logFailure("prepare_process_external_assistance", error);
+    return {
+      code: "unavailable",
+      message: "Lotura could not prepare the external-assistance review safely. Use the standard question instead.",
+      ok: false,
+    };
+  }
+}
+
+export async function prepareInquiryDiscoveryAssistancePilot(input: {
+  assistanceKind: "question_suggestions" | "clarity_draft";
+  expectedRevision: number;
+  focus: string;
+  inquiryId: string;
+  originalText: string;
+  promptKey: string;
+  sessionId: string;
+}): Promise<AssistancePilotPreparationResult> {
+  if (!validUuid(input.inquiryId) || !validUuid(input.sessionId) || !validRevision(input.expectedRevision)) {
+    return { code: "invalid", message: "The inquiry or interview reference is invalid.", ok: false };
+  }
+  try {
+    const loaded = await inquiryContext(input);
+    if (!loaded) {
+      return { code: "unavailable", message: "Discovery assistance is not enabled.", ok: false };
+    }
+    if (!loaded.session) {
+      return { code: "conflict", message: "This interview changed. Reload before asking for help.", ok: false };
+    }
+    const configuration = resolveNonConfidentialPilotConfiguration(
+      process.env,
+      loaded.context.runtimeAccess,
+    );
+    if (!configuration.enabled) return { mode: "mocked", ok: true };
+    const packet = assistancePacket({
+      currentQuestion: loaded.question.prompt,
+      focus: input.focus,
+      promptKey: loaded.question.key,
+      sessionKind: "inquiry",
+      sources: loaded.sources,
+      topic: loaded.question.topic,
+    });
+    const bounded = pilotPacket({ ...input, packet });
+    return {
+      mode: "external_review",
+      ok: true,
+      preview: buildNonConfidentialPilotPreview(nonConfidentialPilotInput({
+        assistanceKind: input.assistanceKind,
+        configuration,
+        originalText: bounded.originalText,
+        packet: bounded.packet,
+        sessionId: input.sessionId,
+        sessionRevision: input.expectedRevision,
+      })),
+    };
+  } catch (error) {
+    logFailure("prepare_inquiry_external_assistance", error);
+    return {
+      code: "unavailable",
+      message: "Lotura could not prepare the external-assistance review safely. Use the standard question instead.",
+      ok: false,
+    };
+  }
+}
+
+export async function requestProcessOpenAIDiscoveryAssistance(input: {
+  assistanceKind: "question_suggestions" | "clarity_draft";
+  confirmedContextFingerprint: string;
+  expectedRevision: number;
+  focus: string;
+  nonConfidentialAuthorized: boolean;
+  originalText: string;
+  promptKey: string;
+  providerRetentionAccepted: boolean;
+  sessionId: string;
+}): Promise<AssistanceResult> {
+  if (!validUuid(input.sessionId) || !validRevision(input.expectedRevision)) {
+    return { code: "invalid", message: "The interview reference is invalid.", ok: false };
+  }
+  try {
+    const loaded = await processContext(input);
+    if (!loaded?.session) {
+      return { code: "conflict", message: "This interview changed. Reload before asking for help.", ok: false };
+    }
+    const configuration = resolveNonConfidentialPilotConfiguration(
+      process.env,
+      loaded.context.runtimeAccess,
+    );
+    if (!configuration.enabled) {
+      return { code: "unavailable", message: "External assistance is not enabled. Use the standard question instead.", ok: false };
+    }
+    const packet = assistancePacket({
+      currentQuestion: loaded.question.prompt,
+      focus: input.focus,
+      promptKey: loaded.question.key,
+      sessionKind: "process",
+      sources: loaded.sources,
+      topic: loaded.question.topic,
+    });
+    const bounded = pilotPacket({ ...input, packet });
+    const pilotInput = nonConfidentialPilotInput({
+      assistanceKind: input.assistanceKind,
+      configuration,
+      confirmedContextFingerprint: input.confirmedContextFingerprint,
+      nonConfidentialAuthorized: input.nonConfidentialAuthorized,
+      originalText: bounded.originalText,
+      packet: bounded.packet,
+      providerRetentionAccepted: input.providerRetentionAccepted,
+      sessionId: input.sessionId,
+      sessionRevision: input.expectedRevision,
+    });
+    const external = await executeOpenAINonConfidentialPilotFromServer({
+      input: pilotInput,
+      runtimeAccess: loaded.context.runtimeAccess,
+    });
+    if (!external.ok) {
+      return { code: "unavailable", message: "External assistance was unavailable. Use the standard question instead.", ok: false };
+    }
+    const rows = await persistProcessRun({
+      assistanceKind: input.assistanceKind,
+      contextFingerprint: input.confirmedContextFingerprint,
+      expectedRevision: input.expectedRevision,
+      focus: packet.participantFocus,
+      packet,
+      provider: {
+        key: NON_CONFIDENTIAL_PILOT_CONTRACT.providerKey,
+        modelIdentifier: external.providerMetadata.model,
+        promptPolicyVersion: external.providerMetadata.promptPolicyVersion,
+      },
+      sessionId: input.sessionId,
+      sources: loaded.sources,
+      suggestions: external.suggestions,
+    });
+    const row = rows?.[0];
+    if (!row || !validUuid(String(row.run_id)) || Number(row.source_count) !== loaded.sources.length || Number(row.suggestion_count) !== external.suggestions.length) {
+      return { code: "conflict", message: "This interview changed. Reload before asking for help.", ok: false };
+    }
+    return {
+      message: "External AI assistance is ready for your review.",
+      ok: true,
+      runId: String(row.run_id),
+      sessionId: input.sessionId,
+    };
+  } catch (error) {
+    logFailure("request_process_external_assistance", error);
+    return {
+      code: "unavailable",
+      message: "Lotura could not request external assistance safely. Use the standard question instead.",
+      ok: false,
+    };
+  }
+}
+
+export async function requestInquiryOpenAIDiscoveryAssistance(input: {
+  assistanceKind: "question_suggestions" | "clarity_draft";
+  confirmedContextFingerprint: string;
+  expectedRevision: number;
+  focus: string;
+  inquiryId: string;
+  nonConfidentialAuthorized: boolean;
+  originalText: string;
+  promptKey: string;
+  providerRetentionAccepted: boolean;
+  sessionId: string;
+}): Promise<AssistanceResult> {
+  if (!validUuid(input.inquiryId) || !validUuid(input.sessionId) || !validRevision(input.expectedRevision)) {
+    return { code: "invalid", message: "The inquiry or interview reference is invalid.", ok: false };
+  }
+  try {
+    const loaded = await inquiryContext(input);
+    if (!loaded?.session) {
+      return { code: "conflict", message: "This interview changed. Reload before asking for help.", ok: false };
+    }
+    const configuration = resolveNonConfidentialPilotConfiguration(
+      process.env,
+      loaded.context.runtimeAccess,
+    );
+    if (!configuration.enabled) {
+      return { code: "unavailable", message: "External assistance is not enabled. Use the standard question instead.", ok: false };
+    }
+    const packet = assistancePacket({
+      currentQuestion: loaded.question.prompt,
+      focus: input.focus,
+      promptKey: loaded.question.key,
+      sessionKind: "inquiry",
+      sources: loaded.sources,
+      topic: loaded.question.topic,
+    });
+    const bounded = pilotPacket({ ...input, packet });
+    const pilotInput = nonConfidentialPilotInput({
+      assistanceKind: input.assistanceKind,
+      configuration,
+      confirmedContextFingerprint: input.confirmedContextFingerprint,
+      nonConfidentialAuthorized: input.nonConfidentialAuthorized,
+      originalText: bounded.originalText,
+      packet: bounded.packet,
+      providerRetentionAccepted: input.providerRetentionAccepted,
+      sessionId: input.sessionId,
+      sessionRevision: input.expectedRevision,
+    });
+    const external = await executeOpenAINonConfidentialPilotFromServer({
+      input: pilotInput,
+      runtimeAccess: loaded.context.runtimeAccess,
+    });
+    if (!external.ok) {
+      return { code: "unavailable", message: "External assistance was unavailable. Use the standard question instead.", ok: false };
+    }
+    const rows = await persistInquiryRun({
+      assistanceKind: input.assistanceKind,
+      contextFingerprint: input.confirmedContextFingerprint,
+      expectedRevision: input.expectedRevision,
+      focus: packet.participantFocus,
+      inquiryId: input.inquiryId,
+      packet,
+      provider: {
+        key: NON_CONFIDENTIAL_PILOT_CONTRACT.providerKey,
+        modelIdentifier: external.providerMetadata.model,
+        promptPolicyVersion: external.providerMetadata.promptPolicyVersion,
+      },
+      sessionId: input.sessionId,
+      sources: loaded.sources,
+      suggestions: external.suggestions,
+    });
+    const row = rows?.[0];
+    if (!row || !validUuid(String(row.run_id)) || Number(row.source_count) !== loaded.sources.length || Number(row.suggestion_count) !== external.suggestions.length) {
+      return { code: "conflict", message: "This interview changed. Reload before asking for help.", ok: false };
+    }
+    return {
+      message: "External AI assistance is ready for your review.",
+      ok: true,
+      runId: String(row.run_id),
+      sessionId: input.sessionId,
+    };
+  } catch (error) {
+    logFailure("request_inquiry_external_assistance", error);
+    return {
+      code: "unavailable",
+      message: "Lotura could not request external assistance safely. Use the standard question instead.",
+      ok: false,
+    };
+  }
 }
 
 export async function requestProcessDiscoveryAssistance(input: {
@@ -643,9 +1014,11 @@ export async function requestProcessDiscoveryAssistance(input: {
       : await discoveryAssistanceProvider.suggestQuestions(packet);
     const rows = await persistProcessRun({
       assistanceKind: input.assistanceKind,
+      contextFingerprint: fingerprintAssistanceValue(packet),
       expectedRevision: input.expectedRevision,
       focus: packet.participantFocus,
       packet,
+      provider: discoveryAssistanceProvider,
       sessionId: input.sessionId,
       sources: loaded.sources,
       suggestions,
@@ -704,10 +1077,12 @@ export async function requestInquiryDiscoveryAssistance(input: {
       : await discoveryAssistanceProvider.suggestQuestions(packet);
     const rows = await persistInquiryRun({
       assistanceKind: input.assistanceKind,
+      contextFingerprint: fingerprintAssistanceValue(packet),
       expectedRevision: input.expectedRevision,
       focus: packet.participantFocus,
       inquiryId: input.inquiryId,
       packet,
+      provider: discoveryAssistanceProvider,
       sessionId: input.sessionId,
       sources: loaded.sources,
       suggestions,

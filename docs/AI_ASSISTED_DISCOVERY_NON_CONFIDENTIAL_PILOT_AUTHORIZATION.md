@@ -1,7 +1,7 @@
 # AI-Assisted Discovery non-confidential pilot authorization
 
 **Decision basis:** LAD-066
-**Status:** Contract accepted; inactive authorization, transport, and server-only credential boundaries implemented; activation and rollout not authorized
+**Status:** Contract accepted; inactive authorization, transport, server-only credential, and authenticated route boundaries implemented; activation and rollout not authorized
 **Provider documentation reviewed:** August 22, 2026
 
 ## Purpose
@@ -128,15 +128,21 @@ reviewed-provider-project checks all pass. It never falls back to
 never returns the value, and never logs the value. Disabled and kill-switch
 paths do not require the credential.
 
-No application route imports it, so this boundary remains inactive. The
-repository contains no provider SDK, configured credential value, environment
-activation, database migration, runtime route activation, Vercel change, Neon
-change, or JU data change. The injected transport has made no real provider
-request and cannot run through an application route. The existing deterministic
-mocked provider remains the only active application provider. This means the
-interface, authorization functions, credential failure modes, and transport
-failure modes can be reviewed and tested without making external assistance
-available.
+The authenticated Discovery Server Actions now provide the only application
+path to this boundary. They rebuild the Organization-scoped context, return the
+exact preview without making a provider request, require both confirmations,
+rebuild and fingerprint the context again, and only then permit one transport
+attempt. A successful response is persisted through the existing append-only
+LAD-063 run, source, and suggestion records before it is shown. No browser-
+callable API endpoint or provider-content debug log was added.
+
+The route remains inactive because the pilot mode defaults to disabled, the
+kill switch defaults to on, and no credential or allowlist value has been added
+to the deployed application. The repository contains no provider SDK,
+configured credential value, environment activation, database migration,
+Vercel change, Neon change, or JU data change. The deterministic mocked
+provider remains the active application provider under the current
+configuration.
 
 ## Reviewed provider project record
 
@@ -163,7 +169,7 @@ available.
   bounded to one request with no retry
 
 The credential remains only in the pilot owner's Keychain. It has not been
-added to Vercel and the application has no active provider route.
+added to Vercel and the authenticated provider route remains inactive.
 
 The implementation follows LAD-002, LAD-003, LAD-008, LAD-015 through LAD-018,
 LAD-020, LAD-021, LAD-025, LAD-029, LAD-037, LAD-042, LAD-046, LAD-051, LAD-060,
@@ -198,16 +204,17 @@ authorization.
 - [x] Add a manual kill switch and deterministic standard-question fallback.
 - [x] Keep prompt, answer, and suggestion content out of URLs, analytics,
       ordinary logs, and error output.
-- [ ] Preserve LAD-063 source, suggestion, and human-decision provenance without
+- [x] Preserve LAD-063 source, suggestion, and human-decision provenance without
       creating a provider-debug content copy.
 - [ ] Prove the provider cannot create evidence or write any canonical,
       proposal, review, Structure, history, or policy record.
 
 The repository foundation implements the static boundary, injected transport,
-and inactive server-only credential loader. The remaining boxes stay open until
-the exact route integration and deployment are separately reviewed. The checked
-items have repository-level proof; they must still be re-verified against the
-exact runtime before the first provider request.
+inactive server-only credential loader, and authenticated two-step route. The
+remaining boxes stay open until fictional route verification and the exact
+deployment are separately reviewed. The checked items have repository-level
+proof; they must still be re-verified against the exact runtime before the first
+provider request.
 
 ## Gate 3 — Bounded rollout
 

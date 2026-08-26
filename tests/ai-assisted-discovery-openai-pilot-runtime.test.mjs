@@ -195,11 +195,25 @@ test("the server boundary uses only the dedicated credential and returns no secr
   assert.doesNotMatch(JSON.stringify(result), /svcacct|fictional-runtime-key/);
 });
 
-test("the credential loader is server-only, content-silent, route-disconnected, and migration-free", async () => {
-  const [runtime, wrapper, processPage, inquiryPage, provider, journal, documentation] =
+test("the credential loader is server-only, content-silent, narrowly routed, and migration-free", async () => {
+  const [
+    runtime,
+    wrapper,
+    administration,
+    actions,
+    requestForm,
+    processPage,
+    inquiryPage,
+    provider,
+    journal,
+    documentation,
+  ] =
     await Promise.all([
       read("lib/discovery-assistance-openai-pilot-runtime.mjs"),
       read("lib/discovery-assistance-openai-pilot-runtime.ts"),
+      read("lib/discovery-assistance-administration.ts"),
+      read("app/studio/discovery/actions.ts"),
+      read("app/studio/discovery/discovery-assistance-request-form.tsx"),
       read("app/studio/discovery/interviews/[sessionId]/page.tsx"),
       read("app/studio/discovery/inquiries/[inquiryId]/interviews/[sessionId]/page.tsx"),
       read("lib/discovery-assistance-provider.ts"),
@@ -211,11 +225,20 @@ test("the credential loader is server-only, content-silent, route-disconnected, 
   assert.match(wrapper, /environment: process\.env/);
   assert.match(runtime, /LOTURA_AI_ASSISTANCE_PILOT_OPENAI_API_KEY/);
   assert.doesNotMatch(runtime + wrapper, /NEXT_PUBLIC_|console\.|JSON\.stringify\(error/);
+  assert.match(administration, /executeOpenAINonConfidentialPilotFromServer/);
+  assert.match(administration, /prepareProcessDiscoveryAssistancePilot/);
+  assert.match(administration, /prepareInquiryDiscoveryAssistancePilot/);
+  assert.match(actions, /confirmProcessOpenAIDiscoveryAssistanceAction/);
+  assert.match(actions, /confirmInquiryOpenAIDiscoveryAssistanceAction/);
+  assert.match(requestForm, /DiscoveryAssistancePilotAuthorization/);
+  assert.match(requestForm, /Continue with OpenAI/);
+  assert.doesNotMatch(actions + requestForm, /OPENAI_API_KEY|Authorization:\s*`Bearer/);
   assert.doesNotMatch(processPage, /openai-pilot-runtime/);
   assert.doesNotMatch(inquiryPage, /openai-pilot-runtime/);
   assert.match(provider, /key: "mocked_provider"/);
   assert.match(journal, /"idx": 29/);
   assert.doesNotMatch(journal, /"idx": 30/);
   assert.match(documentation, /server-only credential boundary/i);
-  assert.match(documentation, /no application route imports it/i);
+  assert.match(documentation, /authenticated Discovery Server Actions/i);
+  assert.match(documentation, /route remains inactive/i);
 });

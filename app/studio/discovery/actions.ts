@@ -19,8 +19,12 @@ import {
   decideInquiryDiscoverySuggestion,
   decideProcessDiscoverySuggestion,
   dismissDiscoverySuggestion,
+  prepareInquiryDiscoveryAssistancePilot,
+  prepareProcessDiscoveryAssistancePilot,
   requestInquiryDiscoveryAssistance,
+  requestInquiryOpenAIDiscoveryAssistance,
   requestProcessDiscoveryAssistance,
+  requestProcessOpenAIDiscoveryAssistance,
 } from "@/lib/discovery-assistance-administration";
 import {
   answerInquiryDiscoveryQuestion,
@@ -55,7 +59,10 @@ import {
 import type { ProposalReviewDisposition } from "@/lib/proposal-review-model.mjs";
 import { loadWorkspaceExperience } from "@/lib/workspace-experience";
 
-import type { DiscoveryActionState } from "./action-state";
+import type {
+  DiscoveryActionState,
+  DiscoveryAssistanceRequestState,
+} from "./action-state";
 
 function text(formData: FormData, name: string) {
   const value = formData.get(name);
@@ -209,22 +216,62 @@ export async function answerInquiryDiscoveryQuestionAction(
 }
 
 export async function requestInquiryDiscoveryAssistanceAction(
-  _previousState: DiscoveryActionState,
+  _previousState: DiscoveryAssistanceRequestState,
   formData: FormData,
-): Promise<DiscoveryActionState> {
+): Promise<DiscoveryAssistanceRequestState> {
   const inquiryId = text(formData, "inquiryId");
   const sessionId = text(formData, "sessionId");
   const assistanceKind = text(formData, "assistanceKind");
   if (assistanceKind !== "question_suggestions" && assistanceKind !== "clarity_draft") {
     return { message: "Choose the kind of help you want.", status: "error" };
   }
-  const result = await requestInquiryDiscoveryAssistance({
-    assistanceKind,
+  const request = {
+    assistanceKind: assistanceKind as "question_suggestions" | "clarity_draft",
     expectedRevision: revision(formData),
     focus: text(formData, "focus"),
     inquiryId,
     originalText: text(formData, "originalText"),
     promptKey: text(formData, "promptKey"),
+    sessionId,
+  };
+  const preparation = await prepareInquiryDiscoveryAssistancePilot(request);
+  if (!preparation.ok) {
+    return { message: preparation.message, status: "error" };
+  }
+  if (preparation.mode === "external_review") {
+    return {
+      message: "Review the exact context and confirm both statements before anything is sent.",
+      preview: preparation.preview,
+      status: "external_review",
+    };
+  }
+  const result = await requestInquiryDiscoveryAssistance(request);
+  if (!result.ok) return { message: result.message, status: "error" };
+  const path = `/studio/discovery/inquiries/${inquiryId}/interviews/${sessionId}`;
+  revalidatePath(path);
+  redirect(path);
+}
+
+export async function confirmInquiryOpenAIDiscoveryAssistanceAction(
+  _previousState: DiscoveryAssistanceRequestState,
+  formData: FormData,
+): Promise<DiscoveryAssistanceRequestState> {
+  const inquiryId = text(formData, "inquiryId");
+  const sessionId = text(formData, "sessionId");
+  const assistanceKind = text(formData, "assistanceKind");
+  if (assistanceKind !== "question_suggestions" && assistanceKind !== "clarity_draft") {
+    return { message: "Choose the kind of help you want.", status: "error" };
+  }
+  const result = await requestInquiryOpenAIDiscoveryAssistance({
+    assistanceKind,
+    confirmedContextFingerprint: text(formData, "confirmedContextFingerprint"),
+    expectedRevision: revision(formData),
+    focus: text(formData, "focus"),
+    inquiryId,
+    nonConfidentialAuthorized: text(formData, "nonConfidentialAuthorized") === "yes",
+    originalText: text(formData, "originalText"),
+    promptKey: text(formData, "promptKey"),
+    providerRetentionAccepted: text(formData, "providerRetentionAccepted") === "yes",
     sessionId,
   });
   if (!result.ok) return { message: result.message, status: "error" };
@@ -364,20 +411,58 @@ export async function answerDiscoveryQuestionAction(
 }
 
 export async function requestProcessDiscoveryAssistanceAction(
-  _previousState: DiscoveryActionState,
+  _previousState: DiscoveryAssistanceRequestState,
   formData: FormData,
-): Promise<DiscoveryActionState> {
+): Promise<DiscoveryAssistanceRequestState> {
   const sessionId = text(formData, "sessionId");
   const assistanceKind = text(formData, "assistanceKind");
   if (assistanceKind !== "question_suggestions" && assistanceKind !== "clarity_draft") {
     return { message: "Choose the kind of help you want.", status: "error" };
   }
-  const result = await requestProcessDiscoveryAssistance({
-    assistanceKind,
+  const request = {
+    assistanceKind: assistanceKind as "question_suggestions" | "clarity_draft",
     expectedRevision: revision(formData),
     focus: text(formData, "focus"),
     originalText: text(formData, "originalText"),
     promptKey: text(formData, "promptKey"),
+    sessionId,
+  };
+  const preparation = await prepareProcessDiscoveryAssistancePilot(request);
+  if (!preparation.ok) {
+    return { message: preparation.message, status: "error" };
+  }
+  if (preparation.mode === "external_review") {
+    return {
+      message: "Review the exact context and confirm both statements before anything is sent.",
+      preview: preparation.preview,
+      status: "external_review",
+    };
+  }
+  const result = await requestProcessDiscoveryAssistance(request);
+  if (!result.ok) return { message: result.message, status: "error" };
+  const path = `/studio/discovery/interviews/${sessionId}`;
+  revalidatePath(path);
+  redirect(path);
+}
+
+export async function confirmProcessOpenAIDiscoveryAssistanceAction(
+  _previousState: DiscoveryAssistanceRequestState,
+  formData: FormData,
+): Promise<DiscoveryAssistanceRequestState> {
+  const sessionId = text(formData, "sessionId");
+  const assistanceKind = text(formData, "assistanceKind");
+  if (assistanceKind !== "question_suggestions" && assistanceKind !== "clarity_draft") {
+    return { message: "Choose the kind of help you want.", status: "error" };
+  }
+  const result = await requestProcessOpenAIDiscoveryAssistance({
+    assistanceKind,
+    confirmedContextFingerprint: text(formData, "confirmedContextFingerprint"),
+    expectedRevision: revision(formData),
+    focus: text(formData, "focus"),
+    nonConfidentialAuthorized: text(formData, "nonConfidentialAuthorized") === "yes",
+    originalText: text(formData, "originalText"),
+    promptKey: text(formData, "promptKey"),
+    providerRetentionAccepted: text(formData, "providerRetentionAccepted") === "yes",
     sessionId,
   });
   if (!result.ok) return { message: result.message, status: "error" };

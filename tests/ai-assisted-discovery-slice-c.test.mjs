@@ -361,7 +361,7 @@ test("the fictional evaluation matrix distinguishes safety checks from human rev
   assert.ok(fixtures.some((fixture) => fixture.id.includes("uncertainty")));
 });
 
-test("the repository foundation contains no credential, live transport, runtime wiring, or schema change", async () => {
+test("the evaluation foundation contains no credential, live transport, or schema change", async () => {
   const [contract, wrapper, provider, processPage, inquiryPage, documentation] = await Promise.all([
     read("lib/discovery-assistance-evaluation.mjs"),
     read("lib/discovery-assistance-openai-evaluation.ts"),
@@ -375,8 +375,8 @@ test("the repository foundation contains no credential, live transport, runtime 
     assert.doesNotMatch(source, /OPENAI_API_KEY|process\.env|api\.openai\.com|\bfetch\s*\(/);
   }
   assert.match(provider, /key: "mocked_provider"/);
-  assert.match(processPage, /deterministic mocked provider/);
-  assert.match(inquiryPage, /deterministic mocked provider/);
+  assert.match(processPage, /assistance uses the deterministic mock/);
+  assert.match(inquiryPage, /assistance uses the deterministic mock/);
   assert.match(documentation, /No provider package, credential, environment variable/);
   assert.match(documentation, /No provider package[\s\S]*migration is required or authorized/);
 });

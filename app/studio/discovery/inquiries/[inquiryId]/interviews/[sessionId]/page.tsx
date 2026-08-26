@@ -237,7 +237,7 @@ export default async function DiscoveryInquiryInterviewPage({
               Ask Lotura for a focused follow-up or a clearer version of rough notes. The original organizational question and the regular interview question remain available.
             </p>
             <Alert className="mt-4" tone="info">
-              This slice uses a deterministic mocked provider so the review and provenance controls can be tested safely. It does not call an external AI service.
+              External assistance remains optional. When the reviewed pilot is enabled, Lotura shows the exact context and asks for two confirmations before sending anything. Otherwise, assistance uses the deterministic mock.
             </Alert>
             {assistance ? (
               <div className="mt-5 space-y-4">
@@ -253,6 +253,7 @@ export default async function DiscoveryInquiryInterviewPage({
                   <DiscoveryAssistanceSuggestionForm
                     inquiryId={inquiryId}
                     key={suggestion.id}
+                    providerKey={assistance.providerKey}
                     revision={session.revision}
                     sessionId={session.id}
                     sessionKind="inquiry"

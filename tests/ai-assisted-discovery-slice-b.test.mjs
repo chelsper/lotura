@@ -128,7 +128,11 @@ test("assistance requests persist bounded sources and suggestions without creati
   assert.match(provider, /export type DiscoveryAssistanceProvider/);
   assert.match(provider, /strictlyValidated/);
   assert.match(provider, /key: "mocked_provider"/);
-  assert.doesNotMatch(administration, /openai|anthropic|gemini/i);
+  assert.match(
+    administration,
+    /provider: discoveryAssistanceProvider[\s\S]*discoveryAssistanceProvider\.suggestQuestions/,
+  );
+  assert.doesNotMatch(provider, /openai|anthropic|gemini/i);
   const logger = administration.slice(
     administration.indexOf("function logFailure"),
     administration.indexOf("async function assistanceWriteContext"),
@@ -170,7 +174,7 @@ test("Slice B UX is optional, human-reviewed, and keeps the standard interview p
   ]);
   for (const page of [processPage, inquiryPage]) {
     assert.match(page, /Optional assistance/);
-    assert.match(page, /deterministic mocked provider/);
+    assert.match(page, /assistance uses the deterministic mock/);
     assert.match(page, /DiscoveryAssistanceRequestForm/);
     assert.match(page, /DiscoveryAssistanceSuggestionForm/);
     assert.match(page, /await import\("@\/lib\/discovery-assistance-data"\)/);
