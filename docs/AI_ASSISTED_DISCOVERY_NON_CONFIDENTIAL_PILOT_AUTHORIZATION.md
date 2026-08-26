@@ -218,7 +218,7 @@ provider request.
 
 ## Gate 3 — Bounded rollout
 
-- [ ] Verify the implementation using fictional fixtures first.
+- [x] Verify the implementation using fictional fixtures first.
 - [ ] Review the exact commit, environment settings, and credential target.
 - [ ] Perform read-only Production QA before the first provider request.
 - [ ] Separately authorize one non-confidential test request.
@@ -228,6 +228,21 @@ provider request.
 
 Completing these gates authorizes only the reviewed non-confidential pilot. It
 does not authorize confidential data or general external-AI availability.
+
+### Fictional route verification record
+
+On August 25, 2026, exact application commit
+`fba8e308856853f236da4f90df04100edf96397c` passed the repository's 20 focused
+non-confidential authorization, authenticated-route, runtime, and transport
+checks using fictional contexts and an injected fictional provider response.
+The full repository verification for the same application commit also passed
+414 tests, TypeScript, ESLint, and the production build before the commit was
+pushed to `origin/main`.
+
+This verification made no external provider request, read no service-account
+credential, changed no environment setting, and wrote no Neon, JU, or canonical
+operating-model data. It does not satisfy the remaining live-provider or
+deployed-environment gates.
 
 ## Permitted retained metadata
 
