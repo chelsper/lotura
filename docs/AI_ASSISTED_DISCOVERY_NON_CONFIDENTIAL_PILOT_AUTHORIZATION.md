@@ -219,8 +219,8 @@ provider request.
 ## Gate 3 — Bounded rollout
 
 - [x] Verify the implementation using fictional fixtures first.
-- [ ] Review the exact commit, environment settings, and credential target.
-- [ ] Perform read-only Production QA before the first provider request.
+- [x] Review the exact commit, environment settings, and credential target.
+- [x] Perform read-only Production QA before the first provider request.
 - [ ] Separately authorize one non-confidential test request.
 - [ ] Review its non-content metadata, behavior, participant choice, cost,
       fallback, and logs before enabling another participant.
@@ -243,6 +243,31 @@ This verification made no external provider request, read no service-account
 credential, changed no environment setting, and wrote no Neon, JU, or canonical
 operating-model data. It does not satisfy the remaining live-provider or
 deployed-environment gates.
+
+### Production read-only QA record
+
+On August 25, 2026, authenticated read-only QA verified the JU Production
+deployment `dpl_BQs8Vh981m14Z1WwChRxVUDF16bJ` at application commit
+`cf6a144`. That deployment includes the reviewed external-assistance route from
+commit `fba8e308856853f236da4f90df04100edf96397c`, completed its Vercel build,
+and reported **Ready**.
+
+The authenticated JU Discovery workspace and an in-progress interview loaded
+without browser console warnings or errors. The interview showed the reviewed
+external-assistance disclosure, identified existing assistance as mocked and
+review-required, and preserved the regular manual question path.
+
+Production contained none of the `LOTURA_AI_ASSISTANCE_PILOT_*` environment
+variables. Therefore the route remained disabled, the kill-switch boundary
+remained fail-closed, and no deployed credential was available to the
+application. The reviewed credential target remains the OpenAI project and
+service account recorded above; the credential itself remains only in the
+pilot owner's Keychain.
+
+This QA submitted no form, invoked no assistance action, made no external
+provider request, read no credential, changed no environment setting, and
+wrote no Neon, JU, proposal, evidence, or canonical operating-model data. It
+does not authorize activation or the first billable request.
 
 ## Permitted retained metadata
 
