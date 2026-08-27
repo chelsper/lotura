@@ -306,8 +306,8 @@ test("the participant-facing authorization is plain-language, exact-context, and
   assert.doesNotMatch(component, /canonical|sanitized working draft/i);
 });
 
-test("the authorization policy stays isolated after the bounded route verification", async () => {
-  const [contract, wrapper, transport, transportWrapper, runtimeWrapper, administration, provider, journal, documentation] =
+test("the authorization policy stays content-isolated after request metadata is added", async () => {
+  const [contract, wrapper, transport, transportWrapper, runtimeWrapper, administration, provider, journal, migration, documentation] =
     await Promise.all([
       read("lib/discovery-assistance-non-confidential-pilot.mjs"),
       read("lib/discovery-assistance-non-confidential-pilot.ts"),
@@ -317,6 +317,7 @@ test("the authorization policy stays isolated after the bounded route verificati
       read("lib/discovery-assistance-administration.ts"),
       read("lib/discovery-assistance-provider.ts"),
       read("drizzle/meta/_journal.json"),
+      read("drizzle/0030_ai_assistance_request_metadata.sql"),
       read("docs/AI_ASSISTED_DISCOVERY_NON_CONFIDENTIAL_PILOT_AUTHORIZATION.md"),
     ]);
   assert.match(wrapper, /import "server-only"/);
@@ -333,8 +334,9 @@ test("the authorization policy stays isolated after the bounded route verificati
   assert.match(administration, /executeOpenAINonConfidentialPilotFromServer/);
   assert.match(administration, /buildNonConfidentialPilotPreview/);
   assert.match(provider, /key: "mocked_provider"/);
-  assert.match(journal, /"idx": 29/);
-  assert.doesNotMatch(journal, /"idx": 30/);
+  assert.match(journal, /"idx": 30/);
+  assert.match(migration, /provider_input_tokens/);
+  assert.doesNotMatch(migration, /prompt_text|response_text|provider_response/);
   assert.match(documentation, /one bounded Production request/i);
   assert.match(documentation, /provider route is disabled again by the manual kill switch/i);
   assert.match(documentation, /broader rollout not authorized/i);

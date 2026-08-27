@@ -2942,6 +2942,18 @@ append-only run, source, and suggestion records before it is shown; no provider
 content is copied to a debug log. The implementation contains no provider SDK,
 database change, public API endpoint, or automatic retry.
 
+The next implementation slice follows this accepted decision without changing
+its authority or content boundary. Forward-only migration `0030` adds nullable,
+typed request metadata to the existing append-only assistance run: exact
+provider project, completion status, one-request count, input/cached/output/total
+tokens, elapsed milliseconds, a rate-versioned estimated cost in micro-US
+dollars, and the cost-basis key. A database constraint requires the complete
+allowlisted set for an OpenAI request or no request metadata at all, preserving
+existing mocked and pre-migration runs. The authenticated interview UI exposes
+these values in a collapsed, read-only section and explicitly labels cost as an
+estimate. It does not add prompt, answer, model-output, response-ID, or provider-
+debug content storage. Existing Production runs are not inferred or backfilled.
+
 On August 26, 2026, the pilot owner reviewed the exact displayed JU context,
 affirmed both required confirmations, and authorized one non-confidential
 Production request. The request returned one append-only, source-linked
@@ -2949,9 +2961,10 @@ assistance suggestion; the interview remained at zero observations and no
 canonical, proposal, review, Structure, history, or policy write occurred.
 Vercel recorded a successful request without application log content. The
 manual kill switch was re-engaged immediately and a new exact-commit Production
-deployment reached Ready. Broader enablement remains closed until safe
-non-content request metadata and cost visibility are reviewed and the
-suggestion's human usefulness decision is preserved.
+deployment reached Ready. The request-metadata slice is prepared but still
+requires isolated migration verification and deployment. Broader enablement
+remains closed until safe non-content request metadata and cost visibility are
+reviewed and the suggestion's human usefulness decision is preserved.
 Confidential information, broader Organization enablement, files, images,
 audio, tools, background mode, provider-managed state, and AI-suggested
 structured mappings remain deferred.

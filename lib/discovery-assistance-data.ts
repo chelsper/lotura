@@ -41,10 +41,64 @@ export type DiscoveryAssistanceRunRecord = {
   participantFocus: string | null;
   promptPolicyVersion: string;
   providerKey: string;
+  requestMetadata: {
+    cachedInputTokens: number;
+    costBasisKey: string;
+    durationMs: number;
+    estimatedCostMicrousd: number;
+    inputTokens: number;
+    outputTokens: number;
+    providerProjectIdentifier: string;
+    requestCount: number;
+    status: "completed";
+    totalTokens: number;
+  } | null;
   requestedSessionRevision: number;
   sourceCount: number;
   suggestions: DiscoveryAssistanceSuggestionRecord[];
 };
+
+type RequestMetadataRow = {
+  costBasisKey: string | null;
+  estimatedCostMicrousd: number | null;
+  providerCachedInputTokens: number | null;
+  providerDurationMs: number | null;
+  providerInputTokens: number | null;
+  providerOutputTokens: number | null;
+  providerProjectIdentifier: string | null;
+  providerRequestCount: number | null;
+  providerRequestStatus: string | null;
+  providerTotalTokens: number | null;
+};
+
+function requestMetadata(row: RequestMetadataRow) {
+  if (
+    row.providerRequestStatus !== "completed"
+    || row.providerProjectIdentifier === null
+    || row.providerRequestCount === null
+    || row.providerInputTokens === null
+    || row.providerCachedInputTokens === null
+    || row.providerOutputTokens === null
+    || row.providerTotalTokens === null
+    || row.providerDurationMs === null
+    || row.estimatedCostMicrousd === null
+    || row.costBasisKey === null
+  ) {
+    return null;
+  }
+  return {
+    cachedInputTokens: row.providerCachedInputTokens,
+    costBasisKey: row.costBasisKey,
+    durationMs: row.providerDurationMs,
+    estimatedCostMicrousd: row.estimatedCostMicrousd,
+    inputTokens: row.providerInputTokens,
+    outputTokens: row.providerOutputTokens,
+    providerProjectIdentifier: row.providerProjectIdentifier,
+    requestCount: row.providerRequestCount,
+    status: "completed" as const,
+    totalTokens: row.providerTotalTokens,
+  };
+}
 
 async function loadRunDetails(
   organizationId: number,
@@ -133,6 +187,18 @@ export async function loadProcessDiscoveryAssistance(
       participantFocus: discoveryAssistanceRun.participantFocus,
       promptPolicyVersion: discoveryAssistanceRun.promptPolicyVersion,
       providerKey: discoveryAssistanceRun.providerKey,
+      providerProjectIdentifier:
+        discoveryAssistanceRun.providerProjectIdentifier,
+      providerRequestStatus: discoveryAssistanceRun.providerRequestStatus,
+      providerRequestCount: discoveryAssistanceRun.providerRequestCount,
+      providerInputTokens: discoveryAssistanceRun.providerInputTokens,
+      providerCachedInputTokens:
+        discoveryAssistanceRun.providerCachedInputTokens,
+      providerOutputTokens: discoveryAssistanceRun.providerOutputTokens,
+      providerTotalTokens: discoveryAssistanceRun.providerTotalTokens,
+      providerDurationMs: discoveryAssistanceRun.providerDurationMs,
+      estimatedCostMicrousd: discoveryAssistanceRun.estimatedCostMicrousd,
+      costBasisKey: discoveryAssistanceRun.costBasisKey,
       requestedSessionRevision: discoveryAssistanceRun.requestedSessionRevision,
     })
     .from(discoveryAssistanceRun)
@@ -174,6 +240,7 @@ export async function loadProcessDiscoveryAssistance(
     participantFocus: row.participantFocus,
     promptPolicyVersion: row.promptPolicyVersion,
     providerKey: row.providerKey,
+    requestMetadata: requestMetadata(row),
     requestedSessionRevision: row.requestedSessionRevision,
   });
 }
@@ -195,6 +262,18 @@ export async function loadInquiryDiscoveryAssistance(
       participantFocus: discoveryAssistanceRun.participantFocus,
       promptPolicyVersion: discoveryAssistanceRun.promptPolicyVersion,
       providerKey: discoveryAssistanceRun.providerKey,
+      providerProjectIdentifier:
+        discoveryAssistanceRun.providerProjectIdentifier,
+      providerRequestStatus: discoveryAssistanceRun.providerRequestStatus,
+      providerRequestCount: discoveryAssistanceRun.providerRequestCount,
+      providerInputTokens: discoveryAssistanceRun.providerInputTokens,
+      providerCachedInputTokens:
+        discoveryAssistanceRun.providerCachedInputTokens,
+      providerOutputTokens: discoveryAssistanceRun.providerOutputTokens,
+      providerTotalTokens: discoveryAssistanceRun.providerTotalTokens,
+      providerDurationMs: discoveryAssistanceRun.providerDurationMs,
+      estimatedCostMicrousd: discoveryAssistanceRun.estimatedCostMicrousd,
+      costBasisKey: discoveryAssistanceRun.costBasisKey,
       requestedSessionRevision: discoveryAssistanceRun.requestedSessionRevision,
     })
     .from(discoveryAssistanceRun)
@@ -248,6 +327,7 @@ export async function loadInquiryDiscoveryAssistance(
     participantFocus: row.participantFocus,
     promptPolicyVersion: row.promptPolicyVersion,
     providerKey: row.providerKey,
+    requestMetadata: requestMetadata(row),
     requestedSessionRevision: row.requestedSessionRevision,
   });
 }

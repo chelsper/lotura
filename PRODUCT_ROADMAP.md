@@ -186,8 +186,10 @@ milestones:
    verified. The request returned one review-required suggestion with two
    attributable sources, created no evidence, and made no operating-model
    change. Immediate disablement passed and the kill switch is engaged again.
-   Broader enablement remains gated on safe request-metadata/cost visibility and
-   review of the participant's decision on the first suggestion.
+   The typed request-metadata and cost-visibility slice is now prepared for
+   isolated migration verification. Broader enablement remains gated on its
+   deployment and review plus the participant's decision on the first
+   suggestion.
    Structured-mapping suggestions remain later; AI may never approve or apply
    them. The accepted staged boundary and provider gate are recorded in
    [docs/AI_ASSISTED_DISCOVERY_V0_1.md](docs/AI_ASSISTED_DISCOVERY_V0_1.md).
@@ -444,7 +446,7 @@ This register makes intentional postponement visible so ideas are neither mistak
 | Editing and knowledge stewardship | Phase 2 | Capture requires provenance, observation status, review meaning, and organizational authorization. |
 | JU Pilot with institutional information | Phase 2 | Pilot use requires private authenticated access and explicit data approval. |
 | Guided interviews | Phase 2 | Manual guided interviewing requires approved scope, disclosure, provenance, observation preservation, and human review. |
-| AI-assisted interviews and mappings | Milestone 7 | LAD-061 Slice A deterministic prior-evidence reuse and LAD-063 Slice B attributable mocked question/clarity suggestions are implemented and isolated-verified. LAD-064's prompt policy v4 is offline-verified against eleven fictional outcomes after v2 failed human non-repetition review and v3 failed human source-fidelity review. Controlled v1 and v4 fictional cases pass. LAD-065 retains the ZDR gate for confidential use. LAD-066 permits a bounded non-confidential pilot under accepted standard retention. Its dedicated provider project, sensitive credential, exact Production route, first separately authorized request, and immediate disablement are verified. Broader use remains gated on safe metadata/cost visibility and human review of the first suggestion. |
+| AI-assisted interviews and mappings | Milestone 7 | LAD-061 Slice A deterministic prior-evidence reuse and LAD-063 Slice B attributable mocked question/clarity suggestions are implemented and isolated-verified. LAD-064's prompt policy v4 is offline-verified against eleven fictional outcomes after v2 failed human non-repetition review and v3 failed human source-fidelity review. Controlled v1 and v4 fictional cases pass. LAD-065 retains the ZDR gate for confidential use. LAD-066 permits a bounded non-confidential pilot under accepted standard retention. Its dedicated provider project, sensitive credential, exact Production route, first separately authorized request, and immediate disablement are verified. Typed non-content token, latency, provider-project, and rate-versioned estimated-cost visibility is prepared in migration `0030`; broader use remains gated on isolated verification, deployment, one separately authorized metadata-path review, and human review of the first suggestion. |
 | Conflict detection, reconciliation, and consensus | Phase 2 | Lotura must preserve conflicting observations before stewards establish an approved definition. |
 | Approval workflow and process version history | Phase 2 | Observation, proposal, consensus, approval, effective timing, and supersession must remain distinct. |
 | Change requests and continuous improvement | Phase 2 and 3 | Phase 2 captures the reason for change; Phase 3 evaluates implementation, measurement, result, and sustainment. |

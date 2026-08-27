@@ -17,6 +17,7 @@ import {
 import { changeInquiryDiscoveryPauseAction } from "../../../../actions";
 import { DiscoveryAssistanceRequestForm } from "../../../../discovery-assistance-request-form";
 import { DiscoveryAssistanceSuggestionForm } from "../../../../discovery-assistance-suggestion-form";
+import { DiscoveryAssistanceRequestDetails } from "../../../../discovery-assistance-request-details";
 import { DiscoveryInquiryAnswerForm } from "../../../../discovery-inquiry-answer-form";
 import { DiscoveryInquiryCorrectionForm } from "../../../../discovery-inquiry-correction-form";
 
@@ -249,6 +250,7 @@ export default async function DiscoveryInquiryInterviewPage({
                     {assistance.sourceCount} attributable {assistance.sourceCount === 1 ? "source" : "sources"}
                   </span>
                 </div>
+                <DiscoveryAssistanceRequestDetails assistance={assistance} />
                 {assistance.suggestions.map((suggestion) => (
                   <DiscoveryAssistanceSuggestionForm
                     inquiryId={inquiryId}

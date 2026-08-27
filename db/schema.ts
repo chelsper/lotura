@@ -1742,6 +1742,18 @@ export const discoveryAssistanceRun = pgTable(
     contextFingerprint: varchar("context_fingerprint", { length: 64 })
       .notNull(),
     participantFocus: text("participant_focus"),
+    providerProjectIdentifier: varchar("provider_project_identifier", {
+      length: 128,
+    }),
+    providerRequestStatus: varchar("provider_request_status", { length: 32 }),
+    providerRequestCount: integer("provider_request_count"),
+    providerInputTokens: integer("provider_input_tokens"),
+    providerCachedInputTokens: integer("provider_cached_input_tokens"),
+    providerOutputTokens: integer("provider_output_tokens"),
+    providerTotalTokens: integer("provider_total_tokens"),
+    providerDurationMs: integer("provider_duration_ms"),
+    estimatedCostMicrousd: integer("estimated_cost_microusd"),
+    costBasisKey: varchar("cost_basis_key", { length: 64 }),
     actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -1809,6 +1821,45 @@ export const discoveryAssistanceRun = pgTable(
     check(
       "discovery_assistance_runs_focus_shape_check",
       sql`${table.participantFocus} is null or (char_length(trim(${table.participantFocus})) > 0 and char_length(${table.participantFocus}) <= 2000)`,
+    ),
+    check(
+      "discovery_assistance_runs_request_metadata_shape_check",
+      sql`(
+        ${table.providerProjectIdentifier} is null
+        and ${table.providerRequestStatus} is null
+        and ${table.providerRequestCount} is null
+        and ${table.providerInputTokens} is null
+        and ${table.providerCachedInputTokens} is null
+        and ${table.providerOutputTokens} is null
+        and ${table.providerTotalTokens} is null
+        and ${table.providerDurationMs} is null
+        and ${table.estimatedCostMicrousd} is null
+        and ${table.costBasisKey} is null
+      ) or (
+        ${table.providerKey} = 'openai'
+        and ${table.providerProjectIdentifier} is not null
+        and char_length(trim(${table.providerProjectIdentifier})) > 0
+        and ${table.providerRequestStatus} is not null
+        and ${table.providerRequestStatus} = 'completed'
+        and ${table.providerRequestCount} is not null
+        and ${table.providerRequestCount} = 1
+        and ${table.providerInputTokens} is not null
+        and ${table.providerInputTokens} >= 0
+        and ${table.providerCachedInputTokens} is not null
+        and ${table.providerCachedInputTokens} >= 0
+        and ${table.providerCachedInputTokens} <= ${table.providerInputTokens}
+        and ${table.providerOutputTokens} is not null
+        and ${table.providerOutputTokens} >= 0
+        and ${table.providerTotalTokens} is not null
+        and ${table.providerTotalTokens} = ${table.providerInputTokens} + ${table.providerOutputTokens}
+        and ${table.providerDurationMs} is not null
+        and ${table.providerDurationMs} >= 0
+        and ${table.providerDurationMs} <= 30000
+        and ${table.estimatedCostMicrousd} is not null
+        and ${table.estimatedCostMicrousd} >= 0
+        and ${table.costBasisKey} is not null
+        and char_length(trim(${table.costBasisKey})) > 0
+      )`,
     ),
     check(
       "discovery_assistance_runs_actor_not_blank_check",

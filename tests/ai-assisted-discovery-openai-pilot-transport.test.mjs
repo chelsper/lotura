@@ -115,6 +115,7 @@ function providerPayload(overrides = {}) {
     status: "completed",
     usage: {
       input_tokens: 400,
+      input_tokens_details: { cached_tokens: 100 },
       output_tokens: 80,
       total_tokens: 480,
     },
@@ -169,9 +170,16 @@ test("the transport makes exactly one bounded Responses request and returns attr
   assert.deepEqual(request.tools, []);
   assert.equal("conversation" in request, false);
   assert.equal("previous_response_id" in request, false);
-  assert.deepEqual(result, {
-    ok: true,
-    providerMetadata: {
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.suggestions, [suggestion]);
+  assert.deepEqual(
+    {
+      ...result.providerMetadata,
+      durationMs: undefined,
+    },
+    {
+      cachedInputTokens: 100,
+      durationMs: undefined,
       inputTokens: 400,
       model: "gpt-5.6-terra",
       outputTokens: 80,
@@ -181,8 +189,9 @@ test("the transport makes exactly one bounded Responses request and returns attr
       status: "completed",
       totalTokens: 480,
     },
-    suggestions: [suggestion],
-  });
+  );
+  assert.ok(Number.isSafeInteger(result.providerMetadata.durationMs));
+  assert.ok(result.providerMetadata.durationMs >= 0);
 });
 
 test("authorization and exact configuration fail before transport", async () => {
@@ -311,8 +320,8 @@ test("provider, model, tool-shaped, and malformed failures return only safe fall
   }
 });
 
-test("the server-only transport is injected, content-silent, narrowly wired, and migration-free", async () => {
-  const [transport, wrapper, administration, provider, processPage, inquiryPage, journal] =
+test("the server-only transport stays content-silent while exposing typed request metadata", async () => {
+  const [transport, wrapper, administration, provider, processPage, inquiryPage, journal, migration] =
     await Promise.all([
       read("lib/discovery-assistance-openai-pilot-transport.mjs"),
       read("lib/discovery-assistance-openai-pilot-transport.ts"),
@@ -321,6 +330,7 @@ test("the server-only transport is injected, content-silent, narrowly wired, and
       read("app/studio/discovery/interviews/[sessionId]/page.tsx"),
       read("app/studio/discovery/inquiries/[inquiryId]/interviews/[sessionId]/page.tsx"),
       read("drizzle/meta/_journal.json"),
+      read("drizzle/0030_ai_assistance_request_metadata.sql"),
     ]);
   assert.match(wrapper, /import "server-only"/);
   assert.match(transport, /fetchImpl/);
@@ -335,6 +345,7 @@ test("the server-only transport is injected, content-silent, narrowly wired, and
   assert.match(provider, /key: "mocked_provider"/);
   assert.doesNotMatch(processPage, /openai-pilot-transport/);
   assert.doesNotMatch(inquiryPage, /openai-pilot-transport/);
-  assert.match(journal, /"idx": 29/);
-  assert.doesNotMatch(journal, /"idx": 30/);
+  assert.match(journal, /"idx": 30/);
+  assert.match(migration, /provider_total_tokens/);
+  assert.doesNotMatch(migration, /prompt_text|response_text|provider_response/);
 });

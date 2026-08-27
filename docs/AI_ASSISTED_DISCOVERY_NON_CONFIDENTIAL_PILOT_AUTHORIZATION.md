@@ -285,11 +285,14 @@ logs. Immediately afterward, the kill switch was set back to `on` and
 deployment `dpl_6RwUHyc4JjcpXDUk2Mke88Bai3jR` reached Ready and became the
 Production alias. No second provider request was made.
 
-The current route preserves provider, model, prompt-policy, source, and
-suggestion provenance, but it does not yet surface retained token, latency, or
-cost metadata for operator review. Gate 3 therefore remains open and another
-participant must not be enabled until that observability decision and the
-pilot owner's accept, edit, skip, or reject decision are reviewed.
+The repository now prepares typed token, latency, provider-project, and
+rate-versioned estimated-cost metadata on future successful external assistance
+runs. The values appear only in a collapsed, read-only request-details section;
+no prompt, answer, or provider-response copy is added. The first Production run
+predates this persistence and is intentionally not inferred or backfilled.
+Gate 3 therefore remains open until migration `0030` is isolated-verified and
+deployed, one separately authorized future request proves the metadata path,
+and the pilot owner's accept, edit, skip, or reject decision is reviewed.
 
 ## Permitted retained metadata
 
@@ -300,6 +303,14 @@ decision.
 
 Lotura must not retain an additional provider-debug copy of the submitted
 context, participant wording, or full provider response.
+
+The initial cost basis is the official
+[GPT-5.6 Terra model pricing](https://developers.openai.com/api/docs/models/gpt-5.6-terra)
+recorded on August 26, 2026: $2.00 per million uncached input tokens, $0.20 per
+million cached input tokens, and $12.00 per million output tokens. Lotura stores
+the resulting rounded micro-dollar estimate together with a versioned basis key
+so a later price change cannot silently rewrite historical estimates. Provider
+billing remains the final source.
 
 ## Stop conditions
 

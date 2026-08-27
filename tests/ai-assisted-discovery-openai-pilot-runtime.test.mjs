@@ -195,7 +195,7 @@ test("the server boundary uses only the dedicated credential and returns no secr
   assert.doesNotMatch(JSON.stringify(result), /svcacct|fictional-runtime-key/);
 });
 
-test("the credential loader is server-only, content-silent, narrowly routed, and migration-free", async () => {
+test("the credential loader stays server-only and content-silent after metadata persistence", async () => {
   const [
     runtime,
     wrapper,
@@ -206,6 +206,7 @@ test("the credential loader is server-only, content-silent, narrowly routed, and
     inquiryPage,
     provider,
     journal,
+    migration,
     documentation,
   ] =
     await Promise.all([
@@ -218,6 +219,7 @@ test("the credential loader is server-only, content-silent, narrowly routed, and
       read("app/studio/discovery/inquiries/[inquiryId]/interviews/[sessionId]/page.tsx"),
       read("lib/discovery-assistance-provider.ts"),
       read("drizzle/meta/_journal.json"),
+      read("drizzle/0030_ai_assistance_request_metadata.sql"),
       read("docs/AI_ASSISTED_DISCOVERY_NON_CONFIDENTIAL_PILOT_AUTHORIZATION.md"),
     ]);
 
@@ -236,8 +238,9 @@ test("the credential loader is server-only, content-silent, narrowly routed, and
   assert.doesNotMatch(processPage, /openai-pilot-runtime/);
   assert.doesNotMatch(inquiryPage, /openai-pilot-runtime/);
   assert.match(provider, /key: "mocked_provider"/);
-  assert.match(journal, /"idx": 29/);
-  assert.doesNotMatch(journal, /"idx": 30/);
+  assert.match(journal, /"idx": 30/);
+  assert.match(migration, /estimated_cost_microusd/);
+  assert.doesNotMatch(migration, /prompt_text|response_text|provider_response/);
   assert.match(documentation, /server-only credential boundary/i);
   assert.match(documentation, /authenticated Discovery Server Actions/i);
   assert.match(documentation, /one bounded Production request/i);

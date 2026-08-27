@@ -26,7 +26,7 @@ test("external assistance uses a two-step authenticated Server Action boundary",
   assert.match(administration, /confirmedContextFingerprint/);
   assert.match(administration, /executeOpenAINonConfidentialPilotFromServer/);
   assert.match(administration, /contextFingerprint: input\.confirmedContextFingerprint/);
-  assert.match(administration, /provider: \{\s*key: NON_CONFIDENTIAL_PILOT_CONTRACT\.providerKey/s);
+  assert.match(administration, /provider: externalProviderAttribution\(external\.providerMetadata\)/);
   assert.doesNotMatch(administration, /console\.log|JSON\.stringify\(error/);
 
   assert.match(requestForm, /DiscoveryAssistancePilotAuthorization/);

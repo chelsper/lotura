@@ -18,14 +18,16 @@ export type OpenAINonConfidentialPilotResult =
   | {
       ok: true;
       providerMetadata: {
-        inputTokens: number | null;
+        cachedInputTokens: number;
+        durationMs: number;
+        inputTokens: number;
         model: "gpt-5.6-terra";
-        outputTokens: number | null;
+        outputTokens: number;
         promptPolicyVersion: "lad-064-v4";
         providerProjectId: string;
         requestCount: 1;
         status: "completed";
-        totalTokens: number | null;
+        totalTokens: number;
       };
       suggestions: DiscoveryAssistanceSuggestion[];
     }

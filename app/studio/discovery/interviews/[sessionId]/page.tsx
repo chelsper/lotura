@@ -23,6 +23,7 @@ import { WorkspacePageHeader, WorkspaceShell } from "../../../../workspace-shell
 import { changeDiscoveryPauseAction } from "../../actions";
 import { DiscoveryAssistanceRequestForm } from "../../discovery-assistance-request-form";
 import { DiscoveryAssistanceSuggestionForm } from "../../discovery-assistance-suggestion-form";
+import { DiscoveryAssistanceRequestDetails } from "../../discovery-assistance-request-details";
 import { DiscoveryAnswerForm } from "../../discovery-answer-form";
 import { DiscoveryCorrectionForm } from "../../discovery-correction-form";
 import { DiscoveryPriorObservationForm } from "../../discovery-prior-observation-form";
@@ -258,6 +259,7 @@ export default async function DiscoveryInterviewPage({
                     {assistance.sourceCount} attributable {assistance.sourceCount === 1 ? "source" : "sources"}
                   </span>
                 </div>
+                <DiscoveryAssistanceRequestDetails assistance={assistance} />
                 {assistance.suggestions.map((suggestion) => (
                   <DiscoveryAssistanceSuggestionForm
                     key={suggestion.id}

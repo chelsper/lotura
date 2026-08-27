@@ -22,6 +22,10 @@ import {
 import {
   executeOpenAINonConfidentialPilotFromServer,
 } from "./discovery-assistance-openai-pilot-runtime";
+import {
+  estimateOpenAIGpt56TerraStandardCostMicrousd,
+  OPENAI_GPT_5_6_TERRA_STANDARD_COST_BASIS,
+} from "./discovery-assistance-provider-cost.mjs";
 import { discoveryAssistanceProvider } from "./discovery-assistance-provider";
 import { resolveDiscoveryConfiguration } from "./discovery-policy.mjs";
 import {
@@ -72,6 +76,18 @@ type AssistanceProviderAttribution = {
   key: string;
   modelIdentifier: string;
   promptPolicyVersion: string;
+  requestMetadata?: {
+    cachedInputTokens: number;
+    costBasisKey: string;
+    durationMs: number;
+    estimatedCostMicrousd: number;
+    inputTokens: number;
+    outputTokens: number;
+    providerProjectIdentifier: string;
+    requestCount: 1;
+    status: "completed";
+    totalTokens: number;
+  };
 };
 
 type EnabledPilotConfiguration = Extract<
@@ -113,6 +129,41 @@ function validUuid(value: string) {
 
 function validRevision(value: number) {
   return Number.isSafeInteger(value) && value >= 1;
+}
+
+function externalProviderAttribution(metadata: {
+  cachedInputTokens: number;
+  durationMs: number;
+  inputTokens: number;
+  model: string;
+  outputTokens: number;
+  promptPolicyVersion: string;
+  providerProjectId: string;
+  requestCount: 1;
+  status: "completed";
+  totalTokens: number;
+}): AssistanceProviderAttribution {
+  return {
+    key: NON_CONFIDENTIAL_PILOT_CONTRACT.providerKey,
+    modelIdentifier: metadata.model,
+    promptPolicyVersion: metadata.promptPolicyVersion,
+    requestMetadata: {
+      cachedInputTokens: metadata.cachedInputTokens,
+      costBasisKey: OPENAI_GPT_5_6_TERRA_STANDARD_COST_BASIS,
+      durationMs: metadata.durationMs,
+      estimatedCostMicrousd: estimateOpenAIGpt56TerraStandardCostMicrousd({
+        cachedInputTokens: metadata.cachedInputTokens,
+        inputTokens: metadata.inputTokens,
+        outputTokens: metadata.outputTokens,
+      }),
+      inputTokens: metadata.inputTokens,
+      outputTokens: metadata.outputTokens,
+      providerProjectIdentifier: metadata.providerProjectId,
+      requestCount: metadata.requestCount,
+      status: metadata.status,
+      totalTokens: metadata.totalTokens,
+    },
+  };
 }
 
 function validateResponse(input: {
@@ -465,120 +516,27 @@ async function persistProcessRun(input: {
          discovery_session_stable_key, requested_session_revision,
          prompt_key, assistance_kind, provider_key, model_identifier,
          prompt_policy_version, context_fingerprint, participant_focus,
+         provider_project_identifier, provider_request_status,
+         provider_request_count, provider_input_tokens,
+         provider_cached_input_tokens, provider_output_tokens,
+         provider_total_tokens, provider_duration_ms,
+         estimated_cost_microusd, cost_basis_key,
          actor_identifier
        )
        select $1::integer, 'process', selected_session.id,
          selected_session.stable_key, $4::integer, $5::varchar(64),
          $6::discovery_assistance_kind, $7::varchar(64), $8::varchar(128),
-         $9::varchar(64), $10::varchar(64), $11::text, $3::varchar(128)
-       from selected_session
-       returning id, stable_key
-     ), inserted_sources as (
-       insert into discovery_assistance_sources (
-         organization_id, run_id, run_stable_key, source_sequence, source_kind,
-         process_id, process_stable_key, discovery_session_id,
-         discovery_session_stable_key, discovery_observation_stable_key,
-         inquiry_id, inquiry_stable_key, inquiry_session_id,
-         inquiry_session_stable_key, inquiry_observation_stable_key,
-         source_snapshot, source_fingerprint
-       )
-       select $1::integer, inserted_run.id, inserted_run.stable_key,
-         source.source_sequence, source.source_kind::discovery_assistance_source_kind,
-         source.process_id, source.process_stable_key, source.discovery_session_id,
-         source.discovery_session_stable_key,
-         source.discovery_observation_stable_key, source.inquiry_id,
-         source.inquiry_stable_key, source.inquiry_session_id,
-         source.inquiry_session_stable_key, source.inquiry_observation_stable_key,
-         source.source_snapshot, source.source_fingerprint
-       from inserted_run
-       cross join jsonb_to_recordset($12::jsonb) as source(
-         source_sequence integer, source_kind text, process_id integer,
-         process_stable_key uuid, discovery_session_id integer,
-         discovery_session_stable_key uuid,
-         discovery_observation_stable_key uuid, inquiry_id integer,
-         inquiry_stable_key uuid, inquiry_session_id integer,
-         inquiry_session_stable_key uuid, inquiry_observation_stable_key uuid,
-         source_snapshot jsonb, source_fingerprint text
-       )
-       returning 1
-     ), inserted_suggestions as (
-       insert into discovery_assistance_suggestions (
-         organization_id, run_id, run_stable_key, suggestion_sequence,
-         suggestion_kind, prompt_key, topic, suggested_text, rationale,
-         original_text
-       )
-       select $1::integer, inserted_run.id, inserted_run.stable_key,
-         suggestion.suggestion_sequence,
-         suggestion.suggestion_kind::discovery_assistance_suggestion_kind,
-         suggestion.prompt_key, suggestion.topic::discovery_observation_topic,
-         suggestion.suggested_text, suggestion.rationale,
-         suggestion.original_text
-       from inserted_run
-       cross join jsonb_to_recordset($13::jsonb) as suggestion(
-         suggestion_sequence integer, suggestion_kind text, prompt_key text,
-         topic text, suggested_text text, rationale text, original_text text
-       )
-       returning 1
-     )
-     select (select stable_key::text from inserted_run) as run_id,
-       (select count(*)::int from inserted_sources) as source_count,
-       (select count(*)::int from inserted_suggestions) as suggestion_count`,
-    [
-      context.configuration.organizationId,
-      input.sessionId,
-      context.configuration.actorIdentifier,
-      input.expectedRevision,
-      input.packet.promptKey,
-      input.assistanceKind,
-      input.provider.key,
-      input.provider.modelIdentifier,
-      input.provider.promptPolicyVersion,
-      input.contextFingerprint,
-      input.focus,
-      JSON.stringify(sourcePayload(input.sources)),
-      JSON.stringify(suggestionPayload(input.suggestions)),
-    ],
-  );
-}
-
-async function persistInquiryRun(input: {
-  assistanceKind: "question_suggestions" | "clarity_draft";
-  contextFingerprint: string;
-  expectedRevision: number;
-  focus: string | null;
-  inquiryId: string;
-  packet: DiscoveryAssistancePacket;
-  provider: AssistanceProviderAttribution;
-  sessionId: string;
-  sources: InquirySource[];
-  suggestions: DiscoveryAssistanceSuggestion[];
-}) {
-  const context = await assistanceWriteContext();
-  if (!context) return null;
-  return context.sql.query(
-    `with selected_session as materialized (
-       select id, stable_key
-       from discovery_inquiry_sessions
-       where organization_id = $1::integer
-         and stable_key = $2::uuid
-         and inquiry_stable_key = $3::uuid
-         and actor_identifier = $4::varchar(128)
-         and revision = $5::integer
-         and status = 'in_progress'
-         and current_question_key = $6::varchar(64)
-       for update
-     ), inserted_run as (
-       insert into discovery_assistance_runs (
-         organization_id, session_kind, inquiry_session_id,
-         inquiry_session_stable_key, requested_session_revision,
-         prompt_key, assistance_kind, provider_key, model_identifier,
-         prompt_policy_version, context_fingerprint, participant_focus,
-         actor_identifier
-       )
-       select $1::integer, 'inquiry', selected_session.id,
-         selected_session.stable_key, $5::integer, $6::varchar(64),
-         $7::discovery_assistance_kind, $8::varchar(64), $9::varchar(128),
-         $10::varchar(64), $11::varchar(64), $12::text, $4::varchar(128)
+         $9::varchar(64), $10::varchar(64), $11::text,
+         $12::jsonb ->> 'providerProjectIdentifier',
+         $12::jsonb ->> 'status',
+         ($12::jsonb ->> 'requestCount')::integer,
+         ($12::jsonb ->> 'inputTokens')::integer,
+         ($12::jsonb ->> 'cachedInputTokens')::integer,
+         ($12::jsonb ->> 'outputTokens')::integer,
+         ($12::jsonb ->> 'totalTokens')::integer,
+         ($12::jsonb ->> 'durationMs')::integer,
+         ($12::jsonb ->> 'estimatedCostMicrousd')::integer,
+         $12::jsonb ->> 'costBasisKey', $3::varchar(128)
        from selected_session
        returning id, stable_key
      ), inserted_sources as (
@@ -634,6 +592,130 @@ async function persistInquiryRun(input: {
     [
       context.configuration.organizationId,
       input.sessionId,
+      context.configuration.actorIdentifier,
+      input.expectedRevision,
+      input.packet.promptKey,
+      input.assistanceKind,
+      input.provider.key,
+      input.provider.modelIdentifier,
+      input.provider.promptPolicyVersion,
+      input.contextFingerprint,
+      input.focus,
+      JSON.stringify(input.provider.requestMetadata ?? null),
+      JSON.stringify(sourcePayload(input.sources)),
+      JSON.stringify(suggestionPayload(input.suggestions)),
+    ],
+  );
+}
+
+async function persistInquiryRun(input: {
+  assistanceKind: "question_suggestions" | "clarity_draft";
+  contextFingerprint: string;
+  expectedRevision: number;
+  focus: string | null;
+  inquiryId: string;
+  packet: DiscoveryAssistancePacket;
+  provider: AssistanceProviderAttribution;
+  sessionId: string;
+  sources: InquirySource[];
+  suggestions: DiscoveryAssistanceSuggestion[];
+}) {
+  const context = await assistanceWriteContext();
+  if (!context) return null;
+  return context.sql.query(
+    `with selected_session as materialized (
+       select id, stable_key
+       from discovery_inquiry_sessions
+       where organization_id = $1::integer
+         and stable_key = $2::uuid
+         and inquiry_stable_key = $3::uuid
+         and actor_identifier = $4::varchar(128)
+         and revision = $5::integer
+         and status = 'in_progress'
+         and current_question_key = $6::varchar(64)
+       for update
+     ), inserted_run as (
+       insert into discovery_assistance_runs (
+         organization_id, session_kind, inquiry_session_id,
+         inquiry_session_stable_key, requested_session_revision,
+         prompt_key, assistance_kind, provider_key, model_identifier,
+         prompt_policy_version, context_fingerprint, participant_focus,
+         provider_project_identifier, provider_request_status,
+         provider_request_count, provider_input_tokens,
+         provider_cached_input_tokens, provider_output_tokens,
+         provider_total_tokens, provider_duration_ms,
+         estimated_cost_microusd, cost_basis_key,
+         actor_identifier
+       )
+       select $1::integer, 'inquiry', selected_session.id,
+         selected_session.stable_key, $5::integer, $6::varchar(64),
+         $7::discovery_assistance_kind, $8::varchar(64), $9::varchar(128),
+         $10::varchar(64), $11::varchar(64), $12::text,
+         $13::jsonb ->> 'providerProjectIdentifier',
+         $13::jsonb ->> 'status',
+         ($13::jsonb ->> 'requestCount')::integer,
+         ($13::jsonb ->> 'inputTokens')::integer,
+         ($13::jsonb ->> 'cachedInputTokens')::integer,
+         ($13::jsonb ->> 'outputTokens')::integer,
+         ($13::jsonb ->> 'totalTokens')::integer,
+         ($13::jsonb ->> 'durationMs')::integer,
+         ($13::jsonb ->> 'estimatedCostMicrousd')::integer,
+         $13::jsonb ->> 'costBasisKey', $4::varchar(128)
+       from selected_session
+       returning id, stable_key
+     ), inserted_sources as (
+       insert into discovery_assistance_sources (
+         organization_id, run_id, run_stable_key, source_sequence, source_kind,
+         process_id, process_stable_key, discovery_session_id,
+         discovery_session_stable_key, discovery_observation_stable_key,
+         inquiry_id, inquiry_stable_key, inquiry_session_id,
+         inquiry_session_stable_key, inquiry_observation_stable_key,
+         source_snapshot, source_fingerprint
+       )
+       select $1::integer, inserted_run.id, inserted_run.stable_key,
+         source.source_sequence, source.source_kind::discovery_assistance_source_kind,
+         source.process_id, source.process_stable_key, source.discovery_session_id,
+         source.discovery_session_stable_key,
+         source.discovery_observation_stable_key, source.inquiry_id,
+         source.inquiry_stable_key, source.inquiry_session_id,
+         source.inquiry_session_stable_key, source.inquiry_observation_stable_key,
+         source.source_snapshot, source.source_fingerprint
+       from inserted_run
+       cross join jsonb_to_recordset($14::jsonb) as source(
+         source_sequence integer, source_kind text, process_id integer,
+         process_stable_key uuid, discovery_session_id integer,
+         discovery_session_stable_key uuid,
+         discovery_observation_stable_key uuid, inquiry_id integer,
+         inquiry_stable_key uuid, inquiry_session_id integer,
+         inquiry_session_stable_key uuid, inquiry_observation_stable_key uuid,
+         source_snapshot jsonb, source_fingerprint text
+       )
+       returning 1
+     ), inserted_suggestions as (
+       insert into discovery_assistance_suggestions (
+         organization_id, run_id, run_stable_key, suggestion_sequence,
+         suggestion_kind, prompt_key, topic, suggested_text, rationale,
+         original_text
+       )
+       select $1::integer, inserted_run.id, inserted_run.stable_key,
+         suggestion.suggestion_sequence,
+         suggestion.suggestion_kind::discovery_assistance_suggestion_kind,
+         suggestion.prompt_key, suggestion.topic::discovery_observation_topic,
+         suggestion.suggested_text, suggestion.rationale,
+         suggestion.original_text
+       from inserted_run
+       cross join jsonb_to_recordset($15::jsonb) as suggestion(
+         suggestion_sequence integer, suggestion_kind text, prompt_key text,
+         topic text, suggested_text text, rationale text, original_text text
+       )
+       returning 1
+     )
+     select (select stable_key::text from inserted_run) as run_id,
+       (select count(*)::int from inserted_sources) as source_count,
+       (select count(*)::int from inserted_suggestions) as suggestion_count`,
+    [
+      context.configuration.organizationId,
+      input.sessionId,
       input.inquiryId,
       context.configuration.actorIdentifier,
       input.expectedRevision,
@@ -644,6 +726,7 @@ async function persistInquiryRun(input: {
       input.provider.promptPolicyVersion,
       input.contextFingerprint,
       input.focus,
+      JSON.stringify(input.provider.requestMetadata ?? null),
       JSON.stringify(sourcePayload(input.sources)),
       JSON.stringify(suggestionPayload(input.suggestions)),
     ],
@@ -860,11 +943,7 @@ export async function requestProcessOpenAIDiscoveryAssistance(input: {
       expectedRevision: input.expectedRevision,
       focus: packet.participantFocus,
       packet,
-      provider: {
-        key: NON_CONFIDENTIAL_PILOT_CONTRACT.providerKey,
-        modelIdentifier: external.providerMetadata.model,
-        promptPolicyVersion: external.providerMetadata.promptPolicyVersion,
-      },
+      provider: externalProviderAttribution(external.providerMetadata),
       sessionId: input.sessionId,
       sources: loaded.sources,
       suggestions: external.suggestions,
@@ -950,11 +1029,7 @@ export async function requestInquiryOpenAIDiscoveryAssistance(input: {
       focus: packet.participantFocus,
       inquiryId: input.inquiryId,
       packet,
-      provider: {
-        key: NON_CONFIDENTIAL_PILOT_CONTRACT.providerKey,
-        modelIdentifier: external.providerMetadata.model,
-        promptPolicyVersion: external.providerMetadata.promptPolicyVersion,
-      },
+      provider: externalProviderAttribution(external.providerMetadata),
       sessionId: input.sessionId,
       sources: loaded.sources,
       suggestions: external.suggestions,

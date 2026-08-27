@@ -268,7 +268,12 @@ GRANT INSERT (
   inquiry_session_stable_key, requested_session_revision, prompt_key,
   assistance_kind,
   provider_key, model_identifier, prompt_policy_version,
-  context_fingerprint, participant_focus, actor_identifier
+  context_fingerprint, participant_focus,
+  provider_project_identifier, provider_request_status,
+  provider_request_count, provider_input_tokens,
+  provider_cached_input_tokens, provider_output_tokens,
+  provider_total_tokens, provider_duration_ms,
+  estimated_cost_microusd, cost_basis_key, actor_identifier
 ) ON discovery_assistance_runs TO <discovery_role>;
 GRANT INSERT (
   organization_id, run_id, run_stable_key, source_sequence, source_kind,
@@ -453,6 +458,14 @@ typed sources, and suggestions. A used or edited suggestion must append the
 human observation, decision, exact observation link, and session advance in
 one transaction. Skip or reject appends only the decision. The fixed interview
 path remains available without any assistance record.
+
+After LAD-066 migration `0030` is enabled, the Discovery role's column-specific
+run insert also includes only the typed provider-request fields shown above.
+Mocked and pre-migration runs leave every request field null. A successful
+OpenAI run must supply the full constrained set atomically; partial metadata is
+rejected. The normal runtime role remains read-only and may display the values
+in the authenticated collapsed request-details section. Neither role receives
+a new prompt, answer, model-output, response-ID, or debug-content column.
 
 The Discovery role receives no write privilege on Process, Step, Role, System,
 Exception, dependency, Organization Structure, `operating_model_changes`, or
