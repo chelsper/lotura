@@ -290,9 +290,19 @@ rate-versioned estimated-cost metadata on future successful external assistance
 runs. The values appear only in a collapsed, read-only request-details section;
 no prompt, answer, or provider-response copy is added. The first Production run
 predates this persistence and is intentionally not inferred or backfilled.
-Gate 3 therefore remains open until migration `0030` is isolated-verified and
-deployed, one separately authorized future request proves the metadata path,
-and the pilot owner's accept, edit, skip, or reject decision is reviewed.
+
+On August 27, 2026, exact commit
+`bf2649cba9ae0c17ee668e9382f671c1a0c216b0` and migration `0030` passed
+isolated fictional verification at journal `31/31`. The complete-or-empty
+metadata constraint, versioned cost basis, column-specific write boundary,
+append-only history, and runtime read-only access passed. The verifier made no
+OpenAI request or canonical write and rolled back every fictional row and
+temporary role.
+
+Gate 3 therefore remains open until migration `0030` is migrated and deployed
+to JU through the separately controlled rollout, one separately authorized
+future request proves the metadata path, and the pilot owner's accept, edit,
+skip, or reject decision is reviewed.
 
 ## Permitted retained metadata
 

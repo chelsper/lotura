@@ -532,8 +532,9 @@ The kill switch was re-engaged immediately after the result was verified.
 - accept standard provider abuse-monitoring retention explicitly;
 - preserve the implemented `store: false`, no-tools, no-background, no-provider-
   state, and no-content-logging boundary in the exact runtime;
-- isolated-verify and deploy migration `0030`, then review the typed token,
-  latency, provider-project, and rate-versioned estimated-cost details from one
+- deploy the isolated-verified migration `0030` through the separately
+  controlled JU rollout, then review the typed token, latency,
+  provider-project, and rate-versioned estimated-cost details from one
   separately authorized future request without adding a content log;
 - preserve the participant's accept, edit, skip, or reject decision for the
   first suggestion; and

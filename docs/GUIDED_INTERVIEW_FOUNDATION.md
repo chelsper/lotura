@@ -467,6 +467,13 @@ rejected. The normal runtime role remains read-only and may display the values
 in the authenticated collapsed request-details section. Neither role receives
 a new prompt, answer, model-output, response-ID, or debug-content column.
 
+Exact commit `bf2649cba9ae0c17ee668e9382f671c1a0c216b0` and migration
+`0030` passed isolated fictional verification on August 27, 2026, at journal
+`31/31`. Complete-or-empty metadata, the versioned cost basis,
+column-specific least privilege, append-only history, and runtime read-only
+access passed. No provider request or canonical write occurred, and every
+fictional probe row and temporary role was rolled back.
+
 The Discovery role receives no write privilege on Process, Step, Role, System,
 Exception, dependency, Organization Structure, `operating_model_changes`, or
 any unrelated table. It receives no schema, database, role, migration,

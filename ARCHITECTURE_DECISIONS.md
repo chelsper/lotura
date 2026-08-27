@@ -2954,6 +2954,14 @@ these values in a collapsed, read-only section and explicitly labels cost as an
 estimate. It does not add prompt, answer, model-output, response-ID, or provider-
 debug content storage. Existing Production runs are not inferred or backfilled.
 
+On August 27, 2026, exact commit
+`bf2649cba9ae0c17ee668e9382f671c1a0c216b0` and migration `0030` passed
+isolated fictional verification on the allowlisted fictional Neon branch at
+journal `31/31`. Complete-or-empty metadata, versioned cost basis,
+column-specific least privilege, append-only history, and runtime read-only
+access passed. The probe made zero external-provider requests, performed no
+canonical writes, and rolled back every fictional row and temporary role.
+
 On August 26, 2026, the pilot owner reviewed the exact displayed JU context,
 affirmed both required confirmations, and authorized one non-confidential
 Production request. The request returned one append-only, source-linked
@@ -2961,10 +2969,11 @@ assistance suggestion; the interview remained at zero observations and no
 canonical, proposal, review, Structure, history, or policy write occurred.
 Vercel recorded a successful request without application log content. The
 manual kill switch was re-engaged immediately and a new exact-commit Production
-deployment reached Ready. The request-metadata slice is prepared but still
-requires isolated migration verification and deployment. Broader enablement
-remains closed until safe non-content request metadata and cost visibility are
-reviewed and the suggestion's human usefulness decision is preserved.
+deployment reached Ready. The request-metadata slice is implemented and
+isolated-verified but still requires a separately controlled JU migration and
+Production deployment. Broader enablement remains closed until one separately
+authorized future request proves the metadata path and the first suggestion's
+human usefulness decision is preserved.
 Confidential information, broader Organization enablement, files, images,
 audio, tools, background mode, provider-managed state, and AI-suggested
 structured mappings remain deferred.
