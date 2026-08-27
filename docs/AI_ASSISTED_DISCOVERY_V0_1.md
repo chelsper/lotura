@@ -13,19 +13,20 @@ controlled v2 comparison failed human non-repetition review. Version 3 caught
 that failure but failed human source-fidelity review by presupposing an
 uncertain detail. Version 4 caught both failures and passed human review. Its original automated
 uncertainty result was a false negative; the unchanged result passed offline
-after the transparent detector correction. Private provider use, persistent
-credentials, environment changes, JU data or configuration, and deployment
-remain separately gated. LAD-065 now defines the evidence required before a
+after the transparent detector correction. Confidential provider use remains
+separately gated. LAD-065 now defines the evidence required before a
 bounded private pilot; accepting that contract does not authorize a provider
 credential, private request, environment change, JU enablement, or deployment.
 LAD-066 separately permits a bounded non-confidential test path under standard
-provider retention. Its repository-only D1 authorization foundation now
+provider retention. Its D1 authorization foundation
 provides the disclosure, exact context preview, two confirmations, fail-closed
 allowlists, prohibited-content checks, request boundary, kill switch, and
-manual fallback. A disconnected injected transport adds one bounded Responses
-request, abort, no-retry behavior, strict response validation, and content-safe
-fallback without activating a provider. Provider-project, credential, runtime,
-deployment, and first-request gates remain incomplete.
+manual fallback. The reviewed server-only route, dedicated provider project,
+sensitive Production credential, exact configuration, and one bounded JU
+request are now live-verified. That request returned one review-required
+suggestion without creating evidence or changing the operating model. The kill
+switch was re-engaged immediately; broader non-confidential enablement remains
+gated on safe metadata/cost visibility and human outcome review.
 
 ## Product outcome
 
@@ -498,7 +499,7 @@ complete evidence and approval sequence is recorded in
 
 ### Slice D1 — Bounded non-confidential pilot
 
-**Repository-only authorization and inactive transport foundations implemented:**
+**One-request non-confidential pilot verified; broader enablement gated:**
 
 - server-only, disabled-by-default pilot policy with an independently
   default-engaged kill switch;
@@ -512,29 +513,30 @@ complete evidence and approval sequence is recorded in
   background or provider state, strict output, and one suggestion; and
 - deterministic standard-question fallback.
 
-The disconnected transport additionally pins the official Responses endpoint,
+The server-only transport additionally pins the official Responses endpoint,
 reviewed OpenAI project header, `gpt-5.6-terra`, and `lad-064-v4`; authorizes
 before transport; makes at most one request; applies one timeout and abort;
 rejects unexpected model, tool, message, size, or structured-output shapes; and
 returns only safe fallback categories and permitted non-content metadata.
 
-This foundation is deliberately dormant. It has no SDK, credential lookup,
-environment activation, database migration, runtime route, deployment, or JU
-data change. The transport accepts an injected fictional credential in tests
-only and has made no external request. The current product continues to use
-only the deterministic mocked provider.
+The server-only route and dedicated sensitive credential were enabled only for
+one separately authorized, non-confidential JU request on August 26, 2026. The
+participant reviewed the exact context and both retention confirmations. One
+source-linked suggestion was persisted as review-required assistance; the
+interview remained at zero observations and no operating-model write occurred.
+The kill switch was re-engaged immediately after the result was verified.
 
-**Still required before activation:**
+**Still required before broader activation:**
 
-- complete every LAD-066 provider-project, transport, logging, cost,
-  configuration, isolated-runtime, and rollout gate;
 - use only affirmatively non-confidential Process and procedure test content;
 - accept standard provider abuse-monitoring retention explicitly;
 - preserve the implemented `store: false`, no-tools, no-background, no-provider-
   state, and no-content-logging boundary in the exact runtime;
-- prove one timeout, no silent retry, provenance, and database/canonical write
-  denials against the eventual transport; and
-- review one separately authorized request before broader testing.
+- surface or otherwise review permitted non-content token, latency, and cost
+  metadata without adding a content log;
+- preserve the participant's accept, edit, skip, or reject decision for the
+  first suggestion; and
+- require separate authorization before enabling another participant.
 
 See
 [AI-Assisted Discovery non-confidential pilot authorization](AI_ASSISTED_DISCOVERY_NON_CONFIDENTIAL_PILOT_AUTHORIZATION.md).

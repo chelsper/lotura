@@ -240,5 +240,7 @@ test("the credential loader is server-only, content-silent, narrowly routed, and
   assert.doesNotMatch(journal, /"idx": 30/);
   assert.match(documentation, /server-only credential boundary/i);
   assert.match(documentation, /authenticated Discovery Server Actions/i);
-  assert.match(documentation, /route remains inactive/i);
+  assert.match(documentation, /one bounded Production request/i);
+  assert.match(documentation, /provider route is disabled again by the manual kill switch/i);
+  assert.match(documentation, /broader rollout not authorized/i);
 });

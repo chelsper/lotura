@@ -306,7 +306,7 @@ test("the participant-facing authorization is plain-language, exact-context, and
   assert.doesNotMatch(component, /canonical|sanitized working draft/i);
 });
 
-test("the authorization policy stays isolated while the authenticated route remains inactive", async () => {
+test("the authorization policy stays isolated after the bounded route verification", async () => {
   const [contract, wrapper, transport, transportWrapper, runtimeWrapper, administration, provider, journal, documentation] =
     await Promise.all([
       read("lib/discovery-assistance-non-confidential-pilot.mjs"),
@@ -335,8 +335,7 @@ test("the authorization policy stays isolated while the authenticated route rema
   assert.match(provider, /key: "mocked_provider"/);
   assert.match(journal, /"idx": 29/);
   assert.doesNotMatch(journal, /"idx": 30/);
-  assert.match(
-    documentation,
-    /route remains inactive/,
-  );
+  assert.match(documentation, /one bounded Production request/i);
+  assert.match(documentation, /provider route is disabled again by the manual kill switch/i);
+  assert.match(documentation, /broader rollout not authorized/i);
 });

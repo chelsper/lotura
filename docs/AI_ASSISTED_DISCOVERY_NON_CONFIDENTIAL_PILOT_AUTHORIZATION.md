@@ -1,7 +1,7 @@
 # AI-Assisted Discovery non-confidential pilot authorization
 
 **Decision basis:** LAD-066
-**Status:** Contract accepted; inactive authorization, transport, server-only credential, and authenticated route boundaries implemented; activation and rollout not authorized
+**Status:** Contract accepted; one bounded JU Production request completed and immediately disabled; broader rollout not authorized
 **Provider documentation reviewed:** August 22, 2026
 
 ## Purpose
@@ -86,7 +86,7 @@ The participant must affirm both:
 Declining, leaving, or failing either confirmation makes no request, creates no
 evidence, and leaves the manual interview path available.
 
-## Inactive implementation evidence
+## Implementation and rollout evidence
 
 The approved repository foundation now provides:
 
@@ -103,7 +103,7 @@ The approved repository foundation now provides:
   conversation-free, previous-response-free structured request builder; and
 - deterministic fallback to the regular interview questions.
 
-The repository also contains a disconnected server-only OpenAI transport that:
+The repository also contains a server-only OpenAI transport that:
 
 - accepts its credential and fetch implementation only through explicit server
   injection and performs no `process.env` lookup;
@@ -136,13 +136,11 @@ attempt. A successful response is persisted through the existing append-only
 LAD-063 run, source, and suggestion records before it is shown. No browser-
 callable API endpoint or provider-content debug log was added.
 
-The route remains inactive because the pilot mode defaults to disabled, the
-kill switch defaults to on, and no credential or allowlist value has been added
-to the deployed application. The repository contains no provider SDK,
-configured credential value, environment activation, database migration,
-Vercel change, Neon change, or JU data change. The deterministic mocked
-provider remains the active application provider under the current
-configuration.
+The reviewed allowlists and sensitive credential are now configured only for
+JU Production. The kill switch is engaged again, so the deterministic mocked
+provider is the active application path under the current deployment. The
+rollout added no provider SDK, database migration, Neon privilege, or canonical
+operating-model write.
 
 ## Reviewed provider project record
 
@@ -152,8 +150,9 @@ configuration.
 - Assigned role: **Lotura AI Responses Writer**
 - Approved permission: `api.responses.write`
 - Credential owner: pilot owner
-- Local pre-activation storage: macOS Keychain; the value is not recorded in
-  Git, this document, chat, or Lotura configuration
+- Credential storage: project-scoped value configured only as a Vercel
+  Production sensitive variable; the value is unreadable after entry and is
+  not recorded in Git, this document, chat, or ordinary Lotura configuration
 - Rotation and revocation: create and verify a replacement project-scoped
   service-account credential, deploy it through the approved secret workflow,
   then revoke the prior credential from the OpenAI project
@@ -168,8 +167,8 @@ configuration.
 - Cost control: pilot usage alert configured; application request count remains
   bounded to one request with no retry
 
-The credential remains only in the pilot owner's Keychain. It has not been
-added to Vercel and the authenticated provider route remains inactive.
+The credential is deployed only through the reviewed Vercel sensitive-variable
+workflow. The provider route is disabled again by the manual kill switch.
 
 The implementation follows LAD-002, LAD-003, LAD-008, LAD-015 through LAD-018,
 LAD-020, LAD-021, LAD-025, LAD-029, LAD-037, LAD-042, LAD-046, LAD-051, LAD-060,
@@ -194,7 +193,7 @@ authorization.
 - [x] Keep the adapter server-only and disabled by default.
 - [x] Require the exact Lotura Organization and environment allowlist.
 - [x] Prevent public Northstar from initializing or calling the adapter.
-- [ ] Send foreground, text-only Responses requests with `store: false`,
+- [x] Send foreground, text-only Responses requests with `store: false`,
       `background: false`, no tools, no conversation, and no previous response.
 - [x] Preserve strict structured output, output bounds, one timeout, and no
       silent retry.
@@ -206,25 +205,21 @@ authorization.
       ordinary logs, and error output.
 - [x] Preserve LAD-063 source, suggestion, and human-decision provenance without
       creating a provider-debug content copy.
-- [ ] Prove the provider cannot create evidence or write any canonical,
+- [x] Prove the provider cannot create evidence or write any canonical,
       proposal, review, Structure, history, or policy record.
 
-The repository foundation implements the static boundary, injected transport,
-inactive server-only credential loader, and authenticated two-step route. The
-remaining boxes stay open until fictional route verification and the exact
-deployment are separately reviewed. The checked items have repository-level
-proof; they must still be re-verified against the exact runtime before the first
-provider request.
+The repository foundation, fictional route verification, exact deployment, and
+one bounded Production request now verify the complete technical boundary.
 
 ## Gate 3 — Bounded rollout
 
 - [x] Verify the implementation using fictional fixtures first.
 - [x] Review the exact commit, environment settings, and credential target.
 - [x] Perform read-only Production QA before the first provider request.
-- [ ] Separately authorize one non-confidential test request.
+- [x] Separately authorize one non-confidential test request.
 - [ ] Review its non-content metadata, behavior, participant choice, cost,
       fallback, and logs before enabling another participant.
-- [ ] Demonstrate immediate disablement and manual fallback.
+- [x] Demonstrate immediate disablement and manual fallback.
 
 Completing these gates authorizes only the reviewed non-confidential pilot. It
 does not authorize confidential data or general external-AI availability.
@@ -268,6 +263,33 @@ This QA submitted no form, invoked no assistance action, made no external
 provider request, read no credential, changed no environment setting, and
 wrote no Neon, JU, proposal, evidence, or canonical operating-model data. It
 does not authorize activation or the first billable request.
+
+### First bounded Production request record
+
+On August 26, 2026, exact application commit
+`0d2b9ea1e243d1dc3a22fc9e39417bc42d8e68da` was deployed with the reviewed
+Production-only Organization, environment, provider-project, credential, and
+pilot settings. The pilot owner reviewed the exact displayed context for JU
+interview `e717c779-6856-4466-baed-f0965a299f77`, affirmed both required
+statements, and separately authorized one request.
+
+The request ran on deployment `dpl_HmfJY5FguKMogfa4uoi8LbknUVED` and returned
+one `OpenAI assistance · review required` suggestion with two attributable
+Lotura sources. The page still reported one question reached and zero
+observations. The suggestion did not advance the interview, create evidence,
+or write a canonical, proposal, review, Structure, history, or policy record.
+
+Vercel recorded the interview POST as HTTP 200 with an empty application log
+message; no submitted or returned content appeared in the reviewed Production
+logs. Immediately afterward, the kill switch was set back to `on` and
+deployment `dpl_6RwUHyc4JjcpXDUk2Mke88Bai3jR` reached Ready and became the
+Production alias. No second provider request was made.
+
+The current route preserves provider, model, prompt-policy, source, and
+suggestion provenance, but it does not yet surface retained token, latency, or
+cost metadata for operator review. Gate 3 therefore remains open and another
+participant must not be enabled until that observability decision and the
+pilot owner's accept, edit, skip, or reject decision are reviewed.
 
 ## Permitted retained metadata
 

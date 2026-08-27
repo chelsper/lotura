@@ -109,7 +109,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-063 | Mocked AI assistance is an attributable artifact, never evidence or authority | Accepted — Slice B generic implementation complete and isolated fictional verification passed; no real provider authorized |
 | LAD-064 | External AI evaluation is fictional, stateless, tool-free, and separate from private use | Accepted — v1 and v4 passed controlled fictional cases; v2 and v3 exposed distinct human-review failures; private use remains unauthorized |
 | LAD-065 | Private external AI assistance is Organization-opt-in and requires verified provider data controls | Accepted — private-pilot authorization contract; implementation and JU use remain separately gated |
-| LAD-066 | An explicitly non-confidential AI pilot may operate under standard provider retention | Accepted — inactive authorization, transport, credential, and authenticated route boundaries implemented; activation and rollout remain separately gated |
+| LAD-066 | An explicitly non-confidential AI pilot may operate under standard provider retention | Accepted — one bounded JU request completed under the reviewed contract and immediate disablement passed; broader enablement remains gated |
 
 ## Decision records
 
@@ -2821,11 +2821,11 @@ AI-suggested structured mappings remain deferred.
 
 ### LAD-066 — An explicitly non-confidential AI pilot may operate under standard provider retention
 
-**Status:** Accepted — the non-confidential pilot contract is approved and its
-inactive authorization, transport, server-only credential, and authenticated
-route boundaries are implemented. A configured credential value, external
-request, environment activation, deployment, or JU rollout remains separately
-gated.
+**Status:** Accepted — the non-confidential pilot contract is approved. Its
+authorization, transport, server-only credential, authenticated route, exact
+Production configuration, and one-request JU rollout have been verified. The
+kill switch was re-engaged immediately afterward; broader enablement remains
+separately gated.
 
 **Context:** LAD-065 was approved after confirming that `store: false` is not
 equivalent to Zero Data Retention. Its initial wording treated a private,
@@ -2940,10 +2940,18 @@ switch continue through the deterministic mocked provider and never read the
 credential. A successful provider response is persisted only through LAD-063's
 append-only run, source, and suggestion records before it is shown; no provider
 content is copied to a debug log. The implementation contains no provider SDK,
-environment activation, database change, public API endpoint, or automatic
-retry. Exact environment configuration, exact-commit deployment, isolated
-runtime verification, and the first-request review remain incomplete rollout
-gates.
+database change, public API endpoint, or automatic retry.
+
+On August 26, 2026, the pilot owner reviewed the exact displayed JU context,
+affirmed both required confirmations, and authorized one non-confidential
+Production request. The request returned one append-only, source-linked
+assistance suggestion; the interview remained at zero observations and no
+canonical, proposal, review, Structure, history, or policy write occurred.
+Vercel recorded a successful request without application log content. The
+manual kill switch was re-engaged immediately and a new exact-commit Production
+deployment reached Ready. Broader enablement remains closed until safe
+non-content request metadata and cost visibility are reviewed and the
+suggestion's human usefulness decision is preserved.
 Confidential information, broader Organization enablement, files, images,
 audio, tools, background mode, provider-managed state, and AI-suggested
 structured mappings remain deferred.
