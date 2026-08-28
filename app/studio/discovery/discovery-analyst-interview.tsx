@@ -12,6 +12,7 @@ import {
   correctDiscoveryAnalystAction,
   finishDiscoveryAnalystAction,
   refreshDiscoveryAnalystAction,
+  skipDiscoveryAnalystQuestionAction,
 } from "./actions";
 
 const stateLabels = {
@@ -80,6 +81,10 @@ export function DiscoveryAnalystInterview({
   );
   const [correctionState, correctionAction, correctionPending] = useActionState(
     correctDiscoveryAnalystAction,
+    initialDiscoveryActionState,
+  );
+  const [skipState, skipAction, skipPending] = useActionState(
+    skipDiscoveryAnalystQuestionAction,
     initialDiscoveryActionState,
   );
   const [epistemicState, setEpistemicState] = useState(
@@ -234,8 +239,22 @@ export function DiscoveryAnalystInterview({
               credential, connection-string, or other sensitive record-level information.
             </Alert>
             {answerState.status === "error" ? <Alert tone="error">{answerState.message}</Alert> : null}
-            <div className="flex justify-end border-t border-[var(--border)] pt-5">
-              <Button disabled={answerPending} type="submit" variant="primary">
+            {skipState.status === "error" ? <Alert tone="error">{skipState.message}</Alert> : null}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] pt-5">
+              <div>
+                <Button
+                  disabled={answerPending || skipPending}
+                  formAction={skipAction}
+                  formNoValidate
+                  type="submit"
+                >
+                  {skipPending ? "Finding another question…" : "Skip this question"}
+                </Button>
+                <p className="mt-2 max-w-md text-xs leading-5 text-[var(--text-tertiary)]">
+                  Skip moves to a different topic without creating an observation or ending the interview.
+                </p>
+              </div>
+              <Button disabled={answerPending || skipPending} type="submit" variant="primary">
                 {answerPending ? "Preserving and thinking…" : "Send answer"}
               </Button>
             </div>

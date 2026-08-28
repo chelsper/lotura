@@ -487,6 +487,7 @@ async function createAnalystTurn(
   sessionId: string,
   expectedRevision: number,
   focus: string | null = null,
+  excludedFallbackPromptKeys: string[] = [],
 ) {
   const analystContext = await loadAnalystContext(context, sessionId, expectedRevision);
   if (!analystContext) return false;
@@ -497,7 +498,11 @@ async function createAnalystTurn(
   });
   const result = providerResult.ok
     ? providerResult.result
-    : createDiscoveryAnalystFallback(analystContext, providerResult.reason);
+    : createDiscoveryAnalystFallback(
+        analystContext,
+        providerResult.reason,
+        excludedFallbackPromptKeys,
+      );
   return preserveAnalystTurn(context, analystContext, result, providerResult, focus);
 }
 
@@ -709,6 +714,127 @@ export async function answerDiscoveryAnalyst(input: {
   } catch (error) {
     logFailure("answer", error);
     return { code: "unavailable", message: "Lotura could not preserve this answer safely.", ok: false };
+  }
+}
+
+export async function skipDiscoveryAnalystQuestion(input: {
+  expectedRevision: number;
+  sessionId: string;
+  suggestionId: string;
+}): Promise<AnalystMutationResult> {
+  if (
+    !validUuid(input.sessionId)
+    || !validUuid(input.suggestionId)
+    || !validRevision(input.expectedRevision)
+  ) {
+    return { code: "invalid", message: "The question reference is invalid.", ok: false };
+  }
+  let context;
+  try {
+    context = await analystWriteContext();
+  } catch (error) {
+    logFailure("skip_configuration", error);
+    return { code: "unavailable", message: "The AI Discovery Analyst is unavailable.", ok: false };
+  }
+  if (!context) return { code: "unavailable", message: "The AI Discovery Analyst is unavailable.", ok: false };
+  try {
+    const rows = await context.sql.query(
+      `with selected_session as materialized (
+         select id, stable_key
+         from discovery_sessions
+         where organization_id = $1::integer
+           and stable_key = $2::uuid
+           and actor_identifier = $3::varchar(128)
+           and revision = $4::integer
+           and status = 'in_progress'
+           and analyst_enabled = true
+         for update
+       ), selected_suggestion as materialized (
+         select suggestion.id, suggestion.stable_key, suggestion.run_id,
+           suggestion.run_stable_key, suggestion.prompt_key,
+           suggestion.suggested_text
+         from discovery_assistance_suggestions suggestion
+         inner join discovery_assistance_runs run
+           on run.id = suggestion.run_id
+          and run.organization_id = suggestion.organization_id
+          and run.stable_key = suggestion.run_stable_key
+         inner join selected_session session
+           on session.id = run.discovery_session_id
+          and session.stable_key = run.discovery_session_stable_key
+         where suggestion.organization_id = $1::integer
+           and suggestion.stable_key = $5::uuid
+           and suggestion.suggestion_kind = 'follow_up_question'
+           and run.analyst_turn = true
+           and run.requested_session_revision = $4::integer
+           and not exists (
+             select 1 from discovery_assistance_decisions decision
+             where decision.organization_id = suggestion.organization_id
+               and decision.suggestion_stable_key = suggestion.stable_key
+           )
+       ), inserted_decision as (
+         insert into discovery_assistance_decisions (
+           organization_id, run_id, run_stable_key, suggestion_id,
+           suggestion_stable_key, session_kind, disposition,
+           actor_identifier
+         )
+         select $1::integer, selected_suggestion.run_id,
+           selected_suggestion.run_stable_key, selected_suggestion.id,
+           selected_suggestion.stable_key, 'process', 'skipped',
+           $3::varchar(128)
+         from selected_suggestion
+         returning 1
+       ), advanced as (
+         update discovery_sessions
+         set revision = revision + 1, updated_at = transaction_timestamp()
+         where id = (select id from selected_session)
+           and exists (select 1 from inserted_decision)
+         returning revision
+       )
+       select (select count(*)::int from selected_suggestion) as suggestion_count,
+         (select count(*)::int from inserted_decision) as decision_count,
+         (select revision from advanced) as revision,
+         (select prompt_key from selected_suggestion) as prompt_key,
+         (select suggested_text from selected_suggestion) as suggested_text`,
+      [
+        context.discovery.organizationId,
+        input.sessionId,
+        context.discovery.actorIdentifier,
+        input.expectedRevision,
+        input.suggestionId,
+      ],
+    );
+    const row = rows[0];
+    const revision = Number(row?.revision);
+    const promptKey = String(row?.prompt_key ?? "");
+    const skippedQuestion = String(row?.suggested_text ?? "").trim();
+    if (
+      !row
+      || Number(row.suggestion_count) !== 1
+      || Number(row.decision_count) !== 1
+      || !validRevision(revision)
+      || !promptKey
+      || !skippedQuestion
+    ) {
+      return { code: "conflict", message: "The interview changed. Reload before skipping this question.", ok: false };
+    }
+    const focus = `The participant skipped the previous follow-up: "${skippedQuestion.slice(0, 500)}" Do not treat the skip as evidence or infer an answer. Keep the skipped issue unresolved and ask one materially different question from another unresolved Discovery topic. Do not repeat or rephrase the skipped question.`;
+    const nextTurn = await createAnalystTurn(
+      context,
+      input.sessionId,
+      revision,
+      focus,
+      [promptKey],
+    );
+    return {
+      message: nextTurn
+        ? "Question skipped. Lotura moved to a different unresolved topic; no observation was created."
+        : "Question skipped without creating evidence. Refresh the analyst when you are ready for another question.",
+      ok: true,
+      sessionId: input.sessionId,
+    };
+  } catch (error) {
+    logFailure("skip", error);
+    return { code: "unavailable", message: "Lotura could not skip this question safely.", ok: false };
   }
 }
 

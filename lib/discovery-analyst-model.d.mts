@@ -43,4 +43,5 @@ export function validateDiscoveryAnalystResult(value: unknown): DiscoveryAnalyst
 export function createDiscoveryAnalystFallback(
   context: Record<string, unknown>,
   reason?: string,
+  excludedPromptKeys?: string[],
 ): DiscoveryAnalystResult;

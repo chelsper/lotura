@@ -21,6 +21,7 @@ import {
   correctDiscoveryAnalyst,
   finishDiscoveryAnalyst,
   refreshDiscoveryAnalyst,
+  skipDiscoveryAnalystQuestion,
 } from "@/lib/discovery-analyst-administration";
 import {
   decideInquiryDiscoverySuggestion,
@@ -445,6 +446,22 @@ export async function answerDiscoveryAnalystAction(
     epistemicState: state(formData),
     expectedRevision: revision(formData),
     responseText: text(formData, "responseText"),
+    sessionId,
+    suggestionId: text(formData, "suggestionId"),
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  const path = `/studio/discovery/interviews/${sessionId}`;
+  revalidatePath(path);
+  redirect(path);
+}
+
+export async function skipDiscoveryAnalystQuestionAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const sessionId = text(formData, "sessionId");
+  const result = await skipDiscoveryAnalystQuestion({
+    expectedRevision: revision(formData),
     sessionId,
     suggestionId: text(formData, "suggestionId"),
   });

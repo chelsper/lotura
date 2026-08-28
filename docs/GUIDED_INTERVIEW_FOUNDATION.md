@@ -600,6 +600,12 @@ pilot session. It does not authorize model-created evidence, approval,
 application, or canonical mutation. Unsent form text remains browser-local and
 may be lost.
 
+An AI Discovery Analyst question may also be skipped. The skip is preserved as
+an append-only assistance decision, not as a human observation. It advances the
+session to one new analyst turn that must pursue a different unresolved topic;
+it does not finish the interview, resolve the skipped issue, or change the
+documented Process.
+
 Slices 1 and 2 establish manual structured proposed-change mapping for the
 approved Process definition and connected operating-model targets. Human
 proposal review, approval, and atomic application to a versioned Process remain

@@ -102,6 +102,13 @@ test("the analyst validates one adaptive question and a noncanonical working syn
   assert.match(fallback.narrative, /Fictional Campus Printing/);
   assert.equal(fallback.nextQuestion.promptKey, "purpose");
   assert.equal(fallback.needsValidation.length, 1);
+  const skipFallback = createDiscoveryAnalystFallback(
+    context,
+    "different_question_requested",
+    ["purpose"],
+  );
+  assert.notEqual(skipFallback.nextQuestion.promptKey, "purpose");
+  assert.match(skipFallback.nextQuestion.rationale, /skipped the prior question/i);
 });
 
 test("the analyst makes exactly one foreground tool-free stateless Responses request", async () => {
@@ -190,6 +197,7 @@ test("LAD-067 and migration 0031 preserve the existing evidence and authority bo
   assert.match(administration, /insert into discovery_assistance_sources/);
   assert.match(administration, /insert into discovery_assistance_suggestions/);
   assert.match(administration, /insert into discovery_assistance_decisions/);
+  assert.match(administration, /'process', 'skipped'/);
   assert.doesNotMatch(
     administration,
     /(?:insert into|update|delete from) (?:processes|process_steps|systems|exceptions|operating_model_changes)/i,
@@ -198,6 +206,8 @@ test("LAD-067 and migration 0031 preserve the existing evidence and authority bo
   assert.match(page, /DiscoveryAnalystInterview/);
   assert.match(interview, /What do you understand so far\?/);
   assert.match(interview, /Correct Lotura&apos;s interpretation/);
+  assert.match(interview, /Skip this question/);
+  assert.match(interview, /without creating an observation or ending the interview/);
   assert.match(interview, /Finish interview/);
 });
 

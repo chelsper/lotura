@@ -3005,11 +3005,14 @@ possible conflicts, participant needs, and open questions.
 
 The question catalog remains coverage guidance and deterministic fallback; it
 does not mechanically control the conversation. The participant may answer in
-ordinary language, ask what Lotura understands, correct the synthesis, pause,
-or finish. Participant messages and corrections become append-only human
-observations. Model questions and syntheses remain append-only assistance
-artifacts. The model may suggest an evidence state, but the participant's
-submitted state controls the observation.
+ordinary language, skip a question, ask what Lotura understands, correct the
+synthesis, pause, or finish. A skip is preserved as an append-only assistance
+decision, creates no observation, and directs the analyst to a materially
+different unresolved topic without treating the skipped issue as resolved.
+Participant messages and corrections become append-only human observations.
+Model questions and syntheses remain append-only assistance artifacts. The
+model may suggest an evidence state, but the participant's submitted state
+controls the observation.
 
 For the explicitly non-confidential pilot authorized by LAD-066, the two
 retention and classification acknowledgements move to the start of the AI
