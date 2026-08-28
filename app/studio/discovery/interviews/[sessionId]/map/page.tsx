@@ -21,6 +21,7 @@ import {
   DiscoveryMappingItemStateForm,
   FinishDiscoveryMappingForm,
 } from "../../../discovery-mapping-controls";
+import { DiscoveryProcessProposalDraft } from "../../../discovery-process-proposal-draft";
 import { DiscoveryProposalItemSummary } from "../../../discovery-proposal-item-summary";
 import { BeginProposalReviewForm } from "../../../proposal-review-controls";
 import { Alert, Badge, Card } from "../../../../../ui/primitives";
@@ -182,13 +183,26 @@ export default async function DiscoveryMappingPage({
         </ul>
       </Card>
 
+      {!mappingFinished && !documentationChanged && session.analystEnabled ? (
+        <DiscoveryProcessProposalDraft
+          catalog={catalog}
+          currentPurpose={process.purpose}
+          evidence={includedEvidence}
+          expectedMappingRevision={mapping?.revision ?? 0}
+          expectedProposalRevision={proposal.revision}
+          ownerRoleId={process.ownerRole?.stableKey ?? null}
+          roles={roles}
+          sessionId={session.id}
+        />
+      ) : null}
+
       <section className="mt-7">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-xs font-medium text-[var(--text-tertiary)]">Structured proposal</p>
             <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">Specific changes and unresolved questions</h2>
           </div>
-          <Badge tone="info">Human-authored</Badge>
+          <Badge tone="info">Human-saved</Badge>
         </div>
 
         {currentItems.length ? (

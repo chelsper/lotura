@@ -165,7 +165,7 @@ test("the review UX keeps interview evidence, human choices, readiness, and appr
     read("lib/discovery-proposal-model.mjs"),
     read("app/studio/discovery/interviews/[sessionId]/reconcile/page.tsx"),
   ]);
-  assert.match(model, /Use in proposed update/);
+  assert.match(model, /Include as evidence for a proposed update/);
   assert.match(model, /Keep what is documented/);
   assert.match(model, /Leave for later/);
   assert.match(controls, /Finish proposed update/);

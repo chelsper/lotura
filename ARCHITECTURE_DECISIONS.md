@@ -111,6 +111,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-065 | Private external AI assistance is Organization-opt-in and requires verified provider data controls | Accepted — private-pilot authorization contract; implementation and JU use remain separately gated |
 | LAD-066 | An explicitly non-confidential AI pilot may operate under standard provider retention | Accepted — one bounded JU request completed under the reviewed contract and immediate disablement passed; broader enablement remains gated |
 | LAD-067 | AI Discovery Analyst Alpha maintains a noncanonical evidence-linked synthesis and chooses adaptive follow-ups | Accepted — implementation authorized for the complete Alpha vertical slice |
+| LAD-068 | AI may draft an evidence-linked Process proposal, but a human creates every governed mapping | Accepted — implementation authorized for AI Process Synthesis & Proposal Draft Alpha |
 
 ## Decision records
 
@@ -3131,6 +3132,91 @@ reconciliation, validation assignment, notification, proposal mapping,
 approval, Process application, FLOW changes, scores, and analytics remain
 separately governed work.
 
+### LAD-068 — AI may draft an evidence-linked Process proposal, but a human creates every governed mapping
+
+**Status:** Accepted — implementation authorized for AI Process Synthesis &
+Proposal Draft Alpha.
+
+**Context:** AI Discovery Analyst Alpha now conducts an adaptive interview and
+maintains a readable noncanonical understanding, but the finished review still
+labels selected evidence as **Use in proposed update** and then presents an
+entirely manual mapping workspace. That label overstates the current behavior:
+selection carries evidence forward but does not rewrite, organize, place, or
+apply it. Real Gift Processing use showed that one answer may contain several
+distinct candidate Steps, handoffs, boundary questions, participants, and
+validation needs. Treating the answer as one undifferentiated update defeats
+the value of the analyst's synthesis.
+
+**Decision:** After a human finishes review with selected change evidence, an
+explicit **Draft proposed Process with Lotura** action may make one foreground,
+tool-free model request using the already authorized non-confidential provider
+configuration. The request receives only the frozen documented Process,
+current reviewed observations and dispositions, the current typed mapping
+items, and the bounded same-Organization target catalog needed to name existing
+Steps, Roles, Systems, Exceptions, and related Processes. It must not receive
+unrestricted workspace data.
+
+The response is a temporary, noncanonical proposal draft containing:
+
+- a concise, readable current-state Process synthesis;
+- clearly separated validation needs and conflicts; and
+- evidence-linked candidate items expressed only in the action vocabulary
+  already authorized by LAD-049 and LAD-050.
+
+The draft may organize evidence, improve wording without changing meaning,
+suggest the supported position of a new Step, and decompose one observation
+into several candidate items. It must use exact supplied target identifiers for
+existing objects, cite only reviewed observations selected for change when it
+suggests a mapping, preserve uncertainty, and omit a candidate it cannot place
+safely. It may not optimize an observed Process into an imagined ideal state.
+Editorial documentation and improvement recommendations remain distinct.
+
+Generating the draft creates no observation, mapping, proposal-review
+decision, approval, Process version, history entry, or canonical write. The
+temporary draft may be lost on refresh and may be regenerated because Alpha is
+optimized for product learning. Every candidate is visibly labeled AI-assisted
+and must remain editable. Only an authenticated person's explicit save action
+may create an existing append-only typed mapping item, using the same server
+authorization, evidence, tenant, target, fingerprint, and compare-and-set
+checks as the manual form. The accepted mapping is attributed to the human
+actor; its rationale states that it began as an AI-assisted draft. Proposal
+Review and Atomic Application remain unchanged.
+
+The reconciliation label becomes **Include as evidence for a proposed update**
+and must explain that selection alone neither drafts nor changes the Process.
+
+**Why:** A complete proposal draft lets a person experience Lotura organizing
+discovery evidence into a coherent Process without building a parallel
+knowledge lifecycle or granting AI authority. Requiring explicit human saves
+preserves the existing governance boundary while a temporary draft avoids a
+new persistence model before Alpha use establishes what is worth retaining.
+
+**Alternatives considered:** Keep the mapping workspace entirely manual;
+silently create mapping rows from model output; treat the analyst synthesis as
+canonical; persist a new draft domain before product use; send the entire
+Organization model; combine editorial cleanup with process optimization; or
+apply a generated Process directly. These were rejected because they either
+preserve the current usability gap, collapse evidence and authority, add
+premature architecture, expose excess context, or manufacture organizational
+truth.
+
+**Affected decisions:** LAD-068 follows and extends LAD-049, LAD-050, LAD-061,
+LAD-063, LAD-066, and LAD-067. It follows LAD-045, LAD-046, LAD-051 through
+LAD-053, and LAD-062. It narrows LAD-067's deferral of AI-created mappings by
+authorizing AI **candidate drafts only**; it does not authorize AI-created
+mapping records and therefore conflicts with or supersedes no evidence,
+governance, tenant-isolation, public/private, credential, or canonical-write
+decision.
+
+**Consequences and deferrals:** Alpha requires no migration, new table, new
+database privilege, new credential, new provider, or public Northstar behavior.
+The existing provider kill switch, one-action/one-request limit, `store: false`,
+no-tools request, content checks, timeout, request metadata returned to the
+screen, and server-only credential remain mandatory. Durable AI proposal-draft
+history, atomic acceptance of several candidates, Process-field expansion for
+separate trigger/end boundaries, Step reordering, improvement recommendations,
+confidential use outside LAD-065, and autonomous refinement remain deferred.
+
 ## Intentionally deferred ideas register
 
 The following ideas are recorded so postponement is visible and deliberate.
@@ -3140,7 +3226,7 @@ The following ideas are recorded so postponement is visible and deliberate.
 | Full authentication and authorization | A replaceable temporary provider now prepares one private administrator; durable deployment protection and enterprise identity remain unresolved | SSO, multiple identities, provisioning, recovery, roles/permissions, audit, and access review |
 | Governance and Stewardship engine | Dimensions, profiles, and Stewardship direction are accepted, but scope, delegation, effective timing, proposals, approval routing, and policy enforcement are unresolved | Governance domain, authorization, workflow, audit, retention, and identity decisions |
 | Broader observations and provenance | LAD-042 proposes a bounded guided self-interview observation model; documents, external sources, multi-participant evidence, retention automation, and generalized provenance remain unresolved | Source/artifact lifecycle, evidence access, privacy, retention, and reconciliation decision |
-| AI interviewing | LAD-061 Slice A and LAD-063 Slice B's attributable mocked-provider schema, adapter, and human-review UX are complete and isolated-verified; real provider use and private enablement remain unapproved | Separately approve participant privacy, retention, evaluation, credentials, environment enablement, and rollout before any external-provider slice |
+| Broader AI Discovery | LAD-066 and LAD-067 authorize the bounded non-confidential JU analyst, and LAD-068 authorizes temporary evidence-linked Process proposal drafts; confidential use, broader permissions, durable draft history, autonomous refinement, and AI-created governed records remain deferred | Separate privacy, authority, persistence, access, evaluation, and rollout decisions for each expansion |
 | Uploads, imports, Visio/PDF/flowchart parsing | Requires malware handling, source permissions, artifact retention, provenance, and conflict treatment | Artifact architecture, storage, security, and extraction decision |
 | Whiteboard and collaborative capture | Draft contribution, authorship, reconciliation, and conversion to structured knowledge are undefined | Collaboration, observation, and approval decision |
 | Conflict detection and consensus | Conflicts need identity, scope, lifecycle, privacy, and human resolution | Conflict and reconciliation schema decision |

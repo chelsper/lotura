@@ -102,7 +102,7 @@ test("the human mapping UX presents explicit existing targets and preserves the 
   assert.match(controls, /Existing Exception/);
   assert.match(controls, /Related Process/);
   assert.match(controls, /Whole Process/);
-  assert.match(page, /Human-authored/);
+  assert.match(page, /Human-saved/);
   assert.match(page, /not been approved or applied/);
   assert.match(page, /documented Process has not changed/);
   assert.match(page, /Steps and responsibility, an existing System, an Exception, a dependency/);

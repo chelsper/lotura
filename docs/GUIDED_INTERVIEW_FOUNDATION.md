@@ -592,8 +592,10 @@ package ready for its next human review. It does not approve or apply anything.
 Multiple participants, interviewing on behalf of another Person, Contributor
 access, uploads, source artifacts, generalized prompt management, multiple AI
 providers or models, autonomous calls, streaming, broad organizational memory,
-structured-mapping suggestions, completed-package withdrawal or rebasing,
-export, retention automation, and deletion require later decisions.
+durable AI proposal-draft history, completed-package withdrawal or rebasing,
+export, retention automation, and deletion require later decisions. LAD-068
+allows a temporary evidence-linked Process proposal and candidate mappings only
+after human review; a human must still create every governed mapping.
 LAD-067 now permits adaptive follow-up selection and a refresh-safe emerging
 synthesis for an explicitly authorized, non-confidential, Process-bound private
 pilot session. It does not authorize model-created evidence, approval,
@@ -606,8 +608,10 @@ session to one new analyst turn that must pursue a different unresolved topic;
 it does not finish the interview, resolve the skipped issue, or change the
 documented Process.
 
-Slices 1 and 2 establish manual structured proposed-change mapping for the
-approved Process definition and connected operating-model targets. Human
+Slices 1 and 2 establish structured proposed-change mapping for the approved
+Process definition and connected operating-model targets. LAD-068 may prefill
+editable candidates from a temporary AI-assisted proposal draft, but only an
+explicit human save creates each governed mapping item. Human
 proposal review, approval, and atomic application to a versioned Process remain
 later, separate boundaries. LAD-061 does not authorize AI to suggest or
 automate this path.

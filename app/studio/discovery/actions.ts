@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { requireWorkspaceAccess } from "@/lib/authentication";
 import {
   answerDiscoveryQuestion,
   appendDiscoveryCorrection,
@@ -23,6 +24,9 @@ import {
   refreshDiscoveryAnalyst,
   skipDiscoveryAnalystQuestion,
 } from "@/lib/discovery-analyst-administration";
+import {
+  DISCOVERY_ANALYST_AUTHORIZATION_VERSION,
+} from "@/lib/discovery-analyst-model.mjs";
 import {
   decideInquiryDiscoverySuggestion,
   decideProcessDiscoverySuggestion,
@@ -56,9 +60,19 @@ import {
   saveDiscoveryMappingItem,
   saveDiscoveryMappingItemSlice2,
 } from "@/lib/discovery-mapping-administration";
-import type { DiscoveryMappingAction } from "@/lib/discovery-mapping-model.mjs";
+import {
+  currentDiscoveryMappingItems,
+  type DiscoveryMappingAction,
+} from "@/lib/discovery-mapping-model.mjs";
+import {
+  executeConfiguredDiscoveryProcessProposal,
+} from "@/lib/discovery-process-proposal-draft-runtime";
 import { buildDocumentedProcessSnapshot } from "@/lib/discovery-proposal-model.mjs";
-import type { DiscoveryProposalDisposition } from "@/lib/discovery-proposal-model.mjs";
+import {
+  currentDiscoveryProposalDecisions,
+  type DiscoveryProposalDisposition,
+} from "@/lib/discovery-proposal-model.mjs";
+import { buildDiscoveryReconciliationEvidence } from "@/lib/discovery-reconciliation-preview.mjs";
 import {
   beginOperatingModelProposalReview,
   finishOperatingModelProposalReview,
@@ -70,6 +84,7 @@ import { loadWorkspaceExperience } from "@/lib/workspace-experience";
 import type {
   DiscoveryActionState,
   DiscoveryAssistanceRequestState,
+  DiscoveryProcessProposalDraftState,
 } from "./action-state";
 
 function text(formData: FormData, name: string) {
@@ -762,14 +777,188 @@ export async function finishDiscoveryReviewByExceptionAction(
   redirect(`/studio/discovery/interviews/${sessionId}/reconcile`);
 }
 
-export async function saveDiscoveryMappingItemAction(
-  _previousState: DiscoveryActionState,
+export async function draftDiscoveryProcessProposalAction(
+  _previousState: DiscoveryProcessProposalDraftState,
   formData: FormData,
-): Promise<DiscoveryActionState> {
+): Promise<DiscoveryProcessProposalDraftState> {
   const sessionId = text(formData, "sessionId");
+  const expectedProposalRevision = Number(
+    text(formData, "expectedProposalRevision"),
+  );
+  const expectedMappingRevision = Number(
+    text(formData, "expectedMappingRevision"),
+  );
+  const runtimeAccess = await requireWorkspaceAccess();
   const experience = await loadWorkspaceExperience();
   if (!experience.discovery.enabled) {
     return { message: "Guided Discovery is not enabled.", status: "error" };
+  }
+  const {
+    loadDiscoveryMappingCatalog,
+    loadDiscoveryProposal,
+    loadDiscoveryProposalMapping,
+    loadDiscoverySession,
+  } = await import("@/lib/discovery-data");
+  const [session, proposal, mapping, catalog] = await Promise.all([
+    loadDiscoverySession(experience.discovery.organizationId, sessionId),
+    loadDiscoveryProposal(experience.discovery.organizationId, sessionId),
+    loadDiscoveryProposalMapping(experience.discovery.organizationId, sessionId),
+    loadDiscoveryMappingCatalog(experience.discovery.organizationId, sessionId),
+  ]);
+  const process = session
+    ? experience.data.processes.find((item) => item.id === session.processId)
+    : null;
+  if (
+    !session
+    || !proposal
+    || !catalog
+    || !process
+    || session.status !== "ready_for_review"
+    || proposal.status !== "ready_for_review"
+  ) {
+    return {
+      message: "The reviewed interview or documented Process is no longer available.",
+      status: "error",
+    };
+  }
+  if (
+    !session.analystEnabled
+    || session.analystAuthorizationVersion !== DISCOVERY_ANALYST_AUTHORIZATION_VERSION
+  ) {
+    return {
+      message: "This interview was not authorized for the AI Discovery Analyst.",
+      status: "error",
+    };
+  }
+  if (
+    proposal.revision !== expectedProposalRevision
+    || (mapping?.revision ?? 0) !== expectedMappingRevision
+    || mapping?.status === "ready_for_proposal_review"
+  ) {
+    return {
+      message: "This proposal changed after the page loaded. Reload before drafting.",
+      status: "error",
+    };
+  }
+  const currentFingerprint = fingerprintDocumentedProcessSnapshot(
+    buildDocumentedProcessSnapshot(process),
+  );
+  if (currentFingerprint !== proposal.documentedProcessFingerprint) {
+    return {
+      message: "The documented Process changed after this review began. A draft cannot be generated until the review is rebased.",
+      status: "error",
+    };
+  }
+
+  const observations = buildDiscoveryReconciliationEvidence(session.observations)
+    .flatMap((section) => section.evidence.map((observation) => ({
+      ...observation,
+      topic: section.topics[0],
+    })));
+  const decisions = currentDiscoveryProposalDecisions(proposal.decisions);
+  const includedObservationIds = observations
+    .filter(
+      (observation) =>
+        decisions.get(observation.id)?.disposition === "use_in_proposal",
+    )
+    .map((observation) => observation.id);
+  if (includedObservationIds.length === 0) {
+    return {
+      message: "Select at least one interview answer as evidence for a proposed update before drafting.",
+      status: "error",
+    };
+  }
+
+  const roles = experience.data.roles
+    .filter((role) => role.status === "active" && role.stableKey)
+    .map((role) => ({ id: role.stableKey!, name: role.name }));
+  const currentItems = [...currentDiscoveryMappingItems(mapping?.items ?? []).values()]
+    .filter((item) => item.state === "active")
+    .map((item) => ({
+      action: item.action,
+      exceptionId: item.exceptionId,
+      processStepId: item.processStepId,
+      proposedState: item.proposedState,
+      rationale: item.rationale,
+      relatedProcessId: item.relatedProcessId,
+      responsibleRoleId: item.responsibleRoleId,
+      sourceObservationIds: item.sourceObservationIds,
+      systemId: item.systemId,
+    }));
+  const result = await executeConfiguredDiscoveryProcessProposal({
+    context: {
+      currentMappingItems: currentItems,
+      documentedProcess: proposal.documentedProcessSnapshot,
+      interview: {
+        observations: observations.map((observation) => ({
+          disposition: decisions.get(observation.id)?.disposition ?? null,
+          epistemicState: observation.epistemicState,
+          id: observation.id,
+          promptText: observation.promptText,
+          responseText: observation.responseText,
+          reviewNote: decisions.get(observation.id)?.reviewNote ?? null,
+          sequence: observation.sequence,
+          topic: observation.topic,
+        })),
+        scopeStatement: session.scopeStatement,
+      },
+      processName: process.name,
+      targetCatalog: {
+        exceptions: catalog.exceptions,
+        processes: catalog.processes.filter((item) => item.status !== "archived"),
+        roles,
+        steps: catalog.steps,
+        systems: catalog.systems.filter(
+          (system) => system.status === "active" && !system.alreadyLinked,
+        ),
+      },
+    },
+    runtimeAccess,
+    validationContext: {
+      exceptionIds: catalog.exceptions.map((item) => item.id),
+      observationIds: includedObservationIds,
+      processIds: catalog.processes
+        .filter((item) => item.status !== "archived")
+        .map((item) => item.id),
+      roleIds: roles.map((item) => item.id),
+      stepIds: catalog.steps.map((item) => item.id),
+      systemIds: catalog.systems
+        .filter((item) => item.status === "active" && !item.alreadyLinked)
+        .map((item) => item.id),
+    },
+  });
+  if (!result.ok) {
+    return {
+      message: result.reason === "timeout"
+        ? "Lotura did not finish the proposal draft in time. Your evidence is intact; try again when ready."
+        : result.reason === "prohibited_or_oversized_context"
+          ? "The reviewed evidence cannot be sent under the current non-confidential pilot boundary. Use the manual proposal form instead."
+          : "Lotura could not generate a safe proposal draft. Your evidence is intact and the manual proposal path remains available.",
+      status: "error",
+    };
+  }
+  return {
+    draft: result.draft,
+    message: "Lotura organized the reviewed evidence into a temporary proposal draft. Review and edit every candidate before saving it.",
+    providerMetadata: {
+      durationMs: result.providerMetadata.durationMs,
+      inputTokens: result.providerMetadata.inputTokens,
+      model: result.providerMetadata.model,
+      outputTokens: result.providerMetadata.outputTokens,
+      totalTokens: result.providerMetadata.totalTokens,
+    },
+    status: "drafted",
+  };
+}
+
+async function saveDiscoveryMappingItemFromForm(formData: FormData) {
+  const sessionId = text(formData, "sessionId");
+  const experience = await loadWorkspaceExperience();
+  if (!experience.discovery.enabled) {
+    return {
+      result: { message: "Guided Discovery is not enabled.", ok: false as const },
+      sessionId,
+    };
   }
   const { loadDiscoveryProposal, loadDiscoverySession } = await import(
     "@/lib/discovery-data"
@@ -783,8 +972,11 @@ export async function saveDiscoveryMappingItemAction(
     : null;
   if (!session || !proposal || proposal.status !== "ready_for_review" || !process) {
     return {
-      message: "The finished proposed update or documented Process is no longer available.",
-      status: "error",
+      result: {
+        message: "The finished proposed update or documented Process is no longer available.",
+        ok: false as const,
+      },
+      sessionId,
     };
   }
   const selectedAction = mappingAction(formData);
@@ -826,9 +1018,30 @@ export async function saveDiscoveryMappingItemAction(
         proposedPurpose: text(formData, "proposedPurpose"),
         unresolvedQuestion: text(formData, "unresolvedQuestion"),
       });
+  return { result, sessionId };
+}
+
+export async function saveDiscoveryMappingItemAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const { result, sessionId } = await saveDiscoveryMappingItemFromForm(formData);
   if (!result.ok) return { message: result.message, status: "error" };
   revalidatePath(`/studio/discovery/interviews/${sessionId}/map`);
   redirect(`/studio/discovery/interviews/${sessionId}/map`);
+}
+
+export async function saveAIDiscoveryMappingCandidateAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const { result, sessionId } = await saveDiscoveryMappingItemFromForm(formData);
+  if (!result.ok) return { message: result.message, status: "error" };
+  revalidatePath(`/studio/discovery/interviews/${sessionId}/map`);
+  return {
+    message: "Added to the governed proposed changes. The documented Process has not changed.",
+    status: "success",
+  };
 }
 
 export async function changeDiscoveryMappingItemStateAction(

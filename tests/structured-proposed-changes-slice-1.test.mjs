@@ -155,7 +155,7 @@ test("Slice 1 UI keeps evidence, proposal, review, and application visibly separ
     read("app/studio/discovery/interviews/[sessionId]/reconcile/page.tsx"),
   ]);
   assert.match(reconcile, /Turn notes into specific changes/);
-  assert.match(page, /Human-authored/);
+  assert.match(page, /Human-saved/);
   assert.match(page, /not been approved or applied/);
   assert.match(page, /documented Process has not changed/);
   assert.match(page, /future governed rebase/);

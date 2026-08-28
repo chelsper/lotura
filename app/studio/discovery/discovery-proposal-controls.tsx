@@ -65,6 +65,9 @@ export function DiscoveryProposalDecisionForm({
           placeholder="Add context for the next reviewer."
         />
       </label>
+      <p className="rounded-[8px] bg-[var(--surface-subtle)] px-3 py-2 text-xs leading-5 text-[var(--text-secondary)]">
+        Selecting evidence does not rewrite or change the documented Process. If changes are selected, the next workspace lets you ask Lotura to organize an editable proposal draft before anything enters governance.
+      </p>
       {state.status === "error" ? <Alert tone="error">{state.message}</Alert> : null}
       <div className="flex justify-end">
         <Button disabled={pending} size="sm" type="submit" variant="primary">

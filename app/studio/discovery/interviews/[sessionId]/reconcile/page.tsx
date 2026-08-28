@@ -180,7 +180,7 @@ function ProposalChoiceSummary({
       disposition: "use_in_proposal" as const,
       empty: "No interview answers are included yet.",
       explanation: "These exact notes will form the basis for later structured review.",
-      title: "Use in proposed update",
+      title: "Evidence for a proposed update",
     },
     {
       disposition: "keep_documented" as const,
@@ -514,7 +514,7 @@ export default async function DiscoveryReconciliationPreviewPage({
           </div>
           {reviewingExceptions ? (
             <p className="mt-4 rounded-[8px] bg-[var(--surface-subtle)] px-3 py-2 text-xs leading-5 text-[var(--text-secondary)]">
-              Select <strong>Use in proposed update</strong> only for answers that may require a documented change. You do not need to save a choice for every other answer; Lotura will preserve them appropriately when you finish.
+              Select <strong>Include as evidence for a proposed update</strong> only for answers that may require different documentation. This choice does not rewrite or change the Process. After review, Lotura can organize the complete selected evidence into an editable proposal draft.
             </p>
           ) : null}
         </Card>
@@ -536,7 +536,7 @@ export default async function DiscoveryReconciliationPreviewPage({
           </div>
           <div>
             <Badge tone="info">Human choices</Badge>
-            <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">You decide what belongs in the proposed update, what stays as documented, and what waits for later.</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">You decide which evidence may support a proposed update, what stays as documented, and what waits for later. Nothing is rewritten or changed on this screen.</p>
           </div>
         </div>
       </Card>
@@ -640,7 +640,7 @@ export default async function DiscoveryReconciliationPreviewPage({
           {proposalFinishedWithoutChanges
             ? "Every interview answer was kept as documented or left for later. Nothing will move into structured proposed-change review."
             : reviewingExceptions
-              ? "Only answers you explicitly select will move toward a possible change. Finishing will keep the remaining known answers with the current documentation and preserve uncertain answers for later."
+              ? "Only answers you explicitly select will move toward a possible change. You do not need to save a choice for every other answer. Finishing will keep the remaining known answers with the current documentation and preserve uncertain answers for later."
               : "Use the finish choice above when the interview did not reveal a needed change. Open possible changes only when an answer should be considered for different documentation."}
         </p>
         {reviewingExceptions ? (

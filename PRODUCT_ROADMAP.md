@@ -216,8 +216,12 @@ milestones:
    runtime read-only access, and canonical-write denial all passed and rolled
    back with zero provider requests. Release now requires exact least-privilege
    JU rollout, deployment, and authenticated acceptance against Gift Processing.
-   Structured-mapping suggestions remain later; AI may never approve or apply
-   them. The accepted staged boundary and provider gate are recorded in
+   LAD-068 now authorizes the next product-acceleration checkpoint: one explicit
+   model call may turn the full reviewed evidence package into a readable,
+   noncanonical Process proposal and evidence-linked candidate mappings. The
+   candidate draft remains temporary and editable; only a human save may create
+   an existing typed mapping item. AI may never approve or apply it. The
+   accepted staged boundary and provider gate are recorded in
    [docs/AI_ASSISTED_DISCOVERY_V0_1.md](docs/AI_ASSISTED_DISCOVERY_V0_1.md).
 8. **Reference Models** — attach governed internal or external comparison bases
    to Processes or Process Families.

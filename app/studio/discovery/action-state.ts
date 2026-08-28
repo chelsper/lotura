@@ -1,11 +1,29 @@
 import type {
   NonConfidentialPilotPreview,
 } from "@/lib/discovery-assistance-non-confidential-pilot.mjs";
+import type {
+  DiscoveryProcessProposalDraft,
+} from "@/lib/discovery-process-proposal-draft-model.mjs";
 
 export type DiscoveryActionState = {
   message: string;
-  status: "idle" | "error";
+  status: "idle" | "error" | "success";
 };
+
+export type DiscoveryProcessProposalDraftState =
+  | DiscoveryActionState
+  | {
+      draft: DiscoveryProcessProposalDraft;
+      message: string;
+      providerMetadata: {
+        durationMs: number;
+        inputTokens: number;
+        model: string;
+        outputTokens: number;
+        totalTokens: number;
+      };
+      status: "drafted";
+    };
 
 export type DiscoveryAssistanceRequestState =
   | DiscoveryActionState
@@ -21,4 +39,7 @@ export const initialDiscoveryActionState: DiscoveryActionState = {
 };
 
 export const initialDiscoveryAssistanceRequestState: DiscoveryAssistanceRequestState =
+  initialDiscoveryActionState;
+
+export const initialDiscoveryProcessProposalDraftState: DiscoveryProcessProposalDraftState =
   initialDiscoveryActionState;

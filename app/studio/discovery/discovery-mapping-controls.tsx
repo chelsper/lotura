@@ -12,11 +12,15 @@ import type {
   DiscoveryMappingItemRecord,
   DiscoveryMappingCatalog,
 } from "@/lib/discovery-data";
+import type {
+  DiscoveryProcessProposalDraftChange,
+} from "@/lib/discovery-process-proposal-draft-model.mjs";
 
 import { Alert, Button, FieldLabel, Select } from "../../ui/primitives";
 import {
   changeDiscoveryMappingItemStateAction,
   finishDiscoveryProposalMappingAction,
+  saveAIDiscoveryMappingCandidateAction,
   saveDiscoveryMappingItemAction,
 } from "./actions";
 import { initialDiscoveryActionState } from "./action-state";
@@ -41,6 +45,7 @@ export function DiscoveryMappingItemForm({
   currentPurpose,
   evidence,
   expectedMappingRevision,
+  initialDraft = null,
   item = null,
   ownerRoleId,
   roles,
@@ -51,46 +56,61 @@ export function DiscoveryMappingItemForm({
   currentPurpose: string | null;
   evidence: DiscoveryMappingEvidence[];
   expectedMappingRevision: number;
+  initialDraft?: DiscoveryProcessProposalDraftChange | null;
   item?: DiscoveryMappingItemRecord | null;
   ownerRoleId: string | null;
   roles: RoleOption[];
   sessionId: string;
 }) {
-  const initialAction = item?.action ?? availableActions[0] ?? "preserve_unresolved";
+  const initialAction = item?.action
+    ?? initialDraft?.action
+    ?? availableActions[0]
+    ?? "preserve_unresolved";
   const [mappingAction, setMappingAction] = useState<DiscoveryMappingAction>(initialAction);
   const [selectedStepId, setSelectedStepId] = useState(
-    item?.processStepId ?? "",
+    item?.processStepId ?? initialDraft?.processStepId ?? "",
   );
   const [selectedExceptionId, setSelectedExceptionId] = useState(
-    item?.exceptionId ?? "",
+    item?.exceptionId ?? initialDraft?.exceptionId ?? "",
   );
   const [state, action, pending] = useActionState(
-    saveDiscoveryMappingItemAction,
+    initialDraft
+      ? saveAIDiscoveryMappingCandidateAction
+      : saveDiscoveryMappingItemAction,
     initialDiscoveryActionState,
   );
   const selectedEvidence = useMemo(
-    () => new Set(item?.sourceObservationIds ?? []),
-    [item],
+    () => new Set(
+      item?.sourceObservationIds ?? initialDraft?.sourceObservationIds ?? [],
+    ),
+    [initialDraft, item],
   );
   const proposedPurpose = item?.action === "update_process_purpose"
     ? String(item.proposedState.purpose ?? "")
-    : currentPurpose ?? "";
+    : initialDraft?.proposedPurpose ?? currentPurpose ?? "";
   const proposedOwner = item?.action === "change_process_owner"
     ? String(item.proposedState.ownerRoleStableKey ?? "")
-    : ownerRoleId ?? "";
+    : initialDraft?.ownerRoleId ?? ownerRoleId ?? "";
   const unresolvedQuestion = item?.action === "preserve_unresolved"
     ? String(item.proposedState.question ?? "")
-    : "";
+    : initialDraft?.unresolvedQuestion ?? "";
   const selectedStep = catalog.steps.find((step) => step.id === selectedStepId) ?? null;
   const selectedException = catalog.exceptions.find(
     (exception) => exception.id === selectedExceptionId,
   ) ?? null;
   const proposedStepTitle = String(
-    item?.proposedState.title ?? selectedStep?.title ?? "",
+    item?.proposedState.title
+      ?? initialDraft?.proposedStepTitle
+      ?? selectedStep?.title
+      ?? "",
   );
   const proposedStepInstructions = String(
-    item?.proposedState.instructions ?? selectedStep?.instructions ?? "",
+    item?.proposedState.instructions
+      ?? initialDraft?.proposedStepInstructions
+      ?? selectedStep?.instructions
+      ?? "",
   );
+  const saved = state.status === "success";
 
   return (
     <form action={action} className="space-y-5">
@@ -105,7 +125,7 @@ export function DiscoveryMappingItemForm({
       <label className="block">
         <FieldLabel>What specific change are you proposing?</FieldLabel>
         <Select
-          disabled={Boolean(item)}
+          disabled={Boolean(item || initialDraft)}
           name="mappingAction"
           onChange={(event) => setMappingAction(event.target.value as DiscoveryMappingAction)}
           value={mappingAction}
@@ -116,7 +136,9 @@ export function DiscoveryMappingItemForm({
             </option>
           ))}
         </Select>
-        {item ? <input name="mappingAction" type="hidden" value={item.action} /> : null}
+        {item || initialDraft ? (
+          <input name="mappingAction" type="hidden" value={initialAction} />
+        ) : null}
       </label>
 
       {mappingAction === "update_process_purpose" ? (
@@ -154,19 +176,19 @@ export function DiscoveryMappingItemForm({
         <div className="grid gap-4 md:grid-cols-2">
           <label className="block md:col-span-2">
             <FieldLabel>Step title</FieldLabel>
-            <input className={textAreaClass.replace("min-h-24", "min-h-0")} defaultValue={String(item?.proposedState.title ?? "")} maxLength={255} name="proposedStepTitle" required />
+            <input className={textAreaClass.replace("min-h-24", "min-h-0")} defaultValue={String(item?.proposedState.title ?? initialDraft?.proposedStepTitle ?? "")} maxLength={255} name="proposedStepTitle" required />
           </label>
           <label className="block md:col-span-2">
             <FieldLabel>What happens in this Step?</FieldLabel>
-            <textarea className={textAreaClass} defaultValue={String(item?.proposedState.instructions ?? "")} maxLength={10000} name="proposedStepInstructions" required />
+            <textarea className={textAreaClass} defaultValue={String(item?.proposedState.instructions ?? initialDraft?.proposedStepInstructions ?? "")} maxLength={10000} name="proposedStepInstructions" required />
           </label>
           <label className="block">
             <FieldLabel>Proposed order</FieldLabel>
-            <input className={textAreaClass.replace("min-h-24", "min-h-0")} defaultValue={Number(item?.proposedState.position ?? catalog.steps.length + 1)} min={1} name="proposedStepPosition" required type="number" />
+            <input className={textAreaClass.replace("min-h-24", "min-h-0")} defaultValue={Number(item?.proposedState.position ?? initialDraft?.proposedStepPosition ?? catalog.steps.length + 1)} min={1} name="proposedStepPosition" required type="number" />
           </label>
           <label className="block">
             <FieldLabel>Responsible Operational Role</FieldLabel>
-            <Select defaultValue={item?.responsibleRoleId ?? ""} name="responsibleRoleId">
+            <Select defaultValue={item?.responsibleRoleId ?? initialDraft?.responsibleRoleId ?? ""} name="responsibleRoleId">
               <option value="">Not assigned</option>
               {roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}
             </Select>
@@ -210,7 +232,7 @@ export function DiscoveryMappingItemForm({
         <label className="block">
           <FieldLabel>Proposed Responsible Operational Role</FieldLabel>
           <Select
-            defaultValue={item?.responsibleRoleId ?? selectedStep?.responsibleRoleId ?? ""}
+            defaultValue={item?.responsibleRoleId ?? initialDraft?.responsibleRoleId ?? selectedStep?.responsibleRoleId ?? ""}
             key={`${selectedStepId}-responsibility`}
             name="responsibleRoleId"
           >
@@ -228,7 +250,7 @@ export function DiscoveryMappingItemForm({
           <label className="block">
             <FieldLabel>Existing System</FieldLabel>
             <Select
-              defaultValue={item?.systemId ?? ""}
+              defaultValue={item?.systemId ?? initialDraft?.systemId ?? ""}
               disabled={Boolean(item)}
               name="systemId"
               required
@@ -245,7 +267,7 @@ export function DiscoveryMappingItemForm({
           </label>
           <label className="block">
             <FieldLabel>How is the System used?</FieldLabel>
-            <textarea className={textAreaClass} defaultValue={String(item?.proposedState.usage ?? "")} maxLength={2000} name="systemUsage" required />
+          <textarea className={textAreaClass} defaultValue={String(item?.proposedState.usage ?? initialDraft?.systemUsage ?? "")} maxLength={2000} name="systemUsage" required />
           </label>
         </div>
       ) : null}
@@ -254,19 +276,19 @@ export function DiscoveryMappingItemForm({
         <div className="grid gap-4">
           <label className="block">
             <FieldLabel>Exception name</FieldLabel>
-            <input className={textAreaClass.replace("min-h-24", "min-h-0")} defaultValue={String(item?.proposedState.name ?? "")} maxLength={255} name="exceptionName" required />
+            <input className={textAreaClass.replace("min-h-24", "min-h-0")} defaultValue={String(item?.proposedState.name ?? initialDraft?.exceptionName ?? "")} maxLength={255} name="exceptionName" required />
           </label>
           <label className="block">
             <FieldLabel>When does this alternate path apply?</FieldLabel>
-            <textarea className={textAreaClass} defaultValue={String(item?.proposedState.condition ?? "")} maxLength={5000} name="exceptionCondition" required />
+            <textarea className={textAreaClass} defaultValue={String(item?.proposedState.condition ?? initialDraft?.exceptionCondition ?? "")} maxLength={5000} name="exceptionCondition" required />
           </label>
           <label className="block">
             <FieldLabel>What happens instead?</FieldLabel>
-            <textarea className={textAreaClass} defaultValue={String(item?.proposedState.response ?? "")} maxLength={5000} name="exceptionResponse" required />
+            <textarea className={textAreaClass} defaultValue={String(item?.proposedState.response ?? initialDraft?.exceptionResponse ?? "")} maxLength={5000} name="exceptionResponse" required />
           </label>
           <label className="block">
             <FieldLabel>Related existing Step (optional)</FieldLabel>
-            <Select defaultValue={item?.processStepId ?? ""} disabled={Boolean(item)} name="processStepId">
+            <Select defaultValue={item?.processStepId ?? initialDraft?.processStepId ?? ""} disabled={Boolean(item)} name="processStepId">
               <option value="">Whole Process</option>
               {catalog.steps.map((step) => <option key={step.id} value={step.id}>{step.position}. {step.title}</option>)}
             </Select>
@@ -294,15 +316,15 @@ export function DiscoveryMappingItemForm({
           <div className="grid gap-4" key={selectedExceptionId || "exception-fields"}>
             <label className="block">
               <FieldLabel>Proposed Exception name</FieldLabel>
-              <input className={textAreaClass.replace("min-h-24", "min-h-0")} defaultValue={String(item?.proposedState.name ?? selectedException?.name ?? "")} maxLength={255} name="exceptionName" required />
+              <input className={textAreaClass.replace("min-h-24", "min-h-0")} defaultValue={String(item?.proposedState.name ?? initialDraft?.exceptionName ?? selectedException?.name ?? "")} maxLength={255} name="exceptionName" required />
             </label>
             <label className="block">
               <FieldLabel>Proposed condition</FieldLabel>
-              <textarea className={textAreaClass} defaultValue={String(item?.proposedState.condition ?? selectedException?.condition ?? "")} maxLength={5000} name="exceptionCondition" required />
+              <textarea className={textAreaClass} defaultValue={String(item?.proposedState.condition ?? initialDraft?.exceptionCondition ?? selectedException?.condition ?? "")} maxLength={5000} name="exceptionCondition" required />
             </label>
             <label className="block">
               <FieldLabel>Proposed response</FieldLabel>
-              <textarea className={textAreaClass} defaultValue={String(item?.proposedState.response ?? selectedException?.response ?? "")} maxLength={5000} name="exceptionResponse" required />
+              <textarea className={textAreaClass} defaultValue={String(item?.proposedState.response ?? initialDraft?.exceptionResponse ?? selectedException?.response ?? "")} maxLength={5000} name="exceptionResponse" required />
             </label>
           </div>
         </div>
@@ -312,7 +334,7 @@ export function DiscoveryMappingItemForm({
         <div className="grid gap-4 md:grid-cols-2">
           <label className="block md:col-span-2">
             <FieldLabel>Related Process</FieldLabel>
-            <Select defaultValue={item?.relatedProcessId ?? ""} disabled={Boolean(item)} name="relatedProcessId" required>
+            <Select defaultValue={item?.relatedProcessId ?? initialDraft?.relatedProcessId ?? ""} disabled={Boolean(item)} name="relatedProcessId" required>
               <option value="">Choose a Process</option>
               {catalog.processes.filter((process) => process.status !== "archived").map((process) => <option key={process.id} value={process.id}>{process.name}</option>)}
             </Select>
@@ -320,7 +342,7 @@ export function DiscoveryMappingItemForm({
           </label>
           <label className="block">
             <FieldLabel>Relationship</FieldLabel>
-            <Select defaultValue={String(item?.proposedState.direction ?? "upstream")} disabled={Boolean(item)} name="dependencyDirection">
+            <Select defaultValue={String(item?.proposedState.direction ?? initialDraft?.dependencyDirection ?? "upstream")} disabled={Boolean(item)} name="dependencyDirection">
               <option value="upstream">Upstream — this work relies on it</option>
               <option value="downstream">Downstream — it receives or follows this work</option>
             </Select>
@@ -328,7 +350,7 @@ export function DiscoveryMappingItemForm({
           </label>
           <label className="block">
             <FieldLabel>Dependency type</FieldLabel>
-            <Select defaultValue={String(item?.proposedState.dependencyType ?? "requires")} disabled={Boolean(item)} name="dependencyType">
+            <Select defaultValue={String(item?.proposedState.dependencyType ?? initialDraft?.dependencyType ?? "requires")} disabled={Boolean(item)} name="dependencyType">
               <option value="requires">Requires</option>
               <option value="receives_from">Receives from</option>
               <option value="provides_to">Provides to</option>
@@ -338,7 +360,7 @@ export function DiscoveryMappingItemForm({
           </label>
           <label className="block md:col-span-2">
             <FieldLabel>Describe the dependency (optional)</FieldLabel>
-            <textarea className={textAreaClass} defaultValue={String(item?.proposedState.description ?? "")} maxLength={2000} name="dependencyDescription" />
+            <textarea className={textAreaClass} defaultValue={String(item?.proposedState.description ?? initialDraft?.dependencyDescription ?? "")} maxLength={2000} name="dependencyDescription" />
           </label>
         </div>
       ) : null}
@@ -391,7 +413,7 @@ export function DiscoveryMappingItemForm({
         <FieldLabel>Why are you proposing this?</FieldLabel>
         <textarea
           className={textAreaClass}
-          defaultValue={item?.rationale ?? ""}
+          defaultValue={item?.rationale ?? (initialDraft ? `AI-assisted draft: ${initialDraft.rationale}` : "")}
           maxLength={2000}
           name="rationale"
           placeholder="Explain the interpretation for the next reviewer."
@@ -400,9 +422,18 @@ export function DiscoveryMappingItemForm({
       </label>
 
       {state.status === "error" ? <Alert tone="error">{state.message}</Alert> : null}
+      {saved ? <Alert tone="success">{state.message}</Alert> : null}
       <div className="flex justify-end">
-        <Button disabled={pending} type="submit" variant="primary">
-          {pending ? "Saving…" : item ? "Save a new revision" : "Add proposed item"}
+        <Button disabled={pending || saved} type="submit" variant="primary">
+          {pending
+            ? "Saving…"
+            : saved
+              ? "Added to proposed changes"
+              : item
+                ? "Save a new revision"
+                : initialDraft
+                  ? "Add this candidate to proposed changes"
+                  : "Add proposed item"}
         </Button>
       </div>
     </form>

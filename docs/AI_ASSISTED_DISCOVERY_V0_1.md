@@ -163,7 +163,7 @@ v0.1 does not authorize AI to:
 - select an evidence state or Knowledge Outcome;
 - decide whether a Process exists;
 - route an inquiry without human confirmation;
-- create a Process, Process Family, structured mapping, or proposal;
+- create a Process, Process Family, governed structured mapping, or proposal;
 - review or approve a proposal;
 - apply an operating-model change or create a Process version;
 - assign responsibility, authority, or validation work;
@@ -171,8 +171,11 @@ v0.1 does not authorize AI to:
 - learn across Organizations; or
 - operate in public Northstar.
 
-AI-assisted structured mapping remains a later slice after question assistance
-has been evaluated and trusted.
+LAD-068 permits a temporary, editable Process proposal and typed mapping
+candidate after the human has selected exact evidence for change. Generation
+creates no mapping row or proposal. Only a later explicit human save may create
+an existing governed mapping item, and the ordinary review, approval, and
+application boundaries remain unchanged.
 
 The bounded clarity-draft interaction described here is allowed only because
 the person explicitly requests it and the raw source, model suggestion,
