@@ -474,6 +474,31 @@ column-specific least privilege, append-only history, and runtime read-only
 access passed. No provider request or canonical write occurred, and every
 fictional probe row and temporary role was rolled back.
 
+Under approved LAD-067, AI Discovery Analyst Alpha extends those same tables
+rather than creating a parallel evidence lifecycle. Migration `0031` adds a
+complete-or-empty authorization tuple to the Process-bound session and an
+`analyst_turn` plus object-shaped `analysis_snapshot` to an assistance run. The
+Discovery role requires only these additional column privileges:
+
+```sql
+GRANT UPDATE (
+  analyst_enabled, analyst_authorized_at, analyst_authorization_version
+) ON discovery_sessions TO <discovery_role>;
+
+GRANT INSERT (
+  analyst_turn, analysis_snapshot
+) ON discovery_assistance_runs TO <discovery_role>;
+```
+
+These grants augment the existing session lifecycle and assistance-run column
+grants; they do not grant a table-wide update or insert. The runtime role
+remains read-only. An analyst turn must be scoped to the exact active
+Process-bound session, revision, Organization, Process, and actor. Its sources
+may cite current active observations from that same session, while ordinary
+Slice B assistance retains the earlier exact-question source boundary. The
+snapshot is a noncanonical working interpretation, not evidence, approval, a
+proposal, or a documented Process mutation.
+
 The Discovery role receives no write privilege on Process, Step, Role, System,
 Exception, dependency, Organization Structure, `operating_model_changes`, or
 any unrelated table. It receives no schema, database, role, migration,
@@ -557,13 +582,15 @@ package ready for its next human review. It does not approve or apply anything.
 ## Intentionally deferred
 
 Multiple participants, interviewing on behalf of another Person, Contributor
-access, consent records, uploads, source artifacts, model-generated follow-up
-selection, provider access, proposal-review governance, approval, application
-to the Process, Process versioning, completed-package withdrawal or rebasing,
-export, retention automation, and deletion require later decisions. LAD-061
-Slice A adds deterministic context and explicit prior-answer confirmation only.
-Refresh-safe server persistence exists for submitted observations and proposal
-choices; unsent form text remains browser-local and may be lost.
+access, uploads, source artifacts, generalized prompt management, multiple AI
+providers or models, autonomous calls, streaming, broad organizational memory,
+structured-mapping suggestions, completed-package withdrawal or rebasing,
+export, retention automation, and deletion require later decisions.
+LAD-067 now permits adaptive follow-up selection and a refresh-safe emerging
+synthesis for an explicitly authorized, non-confidential, Process-bound private
+pilot session. It does not authorize model-created evidence, approval,
+application, or canonical mutation. Unsent form text remains browser-local and
+may be lost.
 
 Slices 1 and 2 establish manual structured proposed-change mapping for the
 approved Process definition and connected operating-model targets. Human

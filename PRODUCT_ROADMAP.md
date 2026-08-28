@@ -52,9 +52,11 @@ The roadmap is organized around five cumulative capabilities:
 - **Understand** — Organization Structure, Responsibilities, Processes,
   Technology, Exceptions, Explorer, FLOW, and What-if are substantially
   implemented.
-- **Discover** — guided interviews, evidence states, reconciliation, and
-  proposed-update packages are in progress; question-driven and AI-assisted
-  Discovery remain future capabilities.
+- **Discover** — guided interviews, evidence states, reconciliation,
+  question-driven entry, and the manual proposal lifecycle are implemented.
+  AI Discovery Analyst Alpha is the current product-acceleration milestone:
+  adaptive interviewing and an evidence-linked working synthesis move into the
+  private pilot without receiving canonical authority.
 - **Govern** — Workspace Administration and append-only history exist;
   Stewardship, contribution, review, approval, and scoped authority remain
   incomplete.
@@ -67,7 +69,7 @@ Process Families and Reference Models are preserved product commitments. They
 remain later milestones because trustworthy comparison depends on the manual
 knowledge lifecycle, not because they are optional side ideas.
 
-## Current product phase — Make Lotura useful at scale
+## Current product phase — Product acceleration through AI Discovery
 
 The first trustworthy manual lifecycle is now implemented: evidence can move
 through human reconciliation, a Knowledge Outcome, typed proposed changes,
@@ -76,10 +78,15 @@ immutable Process version. JU has the application boundary enabled, but no
 change was manufactured merely to exercise it. The first real application
 should wait for a genuine reviewed proposal.
 
-The center of gravity now shifts from proving write boundaries to helping an
-organization build and use connected knowledge at scale. The immediate bridge
-is Knowledge Gaps: explainable questions derived from facts and unresolved
-evidence that help people decide what to understand next.
+The center of gravity now shifts from proving write boundaries to experiencing
+the intended product. Under LAD-067, the immediate objective is a complete AI
+Discovery Analyst Alpha: listen to a participant, choose the most useful
+follow-up, preserve evidence and uncertainty, maintain a readable emerging
+understanding, accept corrections, and finish through the existing human review
+lifecycle. Reasonable reversible pilot debt is acceptable when it accelerates
+learning without weakening tenant isolation, authentication, credential
+secrecy, append-only evidence, public Northstar isolation, or governed
+canonical writes.
 
 ## Ordered product milestones
 
@@ -140,8 +147,22 @@ milestones:
    Governed candidate Process creation remains a later Slice D requiring its
    own decision. The Slice C contract is recorded in
    [docs/INQUIRY_REVIEW_AND_KNOWLEDGE_OUTCOME_V0_1.md](docs/INQUIRY_REVIEW_AND_KNOWLEDGE_OUTCOME_V0_1.md).
-7. **AI Discovery Assistance (Slices A and B implemented; Slice C prompt policy
-   v4 verified; one bounded non-confidential Production request complete)** —
+7. **AI Discovery Analyst Alpha (current product-acceleration milestone)** —
+   LAD-067 extends the verified assistance foundation into one complete
+   Process-bound conversational experience for the private non-confidential
+   pilot. Each explicit participant action may make one foreground, stateless,
+   tool-free model request. The analyst receives only bounded Process context,
+   current interview evidence, and the latest working synthesis. It chooses one
+   adaptive follow-up, maintains a noncanonical emerging understanding,
+   separates what seems clear from validation needs and conflicts, accepts
+   participant corrections as new human evidence, and hands a finished session
+   to the existing review and Knowledge Outcome lifecycle. A fixed catalog
+   remains coverage guidance and deterministic fallback rather than the
+   mechanical conversation order. AI may propose understanding; humans still
+   establish organizational knowledge.
+
+   The foundation is already substantial. Process-bound interviews show
+   deterministic documented context and up
    Process-bound interviews now show deterministic documented context and up
    to three active earlier answers for the same question. A participant may
    explicitly confirm an exact earlier answer or describe what changed; the
@@ -186,10 +207,12 @@ milestones:
    verified. The request returned one review-required suggestion with two
    attributable sources, created no evidence, and made no operating-model
    change. Immediate disablement passed and the kill switch is engaged again.
-   The typed request-metadata and cost-visibility slice is now prepared for
-   isolated migration verification. Broader enablement remains gated on its
-   deployment and review plus the participant's decision on the first
-   suggestion.
+   Typed request-metadata and cost visibility are implemented and rolled out at
+   journal `31/31`. Alpha migration `0031` adds only the durable session
+   authorization and noncanonical synthesis fields needed to survive refreshes
+   and preserve provenance. Its release still requires isolated fictional
+   verification, exact least-privilege JU rollout, deployment, and authenticated
+   acceptance against Gift Processing.
    Structured-mapping suggestions remain later; AI may never approve or apply
    them. The accepted staged boundary and provider gate are recorded in
    [docs/AI_ASSISTED_DISCOVERY_V0_1.md](docs/AI_ASSISTED_DISCOVERY_V0_1.md).

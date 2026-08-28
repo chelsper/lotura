@@ -811,6 +811,13 @@ export const discoverySession = pgTable(
     currentQuestionKey: varchar("current_question_key", { length: 64 })
       .notNull(),
     revision: integer("revision").default(1).notNull(),
+    analystEnabled: boolean("analyst_enabled").default(false).notNull(),
+    analystAuthorizedAt: timestamp("analyst_authorized_at", {
+      withTimezone: true,
+    }),
+    analystAuthorizationVersion: varchar("analyst_authorization_version", {
+      length: 64,
+    }),
     actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -861,6 +868,10 @@ export const discoverySession = pgTable(
     check(
       "discovery_sessions_revision_positive_check",
       sql`${table.revision} >= 1`,
+    ),
+    check(
+      "discovery_sessions_analyst_authorization_shape_check",
+      sql`(${table.analystEnabled} = false and ${table.analystAuthorizedAt} is null and ${table.analystAuthorizationVersion} is null) or (${table.analystEnabled} = true and ${table.analystAuthorizedAt} is not null and ${table.analystAuthorizationVersion} is not null and char_length(trim(${table.analystAuthorizationVersion})) > 0)`,
     ),
     index("discovery_sessions_org_status_updated_idx").on(
       table.organizationId,
@@ -1742,6 +1753,8 @@ export const discoveryAssistanceRun = pgTable(
     contextFingerprint: varchar("context_fingerprint", { length: 64 })
       .notNull(),
     participantFocus: text("participant_focus"),
+    analystTurn: boolean("analyst_turn").default(false).notNull(),
+    analysisSnapshot: jsonb("analysis_snapshot"),
     providerProjectIdentifier: varchar("provider_project_identifier", {
       length: 128,
     }),
@@ -1813,6 +1826,10 @@ export const discoveryAssistanceRun = pgTable(
     check(
       "discovery_assistance_runs_provider_shape_check",
       sql`char_length(trim(${table.providerKey})) > 0 and char_length(trim(${table.modelIdentifier})) > 0 and char_length(trim(${table.promptPolicyVersion})) > 0`,
+    ),
+    check(
+      "discovery_assistance_runs_analysis_snapshot_shape_check",
+      sql`(${table.analystTurn} = true and ${table.assistanceKind} = 'question_suggestions' and ${table.analysisSnapshot} is not null and jsonb_typeof(${table.analysisSnapshot}) = 'object') or (${table.analystTurn} = false and ${table.analysisSnapshot} is null)`,
     ),
     check(
       "discovery_assistance_runs_fingerprint_check",

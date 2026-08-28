@@ -16,6 +16,13 @@ import {
   type DiscoveryEpistemicState,
 } from "@/lib/discovery-administration";
 import {
+  answerDiscoveryAnalyst,
+  authorizeDiscoveryAnalyst,
+  correctDiscoveryAnalyst,
+  finishDiscoveryAnalyst,
+  refreshDiscoveryAnalyst,
+} from "@/lib/discovery-analyst-administration";
+import {
   decideInquiryDiscoverySuggestion,
   decideProcessDiscoverySuggestion,
   dismissDiscoverySuggestion,
@@ -408,6 +415,84 @@ export async function answerDiscoveryQuestionAction(
   if (!result.ok) return { message: result.message, status: "error" };
   revalidatePath(`/studio/discovery/interviews/${sessionId}`);
   redirect(`/studio/discovery/interviews/${sessionId}`);
+}
+
+export async function authorizeDiscoveryAnalystAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const sessionId = text(formData, "sessionId");
+  const result = await authorizeDiscoveryAnalyst({
+    expectedRevision: revision(formData),
+    nonConfidentialAuthorized:
+      text(formData, "nonConfidentialAuthorized") === "yes",
+    providerRetentionAccepted:
+      text(formData, "providerRetentionAccepted") === "yes",
+    sessionId,
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  const path = `/studio/discovery/interviews/${sessionId}`;
+  revalidatePath(path);
+  redirect(path);
+}
+
+export async function answerDiscoveryAnalystAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const sessionId = text(formData, "sessionId");
+  const result = await answerDiscoveryAnalyst({
+    epistemicState: state(formData),
+    expectedRevision: revision(formData),
+    responseText: text(formData, "responseText"),
+    sessionId,
+    suggestionId: text(formData, "suggestionId"),
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  const path = `/studio/discovery/interviews/${sessionId}`;
+  revalidatePath(path);
+  redirect(path);
+}
+
+export async function correctDiscoveryAnalystAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const sessionId = text(formData, "sessionId");
+  const result = await correctDiscoveryAnalyst({
+    epistemicState: state(formData),
+    expectedRevision: revision(formData),
+    responseText: text(formData, "responseText"),
+    sessionId,
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  const path = `/studio/discovery/interviews/${sessionId}`;
+  revalidatePath(path);
+  redirect(path);
+}
+
+export async function refreshDiscoveryAnalystAction(formData: FormData) {
+  const sessionId = text(formData, "sessionId");
+  await refreshDiscoveryAnalyst({
+    expectedRevision: revision(formData),
+    focus: text(formData, "focus") === "synthesize" ? "synthesize" : "continue",
+    sessionId,
+  });
+  const path = `/studio/discovery/interviews/${sessionId}`;
+  revalidatePath(path);
+  redirect(path);
+}
+
+export async function finishDiscoveryAnalystAction(formData: FormData) {
+  const sessionId = text(formData, "sessionId");
+  await finishDiscoveryAnalyst({
+    expectedRevision: revision(formData),
+    sessionId,
+  });
+  const path = `/studio/discovery/interviews/${sessionId}`;
+  revalidatePath(path);
+  revalidatePath("/studio/discovery");
+  redirect(path);
 }
 
 export async function requestProcessDiscoveryAssistanceAction(

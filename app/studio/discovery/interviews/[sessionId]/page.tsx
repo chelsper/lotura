@@ -25,6 +25,8 @@ import { DiscoveryAssistanceRequestForm } from "../../discovery-assistance-reque
 import { DiscoveryAssistanceSuggestionForm } from "../../discovery-assistance-suggestion-form";
 import { DiscoveryAssistanceRequestDetails } from "../../discovery-assistance-request-details";
 import { DiscoveryAnswerForm } from "../../discovery-answer-form";
+import { DiscoveryAnalystInterview } from "../../discovery-analyst-interview";
+import { DiscoveryAnalystStartForm } from "../../discovery-analyst-start-form";
 import { DiscoveryCorrectionForm } from "../../discovery-correction-form";
 import { DiscoveryPriorObservationForm } from "../../discovery-prior-observation-form";
 
@@ -57,8 +59,19 @@ export default async function DiscoveryInterviewPage({
   ]);
   if (!session) notFound();
 
+  const analystTurn = session.analystEnabled && session.status === "in_progress"
+    ? await import("@/lib/discovery-analyst-data").then(
+        ({ loadDiscoveryAnalystTurn }) =>
+          loadDiscoveryAnalystTurn(
+            discoveryOrganizationId,
+            session.id,
+            session.revision,
+          ),
+      )
+    : null;
+
   const question = getDiscoveryQuestion(session.currentQuestionKey);
-  const assistance = question && session.status === "in_progress"
+  const assistance = !session.analystEnabled && question && session.status === "in_progress"
     ? await import("@/lib/discovery-assistance-data").then(
         ({ loadProcessDiscoveryAssistance }) =>
           loadProcessDiscoveryAssistance(
@@ -80,7 +93,9 @@ export default async function DiscoveryInterviewPage({
       .map((observation) => observation.supersedesObservationId)
       .filter((value): value is string => Boolean(value)),
   );
-  const progress = question
+  const progress = session.analystEnabled
+    ? new Set(session.observations.map((observation) => observation.promptKey)).size
+    : question
     ? DISCOVERY_QUESTIONS.findIndex((item) => item.key === question.key) + 1
     : DISCOVERY_QUESTIONS.length;
   const reviewSignals = session.status === "ready_for_review"
@@ -140,12 +155,26 @@ export default async function DiscoveryInterviewPage({
         Describe how the work happens without including sensitive records. Do not include donor, student, prospect, gift, wealth, HR, password, credential, or connection-string information.
       </Alert>
 
+      {!session.analystEnabled && session.status === "in_progress" ? (
+        <DiscoveryAnalystStartForm
+          revision={session.revision}
+          sessionId={session.id}
+        />
+      ) : null}
+
       {session.status === "paused" ? (
         <Card className="mt-6 p-5 sm:p-7">
           <Badge tone="neutral">Paused</Badge>
           <h2 className="mt-3 text-xl font-semibold text-[var(--text)]">This interview is paused</h2>
           <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">Existing observations remain preserved. Resume when you are ready to continue from the current question.</p>
         </Card>
+      ) : session.analystEnabled && session.status === "in_progress" ? (
+        <DiscoveryAnalystInterview
+          observations={session.observations}
+          revision={session.revision}
+          sessionId={session.id}
+          turn={analystTurn}
+        />
       ) : question && session.status === "in_progress" ? (
         <section className="mt-6 space-y-5">
           <Card className="p-5 sm:p-7">

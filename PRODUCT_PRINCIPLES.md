@@ -272,6 +272,23 @@ and use explicit evidence-backed relationships before presenting impact.
 **Product test:** Can Lotura preserve useful cross-Process knowledge without
 manufacturing a Process, policy, ownership claim, or proven impact?
 
+## 20. Learn through complete product experiences
+
+Once a trustworthy boundary exists, Lotura should prefer the smallest complete
+experience that can test the product idea over a long sequence of technically
+complete but experientially disconnected slices. Reversible private-pilot
+decisions and reasonable prototype debt are acceptable when they shorten the
+distance to real participant feedback.
+
+Acceleration never permits cross-tenant access, exposed credentials, private
+data in public Northstar, erased evidence or history, unauthenticated private
+access, destructive data changes, or AI-created organizational truth. Within
+those boundaries, the product should optimize for usefulness and learning
+rather than speculative generality.
+
+**Product test:** Can a participant experience and evaluate the intended value
+end to end before Lotura generalizes the capability for hypothetical users?
+
 ## Discovery through documentation
 
 **Discovery is an expected outcome of documentation.**

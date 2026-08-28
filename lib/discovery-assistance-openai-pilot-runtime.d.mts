@@ -11,6 +11,10 @@ export const OPENAI_PILOT_CREDENTIAL_ENVIRONMENT_VARIABLE:
 
 export class OpenAINonConfidentialPilotCredentialError extends Error {}
 
+export function resolveOpenAIPilotCredential(
+  environment: Record<string, string | undefined>,
+): string;
+
 export function executeConfiguredOpenAINonConfidentialPilot(options: {
   environment: Record<string, string | undefined>;
   fetchImpl: typeof fetch;

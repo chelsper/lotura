@@ -178,9 +178,14 @@ maintenance, and deactivation preserve immutable identity and history.
   a route, interview, evidence, or documented change;
 - `/studio/discovery/interviews/[sessionId]` — answer questions, preserve
   uncertainty, append corrections, and review the saved interview. Under
-  LAD-063's private Slice B boundary, the page may also show optional,
-  attributable mocked question suggestions and clarity drafts that a person
-  can edit, skip, or reject without losing the standard question; and
+  LAD-067, an eligible private Process-bound session may instead begin
+  **Interview me with Lotura** after explicit non-confidential and provider-
+  processing confirmation. The analyst chooses one adaptive follow-up per
+  participant action, references prior interview evidence, maintains a
+  readable noncanonical working synthesis, separates clear information from
+  validation needs and conflicts, accepts corrections as human evidence, and
+  finishes into the same reconciliation route. The fixed catalog remains
+  coverage guidance and deterministic fallback; and
 - `/studio/discovery/interviews/[sessionId]/reconcile` — compare documented
   Process information with active interview notes and finish through an
   exception-driven review. A reviewer may complete a no-change Knowledge
@@ -420,16 +425,14 @@ Complete the Studio home, Workspace Health questions, combined Activity view,
 and the honest read-only Governance and Discovery entry points supported by
 the available data.
 
-AI-assisted Discovery Slice A is implemented and isolated-verified. LAD-063
-authorizes a private mocked-provider Slice B for testing attributable question
-and clarity suggestions. Its generic implementation and isolated fictional
-verification are complete. LAD-064's fictional, stateless, tool-free Slice C
-evaluation foundation is also implemented and offline-verified, but it is not
-wired into Studio and contains no credential or live transport. One controlled
-fictional version 1 provider case was run outside Studio and passed automated
-and human review. A version 2 comparison returned one question but failed human
-non-repetition review. Persistent credentials, provider-account retention
-acceptance, and private rollout remain separately gated.
+The earlier deterministic context, attributable mocked suggestions, prompt-
+policy evaluations, bounded non-confidential provider pilot, and request-
+metadata visibility are implemented and verified under LAD-061 through
+LAD-066. LAD-067 now uses that foundation for AI Discovery Analyst Alpha rather
+than building another assistance stack. The Studio experience is deliberately
+Process-bound, one-call-per-action, non-confidential, and privately configured.
+Its emerging synthesis survives refreshes but remains separate from human
+observations and the documented Process.
 The relationship canvas remains a later capability. Neither is a prerequisite
 for a useful Workspace Studio v1.
 

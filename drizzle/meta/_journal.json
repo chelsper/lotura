@@ -218,6 +218,13 @@
       "when": 1787793660576,
       "tag": "0030_ai_assistance_request_metadata",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1787925018712,
+      "tag": "0031_ai_discovery_analyst_alpha",
+      "breakpoints": true
     }
   ]
 }

@@ -411,8 +411,8 @@ separately governed approval and application boundary.
 
 The roadmap describes product outcomes rather than fixed release dates or implementation commitments.
 
-The immediate product sequence completes the manual organizational knowledge
-lifecycle before AI suggests or automates any part of it:
+The manual organizational knowledge lifecycle was completed before AI received
+an adaptive product role. The resulting sequence is:
 
 1. Knowledge Outcomes
 2. Proposal Review & Governance
@@ -432,10 +432,14 @@ application authority. AI Discovery Assistance therefore moves ahead of
 Reference Models, while remaining unable to approve or apply organizational
 knowledge.
 
-The next phase is **Make Lotura useful at scale**. It begins with Knowledge
-Gaps and Process Families so Lotura can help people find the next useful
-question and navigate related work before AI becomes a prominent product
-surface.
+The current phase is **Product acceleration through AI Discovery**. LAD-067
+authorizes a reversible private-pilot Alpha that lets the model select one
+useful follow-up, maintain an evidence-linked emerging understanding, and
+synthesize the Process in readable language. The synthesis is explicitly
+noncanonical, correctable, and routed into the existing human evidence and
+review lifecycle. The hard boundaries around tenants, authentication,
+credentials, public Northstar, append-only evidence, and governed canonical
+writes remain unchanged.
 
 ### Phase 1: Operating-model foundation
 

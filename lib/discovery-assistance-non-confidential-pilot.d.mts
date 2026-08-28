@@ -59,6 +59,11 @@ export const NON_CONFIDENTIAL_PILOT_AFFIRMATIONS: ReadonlyArray<{
 export class NonConfidentialPilotConfigurationError extends Error {}
 export class NonConfidentialPilotAuthorizationError extends Error {}
 
+export function assertNonConfidentialPilotContent(
+  value: unknown,
+  path?: string,
+): string;
+
 export function resolveNonConfidentialPilotConfiguration(
   environment: Record<string, string | undefined>,
   runtimeAccess: {

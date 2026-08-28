@@ -11,12 +11,6 @@ import type {
   OpenAINonConfidentialPilotResult,
 } from "./discovery-assistance-openai-pilot-transport.mjs";
 
-export {
-  OPENAI_PILOT_CREDENTIAL_ENVIRONMENT_VARIABLE,
-  OpenAINonConfidentialPilotCredentialError,
-  resolveOpenAIPilotCredential,
-} from "./discovery-assistance-openai-pilot-runtime.mjs";
-
 export function executeOpenAINonConfidentialPilotFromServer(options: {
   input: NonConfidentialPilotInput;
   runtimeAccess: RuntimeAccessConfiguration;

@@ -21,7 +21,7 @@ import {
 } from "./discovery-assistance-non-confidential-pilot.mjs";
 import {
   executeOpenAINonConfidentialPilotFromServer,
-} from "./discovery-assistance-openai-pilot-runtime";
+} from "./discovery-assistance-openai-pilot-server";
 import {
   estimateOpenAIGpt56TerraStandardCostMicrousd,
   OPENAI_GPT_5_6_TERRA_STANDARD_COST_BASIS,

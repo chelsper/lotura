@@ -83,6 +83,9 @@ export type DiscoveryInquiryRouteRecord = {
 
 export type DiscoverySessionSummary = {
   actorIdentifier: string;
+  analystAuthorizationVersion: string | null;
+  analystAuthorizedAt: string | null;
+  analystEnabled: boolean;
   createdAt: string;
   currentQuestionKey: string;
   id: string;
@@ -550,6 +553,9 @@ export async function loadDiscoverySessions(
   const rows = await db
     .select({
       actorIdentifier: discoverySession.actorIdentifier,
+      analystAuthorizationVersion: discoverySession.analystAuthorizationVersion,
+      analystAuthorizedAt: discoverySession.analystAuthorizedAt,
+      analystEnabled: discoverySession.analystEnabled,
       createdAt: discoverySession.createdAt,
       currentQuestionKey: discoverySession.currentQuestionKey,
       id: discoverySession.stableKey,
@@ -589,6 +595,7 @@ export async function loadDiscoverySessions(
 
   return rows.map((row) => ({
     ...row,
+    analystAuthorizedAt: row.analystAuthorizedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     observationCount: countBySession.get(row.id) || 0,
     processId: `process:${row.processId}`,
@@ -846,6 +853,9 @@ export async function loadDiscoverySession(
   const sessions = await db
     .select({
       actorIdentifier: discoverySession.actorIdentifier,
+      analystAuthorizationVersion: discoverySession.analystAuthorizationVersion,
+      analystAuthorizedAt: discoverySession.analystAuthorizedAt,
+      analystEnabled: discoverySession.analystEnabled,
       createdAt: discoverySession.createdAt,
       currentQuestionKey: discoverySession.currentQuestionKey,
       id: discoverySession.stableKey,
@@ -1019,6 +1029,9 @@ export async function loadDiscoverySession(
 
   return {
     actorIdentifier: session.actorIdentifier,
+    analystAuthorizationVersion: session.analystAuthorizationVersion,
+    analystAuthorizedAt: session.analystAuthorizedAt?.toISOString() ?? null,
+    analystEnabled: session.analystEnabled,
     createdAt: session.createdAt.toISOString(),
     currentQuestionKey: session.currentQuestionKey,
     id: session.id,

@@ -110,6 +110,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-064 | External AI evaluation is fictional, stateless, tool-free, and separate from private use | Accepted — v1 and v4 passed controlled fictional cases; v2 and v3 exposed distinct human-review failures; private use remains unauthorized |
 | LAD-065 | Private external AI assistance is Organization-opt-in and requires verified provider data controls | Accepted — private-pilot authorization contract; implementation and JU use remain separately gated |
 | LAD-066 | An explicitly non-confidential AI pilot may operate under standard provider retention | Accepted — one bounded JU request completed under the reviewed contract and immediate disablement passed; broader enablement remains gated |
+| LAD-067 | AI Discovery Analyst Alpha maintains a noncanonical evidence-linked synthesis and chooses adaptive follow-ups | Accepted — implementation authorized for the complete Alpha vertical slice |
 
 ## Decision records
 
@@ -2977,6 +2978,81 @@ human usefulness decision is preserved.
 Confidential information, broader Organization enablement, files, images,
 audio, tools, background mode, provider-managed state, and AI-suggested
 structured mappings remain deferred.
+
+### LAD-067 — AI Discovery Analyst Alpha maintains a noncanonical evidence-linked synthesis and chooses adaptive follow-ups
+
+**Status:** Accepted — implementation authorized for the complete AI Discovery
+Analyst Alpha vertical slice.
+
+**Context:** The manual evidence-to-approved-Process path and the bounded
+external-assistance path are complete. The current interview still advances
+through a fixed catalog and treats AI as an optional question helper. Real use
+showed that this interaction repeats questions and does not recreate the
+adaptive Annual Fund Gift Processing discovery experience that established the
+product's value. The next learning priority is a usable conversation, not
+additional speculative AI architecture.
+
+**Decision:** A Process-bound interview may enter an authenticated,
+Organization-scoped AI Discovery Analyst mode. One participant message or one
+explicit synthesis action authorizes at most one foreground, tool-free model
+request. The application supplies a bounded snapshot of the documented
+Process, its linked Steps, Operational Roles, Systems, Exceptions and
+dependencies, the interview scope, current append-only observations, and the
+latest working synthesis. The model chooses one useful next question from the
+reviewed Discovery topic vocabulary and returns an evidence-linked working
+synthesis that distinguishes clear information, unknowns, validation needs,
+possible conflicts, participant needs, and open questions.
+
+The question catalog remains coverage guidance and deterministic fallback; it
+does not mechanically control the conversation. The participant may answer in
+ordinary language, ask what Lotura understands, correct the synthesis, pause,
+or finish. Participant messages and corrections become append-only human
+observations. Model questions and syntheses remain append-only assistance
+artifacts. The model may suggest an evidence state, but the participant's
+submitted state controls the observation.
+
+For the explicitly non-confidential pilot authorized by LAD-066, the two
+retention and classification acknowledgements move to the start of the AI
+interview session. The disclosure remains visible beside the composer, every
+Send or synthesis action is an explicit request, and deterministic prohibited-
+content checks continue before every provider call. Authorization is scoped to
+one interview and is not portable to another session or Organization.
+
+The Alpha uses the existing dedicated OpenAI project, server-only credential,
+`gpt-5.6-terra`, structured Responses output, `store: false`, foreground
+processing, no tools, the existing kill switch, and request metadata. It adds
+no provider-managed conversation, autonomous loop, retry loop, prompt-management
+UI, model abstraction, or public Northstar behavior.
+
+Finishing the interview sends the resulting human observations into the
+existing review-by-exception, Knowledge Outcome, structured-proposal,
+governance, and atomic-application path. AI cannot establish an evidence state,
+Knowledge Outcome, proposal, approval, Process version, governance authority,
+or canonical fact.
+
+**Why:** One durable analyst turn can preserve the useful product experience
+without creating a parallel knowledge lifecycle. Session-scoped authorization
+removes repetitive consent ceremony while keeping disclosure and one-action-
+per-request control. A structured, attributable synthesis gives participants
+something useful to correct and evaluate while preserving the operating model
+as the trusted destination.
+
+**Affected decisions:** LAD-067 follows and extends LAD-061 and LAD-063. It
+narrowly refines LAD-066's repeated per-request acknowledgement into one
+session-scoped acknowledgement while preserving its classification, retention,
+provider, environment, credential, request, and content boundaries. It follows
+LAD-042 through LAD-046, LAD-049 through LAD-053, LAD-060, LAD-062, LAD-064,
+and LAD-065. It conflicts with and supersedes no evidence, governance,
+tenant-isolation, public/private, or canonical-write decision.
+
+**Consequences and deferrals:** The smallest implementation may extend the
+existing Discovery session and assistance-run schema so an analyst turn can
+source current-session observations and preserve one working-synthesis
+snapshot. It must not add a parallel observation model. Inquiry-bound analyst
+mode, confidential external use without LAD-065's provider controls, files,
+voice, tools, unrestricted workspace search, AI-created mappings, dashboards,
+multi-model routing, Scenarios, Reference Models, and autonomous operation
+remain deferred.
 
 ### LAD-062 — Process-bound reconciliation is exception-driven and no change is the default valid outcome
 
