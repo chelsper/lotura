@@ -504,6 +504,14 @@ Exception, dependency, Organization Structure, `operating_model_changes`, or
 any unrelated table. It receives no schema, database, role, migration,
 `TRUNCATE`, observation `UPDATE`, or observation `DELETE` privilege.
 
+Migration `0031` passed isolated fictional verification on August 28, 2026, at
+journal `32/32` against exact commit
+`47575d454485df0c630dccccbee47f0b3349c55c`. Session authorization,
+catalog-independent adaptive prompting, noncanonical synthesis persistence,
+evidence attribution, same-session and same-tenant guards, append-only history,
+runtime read-only access, and canonical-write denial all passed and rolled back.
+No provider request, canonical write, or fictional probe row persisted.
+
 ## Structured proposed changes — Slice 1
 
 Under LAD-049, a finished proposed-update basis can be turned into explicit

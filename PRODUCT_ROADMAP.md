@@ -210,9 +210,12 @@ milestones:
    Typed request-metadata and cost visibility are implemented and rolled out at
    journal `31/31`. Alpha migration `0031` adds only the durable session
    authorization and noncanonical synthesis fields needed to survive refreshes
-   and preserve provenance. Its release still requires isolated fictional
-   verification, exact least-privilege JU rollout, deployment, and authenticated
-   acceptance against Gift Processing.
+   and preserve provenance. It passed isolated fictional verification at
+   journal `32/32`: catalog-independent prompting, synthesis persistence,
+   evidence attribution, same-session and tenant guards, append-only history,
+   runtime read-only access, and canonical-write denial all passed and rolled
+   back with zero provider requests. Release now requires exact least-privilege
+   JU rollout, deployment, and authenticated acceptance against Gift Processing.
    Structured-mapping suggestions remain later; AI may never approve or apply
    them. The accepted staged boundary and provider gate are recorded in
    [docs/AI_ASSISTED_DISCOVERY_V0_1.md](docs/AI_ASSISTED_DISCOVERY_V0_1.md).
