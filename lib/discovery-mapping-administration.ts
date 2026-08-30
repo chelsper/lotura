@@ -41,11 +41,14 @@ function logMappingFailure(operation: string, error: unknown) {
     : {};
   const safeValue = (value: unknown) =>
     typeof value === "string" && value.length > 0 ? value : undefined;
+  const code = safeValue(details.code);
 
   console.error("[discovery-mapping] database operation failed", {
-    code: safeValue(details.code),
+    code,
     constraint: safeValue(details.constraint),
+    message: code === "42601" ? safeValue(details.message) : undefined,
     operation,
+    position: code === "42601" ? safeValue(details.position) : undefined,
     routine: safeValue(details.routine),
     table: safeValue(details.table),
   });
