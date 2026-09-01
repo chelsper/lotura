@@ -60,6 +60,99 @@ test("local inquiry matching keeps source wording and requires policy/person con
   assert.deepEqual(policy.options, []);
 });
 
+test("reference matching does not turn ordinary words into people or embedded short names", () => {
+  const candidates = buildDiscoveryReferenceCandidates({
+    catalog: [
+      {
+        aliases: [],
+        context: "Person currently assigned to Admissions Counselor",
+        kind: "person_capacity",
+        label: "Alvarez, Michael",
+        personStableKey: "69000000-0000-4000-8000-000000000010",
+        positionStableKey: "69000000-0000-4000-8000-000000000011",
+        roleStableKey: null,
+      },
+      {
+        aliases: [],
+        context: "Person currently assigned to Clinical Assistant Professor",
+        kind: "person_capacity",
+        label: "Bilalovic, Erica",
+        personStableKey: "69000000-0000-4000-8000-000000000012",
+        positionStableKey: "69000000-0000-4000-8000-000000000013",
+        roleStableKey: null,
+      },
+      {
+        aliases: [],
+        context: "Person currently assigned to Professor",
+        kind: "person_capacity",
+        label: "Indelicato, Natalie",
+        personStableKey: "69000000-0000-4000-8000-000000000014",
+        positionStableKey: "69000000-0000-4000-8000-000000000015",
+        roleStableKey: null,
+      },
+      {
+        aliases: [],
+        context: "Person currently assigned to Professor",
+        kind: "person_capacity",
+        label: "Oldakowski, Raymond",
+        personStableKey: "69000000-0000-4000-8000-000000000016",
+        positionStableKey: "69000000-0000-4000-8000-000000000017",
+        roleStableKey: null,
+      },
+      {
+        aliases: [],
+        context: "Current System",
+        kind: "system",
+        label: "IT",
+        stableKey: "69000000-0000-4000-8000-000000000018",
+      },
+      {
+        aliases: [],
+        context: "Current Process Family",
+        kind: "process_family",
+        label: "Gift Processing",
+        stableKey: "69000000-0000-4000-8000-000000000022",
+      },
+    ],
+    observations: [{
+      id: "69000000-0000-4000-8000-000000000019",
+      responseText: "I am trying to understand how gifts may be accepted, declined, or escalated in Gift Acceptance Policy and then move into Gift Processing.",
+      sequence: 1,
+    }],
+  });
+
+  assert.equal(candidates.some((candidate) => candidate.kind === "person_capacity"), false);
+  assert.equal(candidates.some((candidate) => candidate.kind === "system"), false);
+  assert.deepEqual(
+    candidates.map((candidate) => [candidate.kind, candidate.mentionText]),
+    [
+      ["process_family", "Gift Processing"],
+      ["policy", "Gift Acceptance Policy"],
+    ],
+  );
+});
+
+test("non-person references may still use distinctive acronyms", () => {
+  const candidates = buildDiscoveryReferenceCandidates({
+    catalog: [{
+      aliases: [],
+      context: "Current Operational Role",
+      kind: "operational_role",
+      label: "Gift Acceptance Committee",
+      stableKey: "69000000-0000-4000-8000-000000000020",
+    }],
+    observations: [{
+      id: "69000000-0000-4000-8000-000000000021",
+      responseText: "The GAC reviews the request.",
+      sequence: 1,
+    }],
+  });
+
+  assert.equal(candidates.length, 1);
+  assert.equal(candidates[0].mentionText, "GAC");
+  assert.equal(candidates[0].kind, "operational_role");
+});
+
 test("reference target and source identities are deterministic and typed", () => {
   const target = parseDiscoveryReferenceTargetKey(
     "person_capacity:69000000-0000-4000-8000-000000000004:69000000-0000-4000-8000-000000000005:69000000-0000-4000-8000-000000000006",
