@@ -20,6 +20,9 @@ import { DiscoveryAssistanceSuggestionForm } from "../../../../discovery-assista
 import { DiscoveryAssistanceRequestDetails } from "../../../../discovery-assistance-request-details";
 import { DiscoveryInquiryAnswerForm } from "../../../../discovery-inquiry-answer-form";
 import { DiscoveryInquiryCorrectionForm } from "../../../../discovery-inquiry-correction-form";
+import { DiscoveryAnalystInterview } from "../../../../discovery-analyst-interview";
+import { DiscoveryAnalystStartForm } from "../../../../discovery-analyst-start-form";
+import { DiscoveryReferenceConfirmationTable } from "../../../../discovery-reference-confirmation-table";
 
 const stateLabels = {
   assumed: "Assumed",
@@ -62,6 +65,22 @@ export default async function DiscoveryInquiryInterviewPage({
         sessionId,
       )
     : null;
+  const [analystTurn, referenceConfirmations] = session.analystEnabled
+    ? await Promise.all([
+        import("@/lib/discovery-analyst-data").then(({ loadDiscoveryAnalystTurn }) =>
+          loadDiscoveryAnalystTurn(
+            discoveryOrganizationId,
+            session.id,
+            session.revision,
+            "inquiry",
+          )),
+        import("@/lib/discovery-reference-data").then(({ loadInquiryReferenceConfirmations }) =>
+          loadInquiryReferenceConfirmations(
+            discoveryOrganizationId,
+            session.id,
+          )),
+      ])
+    : [null, null];
 
   const question = getDiscoveryInquiryQuestion(session.currentQuestionKey);
   const assistance = question && session.status === "in_progress"
@@ -148,6 +167,15 @@ export default async function DiscoveryInquiryInterviewPage({
         selected, or changed a documented Process.
       </Alert>
 
+      {session.status === "in_progress" && !session.analystEnabled ? (
+        <DiscoveryAnalystStartForm
+          inquiryId={inquiryId}
+          revision={session.revision}
+          sessionId={sessionId}
+          sessionKind="inquiry"
+        />
+      ) : null}
+
       {session.status === "paused" ? (
         <Card className="mt-6 p-5 sm:p-7">
           <Badge tone="neutral">Paused</Badge>
@@ -159,6 +187,27 @@ export default async function DiscoveryInquiryInterviewPage({
             continue from the current question.
           </p>
         </Card>
+      ) : session.status === "in_progress" && session.analystEnabled ? (
+        <>
+          <DiscoveryAnalystInterview
+            inquiryId={inquiryId}
+            observations={session.observations}
+            revision={session.revision}
+            sessionId={session.id}
+            sessionKind="inquiry"
+            turn={analystTurn}
+          />
+          {referenceConfirmations ? (
+            <div className="mt-5">
+              <DiscoveryReferenceConfirmationTable
+                candidates={referenceConfirmations.candidates}
+                inquiryId={inquiryId}
+                runId={referenceConfirmations.runId}
+                sessionId={session.id}
+              />
+            </div>
+          ) : null}
+        </>
       ) : question && session.status === "in_progress" && knownContext ? (
         <section className="mt-6 space-y-5">
           <Card className="p-5 sm:p-7">

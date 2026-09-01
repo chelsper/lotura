@@ -278,6 +278,25 @@ export const discoveryAssistanceDisposition = pgEnum(
   ["used_as_written", "edited", "skipped", "rejected"],
 );
 
+export const discoveryReferenceKind = pgEnum(
+  "discovery_reference_kind",
+  [
+    "organization_unit",
+    "operational_role",
+    "person_capacity",
+    "system",
+    "process",
+    "process_family",
+    "policy",
+    "other",
+  ],
+);
+
+export const discoveryReferenceDisposition = pgEnum(
+  "discovery_reference_disposition",
+  ["confirmed", "rejected", "unresolved"],
+);
+
 export const discoveryInquiryReviewOutcomeKind = pgEnum(
   "discovery_inquiry_review_outcome_kind",
   [
@@ -899,6 +918,13 @@ export const discoveryInquirySession = pgTable(
     currentQuestionKey: varchar("current_question_key", { length: 64 })
       .notNull(),
     revision: integer("revision").default(1).notNull(),
+    analystEnabled: boolean("analyst_enabled").default(false).notNull(),
+    analystAuthorizedAt: timestamp("analyst_authorized_at", {
+      withTimezone: true,
+    }),
+    analystAuthorizationVersion: varchar("analyst_authorization_version", {
+      length: 64,
+    }),
     actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -952,6 +978,10 @@ export const discoveryInquirySession = pgTable(
     check(
       "discovery_inquiry_sessions_revision_positive_check",
       sql`${table.revision} >= 1`,
+    ),
+    check(
+      "discovery_inquiry_sessions_analyst_authorization_shape_check",
+      sql`(${table.analystEnabled} = false and ${table.analystAuthorizedAt} is null and ${table.analystAuthorizationVersion} is null) or (${table.analystEnabled} = true and ${table.analystAuthorizedAt} is not null and ${table.analystAuthorizationVersion} is not null and char_length(trim(${table.analystAuthorizationVersion})) > 0)`,
     ),
     index("discovery_inquiry_sessions_org_status_updated_idx").on(
       table.organizationId,
@@ -4725,6 +4755,215 @@ export const organizationStructureChange = pgTable(
     ),
     index("organization_structure_changes_role_created_idx").on(
       table.roleId,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const discoveryReferenceConfirmation = pgTable(
+  "discovery_reference_confirmations",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    organizationId: integer("organization_id").notNull(),
+    stableKey: uuid("stable_key").defaultRandom().notNull(),
+    inquirySessionId: integer("inquiry_session_id").notNull(),
+    inquirySessionStableKey: uuid("inquiry_session_stable_key").notNull(),
+    runId: integer("run_id").notNull(),
+    runStableKey: uuid("run_stable_key").notNull(),
+    sourceObservationStableKey: uuid("source_observation_stable_key")
+      .notNull(),
+    mentionSequence: integer("mention_sequence").notNull(),
+    mentionText: text("mention_text").notNull(),
+    referenceKind: discoveryReferenceKind("reference_kind").notNull(),
+    sourceFingerprint: varchar("source_fingerprint", { length: 64 }).notNull(),
+    disposition: discoveryReferenceDisposition("disposition").notNull(),
+    organizationUnitId: integer("organization_unit_id"),
+    organizationUnitStableKey: uuid("organization_unit_stable_key"),
+    roleId: integer("role_id"),
+    roleStableKey: uuid("role_stable_key"),
+    personId: integer("person_id"),
+    personStableKey: uuid("person_stable_key"),
+    positionId: integer("position_id"),
+    positionStableKey: uuid("position_stable_key"),
+    systemId: integer("system_id"),
+    systemStableKey: uuid("system_stable_key"),
+    processId: integer("process_id"),
+    processStableKey: uuid("process_stable_key"),
+    processFamilyId: integer("process_family_id"),
+    processFamilyStableKey: uuid("process_family_stable_key"),
+    supersedesConfirmationId: integer("supersedes_confirmation_id"),
+    supersedesConfirmationStableKey: uuid(
+      "supersedes_confirmation_stable_key",
+    ),
+    actorIdentifier: varchar("actor_identifier", { length: 128 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      name: "discovery_reference_confirmations_inquiry_session_fk",
+      columns: [
+        table.inquirySessionId,
+        table.organizationId,
+        table.inquirySessionStableKey,
+      ],
+      foreignColumns: [
+        discoveryInquirySession.id,
+        discoveryInquirySession.organizationId,
+        discoveryInquirySession.stableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_reference_confirmations_run_fk",
+      columns: [table.runId, table.organizationId, table.runStableKey],
+      foreignColumns: [
+        discoveryAssistanceRun.id,
+        discoveryAssistanceRun.organizationId,
+        discoveryAssistanceRun.stableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_reference_confirmations_observation_fk",
+      columns: [
+        table.sourceObservationStableKey,
+        table.inquirySessionId,
+        table.organizationId,
+      ],
+      foreignColumns: [
+        discoveryInquiryObservation.stableKey,
+        discoveryInquiryObservation.sessionId,
+        discoveryInquiryObservation.organizationId,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_reference_confirmations_unit_fk",
+      columns: [
+        table.organizationUnitId,
+        table.organizationId,
+        table.organizationUnitStableKey,
+      ],
+      foreignColumns: [
+        organizationUnit.id,
+        organizationUnit.organizationId,
+        organizationUnit.stableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_reference_confirmations_role_fk",
+      columns: [table.roleId, table.organizationId, table.roleStableKey],
+      foreignColumns: [role.id, role.organizationId, role.stableKey],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_reference_confirmations_person_fk",
+      columns: [table.personId, table.organizationId, table.personStableKey],
+      foreignColumns: [person.id, person.organizationId, person.stableKey],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_reference_confirmations_position_fk",
+      columns: [
+        table.positionId,
+        table.organizationId,
+        table.positionStableKey,
+      ],
+      foreignColumns: [
+        position.id,
+        position.organizationId,
+        position.stableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_reference_confirmations_system_fk",
+      columns: [table.systemId, table.organizationId, table.systemStableKey],
+      foreignColumns: [system.id, system.organizationId, system.stableKey],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_reference_confirmations_process_fk",
+      columns: [table.processId, table.organizationId, table.processStableKey],
+      foreignColumns: [process.id, process.organizationId, process.stableKey],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_reference_confirmations_family_fk",
+      columns: [
+        table.processFamilyId,
+        table.organizationId,
+        table.processFamilyStableKey,
+      ],
+      foreignColumns: [
+        processFamily.id,
+        processFamily.organizationId,
+        processFamily.stableKey,
+      ],
+    }).onDelete("restrict"),
+    foreignKey({
+      name: "discovery_reference_confirmations_supersedes_fk",
+      columns: [
+        table.supersedesConfirmationId,
+        table.organizationId,
+        table.supersedesConfirmationStableKey,
+      ],
+      foreignColumns: [table.id, table.organizationId, table.stableKey],
+    }).onDelete("restrict"),
+    unique("discovery_reference_confirmations_stable_key_unique").on(
+      table.stableKey,
+    ),
+    unique("discovery_reference_confirmations_identity_context_unique").on(
+      table.id,
+      table.organizationId,
+      table.stableKey,
+    ),
+    check(
+      "discovery_reference_confirmations_mention_seq_positive_check",
+      sql`${table.mentionSequence} >= 1`,
+    ),
+    check(
+      "discovery_reference_confirmations_mention_not_blank_check",
+      sql`char_length(trim(${table.mentionText})) > 0 and char_length(${table.mentionText}) <= 500`,
+    ),
+    check(
+      "discovery_reference_confirmations_source_fingerprint_check",
+      sql`${table.sourceFingerprint} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "discovery_reference_confirmations_supersedes_pair_check",
+      sql`(${table.supersedesConfirmationId} is null and ${table.supersedesConfirmationStableKey} is null) or (${table.supersedesConfirmationId} is not null and ${table.supersedesConfirmationStableKey} is not null)`,
+    ),
+    check(
+      "discovery_reference_confirmations_target_shape_check",
+      sql`(
+        ${table.disposition} in ('rejected', 'unresolved')
+        and ${table.organizationUnitId} is null and ${table.organizationUnitStableKey} is null
+        and ${table.roleId} is null and ${table.roleStableKey} is null
+        and ${table.personId} is null and ${table.personStableKey} is null
+        and ${table.positionId} is null and ${table.positionStableKey} is null
+        and ${table.systemId} is null and ${table.systemStableKey} is null
+        and ${table.processId} is null and ${table.processStableKey} is null
+        and ${table.processFamilyId} is null and ${table.processFamilyStableKey} is null
+      ) or (
+        ${table.disposition} = 'confirmed' and (
+          (${table.referenceKind} = 'organization_unit' and ${table.organizationUnitId} is not null and ${table.organizationUnitStableKey} is not null and ${table.roleId} is null and ${table.roleStableKey} is null and ${table.personId} is null and ${table.personStableKey} is null and ${table.positionId} is null and ${table.positionStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.processId} is null and ${table.processStableKey} is null and ${table.processFamilyId} is null and ${table.processFamilyStableKey} is null)
+          or (${table.referenceKind} = 'operational_role' and ${table.organizationUnitId} is null and ${table.organizationUnitStableKey} is null and ${table.roleId} is not null and ${table.roleStableKey} is not null and ${table.personId} is null and ${table.personStableKey} is null and ${table.positionId} is null and ${table.positionStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.processId} is null and ${table.processStableKey} is null and ${table.processFamilyId} is null and ${table.processFamilyStableKey} is null)
+          or (${table.referenceKind} = 'person_capacity' and ${table.organizationUnitId} is null and ${table.organizationUnitStableKey} is null and (${table.roleId} is null) = (${table.roleStableKey} is null) and ${table.personId} is not null and ${table.personStableKey} is not null and ${table.positionId} is not null and ${table.positionStableKey} is not null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.processId} is null and ${table.processStableKey} is null and ${table.processFamilyId} is null and ${table.processFamilyStableKey} is null)
+          or (${table.referenceKind} = 'system' and ${table.organizationUnitId} is null and ${table.organizationUnitStableKey} is null and ${table.roleId} is null and ${table.roleStableKey} is null and ${table.personId} is null and ${table.personStableKey} is null and ${table.positionId} is null and ${table.positionStableKey} is null and ${table.systemId} is not null and ${table.systemStableKey} is not null and ${table.processId} is null and ${table.processStableKey} is null and ${table.processFamilyId} is null and ${table.processFamilyStableKey} is null)
+          or (${table.referenceKind} = 'process' and ${table.organizationUnitId} is null and ${table.organizationUnitStableKey} is null and ${table.roleId} is null and ${table.roleStableKey} is null and ${table.personId} is null and ${table.personStableKey} is null and ${table.positionId} is null and ${table.positionStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.processId} is not null and ${table.processStableKey} is not null and ${table.processFamilyId} is null and ${table.processFamilyStableKey} is null)
+          or (${table.referenceKind} = 'process_family' and ${table.organizationUnitId} is null and ${table.organizationUnitStableKey} is null and ${table.roleId} is null and ${table.roleStableKey} is null and ${table.personId} is null and ${table.personStableKey} is null and ${table.positionId} is null and ${table.positionStableKey} is null and ${table.systemId} is null and ${table.systemStableKey} is null and ${table.processId} is null and ${table.processStableKey} is null and ${table.processFamilyId} is not null and ${table.processFamilyStableKey} is not null)
+        )
+      )`,
+    ),
+    check(
+      "discovery_reference_confirmations_actor_not_blank_check",
+      sql`char_length(trim(${table.actorIdentifier})) > 0`,
+    ),
+    index("discovery_reference_confirmations_session_source_idx").on(
+      table.organizationId,
+      table.inquirySessionStableKey,
+      table.sourceObservationStableKey,
+      table.mentionSequence,
+      table.createdAt,
+    ),
+    index("discovery_reference_confirmations_run_idx").on(
+      table.organizationId,
+      table.runStableKey,
       table.createdAt,
     ),
   ],

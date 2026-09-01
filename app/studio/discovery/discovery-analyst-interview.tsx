@@ -9,10 +9,15 @@ import { Alert, Badge, Button, Card, FieldLabel, Select } from "../../ui/primiti
 import { initialDiscoveryActionState } from "./action-state";
 import {
   answerDiscoveryAnalystAction,
+  answerInquiryDiscoveryAnalystAction,
   correctDiscoveryAnalystAction,
+  correctInquiryDiscoveryAnalystAction,
   finishDiscoveryAnalystAction,
+  finishInquiryDiscoveryAnalystAction,
   refreshDiscoveryAnalystAction,
+  refreshInquiryDiscoveryAnalystAction,
   skipDiscoveryAnalystQuestionAction,
+  skipInquiryDiscoveryAnalystQuestionAction,
 } from "./actions";
 
 const stateLabels = {
@@ -55,9 +60,18 @@ function SummaryList({
   );
 }
 
-function HiddenContext({ revision, sessionId }: { revision: number; sessionId: string }) {
+function HiddenContext({
+  inquiryId,
+  revision,
+  sessionId,
+}: {
+  inquiryId?: string;
+  revision: number;
+  sessionId: string;
+}) {
   return (
     <>
+      {inquiryId ? <input name="inquiryId" type="hidden" value={inquiryId} /> : null}
       <input name="sessionId" type="hidden" value={sessionId} />
       <input name="expectedRevision" type="hidden" value={revision} />
     </>
@@ -65,26 +79,33 @@ function HiddenContext({ revision, sessionId }: { revision: number; sessionId: s
 }
 
 export function DiscoveryAnalystInterview({
+  inquiryId,
   observations,
   revision,
   sessionId,
+  sessionKind = "process",
   turn,
 }: {
+  inquiryId?: string;
   observations: DiscoveryObservationRecord[];
   revision: number;
   sessionId: string;
+  sessionKind?: "inquiry" | "process";
   turn: DiscoveryAnalystTurnRecord | null;
 }) {
+  const inquiryMode = sessionKind === "inquiry";
   const [answerState, answerAction, answerPending] = useActionState(
-    answerDiscoveryAnalystAction,
+    inquiryMode ? answerInquiryDiscoveryAnalystAction : answerDiscoveryAnalystAction,
     initialDiscoveryActionState,
   );
   const [correctionState, correctionAction, correctionPending] = useActionState(
-    correctDiscoveryAnalystAction,
+    inquiryMode ? correctInquiryDiscoveryAnalystAction : correctDiscoveryAnalystAction,
     initialDiscoveryActionState,
   );
   const [skipState, skipAction, skipPending] = useActionState(
-    skipDiscoveryAnalystQuestionAction,
+    inquiryMode
+      ? skipInquiryDiscoveryAnalystQuestionAction
+      : skipDiscoveryAnalystQuestionAction,
     initialDiscoveryActionState,
   );
   const [epistemicState, setEpistemicState] = useState(
@@ -141,7 +162,7 @@ export function DiscoveryAnalystInterview({
                 Correct Lotura&apos;s interpretation
               </summary>
               <form action={correctionAction} className="mt-4 space-y-4">
-                <HiddenContext revision={revision} sessionId={sessionId} />
+                <HiddenContext inquiryId={inquiryId} revision={revision} sessionId={sessionId} />
                 <label className="block">
                   <FieldLabel>How should your correction be understood?</FieldLabel>
                   <Select defaultValue="known" name="epistemicState">
@@ -156,7 +177,7 @@ export function DiscoveryAnalystInterview({
                     className="min-h-28 w-full resize-y rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-6 text-[var(--text)] outline-none focus:border-[var(--workspace-accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
                     maxLength={10000}
                     name="responseText"
-                    placeholder="Correct the working interpretation in your own words. This becomes human evidence, not a canonical Process change."
+                    placeholder={`Correct the working interpretation in your own words. This becomes human evidence, not ${inquiryMode ? "a Process selection or organizational change" : "a canonical Process change"}.`}
                     required
                   />
                 </label>
@@ -175,14 +196,14 @@ export function DiscoveryAnalystInterview({
           </div>
         )}
         <div className="mt-5 flex flex-wrap gap-3 border-t border-[var(--border)] pt-5">
-          <form action={refreshDiscoveryAnalystAction}>
-            <HiddenContext revision={revision} sessionId={sessionId} />
+          <form action={inquiryMode ? refreshInquiryDiscoveryAnalystAction : refreshDiscoveryAnalystAction}>
+            <HiddenContext inquiryId={inquiryId} revision={revision} sessionId={sessionId} />
             <input name="focus" type="hidden" value="synthesize" />
             <Button size="sm" type="submit">What do you understand so far?</Button>
           </form>
           {!turn ? (
-            <form action={refreshDiscoveryAnalystAction}>
-              <HiddenContext revision={revision} sessionId={sessionId} />
+            <form action={inquiryMode ? refreshInquiryDiscoveryAnalystAction : refreshDiscoveryAnalystAction}>
+              <HiddenContext inquiryId={inquiryId} revision={revision} sessionId={sessionId} />
               <input name="focus" type="hidden" value="continue" />
               <Button size="sm" type="submit">Refresh analyst</Button>
             </form>
@@ -208,7 +229,7 @@ export function DiscoveryAnalystInterview({
             </p>
           </div>
           <form action={answerAction} className="space-y-5 p-5 sm:p-7">
-            <HiddenContext revision={revision} sessionId={sessionId} />
+            <HiddenContext inquiryId={inquiryId} revision={revision} sessionId={sessionId} />
             <input name="suggestionId" type="hidden" value={turn.suggestion.id} />
             <label className="block">
               <FieldLabel>How should this observation be understood?</FieldLabel>
@@ -297,8 +318,8 @@ export function DiscoveryAnalystInterview({
               Finish when this conversation has captured enough useful evidence. Uncertainty can move forward unresolved. The next step is human review.
             </p>
           </div>
-          <form action={finishDiscoveryAnalystAction}>
-            <HiddenContext revision={revision} sessionId={sessionId} />
+          <form action={inquiryMode ? finishInquiryDiscoveryAnalystAction : finishDiscoveryAnalystAction}>
+            <HiddenContext inquiryId={inquiryId} revision={revision} sessionId={sessionId} />
             <Button type="submit">Finish interview</Button>
           </form>
         </div>

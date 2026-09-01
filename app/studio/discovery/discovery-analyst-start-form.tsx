@@ -4,17 +4,27 @@ import { useActionState } from "react";
 
 import { Alert, Badge, Button, Card } from "../../ui/primitives";
 import { initialDiscoveryActionState } from "./action-state";
-import { authorizeDiscoveryAnalystAction } from "./actions";
+import {
+  authorizeDiscoveryAnalystAction,
+  authorizeInquiryDiscoveryAnalystAction,
+} from "./actions";
 
 export function DiscoveryAnalystStartForm({
+  inquiryId,
   revision,
   sessionId,
+  sessionKind = "process",
 }: {
+  inquiryId?: string;
   revision: number;
   sessionId: string;
+  sessionKind?: "inquiry" | "process";
 }) {
+  const inquiryMode = sessionKind === "inquiry";
   const [state, action, pending] = useActionState(
-    authorizeDiscoveryAnalystAction,
+    inquiryMode
+      ? authorizeInquiryDiscoveryAnalystAction
+      : authorizeDiscoveryAnalystAction,
     initialDiscoveryActionState,
   );
   return (
@@ -27,15 +37,18 @@ export function DiscoveryAnalystStartForm({
         <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
           Have a conversational interview that adapts to your answers, connects
           earlier evidence, and maintains a readable working understanding of
-          the Process. You remain the source of every saved observation.
+          {inquiryMode
+            ? " the question without assuming it is already one Process. You remain the source of every saved observation."
+            : " the Process. You remain the source of every saved observation."}
         </p>
       </div>
       <form action={action} className="space-y-4 p-5 sm:p-7">
         <input name="sessionId" type="hidden" value={sessionId} />
+        {inquiryId ? <input name="inquiryId" type="hidden" value={inquiryId} /> : null}
         <input name="expectedRevision" type="hidden" value={revision} />
         <Alert tone="info">
-          For this non-confidential Alpha, Lotura sends only the bounded Process
-          context, this interview&apos;s observations, and its latest working
+          For this non-confidential Alpha, Lotura sends only the bounded {inquiryMode ? "inquiry" : "Process"}
+          {" "}context, this interview&apos;s observations, and its latest working
           synthesis to OpenAI. Requests use no tools and are not stored as a
           provider conversation. OpenAI may retain submitted content in
           abuse-monitoring systems for up to 30 days.
@@ -49,7 +62,7 @@ export function DiscoveryAnalystStartForm({
             value="yes"
           />
           <span>
-            This interview contains only non-confidential Process information
+            This interview contains only non-confidential organizational information
             that I am authorized to share. I will not enter donor, student, HR,
             payment, credential, or other sensitive record-level information.
           </span>

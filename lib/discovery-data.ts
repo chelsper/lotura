@@ -261,6 +261,9 @@ export type DiscoverySessionDetail = DiscoverySessionSummary & {
 
 export type DiscoveryInquirySessionDetail = {
   actorIdentifier: string;
+  analystAuthorizationVersion: string | null;
+  analystAuthorizedAt: string | null;
+  analystEnabled: boolean;
   createdAt: string;
   currentQuestionKey: string;
   id: string;
@@ -611,6 +614,10 @@ export async function loadDiscoveryInquirySession(
   const sessions = await db
     .select({
       actorIdentifier: discoveryInquirySession.actorIdentifier,
+      analystAuthorizationVersion:
+        discoveryInquirySession.analystAuthorizationVersion,
+      analystAuthorizedAt: discoveryInquirySession.analystAuthorizedAt,
+      analystEnabled: discoveryInquirySession.analystEnabled,
       createdAt: discoveryInquirySession.createdAt,
       currentQuestionKey: discoveryInquirySession.currentQuestionKey,
       id: discoveryInquirySession.stableKey,
@@ -669,6 +676,7 @@ export async function loadDiscoveryInquirySession(
 
   return {
     ...session,
+    analystAuthorizedAt: session.analystAuthorizedAt?.toISOString() ?? null,
     createdAt: session.createdAt.toISOString(),
     observationCount: observations.length,
     observations: observations.map((observation) => ({

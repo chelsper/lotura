@@ -32,23 +32,29 @@ export default async function DiscoveryInquiryReviewPage({
 
   const experience = await loadWorkspaceExperience();
   if (!experience.discovery.enabled) notFound();
+  const discoveryOrganizationId = experience.discovery.organizationId;
   const {
     loadDiscoveryInquiryReview,
     loadDiscoveryInquiryReviewProcesses,
     loadDiscoveryInquirySession,
   } = await import("@/lib/discovery-data");
-  const [session, latestReview, processes] = await Promise.all([
+  const [session, latestReview, processes, referenceConfirmations] = await Promise.all([
     loadDiscoveryInquirySession(
-      experience.discovery.organizationId,
+      discoveryOrganizationId,
       inquiryId,
       sessionId,
     ),
     loadDiscoveryInquiryReview(
-      experience.discovery.organizationId,
+      discoveryOrganizationId,
       inquiryId,
       sessionId,
     ),
-    loadDiscoveryInquiryReviewProcesses(experience.discovery.organizationId),
+    loadDiscoveryInquiryReviewProcesses(discoveryOrganizationId),
+    import("@/lib/discovery-reference-data").then(({ loadInquiryReferenceConfirmations }) =>
+      loadInquiryReferenceConfirmations(
+        discoveryOrganizationId,
+        sessionId,
+      )),
   ]);
   if (!session) notFound();
   const firstReview = session.status === "ready_for_review" && !latestReview;
@@ -64,6 +70,7 @@ export default async function DiscoveryInquiryReviewPage({
     (observation) => !superseded.has(observation.id),
   );
   if (activeObservations.length < 1) notFound();
+  const referenceCandidates = referenceConfirmations?.candidates ?? [];
 
   return (
     <WorkspaceShell
@@ -111,6 +118,69 @@ export default async function DiscoveryInquiryReviewPage({
               {session.scopeStatement}
             </p>
           </Card>
+
+          {referenceCandidates.length > 0 ? (
+            <Card className="p-5 sm:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-medium text-[var(--text-tertiary)]">
+                    Organizational context
+                  </p>
+                  <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">
+                    References carried into review
+                  </h2>
+                </div>
+                <span className="text-xs text-[var(--text-tertiary)]">
+                  {referenceCandidates.length} {referenceCandidates.length === 1
+                    ? "reference"
+                    : "references"}
+                </span>
+              </div>
+              <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+                These matches remain review context. They do not establish a
+                relationship or change organizational records.
+              </p>
+              <div className="mt-4 space-y-3">
+                {referenceCandidates.map((candidate) => {
+                  const selected = candidate.options.find((option) =>
+                    option.key === candidate.decision?.selectedTargetKey);
+                  const status = candidate.decision?.disposition ?? "unresolved";
+                  return (
+                    <div
+                      className="rounded-[10px] border border-[var(--border)] p-4"
+                      key={candidate.sourceFingerprint}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-[var(--text)]">
+                          “{candidate.mentionText}”
+                        </p>
+                        <Badge tone={status === "confirmed" ? "success" : "warning"}>
+                          {status === "confirmed"
+                            ? "Confirmed match"
+                            : status === "rejected"
+                              ? "Match rejected"
+                              : "Unresolved"}
+                        </Badge>
+                      </div>
+                      <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
+                        {candidate.kindLabel}
+                        {selected ? ` · ${selected.label} · ${selected.context}` : ""}
+                      </p>
+                      <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+                        Preserved from answer {candidate.observationSequence}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+              {referenceCandidates.some((candidate) => !candidate.decision) ? (
+                <Alert className="mt-4" tone="info">
+                  Some detected references were not explicitly confirmed. They
+                  remain unresolved and do not block this review.
+                </Alert>
+              ) : null}
+            </Card>
+          ) : null}
 
           <div>
             <p className="text-xs font-medium text-[var(--text-tertiary)]">

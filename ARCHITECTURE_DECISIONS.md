@@ -112,6 +112,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-066 | An explicitly non-confidential AI pilot may operate under standard provider retention | Accepted — one bounded JU request completed under the reviewed contract and immediate disablement passed; broader enablement remains gated |
 | LAD-067 | AI Discovery Analyst Alpha maintains a noncanonical evidence-linked synthesis and chooses adaptive follow-ups | Accepted — implementation authorized for the complete Alpha vertical slice |
 | LAD-068 | AI may draft an evidence-linked Process proposal, but a human creates every governed mapping | Accepted — implementation authorized for AI Process Synthesis & Proposal Draft Alpha |
+| LAD-069 | Inquiry-first AI analysis may suggest organizational references, but a human confirms every typed link | Accepted — implementation authorized for Inquiry-first AI Analyst & Reference Confirmation Alpha |
 
 ## Decision records
 
@@ -3216,6 +3217,113 @@ screen, and server-only credential remain mandatory. Durable AI proposal-draft
 history, atomic acceptance of several candidates, Process-field expansion for
 separate trigger/end boundaries, Step reordering, improvement recommendations,
 confidential use outside LAD-065, and autonomous refinement remain deferred.
+
+### LAD-069 — Inquiry-first AI analysis may suggest organizational references, but a human confirms every typed link
+
+**Status:** Accepted — implementation authorized for Inquiry-first AI Analyst &
+Reference Confirmation Alpha.
+
+**Context:** LAD-057 correctly permits Discovery before a Process is selected,
+while LAD-067 authorizes the adaptive AI Discovery Analyst only for a
+Process-bound interview. The first Gift Acceptance Policy exploration therefore
+falls back to the fixed nine-question catalog even though its purpose is to
+discover whether the subject is a Policy, Process, Family, or cross-Process
+operating context. The same use also exposed a separate knowledge-integrity
+need: participants refer to Units, Roles, people, Systems, policies, and
+Processes using current names, former names, abbreviations, or informal labels.
+Silently converting those words into operating-model relationships would make
+an AI or fuzzy-match suggestion look authoritative.
+
+The current schema cannot satisfy both needs. `discovery_inquiry_sessions`
+cannot record the session-scoped Analyst authorization required by LAD-067,
+and no existing assistance decision or observation table can preserve a typed,
+correctable human confirmation of an organizational reference without
+misrepresenting that confirmation as evidence, a proposal, or canonical truth.
+
+**Decision:** The AI Discovery Analyst Alpha may operate over one authenticated,
+Organization-scoped inquiry interview using the same one-human-action,
+one-foreground-request, no-tools, `store: false`, fixed-model, kill-switch,
+request-metadata, and append-only assistance boundaries already accepted by
+LAD-063 through LAD-067. The allowlisted context contains the inquiry question,
+scope, current inquiry observations, latest noncanonical synthesis, and only the
+small amount of other reviewed context required for the turn. Inquiry Analyst
+mode does not create or select a Process, Process Family, Policy, or other
+operating-model entity.
+
+The working synthesis may identify possible mentions of an Organization Unit,
+Operational Role, person acting in a Position or Role capacity, System,
+Process, Process Family, policy, or currently unmodeled organizational concept.
+Candidate matching occurs in Lotura's server boundary against current
+Organization-scoped identities and bounded historical names; the complete
+organizational catalog is not sent to the provider merely to perform matching.
+Historical-name similarity is a navigation aid, not an alias fact or confidence
+claim.
+
+Lotura presents a **References to confirm** table with the original wording,
+the suggested current match and type, relevant current context, and an explicit
+human choice to confirm, choose another match, reject the match, or preserve the
+reference as unresolved. A person named in evidence remains visible as the
+source wording. Lotura may suggest that person's current Position and
+Operational Role context, but it must never silently replace a person with a
+Role or assume that the person was acting in that capacity. Policies and other
+concepts without a first-class current Lotura identity remain unresolved rather
+than being forced into Process or free-form typed links.
+
+Each saved confirmation is an append-only, Organization-scoped human decision
+linked to the exact Analyst run and source mention. A correction appends a new
+decision that supersedes the earlier one. Confirmed targets use explicit typed,
+same-Organization references; unresolved or rejected decisions contain no
+target. A confirmation supplies reviewed reference context for later human
+review. It is not an observation, operating-model relationship, Process or
+Family membership, policy record, Knowledge Outcome, proposal, approval,
+Process version, or canonical write.
+
+**Why:** Inquiry-first Discovery should be as adaptive as Process-bound
+Discovery without manufacturing the structure it is intended to discover.
+Explicit confirmation lets Lotura reuse existing organizational identity while
+preserving the way the participant actually spoke and protecting against stale
+names, near matches, and person-to-Role inference. Local catalog matching keeps
+provider context narrow and makes the reference suggestion deterministic and
+reviewable.
+
+**Alternatives considered:** Complete the fixed catalog before using AI; create
+a placeholder Draft Process; reuse free-form observations as relationship
+links; store confirmation only in browser state; place candidate targets only
+inside the AI synthesis JSON; silently accept exact or high-similarity matches;
+send the complete Organization catalog to the provider; add a generalized alias
+registry; or introduce a first-class Policy domain in this milestone. These
+alternatives were rejected because they preserve the repetitive experience,
+manufacture structure, lose durable human attribution, blur evidence and typed
+identity, expose unnecessary context, or add domains that the Alpha does not
+yet need.
+
+**Affected decisions:** LAD-069 follows and extends LAD-057, LAD-061, LAD-063,
+LAD-066, and LAD-067. It follows LAD-002, LAD-003, LAD-005, LAD-008, LAD-015
+through LAD-018, LAD-021, LAD-022, LAD-025, LAD-026, LAD-029, LAD-032, LAD-033,
+LAD-035 through LAD-037, LAD-042, LAD-046, LAD-051, LAD-056, and LAD-060. It
+preserves LAD-057's prohibition on placeholder Processes, LAD-060's human
+Knowledge Outcome, LAD-067's noncanonical synthesis, and LAD-068's requirement
+that a human creates every governed mapping. It conflicts with and supersedes
+no accepted decision.
+
+**Consequences and deferrals:** Approval would authorize one forward-only
+migration that extends inquiry sessions with the same immutable Analyst
+authorization shape used by Process interviews, permits Analyst assistance runs
+for the inquiry session kind, and adds one append-only reference-confirmation
+table with exact typed target guards and correction provenance. It would also
+authorize the generic inquiry Analyst UI, local bounded candidate matching,
+the confirmation table, exact Discovery/runtime privilege deltas, and isolated
+fictional verification described in
+[docs/INQUIRY_AI_ANALYST_REFERENCE_CONFIRMATION_ALPHA.md](docs/INQUIRY_AI_ANALYST_REFERENCE_CONFIRMATION_ALPHA.md).
+
+Approval would not authorize applying the migration, changing a credential or
+environment, sending JU data to a provider, deploying, creating JU confirmation
+records, changing public Northstar, creating a Policy domain, maintaining a
+general alias registry, notifying other participants, creating a Process or
+Family, or writing any canonical operating-model relationship. Each rollout
+remains separately controlled. Automatic reference acceptance, cross-
+Organization matching, external directory lookup, unrestricted catalog search,
+policy authoring, and AI-created operating-model links remain deferred.
 
 ## Intentionally deferred ideas register
 

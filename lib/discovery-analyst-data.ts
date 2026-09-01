@@ -39,6 +39,7 @@ export async function loadDiscoveryAnalystTurn(
   organizationId: number,
   sessionStableKey: string,
   revision: number,
+  sessionKind: "inquiry" | "process" = "process",
 ): Promise<DiscoveryAnalystTurnRecord | null> {
   const rows = await db
     .select({
@@ -88,8 +89,10 @@ export async function loadDiscoveryAnalystTurn(
     .where(
       and(
         eq(discoveryAssistanceRun.organizationId, organizationId),
-        eq(discoveryAssistanceRun.sessionKind, "process"),
-        eq(discoveryAssistanceRun.discoverySessionStableKey, sessionStableKey),
+        eq(discoveryAssistanceRun.sessionKind, sessionKind),
+        sessionKind === "process"
+          ? eq(discoveryAssistanceRun.discoverySessionStableKey, sessionStableKey)
+          : eq(discoveryAssistanceRun.inquirySessionStableKey, sessionStableKey),
         eq(discoveryAssistanceRun.requestedSessionRevision, revision),
         eq(discoveryAssistanceRun.analystTurn, true),
       ),

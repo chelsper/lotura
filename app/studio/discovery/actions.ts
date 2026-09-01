@@ -28,6 +28,15 @@ import {
   DISCOVERY_ANALYST_AUTHORIZATION_VERSION,
 } from "@/lib/discovery-analyst-model.mjs";
 import {
+  answerInquiryDiscoveryAnalyst,
+  authorizeInquiryDiscoveryAnalyst,
+  correctInquiryDiscoveryAnalyst,
+  finishInquiryDiscoveryAnalyst,
+  refreshInquiryDiscoveryAnalyst,
+  saveInquiryReferenceConfirmations,
+  skipInquiryDiscoveryAnalystQuestion,
+} from "@/lib/discovery-inquiry-analyst-administration";
+import {
   decideInquiryDiscoverySuggestion,
   decideProcessDiscoverySuggestion,
   dismissDiscoverySuggestion,
@@ -525,6 +534,125 @@ export async function finishDiscoveryAnalystAction(formData: FormData) {
   revalidatePath(path);
   revalidatePath("/studio/discovery");
   redirect(path);
+}
+
+function inquiryInterviewPath(formData: FormData) {
+  return `/studio/discovery/inquiries/${text(formData, "inquiryId")}/interviews/${text(formData, "sessionId")}`;
+}
+
+export async function authorizeInquiryDiscoveryAnalystAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const result = await authorizeInquiryDiscoveryAnalyst({
+    expectedRevision: revision(formData),
+    nonConfidentialAuthorized: text(formData, "nonConfidentialAuthorized") === "yes",
+    providerRetentionAccepted: text(formData, "providerRetentionAccepted") === "yes",
+    sessionId: text(formData, "sessionId"),
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  const path = inquiryInterviewPath(formData);
+  revalidatePath(path);
+  redirect(path);
+}
+
+export async function answerInquiryDiscoveryAnalystAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const result = await answerInquiryDiscoveryAnalyst({
+    epistemicState: state(formData),
+    expectedRevision: revision(formData),
+    responseText: text(formData, "responseText"),
+    sessionId: text(formData, "sessionId"),
+    suggestionId: text(formData, "suggestionId"),
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  const path = inquiryInterviewPath(formData);
+  revalidatePath(path);
+  redirect(path);
+}
+
+export async function skipInquiryDiscoveryAnalystQuestionAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const result = await skipInquiryDiscoveryAnalystQuestion({
+    expectedRevision: revision(formData),
+    sessionId: text(formData, "sessionId"),
+    suggestionId: text(formData, "suggestionId"),
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  const path = inquiryInterviewPath(formData);
+  revalidatePath(path);
+  redirect(path);
+}
+
+export async function correctInquiryDiscoveryAnalystAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const result = await correctInquiryDiscoveryAnalyst({
+    epistemicState: state(formData),
+    expectedRevision: revision(formData),
+    responseText: text(formData, "responseText"),
+    sessionId: text(formData, "sessionId"),
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  const path = inquiryInterviewPath(formData);
+  revalidatePath(path);
+  redirect(path);
+}
+
+export async function refreshInquiryDiscoveryAnalystAction(formData: FormData) {
+  await refreshInquiryDiscoveryAnalyst({
+    expectedRevision: revision(formData),
+    focus: text(formData, "focus") === "synthesize" ? "synthesize" : "continue",
+    sessionId: text(formData, "sessionId"),
+  });
+  const path = inquiryInterviewPath(formData);
+  revalidatePath(path);
+  redirect(path);
+}
+
+export async function finishInquiryDiscoveryAnalystAction(formData: FormData) {
+  await finishInquiryDiscoveryAnalyst({
+    expectedRevision: revision(formData),
+    sessionId: text(formData, "sessionId"),
+  });
+  const path = inquiryInterviewPath(formData);
+  revalidatePath(path);
+  revalidatePath("/studio/discovery");
+  redirect(path);
+}
+
+export async function saveInquiryReferenceConfirmationsAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const count = Number(text(formData, "decisionCount"));
+  if (!Number.isSafeInteger(count) || count < 1 || count > 16) {
+    return { message: "Choose at least one changed reference decision.", status: "error" };
+  }
+  const decisions = Array.from({ length: count }, (_, index) => ({
+    disposition: text(formData, `decision.${index}.disposition`) as
+      | "confirmed" | "rejected" | "unresolved",
+    kind: text(formData, `decision.${index}.kind`),
+    mentionSequence: Number(text(formData, `decision.${index}.mentionSequence`)),
+    mentionText: text(formData, `decision.${index}.mentionText`),
+    runId: text(formData, `decision.${index}.runId`),
+    sourceFingerprint: text(formData, `decision.${index}.sourceFingerprint`),
+    sourceObservationId: text(formData, `decision.${index}.sourceObservationId`),
+    targetKey: text(formData, `decision.${index}.targetKey`) || null,
+  }));
+  const result = await saveInquiryReferenceConfirmations({
+    decisions,
+    sessionId: text(formData, "sessionId"),
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  const path = inquiryInterviewPath(formData);
+  revalidatePath(path);
+  redirect(`${path}#references-to-confirm`);
 }
 
 export async function requestProcessDiscoveryAssistanceAction(
