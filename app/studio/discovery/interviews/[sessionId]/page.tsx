@@ -59,7 +59,8 @@ export default async function DiscoveryInterviewPage({
   ]);
   if (!session) notFound();
 
-  const analystTurn = session.analystEnabled && session.status === "in_progress"
+  const analystTurn = session.analystEnabled
+    && (session.status === "in_progress" || session.status === "paused")
     ? await import("@/lib/discovery-analyst-data").then(
         ({ loadDiscoveryAnalystTurn }) =>
           loadDiscoveryAnalystTurn(
@@ -128,10 +129,19 @@ export default async function DiscoveryInterviewPage({
       <WorkspacePageHeader
         description={session.scopeStatement}
         eyebrow={<>Discovery session · Source observations</>}
-        stats={[
-          { label: "Questions reached", value: progress },
-          { label: "Observations", value: session.observations.length },
-        ]}
+        stats={session.analystEnabled
+          ? [
+              { label: "Answers saved", value: session.observations.length },
+              {
+                label: "Needs attention",
+                value: (analystTurn?.snapshot.needsValidation.length ?? 0)
+                  + (analystTurn?.snapshot.conflicts.length ?? 0),
+              },
+            ]
+          : [
+              { label: "Questions reached", value: progress },
+              { label: "Observations", value: session.observations.length },
+            ]}
         title={session.processName}
       />
 
@@ -139,7 +149,8 @@ export default async function DiscoveryInterviewPage({
         <Link className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--workspace-accent)]" href="/studio/discovery">
           ← All discovery sessions
         </Link>
-        {session.status === "in_progress" || session.status === "paused" ? (
+        {(session.status === "in_progress" || session.status === "paused")
+          && (!session.analystEnabled || session.status === "paused") ? (
           <form action={changeDiscoveryPauseAction}>
             <input name="sessionId" type="hidden" value={session.id} />
             <input name="expectedRevision" type="hidden" value={session.revision} />
@@ -151,9 +162,11 @@ export default async function DiscoveryInterviewPage({
         ) : null}
       </div>
 
-      <Alert className="mt-5" tone="warning">
-        Describe how the work happens without including sensitive records. Do not include donor, student, prospect, gift, wealth, HR, password, credential, or connection-string information.
-      </Alert>
+      {!session.analystEnabled ? (
+        <Alert className="mt-5" tone="warning">
+          Describe how the work happens without including sensitive records. Do not include donor, student, prospect, gift, wealth, HR, password, credential, or connection-string information.
+        </Alert>
+      ) : null}
 
       {!session.analystEnabled && session.status === "in_progress" ? (
         <DiscoveryAnalystStartForm
@@ -167,6 +180,14 @@ export default async function DiscoveryInterviewPage({
           <Badge tone="neutral">Paused</Badge>
           <h2 className="mt-3 text-xl font-semibold text-[var(--text)]">This interview is paused</h2>
           <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">Existing observations remain preserved. Resume when you are ready to continue from the current question.</p>
+          {analystTurn?.snapshot.narrative ? (
+            <div className="mt-5 rounded-[10px] border border-[var(--border)] bg-[var(--surface-subtle)] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">Where you left off</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--text-secondary)]">
+                {analystTurn.snapshot.narrative}
+              </p>
+            </div>
+          ) : null}
         </Card>
       ) : session.analystEnabled && session.status === "in_progress" ? (
         <DiscoveryAnalystInterview

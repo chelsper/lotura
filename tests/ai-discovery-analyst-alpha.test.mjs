@@ -204,11 +204,12 @@ test("LAD-067 and migration 0031 preserve the existing evidence and authority bo
   );
   assert.match(page, /DiscoveryAnalystStartForm/);
   assert.match(page, /DiscoveryAnalystInterview/);
-  assert.match(interview, /What do you understand so far\?/);
+  assert.match(interview, /Review understanding/);
   assert.match(interview, /Correct Lotura&apos;s interpretation/);
-  assert.match(interview, /Skip this question/);
-  assert.match(interview, /without creating an observation or ending the interview/);
-  assert.match(interview, /Finish interview/);
+  assert.match(interview, /Skip for now/);
+  assert.match(interview, /Take a break/);
+  assert.match(interview, /Draft saved in this browser · Not evidence until sent/);
+  assert.match(interview, /Finish & review/);
 });
 
 test("the request builder contains only the bounded interview context", () => {

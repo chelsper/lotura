@@ -124,10 +124,19 @@ export default async function DiscoveryInquiryInterviewPage({
       <WorkspacePageHeader
         description={session.scopeStatement}
         eyebrow={<>Question-first discovery · Saved answers</>}
-        stats={[
-          { label: "Questions reached", value: progress },
-          { label: "Saved answers", value: session.observations.length },
-        ]}
+        stats={session.analystEnabled
+          ? [
+              { label: "Answers saved", value: session.observations.length },
+              {
+                label: "Needs attention",
+                value: (analystTurn?.snapshot.needsValidation.length ?? 0)
+                  + (analystTurn?.snapshot.conflicts.length ?? 0),
+              },
+            ]
+          : [
+              { label: "Questions reached", value: progress },
+              { label: "Saved answers", value: session.observations.length },
+            ]}
         title={session.questionText}
       />
 
@@ -138,7 +147,8 @@ export default async function DiscoveryInquiryInterviewPage({
         >
           ← Back to the original question
         </Link>
-        {session.status === "in_progress" || session.status === "paused" ? (
+        {(session.status === "in_progress" || session.status === "paused")
+          && (!session.analystEnabled || session.status === "paused") ? (
           <form action={changeInquiryDiscoveryPauseAction}>
             <input name="inquiryId" type="hidden" value={inquiryId} />
             <input name="sessionId" type="hidden" value={sessionId} />
@@ -162,9 +172,7 @@ export default async function DiscoveryInquiryInterviewPage({
       </div>
 
       <Alert className="mt-5" tone="info">
-        You are exploring this question before choosing a Process. Your saved
-        answers are evidence for later human review; they have not created,
-        selected, or changed a documented Process.
+        Inquiry-first interview: saved answers remain evidence for human review and do not create or select a Process.
       </Alert>
 
       {session.status === "in_progress" && !session.analystEnabled ? (
@@ -186,28 +194,33 @@ export default async function DiscoveryInquiryInterviewPage({
             Existing answers remain preserved. Resume when you are ready to
             continue from the current question.
           </p>
+          {analystTurn?.snapshot.narrative ? (
+            <div className="mt-5 rounded-[10px] border border-[var(--border)] bg-[var(--surface-subtle)] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">Where you left off</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--text-secondary)]">
+                {analystTurn.snapshot.narrative}
+              </p>
+            </div>
+          ) : null}
         </Card>
       ) : session.status === "in_progress" && session.analystEnabled ? (
-        <>
-          <DiscoveryAnalystInterview
-            inquiryId={inquiryId}
-            observations={session.observations}
-            revision={session.revision}
-            sessionId={session.id}
-            sessionKind="inquiry"
-            turn={analystTurn}
-          />
-          {referenceConfirmations ? (
-            <div className="mt-5">
+        <DiscoveryAnalystInterview
+          inquiryId={inquiryId}
+          observations={session.observations}
+          referenceCount={referenceConfirmations?.candidates.length ?? 0}
+          referenceReview={referenceConfirmations ? (
               <DiscoveryReferenceConfirmationTable
                 candidates={referenceConfirmations.candidates}
                 inquiryId={inquiryId}
                 runId={referenceConfirmations.runId}
                 sessionId={session.id}
               />
-            </div>
-          ) : null}
-        </>
+            ) : undefined}
+          revision={session.revision}
+          sessionId={session.id}
+          sessionKind="inquiry"
+          turn={analystTurn}
+        />
       ) : question && session.status === "in_progress" && knownContext ? (
         <section className="mt-6 space-y-5">
           <Card className="p-5 sm:p-7">
