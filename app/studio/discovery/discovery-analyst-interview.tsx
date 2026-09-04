@@ -1,12 +1,13 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useFormStatus } from "react-dom";
 
 import type { DiscoveryAnalystTurnRecord } from "@/lib/discovery-analyst-data";
 import type { DiscoveryObservationRecord } from "@/lib/discovery-data";
 
 import { Alert, Badge, Button, Card, FieldLabel, Select } from "../../ui/primitives";
-import { initialDiscoveryActionState } from "./action-state";
+import { initialDiscoveryActionState, type DiscoveryActionState } from "./action-state";
 import {
   answerDiscoveryAnalystAction,
   answerInquiryDiscoveryAnalystAction,
@@ -78,6 +79,24 @@ function HiddenContext({
   );
 }
 
+function AnalystRefreshButtons({ disabled, hasTurn }: { disabled: boolean; hasTurn: boolean }) {
+  const { data, pending } = useFormStatus();
+  return (
+    <div className="flex flex-wrap gap-3">
+      <Button disabled={disabled || pending} name="focus" size="sm" type="submit" value="synthesize">
+        {pending && data?.get("focus") === "synthesize"
+          ? "Updating understanding…"
+          : "What do you understand so far?"}
+      </Button>
+      {!hasTurn ? (
+        <Button disabled={disabled || pending} name="focus" size="sm" type="submit" value="continue">
+          {pending && data?.get("focus") === "continue" ? "Refreshing analyst…" : "Refresh analyst"}
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
 export function DiscoveryAnalystInterview({
   inquiryId,
   observations,
@@ -108,9 +127,28 @@ export function DiscoveryAnalystInterview({
       : skipDiscoveryAnalystQuestionAction,
     initialDiscoveryActionState,
   );
-  const [epistemicState, setEpistemicState] = useState(
-    turn?.snapshot.suggestedEpistemicState ?? "known",
+  const [refreshState, refreshAction, refreshPending] = useActionState(
+    async (previousState: DiscoveryActionState, formData: FormData): Promise<DiscoveryActionState> => {
+      try {
+        const action = inquiryMode ? refreshInquiryDiscoveryAnalystAction : refreshDiscoveryAnalystAction;
+        return await action(previousState, formData);
+      } catch {
+        return {
+          message: "We couldn’t confirm whether the analyst finished. Reload this page before trying again. Your saved answers are preserved.",
+          status: "error",
+        };
+      }
+    },
+    initialDiscoveryActionState,
   );
+  const analystPending = answerPending || correctionPending || skipPending || refreshPending;
+  const [evidenceChoice, setEvidenceChoice] = useState<{
+    suggestionId?: string;
+    value: keyof typeof stateLabels;
+  }>({ suggestionId: turn?.suggestion.id, value: turn?.snapshot.suggestedEpistemicState ?? "known" });
+  const epistemicState = evidenceChoice.suggestionId === turn?.suggestion.id
+    ? evidenceChoice.value
+    : turn?.snapshot.suggestedEpistemicState ?? "known";
 
   return (
     <section className="mt-6 space-y-5">
@@ -182,7 +220,7 @@ export function DiscoveryAnalystInterview({
                   />
                 </label>
                 {correctionState.status === "error" ? <Alert tone="error">{correctionState.message}</Alert> : null}
-                <Button disabled={correctionPending} size="sm" type="submit">
+                <Button disabled={analystPending} size="sm" type="submit">
                   {correctionPending ? "Preserving correction…" : "Preserve correction"}
                 </Button>
               </form>
@@ -195,18 +233,25 @@ export function DiscoveryAnalystInterview({
             </Alert>
           </div>
         )}
-        <div className="mt-5 flex flex-wrap gap-3 border-t border-[var(--border)] pt-5">
-          <form action={inquiryMode ? refreshInquiryDiscoveryAnalystAction : refreshDiscoveryAnalystAction}>
+        <div className="mt-5 space-y-4 border-t border-[var(--border)] pt-5">
+          <form action={refreshAction} aria-busy={refreshPending}>
             <HiddenContext inquiryId={inquiryId} revision={revision} sessionId={sessionId} />
-            <input name="focus" type="hidden" value="synthesize" />
-            <Button size="sm" type="submit">What do you understand so far?</Button>
+            <AnalystRefreshButtons disabled={analystPending} hasTurn={Boolean(turn)} />
           </form>
-          {!turn ? (
-            <form action={inquiryMode ? refreshInquiryDiscoveryAnalystAction : refreshDiscoveryAnalystAction}>
-              <HiddenContext inquiryId={inquiryId} revision={revision} sessionId={sessionId} />
-              <input name="focus" type="hidden" value="continue" />
-              <Button size="sm" type="submit">Refresh analyst</Button>
-            </form>
+          <div aria-live="polite" role="status">
+            {refreshPending ? (
+              <Alert>
+                <span className="flex items-start gap-3">
+                  <span aria-hidden="true" className="mt-0.5 size-4 shrink-0 rounded-full border-2 border-current border-t-transparent motion-safe:animate-spin" />
+                  <span>Lotura is reviewing your saved answers and updating its working understanding. This may take a little while. Please keep this page open.</span>
+                </span>
+              </Alert>
+            ) : refreshState.status === "success" ? (
+              <Alert tone="success">{refreshState.message}</Alert>
+            ) : null}
+          </div>
+          {!refreshPending && refreshState.status === "error" ? (
+            <div role="alert"><Alert tone="error">{refreshState.message}</Alert></div>
           ) : null}
         </div>
       </Card>
@@ -235,7 +280,10 @@ export function DiscoveryAnalystInterview({
               <FieldLabel>How should this observation be understood?</FieldLabel>
               <Select
                 name="epistemicState"
-                onChange={(event) => setEpistemicState(event.target.value as keyof typeof stateLabels)}
+                onChange={(event) => setEvidenceChoice({
+                  suggestionId: turn.suggestion.id,
+                  value: event.target.value as keyof typeof stateLabels,
+                })}
                 value={epistemicState}
               >
                 {states.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -264,7 +312,7 @@ export function DiscoveryAnalystInterview({
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] pt-5">
               <div>
                 <Button
-                  disabled={answerPending || skipPending}
+                  disabled={analystPending}
                   formAction={skipAction}
                   formNoValidate
                   type="submit"
@@ -275,7 +323,7 @@ export function DiscoveryAnalystInterview({
                   Skip moves to a different topic without creating an observation or ending the interview.
                 </p>
               </div>
-              <Button disabled={answerPending || skipPending} type="submit" variant="primary">
+              <Button disabled={analystPending} type="submit" variant="primary">
                 {answerPending ? "Preserving and thinking…" : "Send answer"}
               </Button>
             </div>
@@ -320,7 +368,7 @@ export function DiscoveryAnalystInterview({
           </div>
           <form action={inquiryMode ? finishInquiryDiscoveryAnalystAction : finishDiscoveryAnalystAction}>
             <HiddenContext inquiryId={inquiryId} revision={revision} sessionId={sessionId} />
-            <Button type="submit">Finish interview</Button>
+            <Button disabled={analystPending} type="submit">Finish interview</Button>
           </form>
         </div>
       </Card>

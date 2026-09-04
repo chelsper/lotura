@@ -512,16 +512,20 @@ export async function correctDiscoveryAnalystAction(
   redirect(path);
 }
 
-export async function refreshDiscoveryAnalystAction(formData: FormData) {
+export async function refreshDiscoveryAnalystAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
   const sessionId = text(formData, "sessionId");
-  await refreshDiscoveryAnalyst({
+  const result = await refreshDiscoveryAnalyst({
     expectedRevision: revision(formData),
     focus: text(formData, "focus") === "synthesize" ? "synthesize" : "continue",
     sessionId,
   });
+  if (!result.ok) return { message: result.message, status: "error" };
   const path = `/studio/discovery/interviews/${sessionId}`;
   revalidatePath(path);
-  redirect(path);
+  return { message: result.message, status: "success" };
 }
 
 export async function finishDiscoveryAnalystAction(formData: FormData) {
@@ -604,15 +608,19 @@ export async function correctInquiryDiscoveryAnalystAction(
   redirect(path);
 }
 
-export async function refreshInquiryDiscoveryAnalystAction(formData: FormData) {
-  await refreshInquiryDiscoveryAnalyst({
+export async function refreshInquiryDiscoveryAnalystAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const result = await refreshInquiryDiscoveryAnalyst({
     expectedRevision: revision(formData),
     focus: text(formData, "focus") === "synthesize" ? "synthesize" : "continue",
     sessionId: text(formData, "sessionId"),
   });
+  if (!result.ok) return { message: result.message, status: "error" };
   const path = inquiryInterviewPath(formData);
   revalidatePath(path);
-  redirect(path);
+  return { message: result.message, status: "success" };
 }
 
 export async function finishInquiryDiscoveryAnalystAction(formData: FormData) {
