@@ -79,7 +79,7 @@ function HiddenContext({
   );
 }
 
-function AnalystRefreshButtons({ disabled, hasTurn }: { disabled: boolean; hasTurn: boolean }) {
+function AnalystRefreshButtons({ disabled, canRefresh }: { disabled: boolean; canRefresh: boolean }) {
   const { data, pending } = useFormStatus();
   return (
     <div className="flex flex-wrap gap-3">
@@ -88,7 +88,7 @@ function AnalystRefreshButtons({ disabled, hasTurn }: { disabled: boolean; hasTu
           ? "Updating understanding…"
           : "What do you understand so far?"}
       </Button>
-      {!hasTurn ? (
+      {canRefresh ? (
         <Button disabled={disabled || pending} name="focus" size="sm" type="submit" value="continue">
           {pending && data?.get("focus") === "continue" ? "Refreshing analyst…" : "Refresh analyst"}
         </Button>
@@ -168,6 +168,13 @@ export function DiscoveryAnalystInterview({
         </div>
         {turn ? (
           <>
+            {turn.providerKey !== "openai" ? (
+              <div className="mt-4">
+                <Alert tone="warning">
+                  The AI analyst did not return a usable response for this turn. Below are excerpts of your saved answers and a standard follow-up, not a new AI synthesis. You can continue, finish, or use Refresh analyst to try again.
+                </Alert>
+              </div>
+            ) : null}
             <p className="mt-4 max-w-4xl whitespace-pre-wrap text-base leading-7 text-[var(--text-secondary)]">
               {turn.snapshot.narrative}
             </p>
@@ -236,7 +243,7 @@ export function DiscoveryAnalystInterview({
         <div className="mt-5 space-y-4 border-t border-[var(--border)] pt-5">
           <form action={refreshAction} aria-busy={refreshPending}>
             <HiddenContext inquiryId={inquiryId} revision={revision} sessionId={sessionId} />
-            <AnalystRefreshButtons disabled={analystPending} hasTurn={Boolean(turn)} />
+            <AnalystRefreshButtons disabled={analystPending} canRefresh={!turn || turn.providerKey !== "openai"} />
           </form>
           <div aria-live="polite" role="status">
             {refreshPending ? (

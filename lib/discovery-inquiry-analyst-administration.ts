@@ -11,6 +11,8 @@ import {
 } from "./discovery-assistance-provider-cost.mjs";
 import {
   createDiscoveryAnalystFallback,
+  readStoredDiscoveryAnalystResult,
+  validateDiscoveryAnalystResult,
   type DiscoveryAnalystEpistemicState,
   type DiscoveryAnalystResult,
 } from "./discovery-analyst-model.mjs";
@@ -153,7 +155,7 @@ async function loadContext(
       [context.discovery.organizationId, internalSessionId],
     ),
     context.sql.query(
-      `select analysis_snapshot
+      `select analysis_snapshot, provider_key
        from discovery_assistance_runs
        where organization_id = $1::integer
          and inquiry_session_id = $2::integer
@@ -167,7 +169,10 @@ async function loadContext(
   const questionText = String(session.question_text);
   const scopeStatement = String(session.scope_statement);
   return {
-    latestSynthesis: (synthesisRows[0]?.analysis_snapshot ?? null) as DiscoveryAnalystResult | null,
+    latestSynthesis: readStoredDiscoveryAnalystResult(
+      synthesisRows[0]?.analysis_snapshot,
+      synthesisRows[0]?.provider_key,
+    ),
     observations: observationRows.reverse().map((row) => ({
       createdAt: new Date(String(row.created_at)).toISOString(),
       epistemicState: String(row.epistemic_state) as DiscoveryAnalystEpistemicState,
@@ -399,6 +404,9 @@ async function createTurn(
     focus,
     runtimeAccess: context.runtimeAccess,
   });
+  if (!providerResult.ok) {
+    console.warn("[discovery-inquiry-analyst] using standard fallback", { reason: providerResult.reason });
+  }
   const result = providerResult.ok
     ? providerResult.result
     : createDiscoveryAnalystFallback(
@@ -406,7 +414,11 @@ async function createTurn(
         providerResult.reason,
         excludedFallbackPromptKeys,
       );
-  return preserveTurn(context, analystContext, result, providerResult, focus);
+  if (!validateDiscoveryAnalystResult(result)) {
+    throw new Error("Analyst turn failed display validation before persistence.");
+  }
+  const preserved = await preserveTurn(context, analystContext, result, providerResult, focus);
+  return preserved ? { fallback: !providerResult.ok } : false;
 }
 
 function validateResponse(input: {
@@ -704,7 +716,13 @@ export async function refreshInquiryDiscoveryAnalyst(input: {
       : "Continue the adaptive inquiry with the most useful unresolved follow-up.";
     const preserved = await createTurn(context, input.sessionId, input.expectedRevision, focus);
     if (!preserved) return { code: "conflict", message: "The interview changed. Reload before refreshing the analyst.", ok: false };
-    return { message: "Lotura refreshed its working understanding without creating or selecting a Process.", ok: true, sessionId: input.sessionId };
+    return {
+      message: preserved.fallback
+        ? "A standard follow-up is available. The AI analyst did not return a usable response; your saved answers are intact."
+        : "Lotura refreshed its working understanding without creating or selecting a Process.",
+      ok: true,
+      sessionId: input.sessionId,
+    };
   } catch (error) {
     logFailure("refresh", error);
     return { code: "unavailable", message: "Lotura could not refresh the analyst safely.", ok: false };

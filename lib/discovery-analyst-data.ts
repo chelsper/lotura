@@ -10,7 +10,7 @@ import {
 } from "@/db/schema";
 
 import {
-  validateDiscoveryAnalystResult,
+  readStoredDiscoveryAnalystResult,
   type DiscoveryAnalystResult,
 } from "./discovery-analyst-model.mjs";
 
@@ -101,7 +101,7 @@ export async function loadDiscoveryAnalystTurn(
     .limit(1);
   const row = rows[0];
   if (!row) return null;
-  const snapshot = validateDiscoveryAnalystResult(row.snapshot);
+  const snapshot = readStoredDiscoveryAnalystResult(row.snapshot, row.providerKey);
   if (!snapshot) return null;
   const hasMetadata = row.inputTokens !== null
     && row.outputTokens !== null

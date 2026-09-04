@@ -40,6 +40,7 @@ export const DISCOVERY_ANALYST_AUTHORIZATION_VERSION: "lad-067-alpha-v1";
 export const DISCOVERY_ANALYST_PROMPT_POLICY_VERSION: "lad-067-alpha-v1";
 export const DISCOVERY_ANALYST_STATES: ReadonlyArray<DiscoveryAnalystEpistemicState>;
 export function validateDiscoveryAnalystResult(value: unknown): DiscoveryAnalystResult | null;
+export function readStoredDiscoveryAnalystResult(value: unknown, providerKey: unknown): DiscoveryAnalystResult | null;
 export function createDiscoveryAnalystFallback(
   context: Record<string, unknown>,
   reason?: string,
