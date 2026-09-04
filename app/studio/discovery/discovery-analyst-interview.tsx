@@ -157,7 +157,9 @@ export function DiscoveryAnalystInterview({
           <div>
             <Badge tone="accent">Working synthesis · Not canonical</Badge>
             <h2 className="mt-3 text-2xl font-semibold tracking-[-0.035em] text-[var(--text)]">
-              Here&apos;s what I think I understand so far
+              {turn && turn.providerKey !== "openai"
+                ? "Your saved interview notes"
+                : "Here’s what I think I understand so far"}
             </h2>
           </div>
           {turn ? (
@@ -268,7 +270,9 @@ export function DiscoveryAnalystInterview({
           <div className="border-b border-[var(--border)] bg-[var(--workspace-accent-soft)] p-5 sm:p-7">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <Badge tone="accent">Lotura asks</Badge>
-              <span className="text-xs text-[var(--text-tertiary)]">Adaptive follow-up</span>
+              <span className="text-xs text-[var(--text-tertiary)]">
+                {turn.providerKey === "openai" ? "Adaptive follow-up" : "Standard follow-up"}
+              </span>
             </div>
             <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
               {turn.snapshot.acknowledgement}
