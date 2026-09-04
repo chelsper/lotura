@@ -228,7 +228,7 @@ export function DiscoveryAnalystInterview({
 
   return (
     <section className="mt-6 space-y-5">
-      <Card className="sticky top-3 z-20 border-[var(--border-strong)] bg-[var(--surface)] p-4 shadow-sm">
+      <Card className="border-[var(--border-strong)] bg-[var(--surface)] p-4 shadow-sm lg:sticky lg:top-3 lg:z-20">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3">
             <Badge dot tone="success">Interview in progress</Badge>
