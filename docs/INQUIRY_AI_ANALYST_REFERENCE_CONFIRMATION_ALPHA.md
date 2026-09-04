@@ -62,6 +62,10 @@ exists.
 Candidate matching runs server-side within the authenticated Organization. It
 uses normalized current labels and bounded historical rename records where
 available. The provider does not receive the whole organizational catalog.
+The existing read-only runtime connection resolves each selected current
+identity. The Discovery write connection then validates the exact session,
+Analyst run, source observation, and prior decision before appending the human
+confirmation; it does not need broader catalog-read authority.
 
 The provider receives only the allowlisted inquiry context already visible in
 the session preview. Existing warnings against donor, student, prospect, gift,
@@ -94,10 +98,10 @@ change operating-model knowledge.
 
 ## Exact privilege delta
 
-The existing Discovery write role keeps its previously reviewed inquiry,
-observation, assistance, and catalog privileges. Migration `0032` requires only
-the following additional grants, with the concrete workspace role substituted
-for the placeholders:
+The existing read-only runtime role keeps its catalog privileges. The Discovery
+write role keeps its previously reviewed inquiry, observation, and assistance
+privileges. Migration `0032` requires only the following additional grants,
+with the concrete workspace role substituted for the placeholders:
 
 ```sql
 GRANT UPDATE (

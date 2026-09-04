@@ -20,6 +20,7 @@ import {
   fingerprintDiscoveryReferenceMention,
   parseDiscoveryReferenceTargetKey,
 } from "./discovery-reference-matching.mjs";
+import { resolveDiscoveryReferenceTargets } from "./discovery-reference-resolution";
 
 export const DISCOVERY_INQUIRY_ANALYST_AUTHORIZATION_VERSION = "lad-069-alpha-v1";
 export const DISCOVERY_INQUIRY_ANALYST_PROMPT_POLICY_VERSION = "lad-069-alpha-v1";
@@ -784,19 +785,37 @@ export async function saveInquiryReferenceConfirmations(input: {
     normalized.push({
       ...decision,
       mentionText: decision.mentionText.trim(),
-      organizationUnitStableKey: target?.kind === "organization_unit" ? target.stableKey : null,
-      personStableKey: target?.kind === "person_capacity" ? target.personStableKey : null,
-      positionStableKey: target?.kind === "person_capacity" ? target.positionStableKey : null,
-      processFamilyStableKey: target?.kind === "process_family" ? target.stableKey : null,
-      processStableKey: target?.kind === "process" ? target.stableKey : null,
-      roleStableKey: target?.kind === "operational_role" ? target.stableKey
-        : target?.kind === "person_capacity" ? target.roleStableKey : null,
-      systemStableKey: target?.kind === "system" ? target.stableKey : null,
+      organizationUnitStableKey: target?.kind === "organization_unit" ? target.stableKey ?? null : null,
+      personStableKey: target?.kind === "person_capacity" ? target.personStableKey ?? null : null,
+      positionStableKey: target?.kind === "person_capacity" ? target.positionStableKey ?? null : null,
+      processFamilyStableKey: target?.kind === "process_family" ? target.stableKey ?? null : null,
+      processStableKey: target?.kind === "process" ? target.stableKey ?? null : null,
+      roleStableKey: target?.kind === "operational_role" ? target.stableKey ?? null
+        : target?.kind === "person_capacity" ? target.roleStableKey ?? null : null,
+      systemStableKey: target?.kind === "system" ? target.stableKey ?? null : null,
     });
   }
   try {
     const context = await writeContext();
     if (!context) return { code: "unavailable", message: "Reference confirmation is unavailable.", ok: false };
+    if (new Set(normalized.map((decision) => decision.sourceFingerprint)).size !== normalized.length) {
+      return { code: "invalid", message: "A reference source was submitted more than once. Reload before saving.", ok: false };
+    }
+    const targetRows = await resolveDiscoveryReferenceTargets(
+      context.discovery.organizationId,
+      normalized,
+    );
+    const targetByFingerprint = new Map(
+      targetRows.map((target) => [target.sourceFingerprint, target]),
+    );
+    if (targetRows.length !== normalized.length
+      || targetByFingerprint.size !== normalized.length) {
+      return { code: "conflict", message: "A reference or organizational match changed. Reload before saving these decisions.", ok: false };
+    }
+    const resolvedDecisions = normalized.map((decision) => ({
+      ...decision,
+      ...targetByFingerprint.get(decision.sourceFingerprint),
+    }));
     const rows = await context.sql.query(
       `with input as materialized (
          select * from jsonb_to_recordset($4::jsonb) as item(
@@ -805,10 +824,13 @@ export async function saveInquiryReferenceConfirmations(input: {
            "mentionSequence" integer, "mentionText" text,
            "runId" uuid, "sourceFingerprint" varchar(64),
            "sourceObservationId" uuid,
-           "organizationUnitStableKey" uuid, "roleStableKey" uuid,
-           "personStableKey" uuid, "positionStableKey" uuid,
-           "systemStableKey" uuid, "processStableKey" uuid,
-           "processFamilyStableKey" uuid
+           "organizationUnitId" integer, "organizationUnitStableKey" uuid,
+           "roleId" integer, "roleStableKey" uuid,
+           "personId" integer, "personStableKey" uuid,
+           "positionId" integer, "positionStableKey" uuid,
+           "systemId" integer, "systemStableKey" uuid,
+           "processId" integer, "processStableKey" uuid,
+           "processFamilyId" integer, "processFamilyStableKey" uuid
          )
        ), selected_session as materialized (
          select id, stable_key from discovery_inquiry_sessions
@@ -818,14 +840,6 @@ export async function saveInquiryReferenceConfirmations(input: {
        ), resolved as materialized (
          select input.*, session.id as session_id, session.stable_key as session_stable_key,
            run.id as run_id, run.stable_key as run_stable_key,
-           unit.id as unit_id, unit.stable_key as unit_stable_key,
-           matched_role.id as role_id, matched_role.stable_key as role_stable_key,
-           matched_person.id as person_id, matched_person.stable_key as person_stable_key,
-           matched_position.id as position_id, matched_position.stable_key as position_stable_key,
-           assignment.id as assignment_id, matched_mandate.id as mandate_id,
-           matched_system.id as system_id, matched_system.stable_key as system_stable_key,
-           matched_process.id as process_id, matched_process.stable_key as process_stable_key,
-           family.id as family_id, family.stable_key as family_stable_key,
            previous.id as previous_id, previous.stable_key as previous_stable_key
          from input cross join selected_session session
          inner join discovery_assistance_runs run
@@ -837,35 +851,6 @@ export async function saveInquiryReferenceConfirmations(input: {
            on observation.organization_id = $1::integer
           and observation.session_id = session.id
           and observation.stable_key = input."sourceObservationId"
-         left join organization_units unit
-           on unit.organization_id = $1::integer and unit.stable_key = input."organizationUnitStableKey"
-          and unit.status = 'active'
-         left join roles matched_role
-           on matched_role.organization_id = $1::integer and matched_role.stable_key = input."roleStableKey"
-          and matched_role.status = 'active'
-         left join people matched_person
-           on matched_person.organization_id = $1::integer and matched_person.stable_key = input."personStableKey"
-          and matched_person.status = 'active'
-         left join positions matched_position
-           on matched_position.organization_id = $1::integer and matched_position.stable_key = input."positionStableKey"
-          and matched_position.status = 'active'
-         left join position_assignments assignment
-           on assignment.organization_id = $1::integer
-          and assignment.person_id = matched_person.id
-          and assignment.position_id = matched_position.id and assignment.status = 'active'
-         left join role_mandates matched_mandate
-           on matched_mandate.organization_id = $1::integer
-          and matched_mandate.position_id = matched_position.id
-          and matched_mandate.role_id = matched_role.id
-          and matched_mandate.status = 'active'
-         left join systems matched_system
-           on matched_system.organization_id = $1::integer and matched_system.stable_key = input."systemStableKey"
-          and matched_system.status = 'active'
-         left join processes matched_process
-           on matched_process.organization_id = $1::integer and matched_process.stable_key = input."processStableKey"
-         left join process_families family
-           on family.organization_id = $1::integer and family.stable_key = input."processFamilyStableKey"
-          and family.status = 'active'
          left join lateral (
            select confirmation.id, confirmation.stable_key
            from discovery_reference_confirmations confirmation
@@ -886,17 +871,17 @@ export async function saveInquiryReferenceConfirmations(input: {
            count(*) over (partition by "sourceFingerprint") as duplicate_count,
            case
              when disposition in ('rejected', 'unresolved') then
-               unit_id is null and role_id is null and person_id is null
-               and position_id is null and system_id is null and process_id is null
-               and family_id is null
-             when disposition = 'confirmed' and kind = 'organization_unit' then unit_id is not null
-             when disposition = 'confirmed' and kind = 'operational_role' then role_id is not null
+               "organizationUnitId" is null and "roleId" is null and "personId" is null
+               and "positionId" is null and "systemId" is null and "processId" is null
+               and "processFamilyId" is null
+             when disposition = 'confirmed' and kind = 'organization_unit' then "organizationUnitId" is not null
+             when disposition = 'confirmed' and kind = 'operational_role' then "roleId" is not null
              when disposition = 'confirmed' and kind = 'person_capacity' then
-               person_id is not null and position_id is not null and assignment_id is not null
-               and ("roleStableKey" is null or (role_id is not null and mandate_id is not null))
-             when disposition = 'confirmed' and kind = 'system' then system_id is not null
-             when disposition = 'confirmed' and kind = 'process' then process_id is not null
-             when disposition = 'confirmed' and kind = 'process_family' then family_id is not null
+               "personId" is not null and "positionId" is not null
+               and ("roleStableKey" is null or "roleId" is not null)
+             when disposition = 'confirmed' and kind = 'system' then "systemId" is not null
+             when disposition = 'confirmed' and kind = 'process' then "processId" is not null
+             when disposition = 'confirmed' and kind = 'process_family' then "processFamilyId" is not null
              else false
            end as valid
          from resolved
@@ -914,10 +899,10 @@ export async function saveInquiryReferenceConfirmations(input: {
          )
          select $1::integer, session_id, session_stable_key, run_id, run_stable_key,
            "sourceObservationId", "mentionSequence", "mentionText", kind,
-           "sourceFingerprint", disposition, unit_id, unit_stable_key,
-           role_id, role_stable_key, person_id, person_stable_key,
-           position_id, position_stable_key, system_id, system_stable_key,
-           process_id, process_stable_key, family_id, family_stable_key,
+           "sourceFingerprint", disposition, "organizationUnitId", "organizationUnitStableKey",
+           "roleId", "roleStableKey", "personId", "personStableKey",
+           "positionId", "positionStableKey", "systemId", "systemStableKey",
+           "processId", "processStableKey", "processFamilyId", "processFamilyStableKey",
            previous_id, previous_stable_key, $3::varchar(128)
          from guarded
          where valid and duplicate_count = 1 and resolved_count = $5::integer
@@ -927,7 +912,7 @@ export async function saveInquiryReferenceConfirmations(input: {
        select (select count(*)::int from input) input_count,
          (select count(*)::int from inserted) inserted_count`,
       [context.discovery.organizationId, input.sessionId,
-        context.discovery.actorIdentifier, JSON.stringify(normalized), normalized.length],
+        context.discovery.actorIdentifier, JSON.stringify(resolvedDecisions), normalized.length],
     );
     if (Number(rows[0]?.input_count) !== normalized.length
       || Number(rows[0]?.inserted_count) !== normalized.length) {

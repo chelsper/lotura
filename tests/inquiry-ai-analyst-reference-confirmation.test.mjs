@@ -210,11 +210,21 @@ test("the provider sees bounded inquiry evidence but no organizational catalog",
 });
 
 test("LAD-069 implementation preserves inquiry evidence and canonical boundaries", async () => {
-  const [decision, documentation, migration, administration, page, reviewPage, table] = await Promise.all([
+  const [
+    decision,
+    documentation,
+    migration,
+    administration,
+    referenceResolution,
+    page,
+    reviewPage,
+    table,
+  ] = await Promise.all([
     read("ARCHITECTURE_DECISIONS.md"),
     read("docs/INQUIRY_AI_ANALYST_REFERENCE_CONFIRMATION_ALPHA.md"),
     read("drizzle/0032_inquiry_ai_analyst_reference_confirmation.sql"),
     read("lib/discovery-inquiry-analyst-administration.ts"),
+    read("lib/discovery-reference-resolution.ts"),
     read("app/studio/discovery/inquiries/[inquiryId]/interviews/[sessionId]/page.tsx"),
     read("app/studio/discovery/inquiries/[inquiryId]/interviews/[sessionId]/review/page.tsx"),
     read("app/studio/discovery/discovery-reference-confirmation-table.tsx"),
@@ -234,6 +244,18 @@ test("LAD-069 implementation preserves inquiry evidence and canonical boundaries
   assert.match(administration, /insert into discovery_assistance_runs/);
   assert.match(administration, /insert into discovery_reference_confirmations/);
   assert.match(administration, /run\.session_kind = 'inquiry'/);
+  const confirmationSave = administration.slice(
+    administration.indexOf("export async function saveInquiryReferenceConfirmations"),
+  );
+  assert.match(confirmationSave, /resolveDiscoveryReferenceTargets/);
+  assert.doesNotMatch(
+    confirmationSave,
+    /join (?:organization_units|roles|people|positions|position_assignments|role_mandates|systems|processes|process_families)/i,
+  );
+  assert.match(referenceResolution, /process\.env\.DATABASE_URL/);
+  assert.match(referenceResolution, /readOnly: true/);
+  assert.match(referenceResolution, /organization_id = \$1::integer/);
+  assert.doesNotMatch(referenceResolution, /(?:insert into|update|delete from)/i);
   assert.doesNotMatch(
     administration,
     /(?:insert into|update|delete from) (?:processes|process_families|roles|organization_units|positions|people|systems|operating_model_changes)/i,
