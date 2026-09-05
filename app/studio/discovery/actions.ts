@@ -76,6 +76,9 @@ import {
 import {
   executeConfiguredDiscoveryProcessProposal,
 } from "@/lib/discovery-process-proposal-draft-runtime";
+import {
+  createDiscoveryProcessBaseline,
+} from "@/lib/discovery-process-baseline-administration";
 import { buildDocumentedProcessSnapshot } from "@/lib/discovery-proposal-model.mjs";
 import {
   currentDiscoveryProposalDecisions,
@@ -400,6 +403,37 @@ export async function finishDiscoveryInquiryReviewAction(
   revalidatePath(`/studio/discovery/inquiries/${inquiryId}`);
   revalidatePath("/studio/discovery");
   redirect(`${interviewPath}/outcomes/${result.reviewId}`);
+}
+
+export async function createDiscoveryProcessBaselineAction(
+  _previousState: DiscoveryActionState,
+  formData: FormData,
+): Promise<DiscoveryActionState> {
+  const steps = text(formData, "steps")
+    .split(/\r?\n/)
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const result = await createDiscoveryProcessBaseline({
+    familyConfirmed: text(formData, "familyConfirmed") === "yes",
+    inquiryId: text(formData, "inquiryId"),
+    name: text(formData, "name"),
+    ownerConfirmed: text(formData, "ownerConfirmed") === "yes",
+    ownerRoleKey: text(formData, "ownerRoleKey"),
+    processFamilyStableKey: text(formData, "processFamilyStableKey"),
+    purpose: text(formData, "purpose"),
+    reviewId: text(formData, "reviewId"),
+    reviewedBaseline: text(formData, "reviewedBaseline") === "yes",
+    sessionId: text(formData, "sessionId"),
+    steps,
+  });
+  if (!result.ok) return { message: result.message, status: "error" };
+  revalidatePath("/explorer");
+  revalidatePath("/studio/processes");
+  revalidatePath("/studio/process-families");
+  revalidatePath("/studio/discovery");
+  redirect(
+    `/studio/processes/${encodeURIComponent(result.processId)}?baseline=created`,
+  );
 }
 
 export async function startDiscoverySessionAction(

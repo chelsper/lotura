@@ -113,6 +113,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-067 | AI Discovery Analyst Alpha maintains a noncanonical evidence-linked synthesis and chooses adaptive follow-ups | Accepted — implementation authorized for the complete Alpha vertical slice |
 | LAD-068 | AI may draft an evidence-linked Process proposal, but a human creates every governed mapping | Accepted — implementation authorized for AI Process Synthesis & Proposal Draft Alpha |
 | LAD-069 | Inquiry-first AI analysis may suggest organizational references, but a human confirms every typed link | Accepted — implementation authorized for Inquiry-first AI Analyst & Reference Confirmation Alpha |
+| LAD-070 | A human may establish a shared working Process baseline before Discovery is complete | Accepted — implementation authorized for Minimum Viable Process Baseline Alpha |
 
 ## Decision records
 
@@ -3324,6 +3325,88 @@ Family, or writing any canonical operating-model relationship. Each rollout
 remains separately controlled. Automatic reference acceptance, cross-
 Organization matching, external directory lookup, unrestricted catalog search,
 policy authoring, and AI-created operating-model links remain deferred.
+
+### LAD-070 — A human may establish a shared working Process baseline before Discovery is complete
+
+**Status:** Accepted — implementation authorized for Minimum Viable Process
+Baseline Alpha.
+
+**Context:** Inquiry-first Discovery can preserve evidence, maintain an AI-assisted
+working understanding, pause safely, and produce an immutable human Knowledge
+Outcome. It still makes useful progress feel unfinished: a participant must either
+continue answering an open-ended sequence or stop with understanding that cannot
+yet become a visible Process. The Process Acquisition and authoring boundaries can
+already create an intentionally incomplete Draft Process with append-only history,
+ordered Steps, and explicit Process Family membership, but Discovery cannot hand a
+reviewed outcome into that path.
+
+**Decision:** After at least one inquiry observation exists, a participant may choose
+**Use what I have** from an in-progress or paused AI interview. This advances the
+session to human review without claiming that unanswered questions were resolved.
+The current trigger must permit the explicit paused-to-review transition while
+preserving compare-and-set revision, actor, session, tenant, and append-only evidence
+guards.
+
+Human review may classify the evidence as a possible new Process, possible Process
+Family, possible Policy or governing document, an existing Process connection,
+cross-Process work, additional validation, or no separate Process. Classification
+does not create an operating-model record. Policy remains a recognized but unresolved
+governing-document outcome until a separately reviewed first-class Policy domain is
+authorized; it must not be coerced into a Process or Family.
+
+When the latest immutable Knowledge Outcome explicitly identifies a possible new
+Process, a Workspace Administrator may review and edit a minimum Process baseline:
+name, a readable purpose that may include the known start and end boundaries, major
+ordered Steps, optional confirmed Owner Role, and optional existing Process Family
+placement. AI synthesis may prefill these fields, but every field remains editable
+and one deliberate human action creates the baseline. The action reauthorizes
+the workspace and verifies the exact Organization and latest immutable review.
+The Process-administration transaction then rechecks the Role, Family, duplicate
+name, and prior use of the source review before it creates one Draft Process,
+its supplied Steps, optional Family membership, and append-only history together.
+The source Knowledge Outcome key is preserved in history. Retry cannot create a
+second Process from the same review.
+
+The created Process is a **shared working baseline**: it is visible in the private
+workspace and may be strengthened through later Process-bound Discovery, but Draft
+status does not mean approved, complete, or institutional truth. Missing Owner,
+Systems, Exceptions, dependencies, validation, and other detail remain visible work
+rather than publication blockers. Lotura must present the baseline checkpoint as an
+accomplishment and make continued enrichment optional.
+
+**Why:** Organizational knowledge becomes useful before it becomes exhaustive.
+Requiring every possible question to be answered makes Discovery feel endless and
+discourages participation. A human-established baseline provides immediate value,
+preserves uncertainty honestly, and turns later questions into continuous
+strengthening rather than a prerequisite for finishing.
+
+**Alternatives considered:** Require the full question catalog; treat an AI synthesis
+as a published Process; create a placeholder Process before evidence; store the
+baseline only in browser state; publish an active or approved Process automatically;
+or model Policy as a Process. These were rejected because they increase burden, lose
+durability, manufacture authority, or collapse distinct organizational concepts.
+
+**Affected decisions:** LAD-070 follows and extends LAD-057's explicitly deferred
+governed new-Process creation contract, LAD-060's immutable human Knowledge Outcome,
+LAD-067's noncanonical synthesis, and LAD-068's human mapping boundary. It follows
+LAD-035 through LAD-038 for Draft Process creation and authoring, LAD-046 for knowledge
+layer separation, and LAD-055/LAD-059 for explicit non-inheriting Family placement.
+It preserves LAD-047's distinction among Family membership, composition, and
+dependency and LAD-069's refusal to manufacture a Policy identity. It conflicts with
+and supersedes no accepted decision.
+
+**Consequences and deferrals:** Minimum Viable Process Baseline Alpha authorizes one
+forward-only migration expanding human inquiry outcome classification and permitting
+the exact paused-to-review transition. It authorizes the private review-and-create UI, the
+atomic Process/Step/Family/history write through the existing Process-administration
+credential, targeted tests, isolated fictional migration verification, and a
+controlled JU rollout. It does not authorize AI-created or AI-published canonical
+knowledge, active/approved Process publication, first-class Policy records, new
+Process Families created inside the baseline transaction, automatic hierarchy,
+public Northstar changes, destructive writes, unresolved evidence deletion, or new
+canonical Process fields. Separate first-class trigger and end-boundary fields remain
+a later authoring decision; the Alpha preserves known boundaries in the readable
+baseline purpose and evidence.
 
 ## Intentionally deferred ideas register
 

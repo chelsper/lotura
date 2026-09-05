@@ -232,6 +232,13 @@
       "when": 1788273838057,
       "tag": "0032_inquiry_ai_analyst_reference_confirmation",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1788567804102,
+      "tag": "0033_minimum_viable_process_baseline",
+      "breakpoints": true
     }
   ]
 }

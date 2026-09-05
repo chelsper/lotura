@@ -4,10 +4,13 @@ import { connection } from "next/server";
 
 import { Alert, Badge, Card } from "@/app/ui/primitives";
 import { WorkspacePageHeader, WorkspaceShell } from "@/app/workspace-shell";
+import { DiscoveryProcessBaselineForm } from "@/app/studio/discovery/discovery-process-baseline-form";
+import { loadLatestDiscoveryAnalystTurn } from "@/lib/discovery-analyst-data";
 import {
   buildInquiryKnowledgeOutcomeCounts,
   DISCOVERY_INQUIRY_REVIEW_OUTCOME_DETAILS,
 } from "@/lib/discovery-inquiry-review-model.mjs";
+import { loadProcessFamilyCatalog } from "@/lib/process-family-data";
 import { loadWorkspaceExperience } from "@/lib/workspace-experience";
 
 const stateLabels = {
@@ -29,6 +32,26 @@ function formattedDate(value: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
+}
+
+function processPurpose({
+  narrative,
+  purpose,
+  scope,
+  trigger,
+  endBoundary,
+}: {
+  endBoundary: string | null;
+  narrative: string;
+  purpose: string | null;
+  scope: string;
+  trigger: string | null;
+}) {
+  return [
+    purpose || narrative || scope,
+    trigger ? `Starts when: ${trigger}` : null,
+    endBoundary ? `Ends when: ${endBoundary}` : null,
+  ].filter(Boolean).join("\n\n");
 }
 
 export default async function DiscoveryInquiryOutcomePage({
@@ -75,6 +98,37 @@ export default async function DiscoveryInquiryOutcomePage({
   if (!session || !review || !latestReview) notFound();
   const counts = buildInquiryKnowledgeOutcomeCounts(review.observations);
   const isLatest = latestReview.id === review.id;
+  const canCreateBaseline = isLatest && review.outcomes.some(
+    (outcome) => outcome.kind === "possible_new_process",
+  );
+  const isProcessFamilyCandidate = review.outcomes.some(
+    (outcome) => outcome.kind === "possible_new_process_family",
+  );
+  const isPolicyCandidate = review.outcomes.some(
+    (outcome) => outcome.kind === "possible_policy",
+  );
+  const [analystTurn, familyCatalog] = await Promise.all([
+    canCreateBaseline
+      ? loadLatestDiscoveryAnalystTurn(
+          experience.discovery.organizationId,
+          sessionId,
+          "inquiry",
+        )
+      : Promise.resolve(null),
+    canCreateBaseline
+      ? loadProcessFamilyCatalog(experience.discovery.organizationId)
+      : Promise.resolve({ families: [] }),
+  ]);
+  const defaultPurpose = analystTurn
+    ? processPurpose({
+        endBoundary: analystTurn.snapshot.process.endBoundary,
+        narrative: analystTurn.snapshot.narrative,
+        purpose: analystTurn.snapshot.process.purpose,
+        scope: session.scopeStatement,
+        trigger: analystTurn.snapshot.process.trigger,
+      })
+    : session.scopeStatement;
+  const defaultSteps = analystTurn?.snapshot.process.steps.join("\n") ?? "";
   const basePath =
     `/studio/discovery/inquiries/${inquiryId}/interviews/${sessionId}`;
 
@@ -131,6 +185,80 @@ export default async function DiscoveryInquiryOutcomePage({
         This review preserved organizational understanding. No Process was
         created, proposed, approved, or changed.
       </Alert>
+
+      {canCreateBaseline ? (
+        <Card className="mt-6 p-5 sm:p-6">
+          <Badge tone="success">Enough for a working baseline</Badge>
+          <h2 className="mt-3 text-2xl font-semibold text-[var(--text)]">
+            Turn what you learned into something useful now
+          </h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
+            Review the bare bones below, then create a shared Draft Process.
+            It can be read and used immediately while unanswered questions and
+            Needs validation evidence remain available for later Discovery.
+          </p>
+          {experience.authoring.enabled ? (
+            <div className="mt-6 border-t border-[var(--border)] pt-6">
+              <DiscoveryProcessBaselineForm
+                defaultName={session.questionText}
+                defaultPurpose={defaultPurpose}
+                defaultSteps={defaultSteps}
+                families={familyCatalog.families
+                  .filter((family) => family.status === "active")
+                  .map((family) => ({
+                    id: family.stableKey,
+                    name: family.name,
+                  }))}
+                inquiryId={inquiryId}
+                reviewId={reviewId}
+                roles={experience.data.roles
+                  .filter((role) => role.status === "active")
+                  .map((role) => ({ id: role.id, name: role.name }))}
+                sessionId={sessionId}
+              />
+            </div>
+          ) : (
+            <Alert className="mt-5" tone="info">
+              The understanding is preserved. A Workspace Administrator can
+              create the shared working baseline when Process authoring is enabled.
+            </Alert>
+          )}
+        </Card>
+      ) : null}
+
+      {isProcessFamilyCandidate ? (
+        <Card className="mt-6 p-5 sm:p-6">
+          <Badge tone="accent">Process Family candidate</Badge>
+          <h2 className="mt-3 text-xl font-semibold text-[var(--text)]">
+            This appears to organize several related Processes
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+            Lotura preserved that conclusion without pretending the Family is
+            itself a Process. Create or review the Family, then add individual
+            working Processes as members when their basic flows are clear.
+          </p>
+          <Link
+            className="mt-4 inline-flex h-9 items-center rounded-[9px] border border-[var(--workspace-accent-border)] px-3 text-xs font-medium text-[var(--workspace-accent)] hover:bg-[var(--workspace-accent-subtle)]"
+            href="/studio/process-families"
+          >
+            Review Process Families
+          </Link>
+        </Card>
+      ) : null}
+
+      {isPolicyCandidate ? (
+        <Card className="mt-6 p-5 sm:p-6">
+          <Badge tone="accent">Policy candidate</Badge>
+          <h2 className="mt-3 text-xl font-semibold text-[var(--text)]">
+            Keep this as governing guidance—not a parent Process
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+            The Policy classification and evidence are preserved. First-class
+            Policy authoring is not part of this Alpha, so Lotura has not forced
+            the Policy into the Process hierarchy or created a misleading Process.
+          </p>
+        </Card>
+      ) : null}
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
         <section className="space-y-6">

@@ -302,6 +302,8 @@ export const discoveryInquiryReviewOutcomeKind = pgEnum(
   [
     "connect_existing_process",
     "possible_new_process",
+    "possible_new_process_family",
+    "possible_policy",
     "spans_multiple_processes",
     "additional_validation_required",
     "no_separate_process_needed",
@@ -1522,7 +1524,7 @@ export const discoveryInquiryReviewOutcome = pgTable(
     ),
     check(
       "discovery_inquiry_review_outcomes_required_explanation_check",
-      sql`${table.outcomeKind} not in ('possible_new_process', 'spans_multiple_processes', 'additional_validation_required') or ${table.explanation} is not null`,
+      sql`${table.outcomeKind} not in ('possible_new_process', 'possible_new_process_family', 'possible_policy', 'spans_multiple_processes', 'additional_validation_required') or ${table.explanation} is not null`,
     ),
     index("discovery_inquiry_review_outcomes_org_review_idx").on(
       table.organizationId,

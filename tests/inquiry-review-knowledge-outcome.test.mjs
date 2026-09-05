@@ -125,9 +125,19 @@ test("Slice C UX uses conversational language and never forces a change", async 
 });
 
 test("inquiry outcome categories and evidence counts are deterministic without a score", () => {
-  assert.equal(DISCOVERY_INQUIRY_REVIEW_OUTCOME_KINDS.length, 5);
+  assert.equal(DISCOVERY_INQUIRY_REVIEW_OUTCOME_KINDS.length, 7);
   assert.equal(
     DISCOVERY_INQUIRY_REVIEW_OUTCOME_DETAILS.possible_new_process
+      .requiresExplanation,
+    true,
+  );
+  assert.equal(
+    DISCOVERY_INQUIRY_REVIEW_OUTCOME_DETAILS.possible_new_process_family
+      .requiresExplanation,
+    true,
+  );
+  assert.equal(
+    DISCOVERY_INQUIRY_REVIEW_OUTCOME_DETAILS.possible_policy
       .requiresExplanation,
     true,
   );

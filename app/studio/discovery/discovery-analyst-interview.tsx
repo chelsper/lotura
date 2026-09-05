@@ -93,11 +93,21 @@ function PauseSubmitButton({ disabled }: { disabled: boolean }) {
   );
 }
 
-function FinishSubmitButton({ disabled }: { disabled: boolean }) {
+function FinishSubmitButton({
+  disabled,
+  inquiryMode,
+}: {
+  disabled: boolean;
+  inquiryMode: boolean;
+}) {
   const { pending } = useFormStatus();
   return (
     <Button disabled={disabled || pending} size="sm" type="submit">
-      {pending ? "Finishing…" : "Finish & review"}
+      {pending
+        ? "Preparing review…"
+        : inquiryMode
+          ? "Use what I have"
+          : "Finish & review"}
     </Button>
   );
 }
@@ -253,7 +263,10 @@ export function DiscoveryAnalystInterview({
             </Button>
             <form action={finishAction}>
               <HiddenContext inquiryId={inquiryId} revision={revision} sessionId={sessionId} />
-              <FinishSubmitButton disabled={analystPending} />
+              <FinishSubmitButton
+                disabled={analystPending}
+                inquiryMode={inquiryMode}
+              />
             </form>
           </div>
         </div>

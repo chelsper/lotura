@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 
+import { Alert } from "@/app/ui/primitives";
 import { loadProcessAuthoringContext } from "@/lib/operating-model-authoring-data";
 import { loadProcessFamilyProcessIndex } from "@/lib/process-family-data";
 import { decodeProcessRouteId } from "@/lib/process-route.mjs";
@@ -12,11 +13,14 @@ import { WorkspaceShell } from "../../../workspace-shell";
 
 export default async function StudioProcessPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ processId: string }>;
+  searchParams: Promise<{ baseline?: string }>;
 }) {
   await connection();
   const { processId } = await params;
+  const query = await searchParams;
   const decodedProcessId = decodeProcessRouteId(processId);
   if (!decodedProcessId) notFound();
 
@@ -36,17 +40,24 @@ export default async function StudioProcessPage({
 
   return (
     <WorkspaceShell activeView="studio" asOf={asOf} configuration={configuration} source={source}>
+      {query.baseline === "created" ? (
+        <Alert className="mb-5" tone="success">
+          You created a shared working baseline. It is useful now and remains a
+          Draft—not an approved or complete Process. Take a break, or strengthen
+          it with Lotura when you are ready.
+        </Alert>
+      ) : null}
       {discovery.enabled ? (
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-[var(--workspace-accent-border)] bg-[var(--workspace-accent-subtle)] p-4">
           <div>
             <p className="text-sm font-semibold text-[var(--text)]">Discover how this Process actually happens</p>
-            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">Begin a guided interview without changing the documented draft.</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">Add evidence and strengthen this working Process without silently changing it.</p>
           </div>
           <Link
             className="inline-flex h-9 items-center justify-center rounded-[9px] bg-[var(--workspace-accent)] px-3 text-xs font-medium text-[var(--workspace-accent-foreground)] hover:bg-[var(--workspace-accent-hover)]"
             href={`/studio/discovery?process=${encodeURIComponent(decodedProcessId)}`}
           >
-            Interview me
+            Strengthen with Lotura
           </Link>
         </div>
       ) : null}

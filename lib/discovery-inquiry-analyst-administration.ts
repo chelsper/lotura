@@ -745,7 +745,7 @@ export async function finishInquiryDiscoveryAnalyst(input: {
          revision = revision + 1, updated_at = transaction_timestamp()
        where organization_id = $1::integer and stable_key = $2::uuid
          and actor_identifier = $3::varchar(128) and revision = $4::integer
-         and status = 'in_progress' and analyst_enabled = true
+         and status in ('in_progress', 'paused') and analyst_enabled = true
          and exists (select 1 from discovery_inquiry_observations observation
            where observation.organization_id = discovery_inquiry_sessions.organization_id
              and observation.session_id = discovery_inquiry_sessions.id)
@@ -754,7 +754,7 @@ export async function finishInquiryDiscoveryAnalyst(input: {
         context.discovery.actorIdentifier, input.expectedRevision],
     );
     if (!rows[0]) return { code: "conflict", message: "Preserve at least one observation, or reload if the interview changed.", ok: false };
-    return { message: "Inquiry finished. Your evidence is ready for human review; no Process was created or changed.", ok: true, sessionId: input.sessionId };
+    return { message: "What you have is ready for human review. Unanswered questions remain preserved; no Process was created or changed.", ok: true, sessionId: input.sessionId };
   } catch (error) {
     logFailure("finish", error);
     return { code: "unavailable", message: "Lotura could not finish the inquiry safely.", ok: false };

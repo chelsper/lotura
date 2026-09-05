@@ -35,11 +35,11 @@ export type DiscoveryAnalystTurnRecord = {
   };
 };
 
-export async function loadDiscoveryAnalystTurn(
+async function loadDiscoveryAnalystTurnRecord(
   organizationId: number,
   sessionStableKey: string,
-  revision: number,
-  sessionKind: "inquiry" | "process" = "process",
+  revision: number | null,
+  sessionKind: "inquiry" | "process",
 ): Promise<DiscoveryAnalystTurnRecord | null> {
   const rows = await db
     .select({
@@ -93,7 +93,9 @@ export async function loadDiscoveryAnalystTurn(
         sessionKind === "process"
           ? eq(discoveryAssistanceRun.discoverySessionStableKey, sessionStableKey)
           : eq(discoveryAssistanceRun.inquirySessionStableKey, sessionStableKey),
-        eq(discoveryAssistanceRun.requestedSessionRevision, revision),
+        revision === null
+          ? undefined
+          : eq(discoveryAssistanceRun.requestedSessionRevision, revision),
         eq(discoveryAssistanceRun.analystTurn, true),
       ),
     )
@@ -129,4 +131,31 @@ export async function loadDiscoveryAnalystTurn(
       topic: row.suggestionTopic,
     },
   };
+}
+
+export async function loadDiscoveryAnalystTurn(
+  organizationId: number,
+  sessionStableKey: string,
+  revision: number,
+  sessionKind: "inquiry" | "process" = "process",
+): Promise<DiscoveryAnalystTurnRecord | null> {
+  return loadDiscoveryAnalystTurnRecord(
+    organizationId,
+    sessionStableKey,
+    revision,
+    sessionKind,
+  );
+}
+
+export async function loadLatestDiscoveryAnalystTurn(
+  organizationId: number,
+  sessionStableKey: string,
+  sessionKind: "inquiry" | "process" = "process",
+): Promise<DiscoveryAnalystTurnRecord | null> {
+  return loadDiscoveryAnalystTurnRecord(
+    organizationId,
+    sessionStableKey,
+    null,
+    sessionKind,
+  );
 }

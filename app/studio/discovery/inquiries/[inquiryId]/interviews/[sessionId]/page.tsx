@@ -14,7 +14,10 @@ import {
   WorkspacePageHeader,
   WorkspaceShell,
 } from "../../../../../../workspace-shell";
-import { changeInquiryDiscoveryPauseAction } from "../../../../actions";
+import {
+  changeInquiryDiscoveryPauseAction,
+  finishInquiryDiscoveryAnalystAction,
+} from "../../../../actions";
 import { DiscoveryAssistanceRequestForm } from "../../../../discovery-assistance-request-form";
 import { DiscoveryAssistanceSuggestionForm } from "../../../../discovery-assistance-suggestion-form";
 import { DiscoveryAssistanceRequestDetails } from "../../../../discovery-assistance-request-details";
@@ -67,13 +70,21 @@ export default async function DiscoveryInquiryInterviewPage({
     : null;
   const [analystTurn, referenceConfirmations] = session.analystEnabled
     ? await Promise.all([
-        import("@/lib/discovery-analyst-data").then(({ loadDiscoveryAnalystTurn }) =>
-          loadDiscoveryAnalystTurn(
-            discoveryOrganizationId,
-            session.id,
-            session.revision,
-            "inquiry",
-          )),
+        import("@/lib/discovery-analyst-data").then(({
+          loadDiscoveryAnalystTurn,
+          loadLatestDiscoveryAnalystTurn,
+        }) => session.status === "paused"
+          ? loadLatestDiscoveryAnalystTurn(
+              discoveryOrganizationId,
+              session.id,
+              "inquiry",
+            )
+          : loadDiscoveryAnalystTurn(
+              discoveryOrganizationId,
+              session.id,
+              session.revision,
+              "inquiry",
+            )),
         import("@/lib/discovery-reference-data").then(({ loadInquiryReferenceConfirmations }) =>
           loadInquiryReferenceConfirmations(
             discoveryOrganizationId,
@@ -200,6 +211,26 @@ export default async function DiscoveryInquiryInterviewPage({
               <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--text-secondary)]">
                 {analystTurn.snapshot.narrative}
               </p>
+            </div>
+          ) : null}
+          {session.analystEnabled && session.observations.length > 0 ? (
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border)] pt-5">
+              <p className="max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
+                You can also use what you have now. Unanswered questions will
+                remain visible for later strengthening.
+              </p>
+              <form action={finishInquiryDiscoveryAnalystAction}>
+                <input name="inquiryId" type="hidden" value={inquiryId} />
+                <input name="sessionId" type="hidden" value={sessionId} />
+                <input
+                  name="expectedRevision"
+                  type="hidden"
+                  value={session.revision}
+                />
+                <Button type="submit" variant="primary">
+                  Use what I have
+                </Button>
+              </form>
             </div>
           ) : null}
         </Card>

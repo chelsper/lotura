@@ -1,6 +1,8 @@
 export type DiscoveryInquiryReviewOutcomeKind =
   | "connect_existing_process"
   | "possible_new_process"
+  | "possible_new_process_family"
+  | "possible_policy"
   | "spans_multiple_processes"
   | "additional_validation_required"
   | "no_separate_process_needed";
