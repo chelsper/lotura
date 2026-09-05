@@ -121,6 +121,8 @@ test("private inquiry reads remain organization-scoped and authorize before data
   ]);
   assert.match(data, /loadDiscoveryInquiries/);
   assert.match(data, /loadDiscoveryInquiry/);
+  assert.match(data, /loadDiscoveryInquirySessions/);
+  assert.match(data, /eq\(discoveryInquirySession\.organizationId, organizationId\)/g);
   assert.match(data, /eq\(discoveryInquiry\.organizationId, organizationId\)/g);
   assert.match(data, /eq\(discoveryInquiry\.stableKey, stableKey\)/);
   assert.ok(
@@ -132,6 +134,9 @@ test("private inquiry reads remain organization-scoped and authorize before data
       detailPage.indexOf('import("@/lib/discovery-data")'),
   );
   assert.match(catalogPage, /if \(!experience\.discovery\.enabled\) notFound\(\)/);
+  assert.match(catalogPage, /Continue where you left off/);
+  assert.match(catalogPage, /Paused and in-progress interviews stay here until you finish them/);
+  assert.match(catalogPage, /inquiries\/\$\{session\.inquiryId\}\/interviews\/\$\{session\.id\}/);
   assert.match(detailPage, /if \(!experience\.discovery\.enabled\) notFound\(\)/);
   assert.match(detailPage, /if \(!inquiry\) notFound\(\)/);
 });

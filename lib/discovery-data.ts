@@ -98,6 +98,23 @@ export type DiscoverySessionSummary = {
   updatedAt: string;
 };
 
+export type DiscoveryInquirySessionSummary = {
+  actorIdentifier: string;
+  analystAuthorizationVersion: string | null;
+  analystAuthorizedAt: string | null;
+  analystEnabled: boolean;
+  createdAt: string;
+  currentQuestionKey: string;
+  id: string;
+  inquiryId: string;
+  observationCount: number;
+  questionText: string;
+  revision: number;
+  scopeStatement: string;
+  status: "in_progress" | "paused" | "ready_for_review" | "closed";
+  updatedAt: string;
+};
+
 export async function loadDiscoveryInquiries(
   organizationId: number,
 ): Promise<DiscoveryInquiryRecord[]> {
@@ -602,6 +619,65 @@ export async function loadDiscoverySessions(
     createdAt: row.createdAt.toISOString(),
     observationCount: countBySession.get(row.id) || 0,
     processId: `process:${row.processId}`,
+    updatedAt: row.updatedAt.toISOString(),
+  }));
+}
+
+export async function loadDiscoveryInquirySessions(
+  organizationId: number,
+): Promise<DiscoveryInquirySessionSummary[]> {
+  const rows = await db
+    .select({
+      actorIdentifier: discoveryInquirySession.actorIdentifier,
+      analystAuthorizationVersion:
+        discoveryInquirySession.analystAuthorizationVersion,
+      analystAuthorizedAt: discoveryInquirySession.analystAuthorizedAt,
+      analystEnabled: discoveryInquirySession.analystEnabled,
+      createdAt: discoveryInquirySession.createdAt,
+      currentQuestionKey: discoveryInquirySession.currentQuestionKey,
+      id: discoveryInquirySession.stableKey,
+      inquiryId: discoveryInquiry.stableKey,
+      questionText: discoveryInquiry.questionText,
+      revision: discoveryInquirySession.revision,
+      scopeStatement: discoveryInquirySession.scopeStatement,
+      status: discoveryInquirySession.status,
+      updatedAt: discoveryInquirySession.updatedAt,
+    })
+    .from(discoveryInquirySession)
+    .innerJoin(
+      discoveryInquiry,
+      and(
+        eq(discoveryInquiry.organizationId, organizationId),
+        eq(discoveryInquiry.id, discoveryInquirySession.inquiryId),
+        eq(
+          discoveryInquiry.stableKey,
+          discoveryInquirySession.inquiryStableKey,
+        ),
+      ),
+    )
+    .where(eq(discoveryInquirySession.organizationId, organizationId))
+    .orderBy(desc(discoveryInquirySession.updatedAt));
+
+  const counts = await db
+    .select({
+      sequence: discoveryInquiryObservation.sequence,
+      sessionId: discoveryInquiryObservation.sessionStableKey,
+    })
+    .from(discoveryInquiryObservation)
+    .where(eq(discoveryInquiryObservation.organizationId, organizationId));
+  const countBySession = new Map<string, number>();
+  for (const row of counts) {
+    countBySession.set(
+      row.sessionId,
+      Math.max(countBySession.get(row.sessionId) || 0, row.sequence),
+    );
+  }
+
+  return rows.map((row) => ({
+    ...row,
+    analystAuthorizedAt: row.analystAuthorizedAt?.toISOString() ?? null,
+    createdAt: row.createdAt.toISOString(),
+    observationCount: countBySession.get(row.id) || 0,
     updatedAt: row.updatedAt.toISOString(),
   }));
 }

@@ -202,7 +202,8 @@ test("the UI states the evidence, privacy, and no-Process-write boundary in conv
     read("app/studio/discovery/discovery-answer-form.tsx"),
   ]);
   assert.match(catalog, /Interview answers are notes about how work happens/);
-  assert.match(catalog, /does not use AI or change the documented Process/);
+  assert.match(catalog, /choose the AI analyst or the guided manual path/i);
+  assert.match(catalog, /Neither path changes the documented Process without review/);
   assert.match(interview, /Review your interview answers/);
   assert.match(interview, /They have not changed or approved the documented Process/);
   assert.match(answer, /describe how the work happens without including sensitive records/i);
