@@ -8,6 +8,7 @@ import { buildProcessExplorerData } from "./process-explorer-data";
 import { resolveProcessAcquisitionConfiguration } from "./process-acquisition-policy.mjs";
 import { resolveProposalReviewConfiguration } from "./proposal-review-policy.mjs";
 import { resolveProcessApplicationConfiguration } from "./process-application-policy.mjs";
+import { resolvePilotIdentityAssociationConfiguration } from "./pilot-identity-policy.mjs";
 import { loadOperatingModel } from "./process-explorer-source";
 import { resolveWorkspaceConfiguration } from "./workspace-configuration.mjs";
 import { resolveWorkspaceConfigurationOverrides } from "./workspace-configuration-policy.mjs";
@@ -31,6 +32,10 @@ export async function loadWorkspaceExperience() {
     process.env,
     runtimeAccess,
   );
+  const pilotIdentity = resolvePilotIdentityAssociationConfiguration(
+    process.env,
+    runtimeAccess,
+  );
   const { asOf, seed, source } = await loadOperatingModel();
   const data = buildProcessExplorerData(seed, asOf);
   const analysis = buildFlowAnalysis(seed, asOf);
@@ -48,6 +53,7 @@ export async function loadWorkspaceExperience() {
     discovery,
     processAcquisition,
     processApplication,
+    pilotIdentity,
     proposalReview,
     source,
   };

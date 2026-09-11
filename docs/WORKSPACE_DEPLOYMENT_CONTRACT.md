@@ -41,6 +41,10 @@ environment. Temporary deployment lag is acceptable; code divergence is not.
 - uses a distinct least-privilege Process-application role only through the
   server-only `LOTURA_PROCESS_APPLICATION_DATABASE_URL` when approved changes
   may be applied as a documented Process version;
+- may associate the authenticated pilot application identity with one existing
+  Person and current Position Assignment through the paired, server-only
+  `LOTURA_PILOT_PERSON_STABLE_KEY` and
+  `LOTURA_PILOT_POSITION_STABLE_KEY` values;
 - enables administration explicitly with
   `LOTURA_STRUCTURE_ADMIN_MODE=enabled` only after migration and privilege
   verification;
@@ -61,8 +65,10 @@ environment. Temporary deployment lag is acceptable; code divergence is not.
 - receives no public-demo fixture fallback.
 
 The temporary pilot administrator represents the initial Workspace
-Administrator. It is not a substitute for the future multidimensional
-Governance and Stewardship engine.
+Administrator. A configured pilot Person association adds a read-only personal
+lens; it does not make the administrator identity a Person, Position, or
+Operational Role, change authorization, narrow whole-Organization access, or
+substitute for the future multidimensional Governance and Stewardship engine.
 
 ## Environment isolation
 
@@ -74,6 +80,13 @@ credentials must not be configured in:
 - Development; or
 - client-visible variables, browser code, source files, logs, or repository
   artifacts.
+
+Pilot Person and Position stable keys are not credentials, but they are private
+deployment configuration and must likewise remain absent from Public Demo,
+Preview, client-visible variables, browser bundles, and repository artifacts.
+The application fails closed when only one key is present, either key is not a
+UUID, the workspace is public/demo, or the records are not connected by a
+current assignment in the configured Organization.
 
 Public Demo and JU Pilot data, credentials, configuration, domains, and access
 remain independently managed. A release is acceptable only when those

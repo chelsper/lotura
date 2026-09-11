@@ -1,8 +1,12 @@
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 
-import { workspaceAccessContext } from "@/lib/authentication";
+import {
+  requireWorkspaceAccess,
+  workspaceAccessContext,
+} from "@/lib/authentication";
 import type { OperatingModelSource } from "@/lib/process-explorer-source-policy.mjs";
+import { resolvePilotIdentityAssociationConfiguration } from "@/lib/pilot-identity-policy.mjs";
 import type { WorkspaceConfiguration } from "@/lib/workspace-configuration.mjs";
 import { workspaceStudioAvailable } from "@/lib/workspace-studio-availability";
 
@@ -12,10 +16,12 @@ import {
   HomeIcon,
   LayersIcon,
   OrganizationIcon,
+  RoleIcon,
 } from "./ui/icons";
 import { Alert, Badge, cn } from "./ui/primitives";
 
 export type WorkspaceView =
+  | "context"
   | "overview"
   | "organization"
   | "explorer"
@@ -23,6 +29,13 @@ export type WorkspaceView =
   | "studio";
 
 const navigation = [
+  {
+    id: "context" as const,
+    href: "/context",
+    icon: RoleIcon,
+    label: "Your context",
+    personalContextOnly: true,
+  },
   {
     id: "overview" as const,
     href: "/overview",
@@ -72,9 +85,11 @@ function sourceTone(source: OperatingModelSource) {
 
 function WorkspaceNavigation({
   activeView,
+  personalContextEnabled,
   studioEnabled,
 }: {
   activeView?: WorkspaceView;
+  personalContextEnabled: boolean;
   studioEnabled: boolean;
 }) {
   return (
@@ -82,7 +97,10 @@ function WorkspaceNavigation({
       aria-label="Product"
       className="space-y-1 max-lg:flex max-lg:min-w-max max-lg:gap-1 max-lg:space-y-0"
     >
-      {navigation.filter((item) => !("studioOnly" in item) || studioEnabled).map((item) => {
+      {navigation.filter((item) =>
+        (!("studioOnly" in item) || studioEnabled) &&
+        (!("personalContextOnly" in item) || personalContextEnabled),
+      ).map((item) => {
         const Icon = item.icon;
         const active = activeView === item.id;
 
@@ -241,7 +259,13 @@ export async function WorkspaceShell({
   configuration: WorkspaceConfiguration;
   source: OperatingModelSource;
 }) {
-  const studioEnabled = await workspaceStudioAvailable();
+  const [runtimeAccess, studioEnabled] = await Promise.all([
+    requireWorkspaceAccess(),
+    workspaceStudioAvailable(),
+  ]);
+  const personalContextEnabled =
+    resolvePilotIdentityAssociationConfiguration(process.env, runtimeAccess)
+      .enabled;
   const { accent } = configuration.appearance;
   const style = {
     "--workspace-accent": accent.base,
@@ -276,7 +300,11 @@ export async function WorkspaceShell({
         </div>
 
         <div className="flex-1 px-3 py-4">
-          <WorkspaceNavigation activeView={activeView} studioEnabled={studioEnabled} />
+          <WorkspaceNavigation
+            activeView={activeView}
+            personalContextEnabled={personalContextEnabled}
+            studioEnabled={studioEnabled}
+          />
         </div>
 
         <div className="border-t border-[var(--border)] px-5 py-4">
@@ -318,7 +346,11 @@ export async function WorkspaceShell({
             </div>
           </div>
           <div className="flex gap-1 overflow-x-auto px-3 pb-3 sm:px-5">
-            <WorkspaceNavigation activeView={activeView} studioEnabled={studioEnabled} />
+            <WorkspaceNavigation
+              activeView={activeView}
+              personalContextEnabled={personalContextEnabled}
+              studioEnabled={studioEnabled}
+            />
           </div>
         </header>
 

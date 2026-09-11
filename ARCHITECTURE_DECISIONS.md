@@ -114,6 +114,7 @@ A feature request does not implicitly authorize a schema, migration, database, c
 | LAD-068 | AI may draft an evidence-linked Process proposal, but a human creates every governed mapping | Accepted — implementation authorized for AI Process Synthesis & Proposal Draft Alpha |
 | LAD-069 | Inquiry-first AI analysis may suggest organizational references, but a human confirms every typed link | Accepted — implementation authorized for Inquiry-first AI Analyst & Reference Confirmation Alpha |
 | LAD-070 | A human may establish a shared working Process baseline before Discovery is complete | Accepted — implementation authorized for Minimum Viable Process Baseline Alpha |
+| LAD-071 | An authenticated pilot identity may open a derived personal lens into the canonical organizational model | Accepted — implementation authorized for Personalized Pilot Context Alpha |
 
 ## Decision records
 
@@ -3407,6 +3408,75 @@ public Northstar changes, destructive writes, unresolved evidence deletion, or n
 canonical Process fields. Separate first-class trigger and end-boundary fields remain
 a later authoring decision; the Alpha preserves known boundaries in the readable
 baseline purpose and evidence.
+
+### LAD-071 — An authenticated pilot identity may open a derived personal lens into the canonical organizational model
+
+**Status:** Accepted — implementation authorized for Personalized Pilot Context
+Alpha.
+
+**Context:** The private pilot currently authenticates one temporary Workspace
+Administrator without connecting that application identity to a Person in the
+organizational model. Lotura can already show People, Positions, Units, reporting
+relationships, Role Mandates and Coverage, Processes, Systems, dependencies, and
+derived Knowledge Gaps, but a participant must assemble their own place in that
+model by navigating several administrator-oriented surfaces. The immediate pilot
+needs a comprehensible participant story without narrowing Lotura to an individual
+dashboard or creating a second set of organizational relationships.
+
+**Decision:** A private authenticated deployment may configure one explicit Alpha
+association between its application identity and an existing current Person plus
+one of that Person's existing current Position Assignments. The association is
+deployment configuration, not a User, Membership, Person, Position, Role,
+Assignment, Mandate, Coverage, or governance record. Both stable keys are required,
+resolved only on the server, and verified against the configured Organization and
+the common current structure snapshot. Lotura fails closed if either identity is
+missing, inactive, cross-Organization, or not connected by a current Position
+Assignment. It never matches by name or title.
+
+The resulting **Your organizational context** experience is a read-only projection
+of the same canonical organizational digital twin. It may show the associated
+Person and Position, Unit, manager and direct-report Positions, explicitly covered
+Operational Roles, Processes owned or participated in through those Roles,
+connected Systems, Process Families, dependencies, connected Units, and relevant
+derived Knowledge Gaps. Every relationship must be supported by an existing
+canonical record or current derived projection; absence remains visible and is not
+filled by inference.
+
+The personal lens links outward to the underlying Person, Position, Unit, Role,
+Process, System, Family, Discovery, Knowledge Gaps, and whole-Organization
+experiences. It does not filter or replace those experiences, alter Workspace
+Administrator authorization, or create a personalized data model. The holistic
+Organization and Workspace Studio remain independently navigable and retain their
+full scope.
+
+**Why:** A participant understands Lotura most quickly when the connected model
+starts from a familiar structural seat and expands into responsibility and work.
+Deriving that view from the same records demonstrates individual relevance while
+preserving Lotura's purpose as an organizational intelligence platform.
+
+**Alternatives considered:** Make the temporary `ju-admin` identifier a Person;
+infer a Person from a matching name, email, or Position title; duplicate relevant
+relationships in a profile table; restrict the Organization and Studio to the
+associated Person's reach; or defer the experience until SSO and enterprise
+provisioning exist. These were rejected because they collapse identity domains,
+manufacture relationships, create parallel truth, narrow the product, or postpone
+a reversible and useful pilot experience.
+
+**Affected decisions:** LAD-071 follows and extends LAD-001, LAD-003, LAD-005,
+LAD-008, LAD-014 through LAD-016, LAD-029, LAD-033, LAD-037, LAD-046, and LAD-069.
+It preserves LAD-029's separation of application identity from operating-model
+identity and LAD-033's separation of Position, Person, Mandate, and Coverage. It
+conflicts with and supersedes no accepted decision.
+
+**Consequences and deferrals:** Alpha requires no schema, migration, database
+privilege, credential, canonical write, or public Northstar behavior. It authorizes
+two server-only stable-key configuration values, a fail-closed resolver, a derived
+read-only projection, participant-oriented UI, navigation, targeted tests, and a
+separately controlled private-pilot configuration and deployment. The stable keys
+must never use a `NEXT_PUBLIC_` prefix. Multi-user identity association, SSO claims,
+provisioning, recovery, self-service profile selection, authorization based on
+organizational reach, association audit history, participant-specific task queues,
+and governance permissions remain deferred.
 
 ## Intentionally deferred ideas register
 

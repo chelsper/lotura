@@ -59,6 +59,17 @@ Development and deployed demo mode remain public when the value is omitted. A de
 
 Temporary authentication is preparation for a future private deployment, not authorization to expose one. Durable distributed login throttling or approved deployment-level protection must be configured and verified before a private custom domain becomes accessible. SSO remains the intended replacement.
 
+An authenticated private pilot may optionally expose a read-only personal lens
+through `LOTURA_PILOT_PERSON_STABLE_KEY` and
+`LOTURA_PILOT_POSITION_STABLE_KEY`. Both server-only values are required
+together and must identify an active Person and Position connected by a current
+Position Assignment in the configured Organization. The application identity,
+Person, Position, and Operational Roles remain separate. The lens derives its
+structure, responsibility, Process, System, dependency, and knowledge-gap
+connections from the same canonical organizational model used everywhere else;
+it neither filters nor replaces the whole-Organization or Workspace Studio
+experiences.
+
 Optional server-only presentation variables are:
 
 - `LOTURA_WORKSPACE_DISPLAY_NAME`

@@ -26,10 +26,12 @@ function sourceTone(source: OperatingModelSource) {
 export function HomeOrientation({
   asOf,
   configuration,
+  personalContextEnabled,
   source,
 }: {
   asOf: string;
   configuration: WorkspaceConfiguration;
+  personalContextEnabled: boolean;
   source: OperatingModelSource;
 }) {
   const isFictionalSample = source.kind !== "neon";
@@ -54,11 +56,23 @@ export function HomeOrientation({
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link
               className="group inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-[var(--workspace-accent)] px-4 text-sm font-medium text-[var(--workspace-accent-foreground)] transition-colors hover:bg-[var(--workspace-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)] focus-visible:ring-offset-2"
-              href="/overview"
+              href={personalContextEnabled ? "/context" : "/overview"}
             >
-              See {configuration.appearance.displayName}’s organization
+              {personalContextEnabled ? (
+                "See your organizational context"
+              ) : (
+                <>See {configuration.appearance.displayName}’s organization</>
+              )}
               <ArrowIcon className="size-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
+            {personalContextEnabled ? (
+              <Link
+                className="inline-flex h-11 items-center gap-2 rounded-[10px] px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]"
+                href="/overview"
+              >
+                See the whole organization
+              </Link>
+            ) : null}
             <a
               className="inline-flex h-11 items-center gap-2 rounded-[10px] px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]"
               href="#how-lotura-works"

@@ -8,7 +8,8 @@ import { WorkspaceShell } from "./workspace-shell";
 export default async function Home() {
   await connection();
 
-  const { asOf, configuration, source } = await loadWorkspaceExperience();
+  const { asOf, configuration, pilotIdentity, source } =
+    await loadWorkspaceExperience();
 
   return (
     <WorkspaceShell
@@ -19,6 +20,7 @@ export default async function Home() {
       <HomeOrientation
         asOf={asOf}
         configuration={configuration}
+        personalContextEnabled={pilotIdentity.enabled}
         source={source}
       />
     </WorkspaceShell>
