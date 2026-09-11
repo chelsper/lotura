@@ -1,6 +1,9 @@
 import Link from "next/link";
 
-import type { PersonalContext } from "@/lib/personal-context.mjs";
+import {
+  describePersonalContextDependency,
+  type PersonalContext,
+} from "@/lib/personal-context.mjs";
 
 import {
   ArrowIcon,
@@ -11,13 +14,6 @@ import {
   SystemIcon,
 } from "./ui/icons";
 import { Alert, Badge, Card, EmptyState } from "./ui/primitives";
-
-const dependencyLabels: Record<string, string> = {
-  provides_to: "Provides to",
-  receives_from: "Receives from",
-  requires: "Requires",
-  triggers: "Triggers",
-};
 
 function PositionLink({
   people,
@@ -157,10 +153,7 @@ function ProcessCard({
                   href={`/explorer/${encodeURIComponent(dependency.processId)}`}
                   key={`${dependency.direction}:${dependency.processId}:${dependency.type}`}
                 >
-                  <span className="font-medium text-[var(--text)]">
-                    {dependencyLabels[dependency.type] ?? dependency.type}
-                  </span>{" "}
-                  {dependency.processName} →
+                  {describePersonalContextDependency(process.name, dependency)} →
                 </Link>
               ))
             ) : (

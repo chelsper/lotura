@@ -4,6 +4,15 @@ import type { ProcessExplorerData } from "./process-explorer-data";
 
 export class PersonalContextResolutionError extends Error {}
 
+export function describePersonalContextDependency(
+  processName: string,
+  dependency: {
+    direction: "incoming" | "outgoing";
+    processName: string;
+    type: string;
+  },
+): string;
+
 export type PersonalContext = ReturnType<typeof buildPersonalContext>;
 
 export function buildPersonalContext(input: {

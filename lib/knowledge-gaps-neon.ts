@@ -21,7 +21,7 @@ export async function loadNeonKnowledgeGapDiscoverySources(
         createdAt: discoveryObservation.createdAt,
         epistemicState: discoveryObservation.epistemicState,
         id: discoveryObservation.stableKey,
-        processKey: discoverySession.processStableKey,
+        processId: processTable.id,
         processName: processTable.name,
         promptText: discoveryObservation.promptText,
         sessionId: discoverySession.stableKey,
@@ -70,8 +70,9 @@ export async function loadNeonKnowledgeGapDiscoverySources(
       ...decision,
       createdAt: decision.createdAt.toISOString(),
     })),
-    observations: observations.map((observation) => ({
+    observations: observations.map(({ processId, ...observation }) => ({
       ...observation,
+      processKey: `process:${processId}`,
       createdAt: observation.createdAt.toISOString(),
     })),
   };

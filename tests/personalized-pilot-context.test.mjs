@@ -6,6 +6,7 @@ import { buildKnowledgeGaps } from "../lib/knowledge-gaps.mjs";
 import { buildOrganizationStructureData } from "../lib/organization-structure-data.mjs";
 import {
   buildPersonalContext,
+  describePersonalContextDependency,
   PersonalContextResolutionError,
 } from "../lib/personal-context.mjs";
 import {
@@ -179,6 +180,72 @@ test("an exact current Person-Position assignment is required", async () => {
       }),
     PersonalContextResolutionError,
   );
+});
+
+test("personal Discovery questions match the same Process keys as the organizational model", async () => {
+  const input = await fictionalProjection();
+  const process = input.explorerData.processes[0];
+  const observation = {
+    createdAt: asOf,
+    epistemicState: "needs_validation",
+    id: "fictional-observation",
+    processKey: process.id,
+    processName: process.name,
+    promptText: "Who validates the handoff?",
+    sessionId: "fictional-session",
+    supersedesObservationId: null,
+  };
+  const sources = buildKnowledgeGaps({
+    asOf,
+    discovery: {
+      decisions: [],
+      observations: [
+        observation,
+        { ...observation, id: "unrelated-observation", processKey: "process:999" },
+      ],
+    },
+    operatingModel: { processes: [], processSteps: [], roles: [] },
+    organizationKey: "organization:1",
+    structure: { positions: [], roleMandates: [], roleCoverages: [] },
+  });
+  const context = buildPersonalContext({
+    ...input,
+    association: { applicationIdentity: "temporary-admin", personStableKey, positionStableKey },
+    knowledgeGaps: sources,
+  });
+  assert.deepEqual(
+    context.unresolved.map((item) => item.sourceStableKey),
+    ["fictional-observation"],
+  );
+
+  // The live adapter must normalize only after its tenant and stable-key join.
+  const reader = await read("lib/knowledge-gaps-neon.ts");
+  assert.match(reader, /processId: processTable\.id/);
+  assert.match(reader, /processKey: `process:\$\{processId\}`/);
+  assert.match(reader, /eq\(processTable\.stableKey, discoverySession\.processStableKey\)/);
+  assert.match(reader, /eq\(processTable\.organizationId, organizationId\)/);
+});
+
+test("dependency descriptions preserve source and target in both directions", () => {
+  for (const [type, verb] of Object.entries({
+    provides_to: "provides to",
+    receives_from: "receives from",
+    requires: "requires",
+    triggers: "triggers",
+  })) {
+    assert.equal(
+      describePersonalContextDependency("Current work", {
+        direction: "outgoing", processName: "Connected work", type,
+      }),
+      `Current work ${verb} Connected work`,
+    );
+    assert.equal(
+      describePersonalContextDependency("Current work", {
+        direction: "incoming", processName: "Connected work", type,
+      }),
+      `Connected work ${verb} Current work`,
+    );
+  }
 });
 
 test("the route is a read-only lens with outward navigation and no canonical writes", async () => {
