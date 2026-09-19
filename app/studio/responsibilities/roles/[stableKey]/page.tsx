@@ -9,6 +9,7 @@ import { loadWorkspaceStudioExperience } from "@/lib/organization-structure-expe
 import { buildResponsibilityRoles } from "@/lib/responsibility-builder";
 
 import { ResponsibilityRoleWorkspace } from "../../responsibility-role-workspace";
+import { OrganizationNavigation } from "../../../organization-navigation";
 
 export default async function OperationalRolePage({
   params,
@@ -28,6 +29,7 @@ export default async function OperationalRolePage({
   return (
     <WorkspaceShell activeView="studio" asOf={asOf} configuration={configuration} source={source}>
       <div className="mx-auto max-w-6xl">
+        <OrganizationNavigation activeView="roles" />
         <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-tertiary)]">
           <Link href="/studio">Workspace Studio</Link><span>/</span>
           <Link href="/studio/responsibilities">Responsibilities</Link><span>/</span>

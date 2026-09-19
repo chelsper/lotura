@@ -35,7 +35,7 @@ import {
   initialStructureActionState,
   type StructureActionState,
 } from "./action-state";
-import { Alert, Button, Card, Input, Select } from "../ui/primitives";
+import { Alert, Button, Card, Input, RequiredMark, Select } from "../ui/primitives";
 
 type EditableEntity = OrganizationUnit | OrganizationPosition | OrganizationPerson;
 
@@ -128,7 +128,7 @@ function ChangeMetadataFields({
       ) : (
         <label className="block">
           <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-            How should this change be understood?
+            Type of change<RequiredMark />
           </span>
           <Select defaultValue="correction" name="changeKind" required>
             <option value="correction">Correction to the current record</option>
@@ -138,16 +138,16 @@ function ChangeMetadataFields({
       )}
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Effective date
+          Effective date<RequiredMark />
         </span>
         <Input defaultValue={effectiveDateDefault()} name="effectiveDate" required type="date" />
       </label>
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Reason
+          Reason for change<RequiredMark />
         </span>
         <textarea
-          className="min-h-24 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none transition focus:border-[var(--accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
+          className="min-h-20 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none transition focus:border-[var(--accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
           maxLength={2000}
           name="reason"
           onChange={
@@ -155,10 +155,11 @@ function ChangeMetadataFields({
               ? (event) => onReasonChange(event.target.value)
               : undefined
           }
-          placeholder="Explain why this evidence should be treated differently."
+          placeholder="A short note, such as “Corrected the job title.”"
           required
           value={reason}
         />
+        <span className="mt-1.5 block text-xs text-[var(--text-tertiary)]">Saved in the change history so others understand the update.</span>
       </label>
     </>
   );
@@ -263,7 +264,7 @@ function EditForm({
         <>
           <label className="block sm:col-span-2">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-              Rename this Organization Unit
+              Rename this Organization Unit<RequiredMark />
             </span>
             <Input
               maxLength={255}
@@ -283,7 +284,7 @@ function EditForm({
           ) : null}
           <label className="block sm:col-span-2">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-              Parent Organization Unit
+              Parent Organization Unit (optional)
             </span>
             <Select
               defaultValue={(entity as OrganizationUnit).parent?.id ?? ""}
@@ -313,7 +314,7 @@ function EditForm({
         <>
           <label className="block">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-              Position title
+              Position title<RequiredMark />
             </span>
             <Input defaultValue={(entity as OrganizationPosition).title} maxLength={255} name="title" required />
             <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
@@ -322,7 +323,7 @@ function EditForm({
           </label>
           <label className="block">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-              Move this Position to an Organization Unit
+              Move this Position to an Organization Unit (optional)
             </span>
             <Select
               defaultValue={(entity as OrganizationPosition).unit?.id ?? ""}
@@ -344,7 +345,7 @@ function EditForm({
       {entityType === "person" ? (
         <label className="block sm:col-span-2">
           <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-            Person display name
+            Person display name<RequiredMark />
           </span>
           <Input defaultValue={(entity as OrganizationPerson).name} maxLength={255} name="displayName" required />
         </label>
@@ -382,7 +383,7 @@ function RemovalForm({
       <label className="flex items-start gap-3 rounded-[10px] border border-[var(--error-border)] bg-[var(--error-subtle)] p-3 sm:col-span-2">
         <input className="mt-0.5 size-4" name="confirmRemoval" required type="checkbox" value="confirmed" />
         <span className="text-xs leading-5 text-[var(--error)]">
-          I understand this removes the record from the current structure. It does not erase its stable identity, import provenance, or change history.
+          I understand this removes the record from the current structure. It does not erase its stable identity, import provenance, or change history.<RequiredMark />
         </span>
       </label>
       {state.status === "error" ? (
@@ -467,7 +468,7 @@ function OrganizationUnitTransferForm({
       />
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          {isMerge ? "Surviving Organization Unit" : "Destination Organization Unit"}
+          {isMerge ? "Surviving Organization Unit" : "Destination Organization Unit"}<RequiredMark />
         </span>
         <Select
           name="targetStableKey"
@@ -522,7 +523,7 @@ function OrganizationUnitTransferForm({
             ? "Merge the source into the selected survivor"
             : "Move the source Unit's direct contents to the selected destination"},
           move its direct Positions and child Units, and retire—not delete—the
-          source identity.
+          source identity.<RequiredMark />
         </span>
       </label>
       <ActionResult state={state} />
@@ -616,7 +617,7 @@ function ReplaceAssignmentForm({
       />
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Replacement Person
+          Replacement Person<RequiredMark />
         </span>
         <Select name="replacementPersonStableKey" required>
           <option value="">Select a Person</option>
@@ -655,7 +656,7 @@ function EstablishAssignmentForm({
       <PositionRelationshipIdentity position={position} />
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Person
+          Person<RequiredMark />
         </span>
         <Select name="personStableKey" required>
           <option value="">Select a Person</option>
@@ -668,7 +669,7 @@ function EstablishAssignmentForm({
       </label>
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Assignment type
+          Assignment type<RequiredMark />
         </span>
         <Select defaultValue="incumbent" name="assignmentType" required>
           <option value="incumbent">Incumbent</option>
@@ -781,7 +782,7 @@ function CorrectReportingForm({
       />
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Manager Position
+          Manager Position<RequiredMark />
         </span>
         <Select
           defaultValue={relationship.position.id}
@@ -802,7 +803,7 @@ function CorrectReportingForm({
       </label>
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Relationship type
+          Relationship type<RequiredMark />
         </span>
         <Select
           defaultValue={relationship.type}
@@ -816,7 +817,7 @@ function CorrectReportingForm({
       </label>
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Reporting context, if documented
+          Reporting context (optional)
         </span>
         <Input
           defaultValue={relationship.reason ?? ""}
@@ -855,7 +856,7 @@ function EstablishReportingForm({
       <PositionRelationshipIdentity position={position} />
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Primary manager Position
+          Primary manager Position<RequiredMark />
         </span>
         <Select name="managerPositionStableKey" required>
           <option value="">Select a manager Position</option>
@@ -871,7 +872,7 @@ function EstablishReportingForm({
       </label>
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Reporting context, if documented
+          Reporting context (optional)
         </span>
         <Input maxLength={2000} name="relationshipReason" />
       </label>
@@ -915,7 +916,7 @@ function ReplaceReportingForm({
       />
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Replacement manager Position
+          Replacement manager Position<RequiredMark />
         </span>
         <Select name="managerPositionStableKey" required>
           <option value="">Select a different manager Position</option>
@@ -928,7 +929,7 @@ function ReplaceReportingForm({
       </label>
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Reporting context, if documented
+          Reporting context (optional)
         </span>
         <Input maxLength={2000} name="relationshipReason" />
       </label>
@@ -1088,7 +1089,7 @@ function EstablishRoleMandateForm({
       <PositionRelationshipIdentity position={position} />
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Operational Role
+          Operational Role<RequiredMark />
         </span>
         <Select
           name="roleKey"
@@ -1113,13 +1114,13 @@ function EstablishRoleMandateForm({
         <>
           <label className="block sm:col-span-2">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-              New Operational Role name
+              New Operational Role name<RequiredMark />
             </span>
             <Input maxLength={255} name="newRoleName" required />
           </label>
           <label className="block sm:col-span-2">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-              Responsibility description, if established
+              Responsibility description (optional)
             </span>
             <textarea
               className="min-h-20 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none transition focus:border-[var(--accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
@@ -1131,7 +1132,7 @@ function EstablishRoleMandateForm({
       ) : null}
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Mandate type
+          Mandate type<RequiredMark />
         </span>
         <Select
           name="mandateType"
@@ -1145,7 +1146,7 @@ function EstablishRoleMandateForm({
       </label>
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          {mandateType === "shared" ? "Shared scope" : "Narrower scope, if documented"}
+          {mandateType === "shared" ? <>Shared scope<RequiredMark /></> : "Narrower scope (optional)"}
         </span>
         <Input
           maxLength={2000}
@@ -1222,7 +1223,7 @@ function EstablishRoleCoverageForm({
       <input name="expectedRevision" type="hidden" value={mandate.revision} />
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Person providing coverage
+          Person providing coverage<RequiredMark />
         </span>
         <Select name="personStableKey" required>
           <option value="">Select a Person explicitly</option>
@@ -1241,7 +1242,7 @@ function EstablishRoleCoverageForm({
       </label>
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Coverage type
+          Coverage type<RequiredMark />
         </span>
         <Select
           name="coverageType"
@@ -1258,7 +1259,7 @@ function EstablishRoleCoverageForm({
       </label>
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Coverage context{coverageType === "permanent" ? ", if documented" : ""}
+          Coverage context{coverageType === "permanent" ? " (optional)" : <RequiredMark />}
         </span>
         <Input
           maxLength={2000}
@@ -1535,6 +1536,7 @@ export function StructureAdministrationPanel({
       <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
         Edits change the current documented structure. They do not modify the source workbook or its import record. Every accepted change records its reason, effective date, administrator, and the information before and after the change.
       </p>
+      <p className="mt-3 text-xs text-[var(--text-secondary)]">* Required. Everything else is optional.</p>
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <Card className="scroll-mt-6 p-4 sm:p-5" id={entityType === "position" ? "edit-position" : undefined}>
           <details open>

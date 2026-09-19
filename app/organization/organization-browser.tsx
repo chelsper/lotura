@@ -183,11 +183,14 @@ function PersonRow({ basePath, person }: { basePath: string; person: Organizatio
 export function OrganizationBrowser({
   basePath = "/organization",
   data,
+  selectedView,
 }: {
   basePath?: string;
   data: OrganizationStructureData;
+  selectedView?: BrowserView;
 }) {
-  const [view, setView] = useState<BrowserView>("units");
+  const [localView, setView] = useState<BrowserView>("units");
+  const view = selectedView ?? localView;
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLocaleLowerCase();
 
@@ -241,32 +244,38 @@ export function OrganizationBrowser({
             placeholder="Search Units, Positions, people, or Roles"
             value={query}
           />
-          <div
-            aria-label="Organization browser views"
-            className="mt-4 flex gap-1 overflow-x-auto"
-            role="tablist"
-          >
-            {tabs.map((tab) => (
-              <button
-                aria-selected={view === tab.id}
-                className={cn(
-                  "flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]",
-                  view === tab.id
-                    ? "bg-[var(--workspace-accent-subtle)] text-[var(--workspace-accent)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]",
-                )}
-                key={tab.id}
-                onClick={() => setView(tab.id)}
-                role="tab"
-                type="button"
-              >
-                {tab.label}
-                <span className="tabular-nums text-[var(--text-tertiary)]">
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </div>
+          {!selectedView ? (
+            <div
+              aria-label="Organization browser views"
+              className="mt-4 flex gap-1 overflow-x-auto"
+              role="tablist"
+            >
+              {tabs.map((tab) => (
+                <button
+                  aria-selected={view === tab.id}
+                  className={cn(
+                    "flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]",
+                    view === tab.id
+                      ? "bg-[var(--workspace-accent-subtle)] text-[var(--workspace-accent)]"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]",
+                  )}
+                  key={tab.id}
+                  onClick={() => setView(tab.id)}
+                  role="tab"
+                  type="button"
+                >
+                  {tab.label}
+                  <span className="tabular-nums text-[var(--text-tertiary)]">
+                    {tab.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 text-xs text-[var(--text-secondary)]" aria-live="polite">
+              {tabs.find((tab) => tab.id === view)?.label} · {results[view].length} {results[view].length === 1 ? "match" : "matches"}
+            </p>
+          )}
         </div>
 
         <div aria-live="polite">

@@ -14,7 +14,7 @@ import {
   type StructureActionState,
 } from "@/app/organization/action-state";
 import { ArrowIcon } from "@/app/ui/icons";
-import { Alert, Badge, Button, Card, FieldLabel, Input, Select } from "@/app/ui/primitives";
+import { Alert, Badge, Button, Card, FieldLabel, Input, RequiredMark, Select } from "@/app/ui/primitives";
 import type { OrganizationStructureData } from "@/lib/organization-structure-data.mjs";
 import type { ResponsibilityRole } from "@/lib/responsibility-builder";
 
@@ -35,16 +35,20 @@ function Result({ state }: { state: StructureActionState }) {
   );
 }
 
+function RequiredFieldsNote() {
+  return <p className="text-xs text-[var(--text-secondary)] sm:col-span-2">* Required; other fields are optional.</p>;
+}
+
 function Metadata({ fixedKind = "organizational_change" }: { fixedKind?: "correction" | "organizational_change" }) {
   return (
     <>
       <input name="changeKind" type="hidden" value={fixedKind} />
       <label>
-        <FieldLabel>Effective date</FieldLabel>
+        <FieldLabel>Effective date<RequiredMark /></FieldLabel>
         <Input defaultValue={today()} name="effectiveDate" required type="date" />
       </label>
       <label className="sm:col-span-2">
-        <FieldLabel>Reason</FieldLabel>
+        <FieldLabel>Reason<RequiredMark /></FieldLabel>
         <textarea
           className="min-h-24 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--workspace-accent)] focus:ring-2 focus:ring-[var(--workspace-focus-ring)]"
           maxLength={2000}
@@ -60,19 +64,20 @@ function EditRoleForm({ role }: { role: ResponsibilityRole }) {
   const [state, action, pending] = useActionState(updateOperationalRoleAction, initialStructureActionState);
   return (
     <form action={action} className="mt-4 grid gap-3 sm:grid-cols-2">
+      <RequiredFieldsNote />
       <input name="stableKey" type="hidden" value={role.stableKey ?? ""} />
       <input name="expectedRevision" type="hidden" value={role.revision ?? ""} />
-      <label className="sm:col-span-2"><FieldLabel>Role name</FieldLabel><Input defaultValue={role.name} maxLength={255} name="name" required /></label>
+      <label className="sm:col-span-2"><FieldLabel>Role name<RequiredMark /></FieldLabel><Input defaultValue={role.name} maxLength={255} name="name" required /></label>
       <label className="sm:col-span-2">
-        <FieldLabel>Responsibility description</FieldLabel>
+        <FieldLabel>Responsibility description (optional)</FieldLabel>
         <textarea className="min-h-24 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--workspace-accent)] focus:ring-2 focus:ring-[var(--workspace-focus-ring)]" defaultValue={role.description ?? ""} maxLength={2000} name="description" />
       </label>
-      <div>
-        <FieldLabel>How this change is understood</FieldLabel>
-        <Select defaultValue="correction" name="changeKind"><option value="correction">Correction to the current record</option><option value="organizational_change">Organizational change</option></Select>
-      </div>
-      <label><FieldLabel>Effective date</FieldLabel><Input defaultValue={today()} name="effectiveDate" required type="date" /></label>
-      <label className="sm:col-span-2"><FieldLabel>Reason</FieldLabel><textarea className="min-h-24 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none" maxLength={2000} name="reason" required /></label>
+      <label>
+        <FieldLabel>Type of change<RequiredMark /></FieldLabel>
+        <Select defaultValue="correction" name="changeKind" required><option value="correction">Correction to the current record</option><option value="organizational_change">Organizational change</option></Select>
+      </label>
+      <label><FieldLabel>Effective date<RequiredMark /></FieldLabel><Input defaultValue={today()} name="effectiveDate" required type="date" /></label>
+      <label className="sm:col-span-2"><FieldLabel>Reason for change<RequiredMark /></FieldLabel><textarea className="min-h-20 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none" maxLength={2000} name="reason" placeholder="A short note, such as “Clarified the Role name.”" required /><span className="mt-1 block text-xs text-[var(--text-tertiary)]">Saved in the change history so others understand the update.</span></label>
       <Result state={state} />
       <Button disabled={pending} type="submit" variant="primary">{pending ? "Saving…" : "Save Role changes"}</Button>
     </form>
@@ -83,13 +88,14 @@ function InactivateRoleForm({ role }: { role: ResponsibilityRole }) {
   const [state, action, pending] = useActionState(inactivateOperationalRoleAction, initialStructureActionState);
   return (
     <form action={action} className="mt-4 grid gap-3 sm:grid-cols-2">
+      <RequiredFieldsNote />
       <input name="stableKey" type="hidden" value={role.stableKey ?? ""} />
       <input name="expectedRevision" type="hidden" value={role.revision ?? ""} />
       <Alert className="sm:col-span-2" tone="warning">Lotura blocks this action while current or scheduled mandates, assignments, Process responsibility, Exception ownership, or System ownership still reference the Role.</Alert>
       <Metadata />
       <label className="flex items-start gap-2 text-xs leading-5 text-[var(--text-secondary)] sm:col-span-2">
         <input className="mt-1" name="confirmInactivation" required type="checkbox" value="confirmed" />
-        Remove this Role from the current responsibility model without deleting its stable identity or history.
+        <span>Remove this Role from the current responsibility model without deleting its stable identity or history.<RequiredMark /></span>
       </label>
       <Result state={state} />
       <Button disabled={pending} type="submit" variant="destructive">{pending ? "Removing…" : "Remove from current responsibility model"}</Button>
@@ -113,12 +119,13 @@ function AddMandateForm({ data, role }: { data: OrganizationStructureData; role:
   const selected = positions.find((position) => position.id === positionId);
   return (
     <form action={action} className="mt-3 grid gap-3 sm:grid-cols-2">
+      <RequiredFieldsNote />
       <input name="roleKey" type="hidden" value={role.id} />
       <input name="positionStableKey" type="hidden" value={positionId} />
       <input name="expectedRevision" type="hidden" value={selected?.revision ?? ""} />
-      <label className="sm:col-span-2"><FieldLabel>Position</FieldLabel><Select onChange={(event) => setPositionId(event.target.value)} required value={positionId}><option value="">Select a Position</option>{positions.map((position) => <option key={position.id} value={position.id}>{position.title} — {position.unit?.name ?? "No Organization Unit"}</option>)}</Select></label>
-      <label><FieldLabel>Mandate type</FieldLabel><Select name="mandateType" onChange={(event) => setMandateType(event.target.value as typeof mandateType)} value={mandateType}><option value="primary">Primary accountability</option><option value="shared">Shared responsibility</option></Select></label>
-      <label><FieldLabel>{mandateType === "shared" ? "Shared scope" : "Narrower scope, if documented"}</FieldLabel><Input name="scope" required={mandateType === "shared"} /></label>
+      <label className="sm:col-span-2"><FieldLabel>Position<RequiredMark /></FieldLabel><Select onChange={(event) => setPositionId(event.target.value)} required value={positionId}><option value="">Select a Position</option>{positions.map((position) => <option key={position.id} value={position.id}>{position.title} — {position.unit?.name ?? "No Organization Unit"}</option>)}</Select></label>
+      <label><FieldLabel>Mandate type<RequiredMark /></FieldLabel><Select name="mandateType" onChange={(event) => setMandateType(event.target.value as typeof mandateType)} required value={mandateType}><option value="primary">Primary accountability</option><option value="shared">Shared responsibility</option></Select></label>
+      <label><FieldLabel>{mandateType === "shared" ? <>Shared scope<RequiredMark /></> : "Narrower scope (optional)"}</FieldLabel><Input maxLength={2000} name="scope" required={mandateType === "shared"} /></label>
       <Metadata />
       <Result state={state} />
       <Button disabled={pending || !selected} type="submit" variant="primary">{pending ? "Establishing…" : "Establish Role mandate"}</Button>
@@ -131,12 +138,13 @@ function AddCoverageForm({ data, item }: { data: OrganizationStructureData; item
   const [coverageType, setCoverageType] = useState("permanent");
   return (
     <form action={action} className="mt-3 grid gap-3 sm:grid-cols-2">
+      <RequiredFieldsNote />
       <input name="positionStableKey" type="hidden" value={item.position.id} />
       <input name="mandateRecordKey" type="hidden" value={item.mandate.id} />
       <input name="expectedRevision" type="hidden" value={item.mandate.revision} />
-      <label className="sm:col-span-2"><FieldLabel>Person providing coverage</FieldLabel><Select name="personStableKey" required><option value="">Select a Person explicitly</option>{data.people.filter((person) => person.status === "active").map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</Select></label>
-      <label><FieldLabel>Coverage type</FieldLabel><Select name="coverageType" onChange={(event) => setCoverageType(event.target.value)} value={coverageType}><option value="permanent">Permanent</option><option value="interim">Interim</option><option value="acting">Acting</option><option value="delegated">Delegated</option><option value="backup">Backup</option></Select></label>
-      <label><FieldLabel>Coverage context{coverageType === "permanent" ? ", if documented" : ""}</FieldLabel><Input name="coverageReason" required={coverageType !== "permanent"} /></label>
+      <label className="sm:col-span-2"><FieldLabel>Person providing coverage<RequiredMark /></FieldLabel><Select name="personStableKey" required><option value="">Select a Person explicitly</option>{data.people.filter((person) => person.status === "active").map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</Select></label>
+      <label><FieldLabel>Coverage type<RequiredMark /></FieldLabel><Select name="coverageType" onChange={(event) => setCoverageType(event.target.value)} required value={coverageType}><option value="permanent">Permanent</option><option value="interim">Interim</option><option value="acting">Acting</option><option value="delegated">Delegated</option><option value="backup">Backup</option></Select></label>
+      <label><FieldLabel>Coverage context{coverageType === "permanent" ? " (optional)" : <RequiredMark />}</FieldLabel><Input maxLength={2000} name="coverageReason" required={coverageType !== "permanent"} /></label>
       <Metadata />
       <Result state={state} />
       <Button disabled={pending} type="submit" variant="primary">{pending ? "Establishing…" : "Establish Role Coverage"}</Button>
@@ -146,12 +154,12 @@ function AddCoverageForm({ data, item }: { data: OrganizationStructureData; item
 
 function EndCoverageForm({ item, coverage }: { item: ResponsibilityRole["mandates"][number]; coverage: ResponsibilityRole["mandates"][number]["mandate"]["coverage"][number] }) {
   const [state, action, pending] = useActionState(endRoleCoverageAction, initialStructureActionState);
-  return <form action={action} className="mt-3 grid gap-3 sm:grid-cols-2"><input name="positionStableKey" type="hidden" value={item.position.id} /><input name="mandateRecordKey" type="hidden" value={item.mandate.id} /><input name="coverageRecordKey" type="hidden" value={coverage.id} /><input name="expectedRevision" type="hidden" value={coverage.revision} /><Metadata /><Result state={state} /><Button disabled={pending} type="submit" variant="destructive">{pending ? "Ending…" : "End Role Coverage"}</Button></form>;
+  return <form action={action} className="mt-3 grid gap-3 sm:grid-cols-2"><RequiredFieldsNote /><input name="positionStableKey" type="hidden" value={item.position.id} /><input name="mandateRecordKey" type="hidden" value={item.mandate.id} /><input name="coverageRecordKey" type="hidden" value={coverage.id} /><input name="expectedRevision" type="hidden" value={coverage.revision} /><Metadata /><Result state={state} /><Button disabled={pending} type="submit" variant="destructive">{pending ? "Ending…" : "End Role Coverage"}</Button></form>;
 }
 
 function EndMandateForm({ item }: { item: ResponsibilityRole["mandates"][number] }) {
   const [state, action, pending] = useActionState(endRoleMandateAction, initialStructureActionState);
-  return <form action={action} className="mt-3 grid gap-3 sm:grid-cols-2"><input name="positionStableKey" type="hidden" value={item.position.id} /><input name="mandateRecordKey" type="hidden" value={item.mandate.id} /><input name="expectedRevision" type="hidden" value={item.mandate.revision} />{item.mandate.coverage.length ? <Alert className="sm:col-span-2" tone="warning">End all current Role Coverage first. Lotura will not erase coverage automatically.</Alert> : null}<Metadata /><Result state={state} /><Button disabled={pending || item.mandate.coverage.length > 0} type="submit" variant="destructive">{pending ? "Ending…" : "End Role mandate"}</Button></form>;
+  return <form action={action} className="mt-3 grid gap-3 sm:grid-cols-2"><RequiredFieldsNote /><input name="positionStableKey" type="hidden" value={item.position.id} /><input name="mandateRecordKey" type="hidden" value={item.mandate.id} /><input name="expectedRevision" type="hidden" value={item.mandate.revision} />{item.mandate.coverage.length ? <Alert className="sm:col-span-2" tone="warning">End all current Role Coverage first. Lotura will not erase coverage automatically.</Alert> : null}<Metadata /><Result state={state} /><Button disabled={pending || item.mandate.coverage.length > 0} type="submit" variant="destructive">{pending ? "Ending…" : "End Role mandate"}</Button></form>;
 }
 
 function formatTimestamp(value: string) {
@@ -181,7 +189,7 @@ export function ResponsibilityRoleWorkspace({ data, role }: { data: Organization
           {role.mandates.map((item) => (
             <div className="rounded-[10px] border border-[var(--border)] p-3" key={item.mandate.id}>
               <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-sm font-semibold text-[var(--text)]">{item.position.title}</p><p className="mt-1 text-xs text-[var(--text-secondary)]">{item.position.unit?.name ?? "No Organization Unit recorded"} · {item.mandate.typeLabel}{item.mandate.scope ? ` · ${item.mandate.scope}` : ""}</p></div><Link className="inline-flex items-center gap-1 text-xs font-medium text-[var(--workspace-accent)]" href={`/studio/organization/positions/${encodeURIComponent(item.position.id)}`}>View Position <ArrowIcon className="size-3" /></Link></div>
-              <div className="mt-3 flex flex-wrap gap-2">{item.mandate.coverage.length ? item.mandate.coverage.map((coverage) => <Badge key={coverage.id} tone="success">{coverage.person.name} · {coverage.typeLabel}</Badge>) : <Badge tone="warning">No current human coverage</Badge>}</div>
+              <div className="mt-3 flex flex-wrap gap-2">{item.mandate.coverage.length ? item.mandate.coverage.map((coverage) => <Link className="rounded-full hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]" href={`/studio/organization/people/${encodeURIComponent(coverage.person.id)}`} key={coverage.id}><Badge tone="success">{coverage.person.name} · {coverage.typeLabel}<ArrowIcon className="ml-1 size-3" /></Badge></Link>) : <Badge tone="warning">No current human coverage</Badge>}</div>
               <div className="mt-3 grid gap-2 lg:grid-cols-2">
                 <details className="rounded-[10px] bg-[var(--surface-subtle)] p-3"><summary className="cursor-pointer text-xs font-semibold">Add explicit coverage</summary><AddCoverageForm data={data} item={item} /></details>
                 <details className="rounded-[10px] bg-[var(--surface-subtle)] p-3"><summary className="cursor-pointer text-xs font-semibold text-[var(--error)]">End mandate</summary><EndMandateForm item={item} /></details>

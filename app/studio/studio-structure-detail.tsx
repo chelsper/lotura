@@ -16,6 +16,7 @@ import { StructureAdministrationPanel } from "../organization/structure-administ
 import { UnitHierarchyContext } from "../organization/unit-hierarchy-context";
 import { ArrowIcon } from "../ui/icons";
 import { Badge, Card } from "../ui/primitives";
+import { OrganizationNavigation } from "./organization-navigation";
 
 type StudioEntity = OrganizationUnit | OrganizationPosition | OrganizationPerson;
 
@@ -68,6 +69,7 @@ export function StudioStructureDetail({
       : [];
   return (
     <div className="mx-auto max-w-6xl">
+      <OrganizationNavigation activeView={entityType === "person" ? "people" : entityType === "position" ? "positions" : "units"} />
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-tertiary)]">
         <Link className="hover:text-[var(--workspace-accent)]" href="/studio">
           Workspace Studio
@@ -125,6 +127,10 @@ export function StudioStructureDetail({
         </div>
       </header>
 
+      {entityType === "position" ? (
+        <PositionConnections position={entity as OrganizationPosition} />
+      ) : null}
+
       {entityType === "person" && (entity as OrganizationPerson).assignments.length > 0 ? (
         <Card className="mt-6 p-4 sm:p-5">
           <h2 className="text-sm font-semibold text-[var(--text)]">Job titles</h2>
@@ -135,8 +141,10 @@ export function StudioStructureDetail({
             {(entity as OrganizationPerson).assignments.map((assignment) => (
               <li className="flex flex-wrap items-center justify-between gap-2" key={assignment.id}>
                 <div>
-                  <p className="text-sm font-medium text-[var(--text)]">{assignment.position.title}</p>
-                  <p className="text-xs text-[var(--text-secondary)]">{assignment.position.unit?.name ?? "No Organization Unit recorded"}</p>
+                  <Link className="text-sm font-medium text-[var(--workspace-accent)] hover:underline" href={`/studio/organization/positions/${encodeURIComponent(assignment.position.id)}`}>{assignment.position.title}</Link>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    {assignment.position.unit ? <Link className="hover:text-[var(--workspace-accent)] hover:underline" href={`/studio/organization/units/${encodeURIComponent(assignment.position.unit.id)}`}>{assignment.position.unit.name}</Link> : "No Organization Unit recorded"}
+                  </p>
                 </div>
                 <Link className="text-sm font-medium text-[var(--workspace-accent)] hover:underline" href={`/studio/organization/positions/${encodeURIComponent(assignment.position.id)}#edit-position`}>
                   Edit title →
@@ -172,5 +180,24 @@ export function StudioStructureDetail({
         entityType={entityType}
       />
     </div>
+  );
+}
+
+function PositionConnections({ position }: { position: OrganizationPosition }) {
+  const links = [
+    ...(position.unit ? [{ label: `Unit: ${position.unit.name}`, href: `/studio/organization/units/${encodeURIComponent(position.unit.id)}` }] : []),
+    ...position.assignments.map((assignment) => ({ label: `${assignment.typeLabel}: ${assignment.person.name}`, href: `/studio/organization/people/${encodeURIComponent(assignment.person.id)}` })),
+    ...position.mandates.filter((mandate) => mandate.role.stableKey).map((mandate) => ({ label: `Role: ${mandate.role.name}`, href: `/studio/responsibilities/roles/${encodeURIComponent(mandate.role.stableKey!)}` })),
+    ...(position.primaryManager ? [{ label: `Reports to: ${position.primaryManager.position.title}`, href: `/studio/organization/positions/${encodeURIComponent(position.primaryManager.position.id)}` }] : []),
+  ];
+  if (links.length === 0) return null;
+  return (
+    <nav aria-label="Connected organizational records" className="mt-5 flex flex-wrap gap-2">
+      {links.map((link) => (
+        <Link className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--workspace-accent)] hover:bg-[var(--surface-subtle)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]" href={link.href} key={`${link.href}:${link.label}`}>
+          {link.label} <span aria-hidden="true">→</span>
+        </Link>
+      ))}
+    </nav>
   );
 }

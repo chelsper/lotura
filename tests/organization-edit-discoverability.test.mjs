@@ -47,6 +47,7 @@ const { StudioStructureDetail } = await compile("app/studio/studio-structure-det
   "@/lib/organization-unit-hierarchy.mjs": { organizationUnitPath },
   "../organization/structure-administration-panel": { StructureAdministrationPanel: () => null },
   "../organization/unit-hierarchy-context": { UnitHierarchyContext: () => null },
+  "./organization-navigation": { OrganizationNavigation: () => null },
 });
 const fixture = buildOrganizationStructureData(
   JSON.parse(await read("db/seeds/organization-structure.json")),

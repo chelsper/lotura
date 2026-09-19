@@ -4,7 +4,7 @@ import { useActionState, useMemo, useState } from "react";
 
 import type { OrganizationStructureData } from "@/lib/organization-structure-data.mjs";
 import { initialStructureActionState } from "@/app/organization/action-state";
-import { Alert, Button, Card, FieldLabel, Input, Select } from "@/app/ui/primitives";
+import { Alert, Button, Card, FieldLabel, Input, RequiredMark, Select } from "@/app/ui/primitives";
 
 import { createOperationalRoleWithMandateAction } from "./actions";
 
@@ -23,17 +23,18 @@ export function RoleCreateForm({ data }: { data: OrganizationStructureData }) {
 
   return (
     <form action={action} className="mt-6 grid gap-5 lg:grid-cols-2">
+      <p className="text-xs text-[var(--text-secondary)] lg:col-span-2">* Required; other fields are optional.</p>
       <Card className="p-4 sm:p-5">
         <h2 className="text-base font-semibold text-[var(--text)]">Operational Role</h2>
         <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
           Name the durable responsibility—not the current Person or Position title.
         </p>
         <label className="mt-4 block">
-          <FieldLabel>Role name</FieldLabel>
+          <FieldLabel>Role name<RequiredMark /></FieldLabel>
           <Input maxLength={255} name="newRoleName" required />
         </label>
         <label className="mt-3 block">
-          <FieldLabel>Responsibility description, if established</FieldLabel>
+          <FieldLabel>Responsibility description (optional)</FieldLabel>
           <textarea
             className="min-h-28 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none transition focus:border-[var(--workspace-accent)] focus:ring-2 focus:ring-[var(--workspace-focus-ring)]"
             maxLength={2000}
@@ -48,7 +49,7 @@ export function RoleCreateForm({ data }: { data: OrganizationStructureData }) {
           Allocate the new Role deliberately. The Position’s title, occupant, and reporting line remain context only. Human coverage remains a separate decision.
         </p>
         <label className="mt-4 block">
-          <FieldLabel>Position</FieldLabel>
+          <FieldLabel>Position<RequiredMark /></FieldLabel>
           <Select
             name="positionStableKey"
             onChange={(event) => setPositionStableKey(event.target.value)}
@@ -65,10 +66,11 @@ export function RoleCreateForm({ data }: { data: OrganizationStructureData }) {
         </label>
         <input name="expectedRevision" type="hidden" value={selected?.revision ?? ""} />
         <label className="mt-3 block">
-          <FieldLabel>Mandate type</FieldLabel>
+          <FieldLabel>Mandate type<RequiredMark /></FieldLabel>
           <Select
             name="mandateType"
             onChange={(event) => setMandateType(event.target.value as typeof mandateType)}
+            required
             value={mandateType}
           >
             <option value="primary">Primary accountability</option>
@@ -76,7 +78,7 @@ export function RoleCreateForm({ data }: { data: OrganizationStructureData }) {
           </Select>
         </label>
         <label className="mt-3 block">
-          <FieldLabel>{mandateType === "shared" ? "Shared scope" : "Narrower scope, if documented"}</FieldLabel>
+          <FieldLabel>{mandateType === "shared" ? <>Shared scope<RequiredMark /></> : "Narrower scope (optional)"}</FieldLabel>
           <Input maxLength={2000} name="scope" required={mandateType === "shared"} />
         </label>
       </Card>
@@ -91,11 +93,11 @@ export function RoleCreateForm({ data }: { data: OrganizationStructureData }) {
             </p>
           </div>
           <label>
-            <FieldLabel>Effective date</FieldLabel>
+            <FieldLabel>Effective date<RequiredMark /></FieldLabel>
             <Input defaultValue={new Date().toISOString().slice(0, 10)} name="effectiveDate" required type="date" />
           </label>
           <label className="sm:col-span-2">
-            <FieldLabel>Reason</FieldLabel>
+            <FieldLabel>Reason<RequiredMark /></FieldLabel>
             <textarea
               className="min-h-24 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none transition focus:border-[var(--workspace-accent)] focus:ring-2 focus:ring-[var(--workspace-focus-ring)]"
               maxLength={2000}

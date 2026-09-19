@@ -12,7 +12,7 @@ import {
 import {
   initialStructureActionState,
 } from "../../organization/action-state";
-import { Alert, Button, Input, Select } from "../../ui/primitives";
+import { Alert, Button, Input, RequiredMark, Select } from "../../ui/primitives";
 
 type CreationType = "organization_unit" | "position" | "person";
 
@@ -35,7 +35,7 @@ function CreationMetadataFields({
     <>
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          How should this addition be understood?
+          Type of change<RequiredMark />
         </span>
         <Select defaultValue="organizational_change" name="changeKind" required>
           <option value="organizational_change">Organizational change</option>
@@ -44,20 +44,20 @@ function CreationMetadataFields({
       </label>
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Effective date
+          Effective date<RequiredMark />
         </span>
         <Input defaultValue={effectiveDateDefault()} name="effectiveDate" required type="date" />
       </label>
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Reason
+          Reason for adding this<RequiredMark />
         </span>
         <textarea
-          className="min-h-24 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none transition focus:border-[var(--accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
+          className="min-h-20 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none transition focus:border-[var(--accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
           maxLength={2000}
           name="reason"
           onChange={(event) => setReason(event.target.value)}
-          placeholder="Explain why this record is being added."
+          placeholder="A short note, such as “Adding a newly created Position.”"
           required
           value={reason}
         />
@@ -120,11 +120,12 @@ export function StructureCreateForm({
 
   return (
     <form action={formAction} className="grid gap-4 sm:grid-cols-2">
+      <p className="text-xs text-[var(--text-secondary)] sm:col-span-2">* Required. Everything else is optional.</p>
       {entityType === "organization_unit" ? (
         <>
           <label className="block sm:col-span-2">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-              Organization Unit name
+              Organization Unit name<RequiredMark />
             </span>
             <Input
               maxLength={255}
@@ -136,7 +137,7 @@ export function StructureCreateForm({
           </label>
           <label className="block sm:col-span-2">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-              Parent Organization Unit
+              Parent Organization Unit (optional)
             </span>
             <Select
               name="parentOrganizationUnitStableKey"
@@ -163,7 +164,7 @@ export function StructureCreateForm({
         <>
           <label className="block sm:col-span-2">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-              Position title
+              Position title<RequiredMark />
             </span>
             <Input
               maxLength={255}
@@ -175,7 +176,7 @@ export function StructureCreateForm({
           </label>
           <label className="block sm:col-span-2">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-              Organization Unit
+              Organization Unit (optional)
             </span>
             <Select
               name="organizationUnitStableKey"
@@ -201,7 +202,7 @@ export function StructureCreateForm({
       {entityType === "person" ? (
         <label className="block sm:col-span-2">
           <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-            Person display name
+            Person display name<RequiredMark />
           </span>
           <Input
             maxLength={255}
@@ -231,7 +232,7 @@ export function StructureCreateForm({
                 type="checkbox"
                 value="confirmed"
               />
-              Create a separate record after reviewing this possible duplicate.
+              <span>Create a separate record after reviewing this possible duplicate.<RequiredMark /></span>
             </label>
           </div>
         </Alert>

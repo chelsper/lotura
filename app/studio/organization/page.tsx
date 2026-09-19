@@ -8,15 +8,22 @@ import { OrganizationBrowser } from "../../organization/organization-browser";
 import { OrganizationIcon } from "../../ui/icons";
 import { Alert } from "../../ui/primitives";
 import { WorkspacePageHeader, WorkspaceShell } from "../../workspace-shell";
+import { OrganizationNavigation } from "../organization-navigation";
 
 const actionClass =
   "inline-flex h-10 items-center justify-center rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3.5 text-sm font-medium text-[var(--text)] transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]";
 
-export default async function OrganizationBuilderPage() {
+export default async function OrganizationBuilderPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string | string[] }>;
+}) {
   await connection();
   const experience = await loadWorkspaceStudioExperience();
   if (!experience.enabled) notFound();
   const { asOf, configuration, data, source } = experience;
+  const requestedView = (await searchParams).view;
+  const view = requestedView === "positions" || requestedView === "people" ? requestedView : "units";
 
   return (
     <WorkspaceShell
@@ -41,6 +48,8 @@ export default async function OrganizationBuilderPage() {
         title="Organization Builder"
       />
 
+      <OrganizationNavigation activeView={view} preserveScroll />
+
       <div className="mt-5 flex flex-wrap gap-2">
         <Link className={actionClass} href="/studio/organization/units/new">Add Organization Unit</Link>
         <Link className={actionClass} href="/studio/organization/positions/new">Add Position</Link>
@@ -50,7 +59,7 @@ export default async function OrganizationBuilderPage() {
         Build structure deliberately. Person, Position, and Operational Role are different records; reporting hierarchy never assigns Process ownership.
       </Alert>
 
-      <OrganizationBrowser basePath="/studio/organization" data={data} />
+      <OrganizationBrowser basePath="/studio/organization" data={data} selectedView={view} />
     </WorkspaceShell>
   );
 }

@@ -98,6 +98,15 @@ export function Select({
   );
 }
 
+export function RequiredMark() {
+  return (
+    <span className="ml-1 text-[var(--text-secondary)]">
+      <span aria-hidden="true">*</span>
+      <span className="sr-only"> (required)</span>
+    </span>
+  );
+}
+
 export function FieldLabel({
   children,
   className,

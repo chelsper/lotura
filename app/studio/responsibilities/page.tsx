@@ -8,6 +8,7 @@ import { loadWorkspaceStudioExperience } from "@/lib/organization-structure-expe
 import { RoleIcon } from "../../ui/icons";
 import { Alert } from "../../ui/primitives";
 import { WorkspacePageHeader, WorkspaceShell } from "../../workspace-shell";
+import { OrganizationNavigation } from "../organization-navigation";
 import { ResponsibilityBrowser } from "./responsibility-browser";
 
 const actionClass =
@@ -48,6 +49,7 @@ export default async function ResponsibilityBuilderPage() {
         ]}
         title="Responsibility Builder"
       />
+      <OrganizationNavigation activeView="roles" />
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
           Roles outlive people. Position mandates allocate responsibility; Role Coverage records who currently provides it.

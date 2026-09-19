@@ -39,6 +39,7 @@ async function load(path, { pending = false } = {}) {
       Alert: primitive("aside"), Badge: primitive("span"), Button: primitive("button"),
       Card: primitive("section"), FieldLabel: primitive("span"), Input: primitive("input"),
       Select: primitive("select"), SearchField: primitive("input"),
+      RequiredMark: () => React.createElement("span", null, "*", React.createElement("span", { className: "sr-only" }, " (required)")),
     };
     if (id === "@/app/organization/action-state") return { initialStructureActionState: { status: "idle", message: "" } };
     if (id === "./actions" || id === "@/app/organization/actions") return actions;
