@@ -19,8 +19,10 @@ export type ResponsibilitySummary = {
 
 export function ResponsibilityBrowser({
   roles,
+  unitId,
 }: {
   roles: ResponsibilitySummary[];
+  unitId?: string;
 }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<"all" | "active" | "inactive">("all");
@@ -39,9 +41,9 @@ export function ResponsibilityBrowser({
     <section className="mt-6" aria-labelledby="responsibility-inventory">
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px]">
         <SearchField
-          label="Search Operational Roles"
+          label="Search responsibilities"
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search Operational Roles"
+          placeholder="Search responsibilities"
           value={query}
         />
         <label>
@@ -62,7 +64,7 @@ export function ResponsibilityBrowser({
         {visible.map((role) => (
           <Link
             className="group block"
-            href={`/studio/responsibilities/roles/${encodeURIComponent(role.stableKey)}${role.status === "active" ? "#edit-role" : ""}`}
+            href={`/studio/responsibilities/roles/${encodeURIComponent(role.stableKey)}${unitId ? `?unit=${encodeURIComponent(unitId)}` : ""}${role.status === "active" ? "#edit-role" : ""}`}
             key={role.stableKey}
           >
             <Card className="p-4 transition-colors group-hover:border-[var(--border-strong)] group-hover:bg-[var(--surface-hover)] sm:p-5">
@@ -82,7 +84,7 @@ export function ResponsibilityBrowser({
                     {role.description ?? "No responsibility description recorded."}
                   </p>
                   <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">
-                    {role.mandateCount} {role.mandateCount === 1 ? "Position mandate" : "Position mandates"} · {role.coverageCount} current {role.coverageCount === 1 ? "coverage" : "coverages"} · {role.processCount} {role.processCount === 1 ? "Process" : "Processes"} · {role.systemCount} {role.systemCount === 1 ? "System" : "Systems"}
+                    {role.mandateCount} {role.mandateCount === 1 ? "Position mandate" : "Position mandates"} · {role.coverageCount} current {role.coverageCount === 1 ? "coverage" : "coverages"}{unitId ? " in this Unit" : ` · ${role.processCount} ${role.processCount === 1 ? "Process" : "Processes"} · ${role.systemCount} ${role.systemCount === 1 ? "System" : "Systems"}`}
                   </p>
                   <p className="mt-3 text-xs font-medium text-[var(--workspace-accent)]">
                     {role.status === "active" ? "Edit Role name and details →" : "View Role history →"}
@@ -96,7 +98,7 @@ export function ResponsibilityBrowser({
       </div>
       {visible.length === 0 ? (
         <Card className="mt-4 p-6 text-center text-sm text-[var(--text-secondary)]">
-          No Operational Roles match this view.
+          No responsibilities match this view.
         </Card>
       ) : null}
     </section>

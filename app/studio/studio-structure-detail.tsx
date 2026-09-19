@@ -20,6 +20,15 @@ import { OrganizationNavigation } from "./organization-navigation";
 
 type StudioEntity = OrganizationUnit | OrganizationPosition | OrganizationPerson;
 
+function documentedUnit(entity: StudioEntity, entityType: StructureEntityType) {
+  if (entityType === "organization_unit") return entity as OrganizationUnit;
+  if (entityType === "position") return (entity as OrganizationPosition).unit ?? undefined;
+  const units = new Map(
+    (entity as OrganizationPerson).assignments.flatMap(({ position }) => position.unit ? [[position.unit.id, position.unit] as const] : []),
+  );
+  return units.size === 1 ? units.values().next().value : undefined;
+}
+
 function entityPresentation(entity: StudioEntity, entityType: StructureEntityType) {
   if (entityType === "organization_unit") {
     const unit = entity as OrganizationUnit;
@@ -69,7 +78,10 @@ export function StudioStructureDetail({
       : [];
   return (
     <div className="mx-auto max-w-6xl">
-      <OrganizationNavigation activeView={entityType === "person" ? "people" : entityType === "position" ? "positions" : "units"} />
+      <OrganizationNavigation
+        activeView={entityType === "person" ? "people" : entityType === "position" ? "positions" : "units"}
+        unit={documentedUnit(entity, entityType)}
+      />
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-tertiary)]">
         <Link className="hover:text-[var(--workspace-accent)]" href="/studio">
           Workspace Studio
@@ -126,6 +138,10 @@ export function StudioStructureDetail({
           </Link>
         </div>
       </header>
+
+      {entityType === "organization_unit" ? (
+        <UnitRoster data={data} unit={entity as OrganizationUnit} />
+      ) : null}
 
       {entityType === "position" ? (
         <PositionConnections position={entity as OrganizationPosition} />
@@ -187,7 +203,7 @@ function PositionConnections({ position }: { position: OrganizationPosition }) {
   const links = [
     ...(position.unit ? [{ label: `Unit: ${position.unit.name}`, href: `/studio/organization/units/${encodeURIComponent(position.unit.id)}` }] : []),
     ...position.assignments.map((assignment) => ({ label: `${assignment.typeLabel}: ${assignment.person.name}`, href: `/studio/organization/people/${encodeURIComponent(assignment.person.id)}` })),
-    ...position.mandates.filter((mandate) => mandate.role.stableKey).map((mandate) => ({ label: `Role: ${mandate.role.name}`, href: `/studio/responsibilities/roles/${encodeURIComponent(mandate.role.stableKey!)}` })),
+    ...position.mandates.filter((mandate) => mandate.role.stableKey).map((mandate) => ({ label: `Responsibility: ${mandate.role.name}`, href: `/studio/responsibilities/roles/${encodeURIComponent(mandate.role.stableKey!)}${position.unit ? `?unit=${encodeURIComponent(position.unit.id)}` : ""}` })),
     ...(position.primaryManager ? [{ label: `Reports to: ${position.primaryManager.position.title}`, href: `/studio/organization/positions/${encodeURIComponent(position.primaryManager.position.id)}` }] : []),
   ];
   if (links.length === 0) return null;
@@ -199,5 +215,56 @@ function PositionConnections({ position }: { position: OrganizationPosition }) {
         </Link>
       ))}
     </nav>
+  );
+}
+
+function UnitRoster({ data, unit }: { data: OrganizationStructureData; unit: OrganizationUnit }) {
+  const positions = data.positions.filter((position) => position.unit?.id === unit.id);
+  return (
+    <section aria-labelledby="unit-people-job-titles" className="mt-6">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold text-[var(--text)]" id="unit-people-job-titles">People and job titles</h2>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">In this Unit only. Open a child Unit below to see its team.</p>
+        </div>
+        <span className="text-xs text-[var(--text-tertiary)]">{positions.length} {positions.length === 1 ? "Position" : "Positions"}</span>
+      </div>
+      <Card className="mt-3 overflow-hidden">
+        {positions.length ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-[var(--border)] bg-[var(--surface-subtle)] text-xs text-[var(--text-secondary)]">
+                <tr><th className="px-4 py-3 font-medium" scope="col">Job title</th><th className="px-4 py-3 font-medium" scope="col">People</th></tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border)]">
+                {positions.map((position) => (
+                  <tr key={position.id}>
+                    <th className="px-4 py-4 align-top font-normal" scope="row">
+                      <Link className="font-medium text-[var(--workspace-accent)] hover:underline" href={`/studio/organization/positions/${encodeURIComponent(position.id)}#edit-position`}>{position.title} <span aria-hidden="true">→</span></Link>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <Badge tone={position.occupancy.tone}>{position.occupancy.label}</Badge>
+                        {position.status !== "active" ? <Badge>{position.status}</Badge> : null}
+                      </div>
+                    </th>
+                    <td className="px-4 py-4 align-top">
+                      {position.assignments.length ? (
+                        <ul className="space-y-2">
+                          {position.assignments.map((assignment) => (
+                            <li key={assignment.id}>
+                              <Link className="font-medium text-[var(--workspace-accent)] hover:underline" href={`/studio/organization/people/${encodeURIComponent(assignment.person.id)}`}>{assignment.person.name}</Link>
+                              <span className="mt-0.5 block text-xs text-[var(--text-secondary)]">{assignment.typeLabel}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : <span className="text-[var(--text-secondary)]">No current Person recorded</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : <p className="p-5 text-sm text-[var(--text-secondary)]">No job titles have been recorded directly in this Unit yet.</p>}
+      </Card>
+    </section>
   );
 }

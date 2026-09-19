@@ -16,14 +16,18 @@ const actionClass =
 export default async function OrganizationBuilderPage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string | string[] }>;
+  searchParams: Promise<{ view?: string | string[]; unit?: string | string[] }>;
 }) {
   await connection();
   const experience = await loadWorkspaceStudioExperience();
   if (!experience.enabled) notFound();
   const { asOf, configuration, data, source } = experience;
-  const requestedView = (await searchParams).view;
-  const view = requestedView === "positions" || requestedView === "people" ? requestedView : "units";
+  const { view: requestedView, unit: requestedUnit } = await searchParams;
+  const unit = data.units.find((item) => item.id === requestedUnit);
+  if (requestedUnit !== undefined && !unit) notFound();
+  const view = requestedView === "positions" || requestedView === "people" ? requestedView : unit ? "positions" : "units";
+  const positions = unit ? data.positions.filter((item) => item.unit?.id === unit.id) : data.positions;
+  const people = unit ? data.people.filter((item) => item.assignments.some((assignment) => assignment.position.unit?.id === unit.id)) : data.people;
 
   return (
     <WorkspaceShell
@@ -33,7 +37,7 @@ export default async function OrganizationBuilderPage({
       source={source}
     >
       <WorkspacePageHeader
-        description="Create and maintain the durable structural identities that anchor the organization’s digital twin. Source evidence, reporting structure, and operational responsibility remain distinct."
+        description={unit ? "People and job titles recorded directly in this Unit. Child Units have their own lists." : "Find people, job titles, and Organization Units. Open a record to see its connections or make an update."}
         eyebrow={
           <>
             <OrganizationIcon className="size-3.5" />
@@ -41,14 +45,14 @@ export default async function OrganizationBuilderPage({
           </>
         }
         stats={[
-          { label: "People", value: data.people.length },
-          { label: "Positions", value: data.positions.length },
-          { label: "Units", value: data.units.length },
+          { label: "People", value: people.length },
+          { label: "Job titles", value: positions.length },
+          ...(!unit ? [{ label: "Units", value: data.units.length }] : []),
         ]}
-        title="Organization Builder"
+        title={unit?.name ?? "Organization Builder"}
       />
 
-      <OrganizationNavigation activeView={view} preserveScroll />
+      <OrganizationNavigation activeView={view} preserveScroll unit={unit} />
 
       <div className="mt-5 flex flex-wrap gap-2">
         <Link className={actionClass} href="/studio/organization/units/new">Add Organization Unit</Link>
@@ -59,7 +63,7 @@ export default async function OrganizationBuilderPage({
         Build structure deliberately. Person, Position, and Operational Role are different records; reporting hierarchy never assigns Process ownership.
       </Alert>
 
-      <OrganizationBrowser basePath="/studio/organization" data={data} selectedView={view} />
+      <OrganizationBrowser basePath="/studio/organization" data={data} selectedView={view} unitId={unit?.id} />
     </WorkspaceShell>
   );
 }

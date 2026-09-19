@@ -107,8 +107,24 @@ test("Position connections use existing Unit, Person, Role, and manager identiti
     primaryManager: { position: { id: "manager-id", title: "Manager" } },
   };
   const html = renderToStaticMarkup(React.createElement(StudioStructureDetail, { changes: [], data: { units: [] }, entity: position, entityType: "position" }));
-  for (const href of ["/studio/organization/units/unit-id", "/studio/organization/people/person-id", "/studio/responsibilities/roles/role-id", "/studio/organization/positions/manager-id"]) {
+  for (const href of ["/studio/organization/units/unit-id", "/studio/organization/people/person-id", "/studio/responsibilities/roles/role-id?unit=unit-id", "/studio/organization/positions/manager-id"]) {
     assert.ok(html.includes(`href="${href}"`));
   }
   assert.doesNotMatch(html, /roles\/null|roles\/undefined|Unidentified role/);
+});
+
+test("responsibility cards retain Unit context without presenting shared Process counts as Unit membership", async () => {
+  const { ResponsibilityBrowser } = await load("app/studio/responsibilities/responsibility-browser.tsx");
+  const roles = [{
+    stableKey: "role-id", name: "Fictional request coordination", status: "active",
+    description: "Coordinates requests", mandateCount: 2, coverageCount: 1,
+    processCount: 3, systemCount: 4,
+  }];
+  const scoped = renderToStaticMarkup(React.createElement(ResponsibilityBrowser, { roles, unitId: "unit-id" }));
+  assert.match(scoped, /href="\/studio\/responsibilities\/roles\/role-id\?unit=unit-id#edit-role"/);
+  assert.match(scoped, /2 Position mandates · 1 current coverage in this Unit/);
+  assert.doesNotMatch(scoped, /3 Processes|4 Systems/);
+  const global = renderToStaticMarkup(React.createElement(ResponsibilityBrowser, { roles }));
+  assert.match(global, /3 Processes · 4 Systems/);
+  assert.match(global, /href="\/studio\/responsibilities\/roles\/role-id#edit-role"/);
 });

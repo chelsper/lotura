@@ -96,8 +96,10 @@ test("Responsibility UX keeps Role, Position, Person, mandate, and coverage dist
     read("app/studio/responsibilities/role-create-form.tsx"),
     read("app/studio/responsibilities/responsibility-role-workspace.tsx"),
   ]);
-  assert.match(list, /Roles outlive people/);
-  assert.match(list, /never inferred from a title or reporting line/);
+  assert.match(list, /Responsibilities describe work people are accountable for/);
+  assert.match(list, /separate from job titles/);
+  assert.match(list, /explicit first Position mandate/);
+  assert.match(list, /does not change Position occupancy, reporting hierarchy, Process ownership, or human coverage/);
   assert.match(create, /Name the durable responsibility—not the current Person or Position title/);
   assert.match(create, /Human coverage remains a separate decision/);
   assert.match(detail, /Position occupancy does not create coverage/);

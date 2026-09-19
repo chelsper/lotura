@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 
 import { RoleIcon } from "@/app/ui/icons";
@@ -13,8 +13,10 @@ import { OrganizationNavigation } from "../../../organization-navigation";
 
 export default async function OperationalRolePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ stableKey: string }>;
+  searchParams: Promise<{ unit?: string | string[] }>;
 }) {
   await connection();
   const experience = await loadWorkspaceStudioExperience();
@@ -25,14 +27,20 @@ export default async function OperationalRolePage({
     (candidate) => candidate.stableKey === stableKey,
   );
   if (!role || !role.stableKey || !role.revision) notFound();
+  const requestedUnit = (await searchParams).unit;
+  const unit = data.units.find((item) => item.id === requestedUnit);
+  if (requestedUnit !== undefined && !unit) notFound();
+  if (unit && !role.mandates.some((item) => item.position.unit?.id === unit.id)) {
+    redirect(`/studio/responsibilities/roles/${encodeURIComponent(role.stableKey)}`);
+  }
 
   return (
     <WorkspaceShell activeView="studio" asOf={asOf} configuration={configuration} source={source}>
       <div className="mx-auto max-w-6xl">
-        <OrganizationNavigation activeView="roles" />
+        <OrganizationNavigation activeView="roles" unit={unit} />
         <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-tertiary)]">
           <Link href="/studio">Workspace Studio</Link><span>/</span>
-          <Link href="/studio/responsibilities">Responsibilities</Link><span>/</span>
+          <Link href={`/studio/responsibilities${unit ? `?unit=${encodeURIComponent(unit.id)}` : ""}`}>Responsibilities</Link><span>/</span>
           <span className="text-[var(--text-secondary)]">{role.name}</span>
         </nav>
         <header className="mt-5 border-b border-[var(--border)] pb-7 sm:pb-9">

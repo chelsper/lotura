@@ -159,7 +159,10 @@ function PositionRow({ basePath, position }: { basePath: string; position: Organ
   );
 }
 
-function PersonRow({ basePath, person }: { basePath: string; person: OrganizationPerson }) {
+function PersonRow({ basePath, person, unitId }: { basePath: string; person: OrganizationPerson; unitId?: string }) {
+  const assignments = unitId
+    ? person.assignments.filter((item) => item.position.unit?.id === unitId)
+    : person.assignments;
   return (
     <Link
       className="group flex items-center justify-between gap-4 border-b border-[var(--border)] px-4 py-4 transition-colors last:border-b-0 hover:bg-[var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--workspace-focus-ring)] sm:px-5"
@@ -168,8 +171,8 @@ function PersonRow({ basePath, person }: { basePath: string; person: Organizatio
       <div className="min-w-0">
         <h3 className="text-sm font-semibold text-[var(--text)]">{person.name}</h3>
         <p className="mt-1 text-xs text-[var(--text-secondary)]">
-          {person.assignments.length > 0
-            ? person.assignments
+          {assignments.length > 0
+            ? assignments
                 .map((item) => `${item.position.title} · ${item.typeLabel}`)
                 .join("; ")
             : "No current Position Assignment recorded"}
@@ -184,10 +187,12 @@ export function OrganizationBrowser({
   basePath = "/organization",
   data,
   selectedView,
+  unitId,
 }: {
   basePath?: string;
   data: OrganizationStructureData;
   selectedView?: BrowserView;
+  unitId?: string;
 }) {
   const [localView, setView] = useState<BrowserView>("units");
   const view = selectedView ?? localView;
@@ -204,22 +209,26 @@ export function OrganizationBrowser({
         matches([unit.name, unit.parent?.name, ...unit.positions.map((item) => item.title)]),
       ),
       positions: data.positions.filter((position) =>
+        (!unitId || position.unit?.id === unitId) &&
         matches([
           position.title,
           position.unit?.name,
           ...position.assignments.map((item) => item.person.name),
-          ...position.mandates.map((item) => item.role.name),
+          ...(!unitId ? position.mandates.map((item) => item.role.name) : []),
         ]),
       ),
-      people: data.people.filter((person) =>
-        matches([
+      people: data.people.filter((person) => {
+        const assignments = unitId
+          ? person.assignments.filter((item) => item.position.unit?.id === unitId)
+          : person.assignments;
+        return (!unitId || assignments.length > 0) && matches([
           person.name,
-          ...person.assignments.map((item) => item.position.title),
-          ...person.coverages.map((item) => item.role.name),
-        ]),
-      ),
+          ...assignments.map((item) => item.position.title),
+          ...(!unitId ? person.coverages.map((item) => item.role.name) : []),
+        ]);
+      }),
     };
-  }, [data, normalizedQuery]);
+  }, [data, normalizedQuery, unitId]);
   const unitHierarchy = useMemo(
     () => buildOrganizationUnitHierarchy(data.units),
     [data.units],
@@ -227,7 +236,7 @@ export function OrganizationBrowser({
 
   const tabs: Array<{ id: BrowserView; label: string; count: number }> = [
     { id: "units", label: "Organization Units", count: results.units.length },
-    { id: "positions", label: "Positions", count: results.positions.length },
+    { id: "positions", label: basePath === "/studio/organization" ? "Job titles" : "Positions", count: results.positions.length },
     { id: "people", label: "People", count: results.people.length },
   ];
   const leadership = data.positions.filter(
@@ -235,15 +244,16 @@ export function OrganizationBrowser({
   );
 
   return (
-    <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+    <div className={cn("mt-6 grid gap-5", !unitId && "xl:grid-cols-[minmax(0,1fr)_320px]")}>
       <Card className="overflow-hidden">
         <div className="border-b border-[var(--border)] p-4 sm:p-5">
           <SearchField
-            label="Search Organization Units, Positions, and People"
+            label={unitId ? "Search job titles and people in this Unit" : "Search Organization Units, Positions, and People"}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search Units, Positions, people, or Roles"
+            placeholder={unitId ? "Search job titles or people in this Unit" : "Search Units, Positions, people, or Roles"}
             value={query}
           />
+          {unitId ? <p className="mt-2 text-xs text-[var(--text-tertiary)]">Recorded in this Unit only; child Units are not included.</p> : null}
           {!selectedView ? (
             <div
               aria-label="Organization browser views"
@@ -303,18 +313,24 @@ export function OrganizationBrowser({
               <PositionRow basePath={basePath} key={position.id} position={position} />
             ))}
           {view === "people" &&
-            results.people.map((person) => <PersonRow basePath={basePath} key={person.id} person={person} />)}
+            results.people.map((person) => <PersonRow basePath={basePath} key={person.id} person={person} unitId={unitId} />)}
           {results[view].length === 0 ? (
             <div className="p-5">
-              <EmptyState title="No matching structure records">
-                Try a broader name, title, Unit, or Operational Role.
+              <EmptyState title={unitId ? (normalizedQuery ? "No matches in this Unit" : view === "people" ? "No people recorded in this Unit" : "No job titles recorded in this Unit") : "No matching structure records"}>
+                {unitId
+                  ? normalizedQuery
+                    ? "Try another name or job title, or clear your search."
+                    : view === "people"
+                      ? "People appear here when they have a recorded Position assignment in this Unit."
+                      : "Job titles appear here when a Position is assigned to this Unit."
+                  : "Try a broader name, title, Unit, or Operational Role."}
               </EmptyState>
             </div>
           ) : null}
         </div>
       </Card>
 
-      <div className="space-y-5">
+      {!unitId ? <div className="space-y-5">
         <Card className="p-4 sm:p-5">
           <p className="flex items-center gap-2 text-xs font-medium text-[var(--text-tertiary)]">
             <OrganizationIcon className="size-3.5" />
@@ -372,7 +388,7 @@ export function OrganizationBrowser({
             These are documented absences or provisional states, not a quality score or proof of organizational failure.
           </p>
         </Card>
-      </div>
+      </div> : null}
     </div>
   );
 }
