@@ -5,7 +5,6 @@ import { connection } from "next/server";
 import { Alert, Badge, Card } from "@/app/ui/primitives";
 import { WorkspacePageHeader, WorkspaceShell } from "@/app/workspace-shell";
 import { DiscoveryProcessBaselineForm } from "@/app/studio/discovery/discovery-process-baseline-form";
-import { loadLatestDiscoveryAnalystTurn } from "@/lib/discovery-analyst-data";
 import {
   buildInquiryKnowledgeOutcomeCounts,
   DISCOVERY_INQUIRY_REVIEW_OUTCOME_DETAILS,
@@ -73,6 +72,7 @@ export default async function DiscoveryInquiryOutcomePage({
 
   const experience = await loadWorkspaceExperience();
   if (!experience.discovery.enabled) notFound();
+  const { organizationId } = experience.discovery;
   const {
     loadDiscoveryInquiryReview,
     loadDiscoveryInquirySession,
@@ -109,10 +109,12 @@ export default async function DiscoveryInquiryOutcomePage({
   );
   const [analystTurn, familyCatalog] = await Promise.all([
     canCreateBaseline
-      ? loadLatestDiscoveryAnalystTurn(
-          experience.discovery.organizationId,
-          sessionId,
-          "inquiry",
+      ? import("@/lib/discovery-analyst-data").then(({ loadLatestDiscoveryAnalystTurn }) =>
+          loadLatestDiscoveryAnalystTurn(
+            organizationId,
+            sessionId,
+            "inquiry",
+          ),
         )
       : Promise.resolve(null),
     canCreateBaseline

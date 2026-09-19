@@ -3,7 +3,7 @@ import "server-only";
 import { neon } from "@neondatabase/serverless";
 
 import { requireWorkspaceAccess } from "./authentication";
-import { loadDiscoveryInquiryReview } from "./discovery-data";
+import type { loadDiscoveryInquiryReview } from "./discovery-data";
 import {
   resolveOperatingModelAuthoringConfiguration,
   type EnabledOperatingModelAuthoringConfiguration,
@@ -179,6 +179,7 @@ export async function createDiscoveryProcessBaseline(
   let review: Awaited<ReturnType<typeof loadDiscoveryInquiryReview>>;
   let latestReview: Awaited<ReturnType<typeof loadDiscoveryInquiryReview>>;
   try {
+    const { loadDiscoveryInquiryReview } = await import("./discovery-data");
     [review, latestReview] = await Promise.all([
       loadDiscoveryInquiryReview(
         configuration.organizationId,
