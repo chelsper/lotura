@@ -73,25 +73,27 @@ export function PersonDetail({
           <div className="mt-4 space-y-3">
             {person.assignments.length > 0 ? (
               person.assignments.map((assignment) => (
-                <Link
-                  className="block rounded-[10px] border border-[var(--border)] p-3 transition-colors hover:bg-[var(--surface-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]"
-                  href={positionHref(assignment.position.id)}
+                <div
+                  className="rounded-[10px] border border-[var(--border)] p-3"
                   key={assignment.id}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <p className="text-sm font-semibold text-[var(--text)]">{assignment.position.title}</p>
+                      <Link className="text-sm font-semibold text-[var(--text)] hover:underline" href={positionHref(assignment.position.id)}>{assignment.position.title}</Link>
                       <p className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">{assignment.position.unit?.name ?? "No Organization Unit recorded"}</p>
                     </div>
                     <Badge tone={["acting", "interim"].includes(assignment.type) ? "warning" : "neutral"}>{assignment.typeLabel}</Badge>
                   </div>
                   <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">{period(assignment.effectiveFrom, assignment.effectiveUntil)}</p>
-                  <p className="mt-2 text-xs font-medium text-[var(--workspace-accent)]">
-                    {administrationEnabled
-                      ? "Open this Position to change its Organization Unit →"
-                      : "View Position →"}
-                  </p>
-                </Link>
+                  <div className="mt-3 flex flex-wrap gap-4 text-xs font-medium text-[var(--workspace-accent)]">
+                    <Link className="hover:underline" href={positionHref(assignment.position.id)}>View Position →</Link>
+                    {administrationEnabled ? (
+                      <Link className="hover:underline" href={`/studio/organization/positions/${encodeURIComponent(assignment.position.id)}#edit-position`}>
+                        Edit title or Unit →
+                      </Link>
+                    ) : null}
+                  </div>
+                </div>
               ))
             ) : (
               <EmptyState title="No current Position Assignment">
@@ -147,23 +149,31 @@ export function PersonDetail({
           <h2 className="mt-1 text-lg font-semibold text-[var(--text)]">Operational Role coverage</h2>
           <div className="mt-4 space-y-3">
             {person.coverages.length > 0 ? (
-              person.coverages.map((coverage) => (
-                <div className="rounded-[10px] border border-[var(--border)] p-3" key={coverage.id}>
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-[var(--text)]">{coverage.role.name}</p>
-                    <Badge tone={coverage.type === "permanent" ? "neutral" : "warning"}>{coverage.typeLabel}</Badge>
+              person.coverages.map((coverage) => {
+                const role = data.operationalRoles.find((item) => item.id === coverage.role.id);
+                return (
+                  <div className="rounded-[10px] border border-[var(--border)] p-3" key={coverage.id}>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-[var(--text)]">{coverage.role.name}</p>
+                      <Badge tone={coverage.type === "permanent" ? "neutral" : "warning"}>{coverage.typeLabel}</Badge>
+                    </div>
+                    <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                      Through{" "}
+                      <Link className="font-medium text-[var(--text)] hover:text-[var(--workspace-accent)]" href={positionHref(coverage.position.id)}>
+                        {coverage.position.title}
+                      </Link>
+                      {coverage.scope ? ` · Scope: ${coverage.scope}` : ""}
+                    </p>
+                    <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">{period(coverage.effectiveFrom, coverage.effectiveUntil)}</p>
+                    {coverage.reason ? <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">{coverage.reason}</p> : null}
+                    {administrationEnabled && role?.status === "active" && role.stableKey ? (
+                      <Link className="mt-3 inline-flex text-xs font-medium text-[var(--workspace-accent)] hover:underline" href={`/studio/responsibilities/roles/${encodeURIComponent(role.stableKey)}#edit-role`}>
+                        Edit Role name →
+                      </Link>
+                    ) : null}
                   </div>
-                  <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                    Through{" "}
-                    <Link className="font-medium text-[var(--text)] hover:text-[var(--workspace-accent)]" href={positionHref(coverage.position.id)}>
-                      {coverage.position.title}
-                    </Link>
-                    {coverage.scope ? ` · Scope: ${coverage.scope}` : ""}
-                  </p>
-                  <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">{period(coverage.effectiveFrom, coverage.effectiveUntil)}</p>
-                  {coverage.reason ? <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">{coverage.reason}</p> : null}
-                </div>
-              ))
+                );
+              })
             ) : (
               <Alert tone="info">
                 No current role coverage is recorded. Position occupancy alone does not prove operational responsibility.

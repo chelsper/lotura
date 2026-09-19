@@ -95,12 +95,20 @@ export function PositionDetail({
           Position is structural. Operational Role is responsibility. Person is current human coverage.
         </p>
         {administrationEnabled ? (
-          <Link
-            className="mt-4 inline-flex text-xs font-medium text-[var(--workspace-accent)] hover:underline"
-            href={`/studio/organization/positions/${encodeURIComponent(position.id)}`}
-          >
-            Maintain in Workspace Studio →
-          </Link>
+          <div className="mt-4 flex flex-wrap items-center gap-4">
+            <Link
+              className="inline-flex rounded-lg border border-[var(--workspace-accent-border)] bg-[var(--workspace-accent-subtle)] px-3 py-2 text-sm font-medium text-[var(--workspace-accent)] hover:underline"
+              href={`/studio/organization/positions/${encodeURIComponent(position.id)}#edit-position`}
+            >
+              Edit title
+            </Link>
+            <Link
+              className="inline-flex text-xs font-medium text-[var(--workspace-accent)] hover:underline"
+              href={`/studio/organization/positions/${encodeURIComponent(position.id)}`}
+            >
+              Maintain in Workspace Studio →
+            </Link>
+          </div>
         ) : null}
       </header>
 
@@ -168,6 +176,11 @@ export function PositionDetail({
                 key={mandate.id}
                 title={mandate.role.name}
               >
+                {administrationEnabled && mandate.role.status === "active" && mandate.role.stableKey ? (
+                  <Link className="mb-4 inline-flex text-xs font-medium text-[var(--workspace-accent)] hover:underline" href={`/studio/responsibilities/roles/${encodeURIComponent(mandate.role.stableKey)}#edit-role`}>
+                    Edit Role name →
+                  </Link>
+                ) : null}
                 <div className="grid gap-5 lg:grid-cols-2">
                   <div>
                     <p className="text-xs font-medium text-[var(--text-tertiary)]">Role coverage</p>

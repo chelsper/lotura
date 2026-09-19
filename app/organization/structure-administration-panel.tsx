@@ -316,6 +316,9 @@ function EditForm({
               Position title
             </span>
             <Input defaultValue={(entity as OrganizationPosition).title} maxLength={255} name="title" required />
+            <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
+              This changes the title for everyone assigned to this Position. People, reporting lines, and Operational Roles stay connected.
+            </span>
           </label>
           <label className="block">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
@@ -1533,9 +1536,9 @@ export function StructureAdministrationPanel({
         Edits change the current documented structure. They do not modify the source workbook or its import record. Every accepted change records its reason, effective date, administrator, and the information before and after the change.
       </p>
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
-        <Card className="p-4 sm:p-5">
+        <Card className="scroll-mt-6 p-4 sm:p-5" id={entityType === "position" ? "edit-position" : undefined}>
           <details open>
-            <summary className="cursor-pointer text-sm font-semibold text-[var(--text)]">Edit {entityLabel(entityType)}</summary>
+            <summary className="cursor-pointer text-sm font-semibold text-[var(--text)]">{entityType === "position" ? "Edit title or Unit" : `Edit ${entityLabel(entityType)}`}</summary>
             <EditForm data={data} entity={entity} entityType={entityType} />
           </details>
         </Card>

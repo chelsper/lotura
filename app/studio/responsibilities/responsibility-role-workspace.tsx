@@ -74,7 +74,7 @@ function EditRoleForm({ role }: { role: ResponsibilityRole }) {
       <label><FieldLabel>Effective date</FieldLabel><Input defaultValue={today()} name="effectiveDate" required type="date" /></label>
       <label className="sm:col-span-2"><FieldLabel>Reason</FieldLabel><textarea className="min-h-24 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none" maxLength={2000} name="reason" required /></label>
       <Result state={state} />
-      <Button disabled={pending} type="submit" variant="primary">{pending ? "Saving…" : "Save Role definition"}</Button>
+      <Button disabled={pending} type="submit" variant="primary">{pending ? "Saving…" : "Save Role changes"}</Button>
     </form>
   );
 }
@@ -162,7 +162,15 @@ export function ResponsibilityRoleWorkspace({ data, role }: { data: Organization
   return (
     <section className="py-7 sm:py-9">
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="p-4 sm:p-5"><details open><summary className="cursor-pointer text-sm font-semibold text-[var(--text)]">Maintain Role definition</summary>{role.status === "active" ? <EditRoleForm role={role} /> : <p className="mt-3 text-xs text-[var(--text-tertiary)]">Inactive Roles remain visible with their prior identity and activity. Reactivation is not available in v0.1.</p>}</details></Card>
+        <Card className="scroll-mt-6 p-4 sm:p-5" id="edit-role">
+          <h2 className="text-sm font-semibold text-[var(--text)]">{role.status === "active" ? "Edit Role name" : "Role details"}</h2>
+          {role.status === "active" ? (
+            <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
+              Rename this responsibility or update its description. Its connections stay in place, and the previous name stays in history.
+            </p>
+          ) : null}
+          {role.status === "active" ? <EditRoleForm role={role} /> : <p className="mt-3 text-xs text-[var(--text-tertiary)]">Inactive Roles remain visible with their prior identity and activity. Reactivation is not available in v0.1.</p>}
+        </Card>
         <Card className="p-4 sm:p-5"><details><summary className="cursor-pointer text-sm font-semibold text-[var(--error)]">Remove from current responsibility model</summary>{role.status === "active" ? <InactivateRoleForm role={role} /> : <p className="mt-3 text-xs text-[var(--text-tertiary)]">This Role is already inactive.</p>}</details></Card>
       </div>
 

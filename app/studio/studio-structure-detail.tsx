@@ -125,6 +125,28 @@ export function StudioStructureDetail({
         </div>
       </header>
 
+      {entityType === "person" && (entity as OrganizationPerson).assignments.length > 0 ? (
+        <Card className="mt-6 p-4 sm:p-5">
+          <h2 className="text-sm font-semibold text-[var(--text)]">Job titles</h2>
+          <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
+            Job titles belong to Positions. Choose the Position you want to update; this does not change the person’s name or move them to a different job.
+          </p>
+          <ul className="mt-3 space-y-3">
+            {(entity as OrganizationPerson).assignments.map((assignment) => (
+              <li className="flex flex-wrap items-center justify-between gap-2" key={assignment.id}>
+                <div>
+                  <p className="text-sm font-medium text-[var(--text)]">{assignment.position.title}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">{assignment.position.unit?.name ?? "No Organization Unit recorded"}</p>
+                </div>
+                <Link className="text-sm font-medium text-[var(--workspace-accent)] hover:underline" href={`/studio/organization/positions/${encodeURIComponent(assignment.position.id)}#edit-position`}>
+                  Edit title →
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
+
       {entityType === "organization_unit" ? (
         <div className="mt-6">
           <UnitHierarchyContext

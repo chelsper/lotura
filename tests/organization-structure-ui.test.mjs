@@ -118,7 +118,8 @@ test("organizational placement uses existing Unit identities instead of Unit ren
   assert.match(panel, /onChange=\{\(event\) => setUnitName\(event\.target\.value\)\}/);
   assert.match(panel, /Parent Organization Unit/);
   assert.match(panel, /name="parentOrganizationUnitStableKey"/);
-  assert.match(person, /Open this Position to change its Organization Unit/);
+  assert.match(person, /Edit title or Unit/);
+  assert.match(person, /encodeURIComponent\(assignment.position.id\)\}#edit-position/);
 });
 
 test("structure mutations are server-only, access-checked, scoped, and never hard-delete", async () => {
