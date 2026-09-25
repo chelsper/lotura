@@ -15,7 +15,7 @@ export type DocumentedProcessSnapshot = {
     ownerRole: { id: string; name: string } | null;
   };
   steps: ExplorerProcess["steps"];
-  systems: ExplorerProcess["systems"];
+  systems: Array<Omit<ExplorerProcess["systems"][number], "stableKey">>;
 };
 
 export type DiscoveryProposalDecisionLike = {

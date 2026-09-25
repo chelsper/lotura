@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 
 import { loadWorkspaceExperience } from "@/lib/workspace-experience";
+import { buildFlowReviewActions } from "@/lib/flow-review-actions";
 
 import { EvidenceLegend, FlowAnalysis } from "../flow-analysis";
 import { FlowIcon } from "../ui/icons";
@@ -8,8 +9,15 @@ import { WorkspacePageHeader, WorkspaceShell } from "../workspace-shell";
 
 export default async function FlowPage() {
   await connection();
-  const { analysis, asOf, configuration, source } =
+  const { analysis, asOf, authoring, canManageResponsibilities, configuration, data, discovery, source } =
     await loadWorkspaceExperience();
+  const reviewActions = buildFlowReviewActions({
+    findings: analysis.currentGaps,
+    data,
+    canAuthorProcesses: authoring.enabled,
+    canManageResponsibilities,
+    canDiscover: discovery.enabled,
+  });
 
   return (
     <WorkspaceShell
@@ -31,7 +39,7 @@ export default async function FlowPage() {
       <div className="mt-4">
         <EvidenceLegend />
       </div>
-      <FlowAnalysis analysis={analysis} />
+      <FlowAnalysis analysis={analysis} reviewActions={reviewActions} />
     </WorkspaceShell>
   );
 }

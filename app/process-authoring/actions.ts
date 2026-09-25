@@ -59,6 +59,7 @@ function commonInput(formData: FormData) {
 
 function revalidateProcess(processKey: string) {
   const encoded = encodeURIComponent(processKey);
+  revalidatePath("/flow");
   revalidatePath("/explorer");
   revalidatePath(`/explorer/${encoded}`);
   revalidatePath(`/explorer/${encoded}/maintain`);

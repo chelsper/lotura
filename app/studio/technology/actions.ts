@@ -67,6 +67,7 @@ function definition(formData: FormData) {
 }
 
 function revalidateTechnology(stableKey?: string) {
+  revalidatePath("/flow");
   revalidatePath("/studio");
   revalidatePath("/studio/technology");
   revalidatePath("/studio/processes");

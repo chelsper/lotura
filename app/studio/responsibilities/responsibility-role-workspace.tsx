@@ -182,7 +182,7 @@ export function ResponsibilityRoleWorkspace({ data, role }: { data: Organization
         <Card className="p-4 sm:p-5"><details><summary className="cursor-pointer text-sm font-semibold text-[var(--error)]">Remove from current responsibility model</summary>{role.status === "active" ? <InactivateRoleForm role={role} /> : <p className="mt-3 text-xs text-[var(--text-tertiary)]">This Role is already inactive.</p>}</details></Card>
       </div>
 
-      <Card className="mt-4 p-4 sm:p-5">
+      <Card className="mt-4 scroll-mt-6 p-4 sm:p-5" id="coverage">
         <h2 className="text-sm font-semibold text-[var(--text)]">Position mandates and human coverage</h2>
         <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">Mandates allocate this responsibility to Positions. Coverage records People explicitly; Position occupancy does not create coverage.</p>
         <div className="mt-4 space-y-3">

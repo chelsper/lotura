@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 
 import type { OrganizationStructureData } from "@/lib/organization-structure-data.mjs";
 
@@ -34,7 +34,9 @@ function CreationMetadataFields({
   const [changeKind, setChangeKind] = useState("organizational_change");
   const [effectiveDate, setEffectiveDate] = useState(effectiveDateDefault());
   return (
-    <>
+    <fieldset className="grid gap-4 border-t border-[var(--border)] pt-4 sm:col-span-2 sm:grid-cols-2">
+      <legend className="px-1 text-sm font-medium text-[var(--text)]">Change history</legend>
+      <p className="text-xs text-[var(--text-secondary)] sm:col-span-2">A short note helps others understand why this record was added.</p>
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
           Type of change<RequiredMark />
@@ -52,19 +54,19 @@ function CreationMetadataFields({
       </label>
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Reason for adding this<RequiredMark />
+          Why are you adding this?<RequiredMark />
         </span>
         <textarea
           className="min-h-20 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none transition focus:border-[var(--accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
           maxLength={2000}
           name="reason"
           onChange={(event) => setReason(event.target.value)}
-          placeholder="A short note, such as “Adding a newly created Position.”"
+          placeholder="For example, “Documenting our current team.”"
           required
           value={reason}
         />
       </label>
-    </>
+    </fieldset>
   );
 }
 
@@ -72,10 +74,12 @@ export function StructureCreateForm({
   data,
   entityType,
   initialUnitStableKey = "",
+  onPendingChange,
 }: {
   data: OrganizationStructureData;
   entityType: CreationType;
   initialUnitStableKey?: string;
+  onPendingChange?: (pending: boolean) => void;
 }) {
   const action =
     entityType === "organization_unit"
@@ -87,6 +91,7 @@ export function StructureCreateForm({
     action,
     initialStructureActionState,
   );
+  useEffect(() => { onPendingChange?.(pending); }, [onPendingChange, pending]);
   const [name, setName] = useState("");
   const [reason, setReason] = useState("");
   const [unitStableKey, setUnitStableKey] = useState(initialUnitStableKey);

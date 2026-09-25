@@ -132,7 +132,7 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold text-[var(--text)]" id="unit-people-job-titles">People and job titles</h2>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">In this Unit only. Choose Edit to update someone’s job title, assignment, or manager here.</p>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">In this Unit only. Start with job titles; people and managers can wait. Choose Edit when you’re ready.</p>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-[var(--text-tertiary)]">{positions.length} {positions.length === 1 ? "Position" : "Positions"}</span>
@@ -157,7 +157,7 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
                     <th className="px-4 py-4 align-top font-normal" scope="row">
                       <Link className="font-medium text-[var(--workspace-accent)] hover:underline" href={`/studio/organization/positions/${encodeURIComponent(position.id)}#edit-position`}>{position.title} <span aria-hidden="true">→</span></Link>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        <Badge tone={position.occupancy.tone}>{position.occupancy.label}</Badge>
+                        <Badge tone={position.occupancy.tone}>{position.occupancy.id === "not_established" ? "Person not yet recorded" : position.occupancy.label}</Badge>
                         {position.status !== "active" ? <Badge>{position.status}</Badge> : null}
                       </div>
                       {position.status === "active" ? (
@@ -174,7 +174,7 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
                             </li>
                           ))}
                         </ul>
-                      ) : <span className="text-[var(--text-secondary)]">No current Person recorded</span>}
+                      ) : <span className="text-[var(--text-secondary)]">Not yet recorded</span>}
                     </td>
                     <td className="px-4 py-4 align-top">
                       {position.primaryManager ? (
@@ -182,7 +182,7 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
                           <Link className="font-medium text-[var(--workspace-accent)] hover:underline" href={`/studio/organization/positions/${encodeURIComponent(position.primaryManager.position.id)}`}>{position.primaryManager.position.title}</Link>
                           {position.primaryManager.position.unit ? <span className="mt-0.5 block text-xs text-[var(--text-secondary)]">{position.primaryManager.position.unit.name}</span> : null}
                         </>
-                      ) : <span className="text-[var(--text-secondary)]">Not recorded</span>}
+                      ) : <span className="text-[var(--text-secondary)]">Not yet recorded</span>}
                     </td>
                   </tr>
                 ))}

@@ -145,6 +145,7 @@ export async function loadNeonOperatingModel(organizationId: number) {
     db
       .select({
         id: systemTable.id,
+        stableKey: systemTable.stableKey,
         name: systemTable.name,
         description: systemTable.description,
         systemType: systemTable.systemType,

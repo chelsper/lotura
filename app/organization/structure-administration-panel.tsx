@@ -1053,12 +1053,12 @@ function ReportingAdministration({
         </p>
       )}
       {!position.primaryManager ? (
-        <details className="mt-4 rounded-[10px] bg-[var(--surface-subtle)] p-3" open>
+        <details className="mt-4 rounded-[10px] bg-[var(--surface-subtle)] p-3">
           <summary className="cursor-pointer text-xs font-semibold text-[var(--text)]">
-            Establish a primary manager Position
+            Add manager (optional)
           </summary>
           <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
-            No current primary manager is recorded for this Position. Establishing one is an explicit organizational decision, not an inference from Unit hierarchy or a Person’s name.
+            Reports to is not yet recorded. Leave this for later if you’re unsure.
           </p>
           <EstablishReportingForm data={data} position={position} />
         </details>
@@ -1393,13 +1393,13 @@ function OperationalResponsibilityAdministration({
           ))}
         </div>
       ) : (
-        <Alert className="mt-3" tone="warning">
-          No current Operational Role mandate is recorded for this Position.
+        <Alert className="mt-3" tone="info">
+          Responsibilities not yet recorded. Add them when you’re ready.
         </Alert>
       )}
-      <details className="mt-4 rounded-[10px] bg-[var(--surface-subtle)] p-3" open={position.mandates.length === 0}>
+      <details className="mt-4 rounded-[10px] bg-[var(--surface-subtle)] p-3">
         <summary className="cursor-pointer text-xs font-semibold text-[var(--text)]">
-          Establish an Operational Role mandate
+          Add responsibility (optional)
         </summary>
         <EstablishRoleMandateForm data={data} position={position} />
       </details>

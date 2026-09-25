@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import type {
   FlowAnalysisResult,
   FlowEvidence,
   FlowFinding,
 } from "@/lib/flow-analysis.mjs";
+import type { FlowReviewActions, FlowReviewItem } from "@/lib/flow-review-actions";
 
 import { ArrowIcon, FlowIcon, InfoIcon } from "./ui/icons";
 import {
@@ -169,10 +171,12 @@ function Finding({
   defaultExplanationOpen = false,
   finding,
   presentation = "finding",
+  review,
 }: {
   defaultExplanationOpen?: boolean;
   finding: FlowFinding;
   presentation?: "finding" | "reach";
+  review?: FlowReviewItem;
 }) {
   const sourceSummary =
     presentation === "reach" && finding.id.startsWith("reach-")
@@ -204,7 +208,7 @@ function Finding({
             </p>
           ) : null}
         </div>
-        {finding.processIds.length > 0 ? (
+        {!review && finding.processIds.length > 0 ? (
           <Link
             className="self-start"
             href={`/explorer/${encodeURIComponent(finding.processIds[0])}`}
@@ -229,6 +233,50 @@ function Finding({
           </div>
         ))}
       </dl>
+
+      {review ? (
+        <div className="mt-4 space-y-3">
+          {review.note ? (
+            <p className="rounded-lg border border-[var(--warning-border)] bg-[var(--warning-subtle)] px-3 py-2 text-xs leading-5 text-[var(--warning)]">
+              {review.note}
+            </p>
+          ) : null}
+          {review.actions.length ? (
+            <div className="flex flex-wrap gap-2">
+              {review.actions.map((action, index) => (
+                <Link
+                  className={cn(
+                    "inline-flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]",
+                    index === 0
+                      ? "bg-[var(--workspace-accent)] text-white hover:opacity-90"
+                      : "border border-[var(--border)] text-[var(--workspace-accent)] hover:bg-[var(--surface-hover)]",
+                  )}
+                  href={action.href}
+                  key={action.href}
+                >
+                  {action.label}<ArrowIcon className="size-3.5" />
+                </Link>
+              ))}
+            </div>
+          ) : null}
+          {review.processLinks.length > 1 ? (
+            <details>
+              <summary className="cursor-pointer text-xs font-medium text-[var(--workspace-accent)]">
+                View {review.processLinks.length} affected Processes
+              </summary>
+              <ul className="mt-2 space-y-2">
+                {review.processLinks.map((process) => (
+                  <li key={process.href}><Link className="text-xs text-[var(--workspace-accent)] hover:underline" href={process.href}>{process.name}</Link></li>
+                ))}
+              </ul>
+            </details>
+          ) : review.processLinks[0] ? (
+            <Link className="inline-block text-xs font-medium text-[var(--workspace-accent)] hover:underline" href={review.processLinks[0].href}>
+              View Process: {review.processLinks[0].name}
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
 
       <details
         className="group mt-4 border-t border-[var(--border)] pt-3"
@@ -258,11 +306,13 @@ function FindingList({
   findings,
   openFirstExplanation = false,
   presentation = "finding",
+  reviewActions,
 }: {
   emptyMessage: string;
   findings: FlowFinding[];
   openFirstExplanation?: boolean;
   presentation?: "finding" | "reach";
+  reviewActions?: FlowReviewActions;
 }) {
   if (findings.length === 0) {
     return <EmptyState title={emptyMessage} />;
@@ -276,6 +326,7 @@ function FindingList({
           finding={finding}
           key={finding.id}
           presentation={presentation}
+          review={reviewActions?.[finding.id]}
         />
       ))}
     </Card>
@@ -460,7 +511,9 @@ function AnalysisSection({
   );
 }
 
-export function FlowAnalysis({ analysis }: { analysis: FlowAnalysisResult }) {
+export function FlowAnalysis({ analysis, reviewActions }: { analysis: FlowAnalysisResult; reviewActions?: FlowReviewActions }) {
+  const router = useRouter();
+  const [refreshing, startRefresh] = useTransition();
   const [concentration, setConcentration] =
     useState<ConcentrationKey>("roles");
   const [scenario, setScenario] = useState<ScenarioKey>("role-vacancy");
@@ -533,13 +586,16 @@ export function FlowAnalysis({ analysis }: { analysis: FlowAnalysisResult }) {
             eyebrow="Coverage and clarity"
             title="Items to review"
           />
-          <div className="shrink-0 text-left lg:text-right">
+          <div className="shrink-0 space-y-2 text-left lg:text-right">
             <p className="text-[11px] text-[var(--text-tertiary)]">
               Data current as of
             </p>
             <p className="mt-0.5 text-[11px] text-[var(--text-secondary)]">
               {formatAsOf(analysis.asOf)} UTC
             </p>
+            <Button aria-busy={refreshing} disabled={refreshing} onClick={() => startRefresh(() => router.refresh())} size="sm" variant="secondary">
+              {refreshing ? "Refreshing…" : "Refresh findings"}
+            </Button>
           </div>
         </div>
 
@@ -548,6 +604,7 @@ export function FlowAnalysis({ analysis }: { analysis: FlowAnalysisResult }) {
             emptyMessage="No current ownership, coverage, or responsibility gaps were found."
             findings={analysis.currentGaps}
             openFirstExplanation
+            reviewActions={reviewActions}
           />
         </div>
       </AnalysisSection>

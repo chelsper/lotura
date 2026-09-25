@@ -98,6 +98,22 @@ test("title and name edits preserve optional placement and default audit fields"
   }
 });
 
+test("missing manager and responsibilities stay collapsed and optional after the basics are saved", async () => {
+  const { StructureAdministrationPanel } = await load("app/organization/structure-administration-panel.tsx");
+  const entity = { ...data.positions[0], primaryManager: null, additionalManagers: [], assignments: [], mandates: [] };
+  const before = JSON.stringify(entity);
+  const html = render(StructureAdministrationPanel, { changes: [], data, entity, entityType: "position" });
+  for (const label of ["Add manager", "Add responsibility"]) {
+    const section = html.match(new RegExp(`<details([^>]*)><summary[^>]*>${label} \\(optional\\)<\\/summary>`));
+    assert.ok(section, label);
+    assert.doesNotMatch(section[1], /\bopen=/, `${label} should open only when chosen`);
+  }
+  assert.match(html, /Reports to is not yet recorded\. Leave this for later/);
+  assert.match(html, /text-\[var\(--info\)\][^>]*role="alert"><div>Responsibilities not yet recorded/);
+  required(html, "managerPositionStableKey");
+  assert.equal(JSON.stringify(entity), before, "optional setup must not infer relationships");
+});
+
 test("new Units, Positions, and People only require their identity and history fields", async () => {
   const { StructureCreateForm } = await load("app/studio/organization/structure-create-form.tsx");
   for (const [entityType, name, placement] of [

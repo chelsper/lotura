@@ -67,6 +67,7 @@ function operatingModelRows() {
     systems: [
       {
         id: 5,
+        stableKey: "869d54df-e28d-4a84-9f0a-bd9a223a065d",
         name: "Case Desk",
         description: null,
         systemType: "software",
@@ -150,6 +151,8 @@ test("Neon rows map every Version 0.1 entity and relationship into the pure inpu
   );
   assert.equal(loaded.seed.roleCoverages[0].personKey, "person:11");
   assert.equal(loaded.seed.systems[0].ownerRoleKey, "role:3");
+  assert.equal(loaded.seed.systems[0].key, "system:5");
+  assert.equal(loaded.seed.systems[0].stableKey, "869d54df-e28d-4a84-9f0a-bd9a223a065d");
   assert.equal(loaded.seed.processes[0].ownerRoleKey, "role:3");
   assert.equal(loaded.seed.processSteps[0].processKey, "process:6");
   assert.equal(loaded.seed.exceptions[0].processStepKey, "step:8");
@@ -171,6 +174,19 @@ test("Neon rows map every Version 0.1 entity and relationship into the pure inpu
     analysis.roleCoverage[0].primary.personName,
     loaded.seed.people[0].displayName,
     "FLOW must continue using Version 0.1 RoleAssignment until separately approved",
+  );
+});
+
+test("System route identity is optional and does not change FLOW calculations", () => {
+  const rows = operatingModelRows();
+  const withIdentity = mapNeonOperatingModel(rows);
+  delete rows.systems[0].stableKey;
+  const withoutIdentity = mapNeonOperatingModel(rows);
+  assert.equal(withoutIdentity.seed.systems[0].stableKey, undefined);
+  assert.equal(withoutIdentity.seed.systems[0].key, "system:5");
+  assert.deepEqual(
+    buildFlowAnalysis(withIdentity.seed, withIdentity.asOf),
+    buildFlowAnalysis(withoutIdentity.seed, withoutIdentity.asOf),
   );
 });
 
@@ -219,6 +235,7 @@ test("the runtime adapter is organization-scoped and contains only read queries"
   }
 
   assert.doesNotMatch(adapter, /\.insert\(|\.update\(|\.delete\(|\btruncate\b/i);
+  assert.match(adapter, /stableKey: systemTable\.stableKey/);
   assert.match(adapter, /transaction_timestamp\(\)/);
   assert.match(adapter, /db\.batch\(/);
   assert.match(databaseClient, /isolationLevel: "RepeatableRead"/);

@@ -60,6 +60,7 @@ export type NeonOperatingModelRows = {
   }>;
   systems: Array<{
     id: number;
+    stableKey?: string;
     name: string;
     description: string | null;
     systemType: "software" | "external_service" | "manual_record" | "other";

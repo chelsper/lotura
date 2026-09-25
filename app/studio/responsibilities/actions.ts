@@ -40,6 +40,7 @@ function metadata(formData: FormData) {
 }
 
 function refreshResponsibilityPaths(roleStableKey?: string) {
+  revalidatePath("/flow");
   revalidatePath("/organization");
   revalidatePath("/studio");
   revalidatePath("/studio/organization");

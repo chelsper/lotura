@@ -4,6 +4,7 @@ import { buildFlowAnalysis } from "./flow-analysis.mjs";
 import { requireWorkspaceAccess } from "./authentication";
 import { resolveDiscoveryConfiguration } from "./discovery-policy.mjs";
 import { resolveOperatingModelAuthoringConfiguration } from "./operating-model-authoring-policy.mjs";
+import { resolveOrganizationStructureAdministrationConfiguration } from "./organization-structure-administration-policy.mjs";
 import { buildProcessExplorerData } from "./process-explorer-data";
 import { resolveProcessAcquisitionConfiguration } from "./process-acquisition-policy.mjs";
 import { resolveProposalReviewConfiguration } from "./proposal-review-policy.mjs";
@@ -24,6 +25,8 @@ export async function loadWorkspaceExperience() {
     runtimeAccess,
   );
   const discovery = resolveDiscoveryConfiguration(process.env, runtimeAccess);
+  const canManageResponsibilities =
+    resolveOrganizationStructureAdministrationConfiguration(process.env, runtimeAccess).enabled;
   const proposalReview = resolveProposalReviewConfiguration(
     process.env,
     runtimeAccess,
@@ -48,6 +51,7 @@ export async function loadWorkspaceExperience() {
     analysis,
     asOf,
     authoring,
+    canManageResponsibilities,
     configuration,
     data,
     discovery,

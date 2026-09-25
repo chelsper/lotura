@@ -104,18 +104,34 @@ test("scoped create forms fix placement, preserve identity input, and label requ
   }
 });
 
+test("partial setup asks only for identity and history, not unknown organizational relationships", async () => {
+  const { StructureCreateForm } = await load("app/studio/organization/structure-create-form.tsx");
+  for (const entityType of ["organization_unit", "position", "person"]) {
+    const html = render(StructureCreateForm, { data, entityType });
+    assert.match(html, /<legend[^>]*>Change history<\/legend>/);
+    assert.match(html, /A short note helps others understand why this record was added/);
+    assert.match(html, /Why are you adding this\?/);
+    assert.doesNotMatch(html, /name="(?:personStableKey|managerPositionStableKey|roleStableKey|processStableKey|ownerRoleStableKey)"/);
+    const required = [...html.matchAll(/<(?:input|select|textarea)(?=[^>]*required="")(?=[^>]*name="([^"]+)")[^>]*>/g)].map(match => match[1]).sort();
+    const identity = entityType === "position" ? "title" : entityType === "person" ? "displayName" : "name";
+    assert.deepEqual(required, [identity, "changeKind", "effectiveDate", "reason"].sort());
+  }
+});
+
 test("create page keeps the Unit breadcrumb and cancel target; saved Person cannot be created again", async () => {
   let creation = 0, placement = 0;
   const { StudioCreatePage } = await load("app/studio/studio-create-page.tsx", {
     "./organization/structure-create-form": { StructureCreateForm: () => { creation++; return React.createElement("div", { "data-create": true }); } },
     "./organization/unit-person-placement": { UnitPersonPlacement: props => { placement++; assert.equal(props.person, person); assert.equal(props.unit, unit); return React.createElement("div", { "data-placement": true }); } },
+    "./organization/unit-person-picker": { UnitPersonPicker: () => React.createElement("div", { "data-picker": true }) },
   });
   const created = render(StudioCreatePage, { data, entityType: "position", initialUnitStableKey: unit.id });
   assert.match(created, /Add job title/);
+  assert.match(created, /People, managers, and responsibilities can wait/);
   assert.match(created, /href="\/studio\/organization\/units\/fictional-unit"/);
   assert.match(created, /Cancel and return to/);
   const saved = render(StudioCreatePage, { data, entityType: "person", initialUnitStableKey: unit.id, savedPerson: person });
-  assert.match(saved, /Fictional Person is saved/);
+  assert.match(saved, /Choose a job title for Fictional Person/);
   assert.match(saved, /Their record is already saved/);
   assert.equal(creation, 1);
   assert.equal(placement, 1);
@@ -224,6 +240,10 @@ test("saved Person placement lists only active direct Unit titles without inferr
   assert.match(html, /\(optional\)/);
   assert.doesNotMatch(html, /Inactive title|Outside title|Child title|Already held title|name="personStableKey"|Save assignment/);
   assert.match(html, /href="\/studio\/organization\/people\/fictional-person"/);
+  assert.match(html, /href="\/studio\/organization\/units\/fictional-unit#unit-people-job-titles"[^>]*>Do this later<\/a>/);
+  assert.match(html, /Their Person record stays saved/);
+  assert.match(html, /roster once you assign a job title/);
+  assert.doesNotMatch(html, /<form|type="submit"/);
   const empty = render(UnitPersonPlacement, { data, person, unit });
   assert.match(empty, /positions\/new\?unit=fictional-unit/);
 });

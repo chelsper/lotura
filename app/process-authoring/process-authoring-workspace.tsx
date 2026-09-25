@@ -483,7 +483,7 @@ function StepReorderForm({
 
 function StepsWorkspace({ context, today }: { context: ProcessAuthoringContext; today: string }) {
   return (
-    <section className="space-y-5">
+    <section className="scroll-mt-6 space-y-5" id="steps">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-[var(--text-tertiary)]">How the work happens</p>
@@ -727,7 +727,7 @@ function ExceptionEditor({ context, exception, today }: { context: ProcessAuthor
 
 function ExceptionsWorkspace({ context, today }: { context: ProcessAuthoringContext; today: string }) {
   return (
-    <section className="mt-7 space-y-5">
+    <section className="mt-7 scroll-mt-6 space-y-5" id="exceptions">
       <div><p className="text-xs font-medium text-[var(--text-tertiary)]">Alternate paths</p><h2 className="mt-1 text-xl font-semibold text-[var(--text)]">Exceptions</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">Document legitimate alternate paths, not every error or unresolved problem. Uncertain observations should remain identified as needing validation.</p></div>
       <Card className="p-4 sm:p-6"><details><summary className="cursor-pointer text-sm font-semibold text-[var(--workspace-accent)]">Add an Exception</summary><div className="mt-5 border-t border-[var(--border)] pt-5"><AddExceptionForm context={context} today={today} /></div></details></Card>
       {context.exceptions.length > 0 ? <div className="grid gap-4 lg:grid-cols-2">{context.exceptions.map((item) => <ExceptionEditor context={context} exception={item} key={item.stableKey} today={today} />)}</div> : <Alert>No Exceptions are documented. That may be accurate or may need validation.</Alert>}
@@ -791,7 +791,7 @@ export function ProcessAuthoringWorkspace({
           </div>
           <DefinitionForm context={context} today={today} />
         </Card>
-        <Card className="p-4 sm:p-6">
+        <Card className="scroll-mt-6 p-4 sm:p-6" id="ownership">
           <div className="mb-5">
             <p className="text-xs font-medium text-[var(--text-tertiary)]">Ownership & responsibility</p>
             <h2 className="mt-1 text-xl font-semibold text-[var(--text)]">Owner Role</h2>

@@ -80,6 +80,7 @@ type SeedRoleCoverage = {
 
 type SeedSystem = {
   key: string;
+  stableKey?: string;
   name: string;
   description?: string;
   systemType: SystemType;
@@ -169,6 +170,7 @@ export type ExplorerRole = {
 
 export type ExplorerSystem = {
   id: string;
+  stableKey: string | null;
   name: string;
   description: string | null;
   type: SystemType;
@@ -219,7 +221,7 @@ export type ExplorerProcess = {
 export type ProcessExplorerData = {
   organization: { name: string };
   roles: ExplorerRole[];
-  systems: Array<Pick<ExplorerSystem, "id" | "name" | "type" | "status">>;
+  systems: Array<Pick<ExplorerSystem, "id" | "stableKey" | "name" | "type" | "status">>;
   processes: ExplorerProcess[];
 };
 
@@ -491,6 +493,7 @@ export function buildProcessExplorerData(
 
         return {
           id: linkedSystem.key,
+          stableKey: linkedSystem.stableKey ?? null,
           name: linkedSystem.name,
           description: linkedSystem.description ?? null,
           type: linkedSystem.systemType,
@@ -565,6 +568,7 @@ export function buildProcessExplorerData(
     roles,
     systems: seed.systems.map((item) => ({
       id: item.key,
+      stableKey: item.stableKey ?? null,
       name: item.name,
       type: item.systemType,
       status: item.status,

@@ -10,7 +10,7 @@ import ts from "typescript";
 
 const require = createRequire(import.meta.url);
 const root = new URL("../", import.meta.url);
-const Box = ({ children }) => React.createElement("div", null, children);
+const Box = ({ children, tone }) => React.createElement("div", { "data-tone": tone }, children);
 const Link = ({ children, scroll, ...props }) => {
   void scroll;
   return React.createElement("a", props, children);
@@ -27,11 +27,12 @@ async function load(path, stubs = {}) {
       if (id === "next/link") return { default: Link };
       if (id === "next/navigation") return { useRouter: () => ({ refresh() { throw new Error("Rendering must not refresh the route"); } }) };
       if (id.endsWith("ui/primitives")) return {
-        Alert: Box, Badge: Box, Card: Box,
+        Alert: Box, Badge: Box, Card: Box, ExpandableSection: Box,
+        EmptyState: ({ title, children }) => React.createElement("div", null, React.createElement("h3", null, title), children),
         Button: ({ children, variant, ...props }) => { void variant; return React.createElement("button", props, children); },
         cn: (...parts) => parts.filter(Boolean).join(" "),
       };
-      if (id.endsWith("ui/icons")) return { ArrowIcon: () => null };
+      if (id.endsWith("ui/icons")) return { ArrowIcon: () => null, RoleIcon: () => null, SystemIcon: () => null };
       return require(id);
     },
   });
@@ -49,6 +50,11 @@ const { StudioStructureDetail } = await load("app/studio/studio-structure-detail
   "@/lib/organization-unit-hierarchy.mjs": { organizationUnitPath: () => [] },
   "../organization/structure-administration-panel": { StructureAdministrationPanel: () => null },
   "../organization/unit-hierarchy-context": { UnitHierarchyContext: () => null },
+});
+const { PositionDetail } = await load("app/organization/position-detail.tsx", {
+  "../workspace-shell": { formatOperatingModelTimestamp: value => value },
+  "./focused-hierarchy": { FocusedHierarchy: () => null },
+  "./structure-context": { StructureContext: () => null },
 });
 const unit = { id: "unit-a", name: "Fictional Services", status: "active", positions: [], parent: null };
 const child = { ...unit, id: "unit-child", name: "Child Unit", parent: unit };
@@ -116,7 +122,7 @@ test("Unit roster shows the recorded manager Position even outside this Unit, wi
   const html = renderDetail("organization_unit", { ...unit, head: { name: "Do not infer this Unit head" } }, [documented, unknown]);
   assertHref(html, "/studio/organization/positions/external-manager");
   assert.match(html, /Shared Services Director/);
-  assert.match(html, /Not recorded/);
+  assert.match(html, /Not yet recorded/);
   assert.doesNotMatch(html, /Do not infer this Unit head/);
   assert.equal([...html.matchAll(/href="\/studio\/organization\/positions\/external-manager"/g)].length, 1);
 });
@@ -152,13 +158,39 @@ test("matching job titles and shared occupancy retain separate recorded identiti
 test("roster preserves documented vacancy and not-established distinctions without manufacturing an occupant", () => {
   const vacant = position({ id: "vacant", title: "Vacant Position", assignments: [], occupancy: { id: "vacant", label: "Vacant", tone: "warning" } });
   const unknown = position({ id: "unknown", title: "Uncertain Position", assignments: [], occupancy: { id: "not_established", label: "Occupancy not established", tone: "neutral" } });
+  const before = JSON.stringify([vacant, unknown]);
   const html = renderDetail("organization_unit", unit, [vacant, unknown]);
   assert.match(html, />Vacant<\/div>/);
-  assert.match(html, />Occupancy not established<\/div>/);
-  assert.equal([...html.matchAll(/No current Person recorded/g)].length, 2);
+  assert.match(html, />Person not yet recorded<\/div>/);
+  assert.equal([...html.matchAll(/Not yet recorded/g)].length, 4);
+  assert.match(html, /people and managers can wait/);
+  assert.equal(JSON.stringify([vacant, unknown]), before, "friendly labels must not change vacancy evidence or assignments");
   const rosterTable = html.slice(html.indexOf("<table"), html.indexOf("</table>"));
   assert.doesNotMatch(rosterTable, /Fictional Alex|\/studio\/organization\/people\//);
   assert.match(renderDetail("organization_unit", unit), /No job titles have been recorded directly in this Unit yet/);
+});
+
+test("Position detail keeps unknown staffing separate from reviewed vacancy and optional responsibilities neutral", () => {
+  const unknown = position({ assignments: [], systems: [], occupancy: { id: "not_established", label: "Occupancy not established", tone: "neutral" } });
+  const render = current => renderToStaticMarkup(React.createElement(PositionDetail, { administrationEnabled: false, data: {}, position: current, processAcquisitionEnabled: false }));
+  const before = JSON.stringify(unknown);
+  const html = render(unknown);
+  assert.match(html, /<h3>Person not yet recorded<\/h3>/);
+  assert.match(html, /Missing information does not mean this Position is vacant/);
+  assert.match(html, /data-tone="info">Responsibilities not yet recorded/);
+  assert.doesNotMatch(html, /data-tone="warning"|<form/);
+  assert.equal(JSON.stringify(unknown), before);
+  const vacant = render({ ...unknown, occupancy: { id: "vacant", label: "Vacant", tone: "warning" } });
+  assert.match(vacant, /<h3>Vacant Position<\/h3>/);
+  assert.match(vacant, /vacancy evidence is complete/);
+  assert.doesNotMatch(vacant, /Person not yet recorded/);
+});
+
+test("Position detail retains a coverage warning for an established responsibility without a recorded person", () => {
+  const recorded = position({ systems: [], mandates: [{ id: "mandate-1", role: { name: "Request coordination" }, processes: [], coverage: [] }] });
+  const html = renderToStaticMarkup(React.createElement(PositionDetail, { administrationEnabled: false, data: {}, position: recorded, processAcquisitionEnabled: false }));
+  assert.match(html, /data-tone="warning">This role mandate has no current person-level role coverage recorded/);
+  assert.match(html, /No Process links recorded yet/);
 });
 
 test("Person scope follows one documented distinct Unit, never guessing among several Units", () => {

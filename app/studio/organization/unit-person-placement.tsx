@@ -92,10 +92,11 @@ export function UnitPersonPlacement({ data, person, unit }: { data: Organization
       </> : <p className="text-sm text-[var(--text-secondary)]">There are no other active job titles available in this Unit. You can <Link className="font-medium text-[var(--workspace-accent)]" href={`/studio/organization/positions/new?unit=${encodeURIComponent(unit.id)}`}>add a job title</Link> first and assign this saved person from the roster.</p>}
       <div className="mt-5 flex flex-wrap gap-4 text-sm font-medium text-[var(--workspace-accent)]">
         {pending ? <span aria-disabled="true">Saving assignment…</span> : <>
-          <Link href={`/studio/organization/units/${encodeURIComponent(unit.id)}#unit-people-job-titles`} prefetch={false}>Back to {unit.name}</Link>
+          <Link href={`/studio/organization/units/${encodeURIComponent(unit.id)}#unit-people-job-titles`} prefetch={false}>{saved || assignedHere ? `Back to ${unit.name}` : "Do this later"}</Link>
           <Link href={`/studio/organization/people/${encodeURIComponent(person.id)}`} prefetch={false}>View {person.name}’s record</Link>
         </>}
       </div>
+      {!saved && !assignedHere ? <p className="mt-2 text-xs text-[var(--text-secondary)]">Their Person record stays saved. They’ll appear on this Unit’s roster once you assign a job title.</p> : null}
     </section>
   );
 }

@@ -44,7 +44,7 @@ function entityPresentation(entity: StudioEntity, entityType: StructureEntityTyp
     const position = entity as OrganizationPosition;
     return {
       browseHref: `/organization/positions/${encodeURIComponent(position.id)}`,
-      description: `${position.unit?.name ?? "No Organization Unit recorded"} · ${position.occupancy.label}`,
+      description: `${position.unit?.name ?? "Organization Unit not yet recorded"} · ${position.occupancy.id === "not_established" ? "Person not yet recorded" : position.occupancy.label}`,
       label: "Position",
       title: position.title,
     };
@@ -55,7 +55,7 @@ function entityPresentation(entity: StudioEntity, entityType: StructureEntityTyp
     description:
       person.assignments.length > 0
         ? person.assignments.map((item) => item.position.title).join(" · ")
-        : "No current Position Assignment recorded",
+        : "Job title not yet recorded",
     label: "Person",
     title: person.name,
   };

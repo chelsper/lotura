@@ -65,7 +65,7 @@ export function PositionDetail({
       <header className="mt-5 border-b border-[var(--border)] pb-7 sm:pb-9">
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone={position.status === "active" ? "success" : "neutral"}>{position.status}</Badge>
-          <Badge tone={position.occupancy.tone}>{position.occupancy.label}</Badge>
+          <Badge tone={position.occupancy.tone}>{position.occupancy.id === "not_established" ? "Person not yet recorded" : position.occupancy.label}</Badge>
         </div>
         <h1 className="mt-4 max-w-4xl text-[34px] font-semibold leading-tight tracking-[-0.05em] text-[var(--text)] sm:text-[44px]">
           {position.title}
@@ -138,10 +138,10 @@ export function PositionDetail({
                 </div>
               ))
             ) : (
-              <EmptyState title={position.occupancy.id === "vacant" ? "Vacant Position" : "No current Assignment recorded"}>
+              <EmptyState title={position.occupancy.id === "vacant" ? "Vacant Position" : "Person not yet recorded"}>
                 {position.occupancy.id === "vacant"
                   ? "This vacancy is shown only because the snapshot states that vacancy evidence is complete for its reviewed scope."
-                  : "Lotura cannot infer a vacancy from missing Assignment evidence."}
+                  : "A person can be added later. Missing information does not mean this Position is vacant."}
               </EmptyState>
             )}
           </div>
@@ -225,7 +225,7 @@ export function PositionDetail({
                           </Link>
                         ))
                       ) : (
-                        <p className="text-xs leading-5 text-[var(--text-tertiary)]">No Processes are connected through this Operational Role.</p>
+                        <p className="text-xs leading-5 text-[var(--text-tertiary)]">No Process links recorded yet.</p>
                       )}
                     </div>
                   </div>
@@ -233,9 +233,8 @@ export function PositionDetail({
               </ExpandableSection>
             ))
           ) : (
-            <Alert tone="warning">
-              No current role mandates are recorded for this Position. Lotura
-              does not infer Operational Roles from the Position title or reporting hierarchy.
+            <Alert tone="info">
+              Responsibilities not yet recorded. These can be added later; a job title or reporting line does not establish them.
             </Alert>
           )}
         </div>
