@@ -26,6 +26,7 @@ import {
   updateStructureEntity,
 } from "@/lib/organization-structure-administration";
 import type { StructureActionState } from "./action-state";
+import { loadWorkspaceStudioExperience } from "@/lib/organization-structure-experience";
 
 function textValue(formData: FormData, name: string) {
   const value = formData.get(name);
@@ -118,6 +119,15 @@ function studioTargetPath(entityType: StructureEntityType, stableKey: string) {
   return `/studio/organization/${segment}/${encodeURIComponent(stableKey)}`;
 }
 
+async function creationUnitContext(formData: FormData) {
+  const stableKey = textValue(formData, "returnToUnitStableKey");
+  if (!stableKey) return { valid: true, stableKey: undefined };
+  const experience = await loadWorkspaceStudioExperience();
+  if (!experience.enabled) return { valid: false, stableKey: undefined };
+  const unit = experience.data.units.find((item) => item.id === stableKey && item.status === "active");
+  return { valid: Boolean(unit), stableKey: unit?.id };
+}
+
 export async function createOrganizationUnitAction(
   _previousState: StructureActionState,
   formData: FormData,
@@ -125,6 +135,10 @@ export async function createOrganizationUnitAction(
   const metadata = creationMetadata(formData);
   if (!metadata) {
     return { status: "error", message: "Review the new Unit details and try again." };
+  }
+  const context = await creationUnitContext(formData);
+  if (!context.valid || (context.stableKey && context.stableKey !== textValue(formData, "parentOrganizationUnitStableKey"))) {
+    return { status: "error", message: "Return to the Unit and start again. Its context could not be confirmed." };
   }
   const result = await createOrganizationUnit({
     ...metadata,
@@ -139,6 +153,11 @@ export async function createOrganizationUnitAction(
   revalidatePath("/organization");
   revalidatePath("/studio");
   revalidatePath("/studio/organization");
+  if (context.stableKey) {
+    const path = studioTargetPath("organization_unit", context.stableKey);
+    revalidatePath(path);
+    redirect(path);
+  }
   redirect(studioTargetPath("organization_unit", result.stableKey));
 }
 
@@ -149,6 +168,10 @@ export async function createPositionAction(
   const metadata = creationMetadata(formData);
   if (!metadata) {
     return { status: "error", message: "Review the new Position details and try again." };
+  }
+  const context = await creationUnitContext(formData);
+  if (!context.valid || (context.stableKey && context.stableKey !== textValue(formData, "organizationUnitStableKey"))) {
+    return { status: "error", message: "Return to the Unit and start again. Its context could not be confirmed." };
   }
   const result = await createPosition({
     ...metadata,
@@ -163,6 +186,11 @@ export async function createPositionAction(
   revalidatePath("/organization");
   revalidatePath("/studio");
   revalidatePath("/studio/organization");
+  if (context.stableKey) {
+    const path = studioTargetPath("organization_unit", context.stableKey);
+    revalidatePath(path);
+    redirect(`${path}#unit-people-job-titles`);
+  }
   redirect(studioTargetPath("position", result.stableKey));
 }
 
@@ -174,6 +202,8 @@ export async function createPersonAction(
   if (!metadata) {
     return { status: "error", message: "Review the new Person details and try again." };
   }
+  const context = await creationUnitContext(formData);
+  if (!context.valid) return { status: "error", message: "Return to the Unit and start again. Its context could not be confirmed." };
   const result = await createPerson({
     ...metadata,
     displayName: textValue(formData, "displayName"),
@@ -185,6 +215,9 @@ export async function createPersonAction(
   revalidatePath("/organization");
   revalidatePath("/studio");
   revalidatePath("/studio/organization");
+  if (context.stableKey) {
+    redirect(`/studio/organization/people/new?unit=${encodeURIComponent(context.stableKey)}&person=${encodeURIComponent(result.stableKey)}`);
+  }
   redirect(studioTargetPath("person", result.stableKey));
 }
 
@@ -326,6 +359,7 @@ export async function removeOrganizationUnitAndMoveContentsAction(
 function revalidatePosition(stableKey: string) {
   revalidatePath("/organization");
   revalidatePath("/studio");
+  revalidatePath("/studio/organization/units/[stableKey]", "page");
   revalidatePath("/studio/responsibilities");
   revalidatePath(
     `/organization/positions/${encodeURIComponent(stableKey)}`,

@@ -8,6 +8,7 @@ import type { OrganizationPosition, OrganizationStructureData, OrganizationUnit 
 
 import { Badge, Button, Card } from "../ui/primitives";
 import { UnitRosterEditor, type UnitRosterEditMode } from "./unit-roster-editor";
+import { UnitAddMenu } from "./unit-add-menu";
 
 const editorModes: Array<{ id: UnitRosterEditMode; label: string }> = [
   { id: "title", label: "Job title" },
@@ -133,7 +134,10 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
           <h2 className="text-xl font-semibold text-[var(--text)]" id="unit-people-job-titles">People and job titles</h2>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">In this Unit only. Choose Edit to update someone’s job title, assignment, or manager here.</p>
         </div>
-        <span className="text-xs text-[var(--text-tertiary)]">{positions.length} {positions.length === 1 ? "Position" : "Positions"}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-[var(--text-tertiary)]">{positions.length} {positions.length === 1 ? "Position" : "Positions"}</span>
+          <UnitAddMenu unit={unit} />
+        </div>
       </div>
       <p aria-live="polite" className="mt-2 text-sm text-[var(--workspace-accent)]" role="status">{refreshing ? "Saved. Updating the roster…" : notice}</p>
       <Card className="mt-3 overflow-hidden">

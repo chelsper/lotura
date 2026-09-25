@@ -1,9 +1,10 @@
 import Link from "next/link";
 
-import type { OrganizationStructureData } from "@/lib/organization-structure-data.mjs";
+import type { OrganizationPerson, OrganizationStructureData } from "@/lib/organization-structure-data.mjs";
 
 import { Alert, Card } from "../ui/primitives";
 import { StructureCreateForm } from "./organization/structure-create-form";
+import { UnitPersonPlacement } from "./organization/unit-person-placement";
 
 type CreationType = "organization_unit" | "position" | "person";
 
@@ -11,23 +12,27 @@ export function StudioCreatePage({
   data,
   entityType,
   initialUnitStableKey,
+  savedPerson,
 }: {
   data: OrganizationStructureData;
   entityType: CreationType;
   initialUnitStableKey?: string;
+  savedPerson?: OrganizationPerson;
 }) {
+  const unit = data.units.find((item) => item.id === initialUnitStableKey && item.status === "active");
+  const backHref = unit ? `/studio/organization/units/${encodeURIComponent(unit.id)}` : "/studio/organization";
   const presentation = {
     organization_unit: {
-      description: "Add a durable grouping for Positions without inferring reporting relationships or operational responsibility.",
-      label: "Organization Unit",
+      description: unit ? `Add a team within ${unit.name}.` : "Add a team or department to the organization.",
+      label: unit ? "child Unit" : "Organization Unit",
     },
     person: {
-      description: "Add a human being to the organizational model without creating a Lotura account or assigning a Position.",
-      label: "Person",
+      description: unit ? `Add a person, then choose their job title in ${unit.name} if you know it.` : "Add a person to the organization. This does not create a login.",
+      label: "person",
     },
     position: {
-      description: "Add a durable structural seat. Position occupancy and Operational Roles are attached separately.",
-      label: "Position",
+      description: unit ? `Add a job title in ${unit.name}. You can add its person and manager afterward.` : "Add a job title. You can add its person and manager afterward.",
+      label: "job title",
     },
   }[entityType];
 
@@ -42,29 +47,29 @@ export function StudioCreatePage({
           Organization
         </Link>
         <span aria-hidden="true">/</span>
-        <span className="text-[var(--text-secondary)]">Add {presentation.label}</span>
+        {unit ? <><Link className="hover:text-[var(--workspace-accent)]" href={backHref}>{unit.name}</Link><span aria-hidden="true">/</span></> : null}
+        <span className="text-[var(--text-secondary)]">{savedPerson ? "Choose a job title" : `Add ${presentation.label}`}</span>
       </nav>
 
       <header className="mt-5 border-b border-[var(--border)] pb-7 sm:pb-9">
         <p className="text-xs font-medium text-[var(--text-tertiary)]">Organization Builder</p>
         <h1 className="mt-2 text-[34px] font-semibold leading-tight tracking-[-0.05em] text-[var(--text)] sm:text-[44px]">
-          Add {presentation.label}
+          {savedPerson ? `${savedPerson.name} is saved` : `Add ${presentation.label}`}
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
-          {presentation.description}
+          {savedPerson ? "Choose a job title below, or leave it for later. Their record is already saved." : presentation.description}
         </p>
       </header>
 
-      <Alert className="mt-6" tone="warning">
-        Adding a record does not establish institutional approval. Review possible duplicates and record the reason and effective date honestly.
-      </Alert>
+      {!unit ? <Alert className="mt-6" tone="warning">Review possible duplicates before adding a separate record.</Alert> : null}
       <Card className="mt-5 p-4 sm:p-6">
-        <StructureCreateForm
+        {savedPerson && unit ? <UnitPersonPlacement data={data} person={savedPerson} unit={unit} /> : <StructureCreateForm
           data={data}
           entityType={entityType}
           initialUnitStableKey={initialUnitStableKey}
-        />
+        />}
       </Card>
+      {!savedPerson ? <Link className="mt-5 inline-block text-sm font-medium text-[var(--workspace-accent)]" href={backHref}>Cancel and return to {unit?.name ?? "Organization"}</Link> : null}
     </div>
   );
 }

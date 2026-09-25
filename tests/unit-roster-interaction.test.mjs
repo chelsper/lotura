@@ -58,6 +58,7 @@ function harness() {
       if (id === "next/link") return { default: "link" };
       if (id === "../ui/primitives") return { Badge: "badge", Button: "button", Card: "card" };
       if (id === "./unit-roster-editor") return { UnitRosterEditor: "editor" };
+      if (id === "./unit-add-menu") return { UnitAddMenu: "add-menu" };
       throw new Error(`Unexpected dependency: ${id}`);
     },
   });

@@ -38,7 +38,9 @@ async function load(path, stubs = {}) {
   return testModule.exports;
 }
 const { OrganizationNavigation } = await load("app/studio/organization-navigation.tsx");
+const { UnitAddMenu } = await load("app/studio/unit-add-menu.tsx");
 const { UnitRoster } = await load("app/studio/unit-roster.tsx", {
+  "./unit-add-menu": { UnitAddMenu },
   "./unit-roster-editor": { UnitRosterEditor: () => { throw new Error("The editor must remain closed until a person chooses Edit"); } },
 });
 const { StudioStructureDetail } = await load("app/studio/studio-structure-detail.tsx", {
@@ -61,6 +63,16 @@ const renderDetail = (entityType, entity, positions = []) => renderToStaticMarku
   entityType, entity, changes: [], data: { positions, units: [unit, child] },
 }));
 const assertHref = (html, href) => assert.ok(html.includes(`href="${href.replaceAll("&", "&amp;")}"`), href);
+
+test("Add to this Unit uses existing scoped creation routes and stays hidden on inactive Units", () => {
+  const html = renderToStaticMarkup(React.createElement(UnitAddMenu, { unit: { ...unit, id: "unit/a" } }));
+  assert.match(html, /<summary[^>]*>Add to this Unit<\/summary>/);
+  assertHref(html, "/studio/organization/positions/new?unit=unit%2Fa");
+  assertHref(html, "/studio/organization/people/new?unit=unit%2Fa");
+  assertHref(html, "/studio/organization/units/new?parent=unit%2Fa");
+  assert.doesNotMatch(html, /<form|<input|responsibilities\/roles\/new/);
+  assert.equal(renderToStaticMarkup(React.createElement(UnitAddMenu, { unit: { ...unit, status: "inactive" } })), "");
+});
 
 test("global navigation uses job-title and responsibility labels without changing entity routes", () => {
   const html = renderToStaticMarkup(React.createElement(OrganizationNavigation, { activeView: "positions" }));
@@ -144,7 +156,8 @@ test("roster preserves documented vacancy and not-established distinctions witho
   assert.match(html, />Vacant<\/div>/);
   assert.match(html, />Occupancy not established<\/div>/);
   assert.equal([...html.matchAll(/No current Person recorded/g)].length, 2);
-  assert.doesNotMatch(html, /Fictional Alex|\/studio\/organization\/people\//);
+  const rosterTable = html.slice(html.indexOf("<table"), html.indexOf("</table>"));
+  assert.doesNotMatch(rosterTable, /Fictional Alex|\/studio\/organization\/people\//);
   assert.match(renderDetail("organization_unit", unit), /No job titles have been recorded directly in this Unit yet/);
 });
 

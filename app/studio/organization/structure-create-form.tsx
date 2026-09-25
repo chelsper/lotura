@@ -31,13 +31,15 @@ function CreationMetadataFields({
   reason: string;
   setReason: (value: string) => void;
 }) {
+  const [changeKind, setChangeKind] = useState("organizational_change");
+  const [effectiveDate, setEffectiveDate] = useState(effectiveDateDefault());
   return (
     <>
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
           Type of change<RequiredMark />
         </span>
-        <Select defaultValue="organizational_change" name="changeKind" required>
+        <Select name="changeKind" onChange={(event) => setChangeKind(event.target.value)} required value={changeKind}>
           <option value="organizational_change">Organizational change</option>
           <option value="correction">Correction to an omitted record</option>
         </Select>
@@ -46,7 +48,7 @@ function CreationMetadataFields({
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
           Effective date<RequiredMark />
         </span>
-        <Input defaultValue={effectiveDateDefault()} name="effectiveDate" required type="date" />
+        <Input name="effectiveDate" onChange={(event) => setEffectiveDate(event.target.value)} required type="date" value={effectiveDate} />
       </label>
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
@@ -88,6 +90,7 @@ export function StructureCreateForm({
   const [name, setName] = useState("");
   const [reason, setReason] = useState("");
   const [unitStableKey, setUnitStableKey] = useState(initialUnitStableKey);
+  const contextUnit = data.units.find((unit) => unit.id === initialUnitStableKey && unit.status === "active");
   const duplicate = useMemo(() => {
     const value = normalized(name);
     if (!value) return null;
@@ -113,13 +116,14 @@ export function StructureCreateForm({
   }, [data, entityType, name, unitStableKey]);
   const label =
     entityType === "organization_unit"
-      ? "Organization Unit"
+      ? contextUnit ? "child Unit" : "Organization Unit"
       : entityType === "position"
-        ? "Position"
-        : "Person";
+        ? "job title"
+        : "person";
 
   return (
     <form action={formAction} className="grid gap-4 sm:grid-cols-2">
+      {contextUnit ? <input name="returnToUnitStableKey" type="hidden" value={contextUnit.id} /> : null}
       <p className="text-xs text-[var(--text-secondary)] sm:col-span-2">* Required. Everything else is optional.</p>
       {entityType === "organization_unit" ? (
         <>
@@ -135,7 +139,7 @@ export function StructureCreateForm({
               value={name}
             />
           </label>
-          <label className="block sm:col-span-2">
+          {contextUnit ? <div className="sm:col-span-2 text-sm text-[var(--text-secondary)]"><input name="parentOrganizationUnitStableKey" type="hidden" value={contextUnit.id} />Within {contextUnit.name}</div> : <label className="block sm:col-span-2">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
               Parent Organization Unit (optional)
             </span>
@@ -156,7 +160,7 @@ export function StructureCreateForm({
             <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
               Unit hierarchy does not establish manager reporting, Process ownership, or operational responsibility.
             </span>
-          </label>
+          </label>}
         </>
       ) : null}
 
@@ -164,7 +168,7 @@ export function StructureCreateForm({
         <>
           <label className="block sm:col-span-2">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-              Position title<RequiredMark />
+              Job title<RequiredMark />
             </span>
             <Input
               maxLength={255}
@@ -174,7 +178,7 @@ export function StructureCreateForm({
               value={name}
             />
           </label>
-          <label className="block sm:col-span-2">
+          {contextUnit ? <div className="sm:col-span-2 text-sm text-[var(--text-secondary)]"><input name="organizationUnitStableKey" type="hidden" value={contextUnit.id} />In {contextUnit.name}</div> : <label className="block sm:col-span-2">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
               Organization Unit (optional)
             </span>
@@ -195,14 +199,14 @@ export function StructureCreateForm({
             <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
               A Position is a durable structural seat. Its title does not create an Operational Role.
             </span>
-          </label>
+          </label>}
         </>
       ) : null}
 
       {entityType === "person" ? (
         <label className="block sm:col-span-2">
           <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-            Person display name<RequiredMark />
+            Person’s name<RequiredMark />
           </span>
           <Input
             maxLength={255}
@@ -212,7 +216,7 @@ export function StructureCreateForm({
             value={name}
           />
           <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
-            This creates organizational context only. It does not create a Lotura User or login.
+            {contextUnit ? "You can choose their job title after saving. This does not create a login." : "This does not create a Lotura login or assign a job title."}
           </span>
         </label>
       ) : null}

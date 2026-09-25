@@ -16,20 +16,14 @@ export default async function NewOrganizationUnitPage({
   const experience = await loadWorkspaceStudioExperience();
   if (!experience.enabled) notFound();
   const { asOf, configuration, data, source } = experience;
-  const parentStableKey = Array.isArray(requestedParent)
-    ? requestedParent[0]
-    : requestedParent;
-  const initialUnitStableKey = data.units.some(
-    (unit) => unit.id === parentStableKey && unit.status === "active",
-  )
-    ? parentStableKey
-    : undefined;
+  const parent = data.units.find((unit) => unit.id === requestedParent && unit.status === "active");
+  if (requestedParent !== undefined && !parent) notFound();
   return (
     <WorkspaceShell activeView="studio" asOf={asOf} configuration={configuration} source={source}>
       <StudioCreatePage
         data={data}
         entityType="organization_unit"
-        initialUnitStableKey={initialUnitStableKey}
+        initialUnitStableKey={parent?.id}
       />
     </WorkspaceShell>
   );
