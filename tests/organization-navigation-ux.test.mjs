@@ -98,6 +98,7 @@ test("Position connections use existing Unit, Person, Role, and manager identiti
     "../organization/structure-administration-panel": { StructureAdministrationPanel: Box },
     "../organization/unit-hierarchy-context": { UnitHierarchyContext: Box },
     "./organization-navigation": { OrganizationNavigation },
+    "./unit-roster": { UnitRoster: Box },
   });
   const position = {
     id: "position-id", title: "Coordinator", status: "active", occupancy: { label: "Occupied" },

@@ -17,6 +17,7 @@ import { UnitHierarchyContext } from "../organization/unit-hierarchy-context";
 import { ArrowIcon } from "../ui/icons";
 import { Badge, Card } from "../ui/primitives";
 import { OrganizationNavigation } from "./organization-navigation";
+import { UnitRoster } from "./unit-roster";
 
 type StudioEntity = OrganizationUnit | OrganizationPosition | OrganizationPerson;
 
@@ -215,56 +216,5 @@ function PositionConnections({ position }: { position: OrganizationPosition }) {
         </Link>
       ))}
     </nav>
-  );
-}
-
-function UnitRoster({ data, unit }: { data: OrganizationStructureData; unit: OrganizationUnit }) {
-  const positions = data.positions.filter((position) => position.unit?.id === unit.id);
-  return (
-    <section aria-labelledby="unit-people-job-titles" className="mt-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-semibold text-[var(--text)]" id="unit-people-job-titles">People and job titles</h2>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">In this Unit only. Open a child Unit below to see its team.</p>
-        </div>
-        <span className="text-xs text-[var(--text-tertiary)]">{positions.length} {positions.length === 1 ? "Position" : "Positions"}</span>
-      </div>
-      <Card className="mt-3 overflow-hidden">
-        {positions.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-[var(--border)] bg-[var(--surface-subtle)] text-xs text-[var(--text-secondary)]">
-                <tr><th className="px-4 py-3 font-medium" scope="col">Job title</th><th className="px-4 py-3 font-medium" scope="col">People</th></tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border)]">
-                {positions.map((position) => (
-                  <tr key={position.id}>
-                    <th className="px-4 py-4 align-top font-normal" scope="row">
-                      <Link className="font-medium text-[var(--workspace-accent)] hover:underline" href={`/studio/organization/positions/${encodeURIComponent(position.id)}#edit-position`}>{position.title} <span aria-hidden="true">→</span></Link>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        <Badge tone={position.occupancy.tone}>{position.occupancy.label}</Badge>
-                        {position.status !== "active" ? <Badge>{position.status}</Badge> : null}
-                      </div>
-                    </th>
-                    <td className="px-4 py-4 align-top">
-                      {position.assignments.length ? (
-                        <ul className="space-y-2">
-                          {position.assignments.map((assignment) => (
-                            <li key={assignment.id}>
-                              <Link className="font-medium text-[var(--workspace-accent)] hover:underline" href={`/studio/organization/people/${encodeURIComponent(assignment.person.id)}`}>{assignment.person.name}</Link>
-                              <span className="mt-0.5 block text-xs text-[var(--text-secondary)]">{assignment.typeLabel}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : <span className="text-[var(--text-secondary)]">No current Person recorded</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : <p className="p-5 text-sm text-[var(--text-secondary)]">No job titles have been recorded directly in this Unit yet.</p>}
-      </Card>
-    </section>
   );
 }

@@ -102,7 +102,7 @@ function reportingPositionLabel(
   return position ? positionOptionLabel(position) : fallbackTitle;
 }
 
-function ChangeMetadataFields({
+export function ChangeMetadataFields({
   fixedKind,
   onReasonChange,
   reason,

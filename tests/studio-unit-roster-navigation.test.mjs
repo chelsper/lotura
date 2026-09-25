@@ -25,7 +25,12 @@ async function load(path, stubs = {}) {
     require(id) {
       if (id in stubs) return stubs[id];
       if (id === "next/link") return { default: Link };
-      if (id.endsWith("ui/primitives")) return { Badge: Box, Card: Box, cn: (...parts) => parts.filter(Boolean).join(" ") };
+      if (id === "next/navigation") return { useRouter: () => ({ refresh() { throw new Error("Rendering must not refresh the route"); } }) };
+      if (id.endsWith("ui/primitives")) return {
+        Alert: Box, Badge: Box, Card: Box,
+        Button: ({ children, variant, ...props }) => { void variant; return React.createElement("button", props, children); },
+        cn: (...parts) => parts.filter(Boolean).join(" "),
+      };
       if (id.endsWith("ui/icons")) return { ArrowIcon: () => null };
       return require(id);
     },
@@ -33,8 +38,12 @@ async function load(path, stubs = {}) {
   return testModule.exports;
 }
 const { OrganizationNavigation } = await load("app/studio/organization-navigation.tsx");
+const { UnitRoster } = await load("app/studio/unit-roster.tsx", {
+  "./unit-roster-editor": { UnitRosterEditor: () => { throw new Error("The editor must remain closed until a person chooses Edit"); } },
+});
 const { StudioStructureDetail } = await load("app/studio/studio-structure-detail.tsx", {
   "./organization-navigation": { OrganizationNavigation },
+  "./unit-roster": { UnitRoster },
   "@/lib/organization-unit-hierarchy.mjs": { organizationUnitPath: () => [] },
   "../organization/structure-administration-panel": { StructureAdministrationPanel: () => null },
   "../organization/unit-hierarchy-context": { UnitHierarchyContext: () => null },
@@ -43,7 +52,7 @@ const unit = { id: "unit-a", name: "Fictional Services", status: "active", posit
 const child = { ...unit, id: "unit-child", name: "Child Unit", parent: unit };
 const assigned = { id: "assignment-1", typeLabel: "Incumbent", person: { id: "person-1", name: "Fictional Alex" } };
 const position = (overrides = {}) => ({
-  id: "position-1", title: "Services Coordinator", status: "active", unit,
+  id: "position-1", title: "Services Coordinator", status: "active", revision: 1, unit,
   occupancy: { id: "occupied", label: "Occupied", tone: "success" },
   assignments: [assigned], mandates: [], primaryManager: null,
   ...overrides,
@@ -83,7 +92,49 @@ test("Unit roster shows exact-Unit Positions and linked people, without descenda
   assert.match(html, /Fictional Alex/);
   assert.match(html, /Incumbent/);
   assert.match(html, /scope="col">Job title/);
+  assert.match(html, /scope="col">Reports to/);
+  assert.match(html, /aria-label="Edit Services Coordinator"/);
   assert.doesNotMatch(html, /Child Specialist|Child Person|Unplaced Specialist|Unrelated process-like responsibility/);
+});
+
+test("Unit roster shows the recorded manager Position even outside this Unit, without inferring a Unit head", () => {
+  const manager = { id: "external-manager", title: "Shared Services Director", unit: { id: "other-unit", name: "Shared Services" } };
+  const documented = position({ primaryManager: { id: "reporting-1", revision: 1, position: manager } });
+  const unknown = position({ id: "unknown-manager", title: "Support Coordinator" });
+  const html = renderDetail("organization_unit", { ...unit, head: { name: "Do not infer this Unit head" } }, [documented, unknown]);
+  assertHref(html, "/studio/organization/positions/external-manager");
+  assert.match(html, /Shared Services Director/);
+  assert.match(html, /Not recorded/);
+  assert.doesNotMatch(html, /Do not infer this Unit head/);
+  assert.equal([...html.matchAll(/href="\/studio\/organization\/positions\/external-manager"/g)].length, 1);
+});
+
+test("only active exact-Unit Positions offer in-place editing; inactive rows remain visible", () => {
+  const active = position();
+  const inactive = position({ id: "inactive-position", title: "Former Services Lead", status: "inactive" });
+  const childPosition = position({ id: "child-position", title: "Child Specialist", unit: child });
+  const html = renderDetail("organization_unit", unit, [active, inactive, childPosition]);
+  assert.match(html, /Former Services Lead/);
+  assertHref(html, "/studio/organization/positions/inactive-position#edit-position");
+  assert.match(html, /aria-label="Edit Services Coordinator"/);
+  assert.doesNotMatch(html, /aria-label="Edit Former Services Lead"|aria-label="Edit Child Specialist"/);
+  assert.equal([...html.matchAll(/aria-label="Edit /g)].length, 1);
+});
+
+test("matching job titles and shared occupancy retain separate recorded identities", () => {
+  const shared = position({
+    assignments: [assigned, { id: "assignment-2", typeLabel: "Job share", person: { id: "person-2", name: "Fictional Casey" } }],
+  });
+  const second = position({ id: "position-2", assignments: [] });
+  const before = JSON.stringify([shared, second]);
+  const html = renderDetail("organization_unit", unit, [shared, second]);
+  assertHref(html, "/studio/organization/positions/position-1#edit-position");
+  assertHref(html, "/studio/organization/positions/position-2#edit-position");
+  assertHref(html, "/studio/organization/people/person-1");
+  assertHref(html, "/studio/organization/people/person-2");
+  assert.equal([...html.matchAll(/aria-label="Edit Services Coordinator"/g)].length, 2);
+  assert.match(html, /Job share/);
+  assert.equal(JSON.stringify([shared, second]), before, "rendering must not merge matching titles or rewrite occupancy");
 });
 
 test("roster preserves documented vacancy and not-established distinctions without manufacturing an occupant", () => {
