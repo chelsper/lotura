@@ -99,7 +99,12 @@ test("Position header links to its own stable editor even for a shared Position"
 test("Studio Person routes each job-title edit to the corresponding Position", () => {
   const person = fixture.people.find((item) => item.name === "Taylor Brooks");
   const html = render(StudioStructureDetail, { changes: [], data: fixture, entity: person, entityType: "person" });
-  assert.match(html, /Job titles belong to Positions/);
+  assert.match(html, /Choose a job title to edit/);
+  const help = html.match(/<details\b([^>]*)>\s*<summary[^>]*>About job titles<\/summary>([\s\S]*?)<\/details>/);
+  assert.ok(help, "the Position distinction remains available in optional help");
+  assert.doesNotMatch(help[1], /\bopen\b/);
+  assert.match(help[2], /A job title names a Position/);
+  assert.match(help[2], /changes it for everyone assigned to that Position/);
   assert.deepEqual(titleLinks(html), person.assignments.map((item) => positionEditHref(item.position.id)));
   assertNoNestedAnchors(html);
   const withoutAssignments = render(StudioStructureDetail, { changes: [], data: fixture, entity: { ...person, assignments: [] }, entityType: "person" });
@@ -181,7 +186,7 @@ test("Position deep-link opens the existing editor without changing its identity
   assert.match(editForm, /<form action=\{action\}/);
   assert.match(editForm, /<HiddenIdentity entity=\{entity\} entityType=\{entityType\}/);
   assert.match(editForm, /defaultValue=\{\(entity as OrganizationPosition\)\.title\} maxLength=\{255\} name="title" required/);
-  assert.match(editForm, /This changes the title for everyone assigned to this Position/);
+  assert.match(editForm, /This changes the title for everyone in this position/);
   assert.match(editForm, /<ChangeMetadataFields \/>/);
   assert.match(editForm, /<Button disabled=\{pending\} type="submit"/);
   const identity = source.slice(source.indexOf("function HiddenIdentity("), source.indexOf("function EditForm("));

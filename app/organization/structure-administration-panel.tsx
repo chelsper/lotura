@@ -119,7 +119,7 @@ export function ChangeMetadataFields({
         <div className="block">
           <input name="changeKind" type="hidden" value={fixedKind} />
           <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-            How this change is understood
+            Type of change
           </span>
           <p className="rounded-[10px] border border-[var(--border)] bg-[var(--surface-subtle)] px-3 py-2 text-sm text-[var(--text-secondary)]">
             {fixedKind === "correction"
@@ -307,7 +307,7 @@ function EditForm({
                 ))}
             </Select>
             <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
-              This records Unit hierarchy only. It does not create a manager relationship or assign Process ownership. Descendant Units are excluded; the database rechecks cycles before commit.
+              This changes Unit hierarchy, not reporting lines or Process ownership.
             </span>
           </label>
         </>
@@ -316,16 +316,16 @@ function EditForm({
         <>
           <label className="block">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-              Position title<RequiredMark />
+              Job title<RequiredMark />
             </span>
             <Input defaultValue={(entity as OrganizationPosition).title} maxLength={255} name="title" required />
             <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
-              This changes the title for everyone assigned to this Position. People, reporting lines, and Operational Roles stay connected.
+              This changes the title for everyone in this position. People, reporting lines, and responsibilities stay connected.
             </span>
           </label>
           <label className="block">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-              Move this Position to an Organization Unit (optional)
+              Organization Unit (optional)
             </span>
             <Select
               defaultValue={(entity as OrganizationPosition).unit?.id ?? ""}
@@ -339,7 +339,7 @@ function EditForm({
               ))}
             </Select>
             <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
-              Choose an existing Unit by its stable identity. This moves the Position and its current occupants without renaming either Unit.
+              Changing the Unit moves this position and its people. Neither Unit is renamed.
             </span>
           </label>
         </>
@@ -347,7 +347,7 @@ function EditForm({
       {entityType === "person" ? (
         <label className="block sm:col-span-2">
           <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-            Person display name<RequiredMark />
+            Person’s name<RequiredMark />
           </span>
           <Input defaultValue={(entity as OrganizationPerson).name} maxLength={255} name="displayName" required />
         </label>
@@ -360,7 +360,7 @@ function EditForm({
       ) : null}
       <div className="sm:col-span-2">
         <Button disabled={pending} type="submit" variant="primary">
-          {pending ? "Saving…" : `Save ${entityLabel(entityType)}`}
+          {pending ? "Saving…" : "Save changes"}
         </Button>
       </div>
     </form>
@@ -581,11 +581,14 @@ function EndAssignmentForm({
         positionStableKey={position.id}
         recordKey={assignment.id}
       />
+      <p className="text-xs leading-5 text-[var(--text-secondary)] sm:col-span-2">
+        This ends {assignment.person.name}’s assignment on the effective date. The person and their assignment history stay in Lotura.
+      </p>
       <ChangeMetadataFields fixedKind="organizational_change" />
       <ActionResult state={state} />
       <div className="sm:col-span-2">
         <Button disabled={pending} type="submit" variant="destructive">
-          {pending ? "Ending Assignment…" : "End Assignment"}
+          {pending ? "Ending assignment…" : "End person’s assignment"}
         </Button>
       </div>
     </form>
@@ -620,19 +623,22 @@ function ReplaceAssignmentForm({
       <div className="sm:col-span-2">
         <SearchableSelect
           disabled={pending}
-          label="Replacement Person"
+          label="New person"
           name="replacementPersonStableKey"
           options={personPickerOptions(replacementPeople)}
-          placeholder="Select a Person"
+          placeholder="Choose a person"
           searchPlaceholder="Search name, job title, or Unit"
           required
         />
       </div>
+      <p className="text-xs leading-5 text-[var(--text-secondary)] sm:col-span-2">
+        This ends {assignment.person.name}’s assignment and starts the selected person’s assignment on the effective date. Both stay in the history.
+      </p>
       <ChangeMetadataFields fixedKind="organizational_change" />
       <ActionResult state={state} />
       <div className="sm:col-span-2">
         <Button disabled={pending} type="submit" variant="primary">
-          {pending ? "Replacing Assignment…" : "Replace Assignment"}
+          {pending ? "Replacing person…" : "Replace person"}
         </Button>
       </div>
     </form>
@@ -660,7 +666,7 @@ function EstablishAssignmentForm({
           label="Person"
           name="personStableKey"
           options={personPickerOptions(availablePeople)}
-          placeholder="Select a Person"
+          placeholder="Choose a person"
           searchPlaceholder="Search name, job title, or Unit"
           required
         />
@@ -678,13 +684,13 @@ function EstablishAssignmentForm({
         </Select>
       </label>
       <Alert className="sm:col-span-2" tone="info">
-        This records structural occupancy only. It does not grant an Operational Role, Role Coverage, Process ownership, or application access.
+        This records who fills the position. It does not assign responsibilities or give access to Lotura.
       </Alert>
       <ChangeMetadataFields />
       <ActionResult state={state} />
       <div className="sm:col-span-2">
         <Button disabled={pending || availablePeople.length === 0} type="submit" variant="primary">
-          {pending ? "Establishing Assignment…" : "Establish Position Assignment"}
+          {pending ? "Adding person…" : "Add person to this position"}
         </Button>
       </div>
     </form>
@@ -701,16 +707,18 @@ function AssignmentAdministration({
   return (
     <Card className="mt-4 p-4 sm:p-5">
       <h3 className="text-sm font-semibold text-[var(--text)]">
-        Assignment maintenance
+        People in this position
       </h3>
       <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
-        Add an explicit current occupant or coverage relationship. Ending
-        preserves the Assignment as history. Replacing ends the current record
-        and creates its replacement in the same audited transaction.
+        Add, replace, or end a person’s assignment. Earlier assignments stay in the history.
       </p>
+      <details className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
+        <summary className="cursor-pointer font-medium text-[var(--workspace-accent)]">About assignments and responsibilities</summary>
+        <p className="mt-2">A Position Assignment records who fills a position. Operational Roles, Role Coverage, and Process ownership are separate and do not change here.</p>
+      </details>
       <details className="mt-4 rounded-[10px] bg-[var(--surface-subtle)] p-3">
         <summary className="cursor-pointer text-xs font-semibold text-[var(--text)]">
-          Establish Position Assignment
+          Add person to this position
         </summary>
         <EstablishAssignmentForm data={data} position={position} />
       </details>
@@ -727,7 +735,7 @@ function AssignmentAdministration({
               <div className="mt-3 grid gap-3 lg:grid-cols-2">
                 <details className="rounded-[10px] bg-[var(--surface-subtle)] p-3">
                   <summary className="cursor-pointer text-xs font-semibold text-[var(--text)]">
-                    Replace Assignment
+                    Replace person
                   </summary>
                   <ReplaceAssignmentForm
                     assignment={assignment}
@@ -737,7 +745,7 @@ function AssignmentAdministration({
                 </details>
                 <details className="rounded-[10px] bg-[var(--surface-subtle)] p-3">
                   <summary className="cursor-pointer text-xs font-semibold text-[var(--error)]">
-                    End Assignment
+                    End person’s assignment
                   </summary>
                   <EndAssignmentForm
                     assignment={assignment}
@@ -750,7 +758,7 @@ function AssignmentAdministration({
         </div>
       ) : (
         <p className="mt-3 text-xs text-[var(--text-tertiary)]">
-          No current Position Assignments are available to maintain.
+          No one is currently assigned to this position.
         </p>
       )}
     </Card>
@@ -781,18 +789,18 @@ function CorrectReportingForm({
       <SearchableSelect
         defaultValue={relationship.position.id}
         disabled={pending}
-        label="Manager Position"
+        label="Manager’s job title"
         name="managerPositionStableKey"
         options={positionPickerOptions(data.positions.filter(
           (candidate) => candidate.status === "active" && candidate.id !== position.id,
         ))}
-        placeholder="Select a manager Position"
+        placeholder="Choose a manager’s job title"
         searchPlaceholder="Search job title, person, or Unit"
         required
       />
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Relationship type<RequiredMark />
+          Reporting type<RequiredMark />
         </span>
         <Select
           defaultValue={relationship.type}
@@ -806,7 +814,7 @@ function CorrectReportingForm({
       </label>
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Reporting context (optional)
+          Notes about reporting (optional)
         </span>
         <Input
           defaultValue={relationship.reason ?? ""}
@@ -818,7 +826,7 @@ function CorrectReportingForm({
       <ActionResult state={state} />
       <div className="sm:col-span-2">
         <Button disabled={pending} type="submit" variant="primary">
-          {pending ? "Checking hierarchy…" : "Save reporting correction"}
+          {pending ? "Saving…" : "Save reporting correction"}
         </Button>
       </div>
     </form>
@@ -846,20 +854,20 @@ function EstablishReportingForm({
       <div className="sm:col-span-2">
         <SearchableSelect
           disabled={pending}
-          label="Primary manager Position"
+          label="Primary manager’s job title"
           name="managerPositionStableKey"
           options={positionPickerOptions(managerPositions)}
-          placeholder="Select a manager Position"
+          placeholder="Choose a manager’s job title"
           searchPlaceholder="Search job title, person, or Unit"
           required
         />
         <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
-          The relationship belongs to the two Positions. Current occupants are shown only to help identify the correct structural seats.
+          Choose the manager’s position. Names help you identify the right one.
         </span>
       </div>
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Reporting context (optional)
+          Notes about reporting (optional)
         </span>
         <Input maxLength={2000} name="relationshipReason" />
       </label>
@@ -867,7 +875,7 @@ function EstablishReportingForm({
       <ActionResult state={state} />
       <div className="sm:col-span-2">
         <Button disabled={pending} type="submit" variant="primary">
-          {pending ? "Checking hierarchy…" : "Establish primary manager"}
+          {pending ? "Saving…" : "Save manager"}
         </Button>
       </div>
     </form>
@@ -904,25 +912,28 @@ function ReplaceReportingForm({
       <div className="sm:col-span-2">
         <SearchableSelect
           disabled={pending}
-          label="Replacement manager Position"
+          label="New manager’s job title"
           name="managerPositionStableKey"
           options={positionPickerOptions(managerPositions)}
-          placeholder="Select a different manager Position"
+          placeholder="Choose a different manager’s job title"
           searchPlaceholder="Search job title, person, or Unit"
           required
         />
       </div>
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Reporting context (optional)
+          Notes about reporting (optional)
         </span>
         <Input maxLength={2000} name="relationshipReason" />
       </label>
+      <p className="text-xs leading-5 text-[var(--text-secondary)] sm:col-span-2">
+        This ends the current primary reporting line and starts the new one on the effective date. Both stay in the history.
+      </p>
       <ChangeMetadataFields fixedKind="organizational_change" />
       <ActionResult state={state} />
       <div className="sm:col-span-2">
         <Button disabled={pending} type="submit" variant="primary">
-          {pending ? "Replacing manager…" : "Replace primary manager"}
+          {pending ? "Changing manager…" : "Change manager"}
         </Button>
       </div>
     </form>
@@ -949,10 +960,13 @@ function EndReportingForm({
         recordKey={relationship.id}
       />
       <ChangeMetadataFields fixedKind="organizational_change" />
+      <p className="text-xs leading-5 text-[var(--text-secondary)] sm:col-span-2">
+        This ends the reporting line on the effective date. Its history is kept; no replacement manager is selected.
+      </p>
       <ActionResult state={state} />
       <div className="sm:col-span-2">
         <Button disabled={pending} type="submit" variant="destructive">
-          {pending ? "Ending relationship…" : "End reporting relationship"}
+          {pending ? "Ending reporting line…" : "End reporting line"}
         </Button>
       </div>
     </form>
@@ -973,14 +987,15 @@ function ReportingAdministration({
   return (
     <Card className="mt-4 p-4 sm:p-5">
       <h3 className="text-sm font-semibold text-[var(--text)]">
-        Reporting-relationship maintenance
+        Reports to
       </h3>
       <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
-        Reporting is maintained between Positions, never directly between
-        People. Establish, replace, correct, or end a relationship without
-        inventing Process responsibility. Cycle safeguards run again before
-        commit.
+        Record which position this one reports to. This does not assign Process ownership.
       </p>
+      <details className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
+        <summary className="cursor-pointer font-medium text-[var(--workspace-accent)]">About reporting lines</summary>
+        <p className="mt-2">Reporting connects Positions, not individual people, so the reporting line can remain when people change. Lotura checks for circular reporting before saving.</p>
+      </details>
       {managerRelationships.length > 0 ? (
         <div className="mt-4 space-y-3">
           {managerRelationships.map((relationship) => (
@@ -1000,7 +1015,7 @@ function ReportingAdministration({
                 {relationship.type === "primary" ? (
                   <details className="rounded-[10px] bg-[var(--surface-subtle)] p-3">
                     <summary className="cursor-pointer text-xs font-semibold text-[var(--text)]">
-                      Replace manager
+                      Change manager
                     </summary>
                     <ReplaceReportingForm
                       data={data}
@@ -1011,7 +1026,7 @@ function ReportingAdministration({
                 ) : null}
                 <details className="rounded-[10px] bg-[var(--surface-subtle)] p-3">
                   <summary className="cursor-pointer text-xs font-semibold text-[var(--text)]">
-                    Correct relationship
+                    Correct reporting details
                   </summary>
                   <CorrectReportingForm
                     data={data}
@@ -1021,7 +1036,7 @@ function ReportingAdministration({
                 </details>
                 <details className="rounded-[10px] bg-[var(--surface-subtle)] p-3">
                   <summary className="cursor-pointer text-xs font-semibold text-[var(--error)]">
-                    End relationship
+                    End reporting line
                   </summary>
                   <EndReportingForm
                     position={position}
@@ -1034,7 +1049,7 @@ function ReportingAdministration({
         </div>
       ) : (
         <p className="mt-3 text-xs text-[var(--text-tertiary)]">
-          No current reporting relationships are recorded from this Position.
+          No reporting lines are recorded for this position yet.
         </p>
       )}
       {!position.primaryManager ? (
@@ -1514,13 +1529,20 @@ export function StructureAdministrationPanel({
   );
   return (
     <section aria-labelledby="structure-administration" className="py-7 sm:py-9">
-      <p className="text-xs font-medium text-[var(--text-tertiary)]">Authorized administration</p>
       <h2 className="mt-1 text-2xl font-semibold tracking-[-0.035em] text-[var(--text)]" id="structure-administration">
-        Maintain the current structural record
+        Edit details
       </h2>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
-        Edits change the current documented structure. They do not modify the source workbook or its import record. Every accepted change records its reason, effective date, administrator, and the information before and after the change.
+        Saved changes keep their history.
       </p>
+      <details className="mt-2 max-w-3xl text-xs leading-5 text-[var(--text-secondary)]">
+        <summary className="cursor-pointer font-medium text-[var(--workspace-accent)]">How changes are recorded</summary>
+        <p className="mt-2">Edits update the current documented structure, not the original source workbook or import record. Lotura keeps who made each change, why, when it takes effect, and what changed.</p>
+        <p className="mt-2">Use a correction to fix the record; use an organizational change when the organization itself has changed. Earlier information stays in the change history.</p>
+        {entityType === "position" ? (
+          <p className="mt-2">The job title names a Position: a place in the organization that remains when the person changes. The Person, Position, and Operational Roles remain separate.</p>
+        ) : null}
+      </details>
       <p className="mt-3 text-xs text-[var(--text-secondary)]">* Required. Everything else is optional.</p>
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <Card className="scroll-mt-6 p-4 sm:p-5" id={entityType === "position" ? "edit-position" : undefined}>

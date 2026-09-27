@@ -134,7 +134,7 @@ export function StructureCreateForm({
         <>
           <label className="block sm:col-span-2">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-              Organization Unit name<RequiredMark />
+              Unit name<RequiredMark />
             </span>
             <Input
               maxLength={255}
@@ -146,25 +146,22 @@ export function StructureCreateForm({
           </label>
           {contextUnit ? <div className="sm:col-span-2 text-sm text-[var(--text-secondary)]"><input name="parentOrganizationUnitStableKey" type="hidden" value={contextUnit.id} />Within {contextUnit.name}</div> : <label className="block sm:col-span-2">
             <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-              Parent Organization Unit (optional)
+              Parent Unit (optional)
             </span>
             <Select
               name="parentOrganizationUnitStableKey"
               onChange={(event) => setUnitStableKey(event.target.value)}
               value={unitStableKey}
             >
-              <option value="">No Parent Unit — root Unit</option>
+              <option value="">No parent Unit recorded</option>
               {data.units
                 .filter((unit) => unit.status === "active")
                 .map((unit) => (
                   <option key={unit.id} value={unit.id}>
-                    {unit.name}{unit.parent ? ` — within ${unit.parent.name}` : " — root Unit"}
+                    {unit.name}{unit.parent ? ` — within ${unit.parent.name}` : ""}
                   </option>
                 ))}
             </Select>
-            <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
-              Unit hierarchy does not establish manager reporting, Process ownership, or operational responsibility.
-            </span>
           </label>}
         </>
       ) : null}
@@ -197,13 +194,10 @@ export function StructureCreateForm({
                 .filter((unit) => unit.status === "active")
                 .map((unit) => (
                   <option key={unit.id} value={unit.id}>
-                    {unit.name}{unit.parent ? ` — within ${unit.parent.name}` : " — root Unit"}
+                    {unit.name}{unit.parent ? ` — within ${unit.parent.name}` : ""}
                   </option>
                 ))}
             </Select>
-            <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
-              A Position is a durable structural seat. Its title does not create an Operational Role.
-            </span>
           </label>}
         </>
       ) : null}
@@ -226,12 +220,19 @@ export function StructureCreateForm({
         </label>
       ) : null}
 
+      {entityType !== "person" ? (
+        <details className="text-xs leading-5 text-[var(--text-secondary)] sm:col-span-2">
+          <summary className="cursor-pointer font-medium text-[var(--workspace-accent)]">{entityType === "position" ? "About job titles" : "About Unit placement"}</summary>
+          <p className="mt-2">{entityType === "position" ? "A job title names a Position—a place in the organization that can be filled by different people over time. Adding it does not assign anyone or create an Operational Role. People, managers, and responsibilities can be added later." : "This records where the Unit sits in the organization. It does not assign managers, Process ownership, or responsibilities."}</p>
+        </details>
+      ) : null}
+
       {duplicate ? (
         <Alert className="sm:col-span-2" tone="warning">
           <div>
             <p className="font-medium">A matching active {label} already exists.</p>
             <p className="mt-1 text-xs leading-5">
-              Duplicate names and titles can be legitimate, but stable identity must remain distinct. Review the existing record before continuing.
+              Check the existing record first. If this is a different {label}, you can keep both.
             </p>
             <label className="mt-3 flex items-start gap-2 text-xs">
               <input
@@ -241,7 +242,7 @@ export function StructureCreateForm({
                 type="checkbox"
                 value="confirmed"
               />
-              <span>Create a separate record after reviewing this possible duplicate.<RequiredMark /></span>
+              <span>I checked: this is a separate {label}.<RequiredMark /></span>
             </label>
           </div>
         </Alert>

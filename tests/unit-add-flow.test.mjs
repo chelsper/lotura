@@ -123,6 +123,22 @@ test("partial setup asks only for identity and history, not unknown organization
   }
 });
 
+test("setup explanations are optional help, never hiding required identity or history fields", async () => {
+  const { StructureCreateForm } = await load("app/studio/organization/structure-create-form.tsx");
+  for (const [entityType, summary, meaning] of [
+    ["position", "About job titles", /does not assign anyone or create an Operational Role/],
+    ["organization_unit", "About Unit placement", /does not assign managers, Process ownership, or responsibilities/],
+  ]) {
+    const html = render(StructureCreateForm, { data, entityType });
+    const help = html.match(new RegExp(`<details\\b([^>]*)>\\s*<summary[^>]*>${summary}<\\/summary>([\\s\\S]*?)<\\/details>`));
+    assert.ok(help);
+    assert.doesNotMatch(help[1], /\bopen\b/);
+    assert.match(help[2], meaning);
+    assert.doesNotMatch(help[2], /<(?:input|select|textarea)\b/);
+    assert.match(html, /<legend[^>]*>Change history<\/legend>/);
+  }
+});
+
 test("create page keeps the Unit breadcrumb and cancel target; saved Person cannot be created again", async () => {
   let creation = 0, placement = 0;
   const { StudioCreatePage } = await load("app/studio/studio-create-page.tsx", {
@@ -241,12 +257,12 @@ test("saved Person placement lists only active direct Unit titles without inferr
   ];
   const html = render(UnitPersonPlacement, { data: { ...data, positions }, person, unit });
   assert.match(html, /value="local-position"/);
-  assert.match(html, /no assignment in this Unit yet/);
+  assert.match(html, /Choose a job title for Fictional Person, or do this later/);
   assert.match(html, /\(optional\)/);
   assert.doesNotMatch(html, /Inactive title|Outside title|Child title|Already held title|name="personStableKey"|Save assignment/);
   assert.match(html, /href="\/studio\/organization\/people\/fictional-person"/);
   assert.match(html, /href="\/studio\/organization\/units\/fictional-unit#unit-people-job-titles"[^>]*>Do this later<\/a>/);
-  assert.match(html, /Their Person record stays saved/);
+  assert.match(html, /Their record stays saved/);
   assert.match(html, /roster once you assign a job title/);
   assert.doesNotMatch(html, /<form|type="submit"/);
   const empty = render(UnitPersonPlacement, { data, person, unit });
@@ -284,7 +300,7 @@ test("optional assignment success prevents repeats and failure explains that the
       assert.match(html, /Job title assigned/);
     } else {
       assert.doesNotMatch(html, /<fieldset[^>]*disabled=""/);
-      assert.match(html, /The Person record is still saved/);
+      assert.match(html, /The person’s record is still saved/);
       assert.match(html, /Revision changed/);
     }
   }

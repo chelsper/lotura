@@ -35,8 +35,8 @@ test("Organization Unit parent maintenance is explicit and cycle-safe", async ()
   assert.match(administration, /organization_id = \$4/);
   assert.match(administration, /An Organization Unit cannot be its own parent/);
   assert.match(panel, /Parent Organization Unit/);
-  assert.match(panel, /Descendant Units are excluded/);
-  assert.match(panel, /does not create a manager relationship or assign Process ownership/);
+  assert.match(panel, /!unavailableParentUnitIds\.has\(unit\.id\)/);
+  assert.match(panel, /This changes Unit hierarchy, not reporting lines or Process ownership/);
   assert.match(
     structureMigration,
     /CREATE CONSTRAINT TRIGGER "organization_units_parent_cycle_constraint_trigger"/,
@@ -58,8 +58,8 @@ test("manager maintenance is Position-to-Position with occupant context", async 
     administration,
     /export async function replacePositionReportingRelationship/,
   );
-  assert.match(panel, /Reporting is maintained between Positions, never\s+directly between\s+People/);
-  assert.match(panel, /Current occupants are shown only to help identify the correct\s+structural seats/);
+  assert.match(panel, /Reporting connects Positions, not individual people/);
+  assert.match(panel, /Choose the manager’s position\. Names help you identify the right one/);
   assert.match(panel, /position\.assignments\.map/);
   assert.match(person, /A Person may occupy more than one Position/);
   assert.match(person, /maintained separately on each Position/);

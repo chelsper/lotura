@@ -11,14 +11,14 @@ import { buildOrganizationStructureData } from "../lib/organization-structure-da
 const read = path => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 const icons = { ChevronIcon: () => null, InfoIcon: () => null, SearchIcon: () => null };
 const Link = ({ children, ...props }) => React.createElement("a", props, children);
-const actions = new Proxy({}, { get: (_target, name) => function action() { throw new Error(`Rendering must not call ${name}`); } });
+const actions = new Proxy({}, { get: (target, name) => target[name] ??= function action() { throw new Error(`Rendering must not call ${name}`); } });
 let primitives;
 let pickerOptions;
 let searchableSelect;
-async function load(path, states = []) {
+async function load(path, states = [], pending = false) {
   const source = await read(path);
   const expose = path.endsWith("structure-administration-panel.tsx")
-    ? "\nexport { EditForm, EstablishRoleMandateForm, EstablishRoleCoverageForm, EstablishAssignmentForm, ReplaceAssignmentForm, CorrectReportingForm, EstablishReportingForm, ReplaceReportingForm };" : "";
+    ? "\nexport { EditForm, EstablishRoleMandateForm, EstablishRoleCoverageForm, EstablishAssignmentForm, ReplaceAssignmentForm, EndAssignmentForm, CorrectReportingForm, EstablishReportingForm, ReplaceReportingForm, EndReportingForm };" : "";
   const { outputText } = ts.transpileModule(source + expose, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
   });
@@ -28,7 +28,7 @@ async function load(path, states = []) {
     if (id === "react/jsx-runtime") return jsxRuntime;
     if (id === "react") return { ...React,
       useState(initial) { const value = stateIndex < states.length ? states[stateIndex] : initial; stateIndex += 1; return [value, () => {}]; },
-      useActionState(action, initial) { return [initial, action, false]; },
+      useActionState(action, initial) { return [initial, action, pending]; },
     };
     if (id === "next/link") return { default: Link };
     if (id === "./icons") return icons;
@@ -192,5 +192,81 @@ test("structure mandate and coverage markers follow conditional validation", asy
     const html = render(EstablishRoleCoverageForm, { data, position, mandate: position.mandates[0] });
     if (type === "permanent") optional(html, "coverageReason");
     else required(html, "coverageReason");
+  }
+});
+
+test("plain-language panel keeps edit and history visible while explanatory help is closed", async () => {
+  const { StructureAdministrationPanel } = await load("app/organization/structure-administration-panel.tsx");
+  const entity = data.positions.find(item => item.assignments.length > 0 && item.primaryManager);
+  const html = render(StructureAdministrationPanel, { changes: [], data, entity, entityType: "position" });
+  for (const label of ["Edit details", "People in this position", "Reports to", "Change history", "Saved changes keep their history."]) {
+    assert.ok(html.includes(label), label);
+  }
+  assert.match(labelFor(html, "title"), /Job title/);
+  assert.doesNotMatch(html, /Maintain the current structural record|Assignment maintenance|Reporting-relationship maintenance/);
+  for (const summary of ["How changes are recorded", "About assignments and responsibilities", "About reporting lines"]) {
+    const help = html.match(new RegExp(`<details([^>]*)><summary[^>]*>${summary}<\\/summary>([\\s\\S]*?)<\\/details>`));
+    assert.ok(help, summary);
+    assert.doesNotMatch(help[1], /\bopen=/);
+    assert.doesNotMatch(help[2], /<(?:form|input|select|textarea)\b/, "help must not hide edit or required audit controls");
+  }
+  assert.match(html, /<details open=""><summary[^>]*>Edit title or Unit/);
+  assert.match(html, /The Person, Position, and Operational Roles remain separate/);
+  assert.match(html, /This does not assign Process ownership/);
+  assert.match(html, /No saved changes have been recorded for this item/);
+});
+
+test("simpler assignment and manager actions preserve exact identities, actions, dates, and pending guards", async () => {
+  const position = data.positions.find(item => item.assignments.length > 0 && item.primaryManager);
+  const assignment = position.assignments[0];
+  const relationship = position.primaryManager;
+  const rows = [
+    ["EstablishAssignmentForm", "establishPositionAssignmentAction", "Add person to this position", null, position.revision],
+    ["ReplaceAssignmentForm", "replacePositionAssignmentAction", "Replace person", "assignmentRecordKey", assignment.revision],
+    ["EndAssignmentForm", "endPositionAssignmentAction", "End person’s assignment", "assignmentRecordKey", assignment.revision],
+    ["EstablishReportingForm", "establishPositionReportingRelationshipAction", "Save manager", null, position.revision],
+    ["ReplaceReportingForm", "replacePositionReportingRelationshipAction", "Change manager", "reportingRecordKey", relationship.revision],
+    ["CorrectReportingForm", "correctPositionReportingRelationshipAction", "Save reporting correction", "reportingRecordKey", relationship.revision],
+    ["EndReportingForm", "endPositionReportingRelationshipAction", "End reporting line", "reportingRecordKey", relationship.revision],
+  ];
+  for (const pending of [false, true]) {
+    for (const [formName, actionName, buttonLabel, recordField, revision] of rows) {
+      const forms = await load("app/organization/structure-administration-panel.tsx", [], pending);
+      const props = { data, position, assignment, relationship };
+      assert.equal(forms[formName](props).props.action, actions[actionName], formName);
+      const html = render(forms[formName], props);
+      const hidden = name => [...html.matchAll(/<input\b[^>]*>/g)].map(match => match[0]).find(control => control.includes(`name="${name}"`));
+      for (const [name, value] of [
+        ["positionStableKey", position.id],
+        ["expectedRevision", revision],
+        ...(recordField ? [[recordField, recordField === "assignmentRecordKey" ? assignment.id : relationship.id]] : []),
+      ]) {
+        const control = hidden(name);
+        assert.ok(control, `${formName}: ${name}`);
+        assert.ok(control.includes('type="hidden"'));
+        assert.ok(control.includes(`value="${value}"`));
+      }
+      required(html, "effectiveDate");
+      required(html, "reason");
+      if (pending) assert.match(html, /<button[^>]*disabled=""[^>]*type="submit"/);
+      else assert.ok(html.includes(buttonLabel), buttonLabel);
+    }
+  }
+});
+
+test("replacement and end forms keep their consequences next to the save action", async () => {
+  const forms = await load("app/organization/structure-administration-panel.tsx");
+  const position = data.positions.find(item => item.assignments.length > 0 && item.primaryManager);
+  const props = { data, position, assignment: position.assignments[0], relationship: position.primaryManager };
+  for (const [name, consequence] of [
+    ["ReplaceAssignmentForm", /ends .*?assignment and starts the selected person’s assignment/],
+    ["EndAssignmentForm", /assignment history stay in Lotura/],
+    ["ReplaceReportingForm", /ends the current primary reporting line and starts the new one/],
+    ["EndReportingForm", /no replacement manager is selected/],
+  ]) {
+    const html = render(forms[name], props);
+    assert.match(html, consequence);
+    assert.doesNotMatch(html, /<details/, "consequence must stay visible when action form is open");
+    assert.match(html, /effective date/);
   }
 });

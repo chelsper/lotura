@@ -208,7 +208,7 @@ export function UnitRosterEditor({
               searchPlaceholder="Search job title, person, or Unit"
               required
             />
-            <p className="text-xs leading-5 text-[var(--text-secondary)]">Choose the manager’s position. Names help identify it; this doesn’t assign responsibilities.</p>
+            <p className="text-xs leading-5 text-[var(--text-secondary)]">Choose the manager’s job title. Names help you find it; responsibilities stay unchanged.</p>
             <Field label="Reporting note" optional>
               <Input defaultValue={manager && managerChange === "correction" ? manager.reason ?? "" : ""} key={managerChange} maxLength={2000} name="relationshipReason" />
             </Field>

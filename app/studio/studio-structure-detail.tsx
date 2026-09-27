@@ -35,7 +35,7 @@ function entityPresentation(entity: StudioEntity, entityType: StructureEntityTyp
     const unit = entity as OrganizationUnit;
     return {
       browseHref: `/organization/units/${encodeURIComponent(unit.id)}`,
-      description: `${unit.positions.length} ${unit.positions.length === 1 ? "Position" : "Positions"} · ${unit.parent ? `Within ${unit.parent.name}` : "Root Unit"}`,
+      description: `${unit.positions.length} ${unit.positions.length === 1 ? "job title" : "job titles"} · ${unit.parent ? `Within ${unit.parent.name}` : "No parent Unit recorded"}`,
       label: "Organization Unit",
       title: unit.name,
     };
@@ -45,7 +45,7 @@ function entityPresentation(entity: StudioEntity, entityType: StructureEntityTyp
     return {
       browseHref: `/organization/positions/${encodeURIComponent(position.id)}`,
       description: `${position.unit?.name ?? "Organization Unit not yet recorded"} · ${position.occupancy.id === "not_established" ? "Person not yet recorded" : position.occupancy.label}`,
-      label: "Position",
+      label: "Job title",
       title: position.title,
     };
   }
@@ -152,8 +152,12 @@ export function StudioStructureDetail({
         <Card className="mt-6 p-4 sm:p-5">
           <h2 className="text-sm font-semibold text-[var(--text)]">Job titles</h2>
           <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
-            Job titles belong to Positions. Choose the Position you want to update; this does not change the person’s name or move them to a different job.
+            Choose a job title to edit. The person’s name and assignment stay unchanged.
           </p>
+          <details className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
+            <summary className="cursor-pointer font-medium text-[var(--workspace-accent)]">About job titles</summary>
+            <p className="mt-2">A job title names a Position—the place someone fills in the organization. Editing the title changes it for everyone assigned to that Position, not just this person.</p>
+          </details>
           <ul className="mt-3 space-y-3">
             {(entity as OrganizationPerson).assignments.map((assignment) => (
               <li className="flex flex-wrap items-center justify-between gap-2" key={assignment.id}>
@@ -182,13 +186,6 @@ export function StudioStructureDetail({
           />
         </div>
       ) : null}
-
-      <Card className="mt-6 p-4 sm:p-5">
-        <p className="text-xs font-medium text-[var(--text-tertiary)]">How changes are recorded</p>
-        <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-          Imported source information remains unchanged. Every saved update changes the current documented structure and adds a history entry at the same time.
-        </p>
-      </Card>
 
       <StructureAdministrationPanel
         changes={changes}

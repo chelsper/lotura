@@ -28,7 +28,7 @@ export function UnitPersonPicker({ data, unit }: { data: OrganizationStructureDa
         {people.length ? (
           <form action="/studio/organization/people/new" className="grid gap-4" method="get">
             <input name="unit" type="hidden" value={unit.id} />
-            <p className="text-sm text-[var(--text-secondary)]">Choose someone already in Lotura. You’ll pick their job title in this Unit next.</p>
+            <p className="text-sm text-[var(--text-secondary)]">Find a person, then choose their job title in this Unit.</p>
             <SearchableSelect
               emptyContent={<Button disabled={creating} onClick={() => setMode("new")} type="button">Create new person</Button>}
               label="Person"
@@ -40,7 +40,7 @@ export function UnitPersonPicker({ data, unit }: { data: OrganizationStructureDa
               value={personId}
             />
             {selected ? <Link className="text-sm text-[var(--workspace-accent)] hover:underline" href={`/studio/organization/people/${encodeURIComponent(selected.id)}`}>View {selected.name}’s existing record →</Link> : null}
-            <p className="text-xs text-[var(--text-secondary)]">This won’t create a duplicate person or change their current assignments. Nothing changes until you save an assignment.</p>
+            <p className="text-xs text-[var(--text-secondary)]">This reuses their existing record. Nothing changes until you save an assignment.</p>
             <div><Button disabled={!selected} type="submit" variant="primary">Continue with this person</Button></div>
           </form>
         ) : <p className="text-sm text-[var(--text-secondary)]">No active people are recorded yet. Choose Create new person to add someone.</p>}

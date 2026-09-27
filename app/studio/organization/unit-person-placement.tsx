@@ -47,7 +47,7 @@ function AssignmentForm({ person, position, onPendingChange, onSaved }: { person
         <input name="personStableKey" type="hidden" value={person.id} />
         <input name="positionStableKey" type="hidden" value={position.id} />
         <input name="expectedRevision" type="hidden" value={position.revision} />
-        {hasIncumbent ? <Alert tone="info">This job title already has a regular occupant. Adding an assignment does not replace them.</Alert> : null}
+        {hasIncumbent ? <Alert tone="info">Someone already fills this position. Adding an assignment does not replace them.</Alert> : null}
         <label className="block">
           <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">How are they filling this position?<RequiredMark /></span>
           <Select defaultValue={hasIncumbent ? "" : "incumbent"} name="assignmentType" required>
@@ -62,7 +62,7 @@ function AssignmentForm({ person, position, onPendingChange, onSaved }: { person
         <p className="text-xs text-[var(--text-secondary)]">Responsibilities and app access stay unchanged.</p>
         <Button disabled={unavailable} type="submit" variant="primary">{pending ? "Saving assignment…" : "Save assignment"}</Button>
       </fieldset>
-      {state.status !== "idle" ? <div aria-live="polite" className="mt-4"><Alert tone={state.status === "success" ? "success" : "error"}>{state.status === "success" ? "Job title assigned. You can return to the Unit." : `${state.message} The Person record is still saved.`}</Alert></div> : null}
+      {state.status !== "idle" ? <div aria-live="polite" className="mt-4"><Alert tone={state.status === "success" ? "success" : "error"}>{state.status === "success" ? "Job title assigned. You can return to the Unit." : `${state.message} The person’s record is still saved.`}</Alert></div> : null}
     </form>
   );
 }
@@ -78,7 +78,7 @@ export function UnitPersonPlacement({ data, person, unit }: { data: Organization
 
   return (
     <section aria-label="Choose a job title">
-      <p className="mb-4 text-sm text-[var(--text-secondary)]">{assignedHere ? `${person.name} already has an assignment in this Unit. You can add another only if needed.` : `${person.name} has no assignment in this Unit yet. Choose a job title to add them to its roster, or leave this for later.`}</p>
+      <p className="mb-4 text-sm text-[var(--text-secondary)]">{assignedHere ? `${person.name} already has a job title here. Add another only if needed.` : `Choose a job title for ${person.name}, or do this later.`}</p>
       {saved ? <Alert tone="success">Job title assigned. You can return to the Unit.</Alert> : positions.length ? <>
         <SearchableSelect label={`Job title in ${unit.name} (optional)`} disabled={pending} onChange={(event) => {
             if (position && !window.confirm("Choose another job title? Unsaved assignment details will be cleared.")) return;
@@ -92,7 +92,7 @@ export function UnitPersonPlacement({ data, person, unit }: { data: Organization
           <Link href={`/studio/organization/people/${encodeURIComponent(person.id)}`} prefetch={false}>View {person.name}’s record</Link>
         </>}
       </div>
-      {!saved && !assignedHere ? <p className="mt-2 text-xs text-[var(--text-secondary)]">Their Person record stays saved. They’ll appear on this Unit’s roster once you assign a job title.</p> : null}
+      {!saved && !assignedHere ? <p className="mt-2 text-xs text-[var(--text-secondary)]">Their record stays saved. They’ll appear on this Unit’s roster once you assign a job title.</p> : null}
     </section>
   );
 }

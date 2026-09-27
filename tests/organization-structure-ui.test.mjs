@@ -91,7 +91,7 @@ test("Organization Structure administration is explicit and disabled by default"
   const combined = sources.join("\n");
   assert.match(combined, /LOTURA_STRUCTURE_ADMIN_MODE \|\| "disabled"/);
   assert.match(combined, /administrationEnabled \?/);
-  assert.match(combined, /do not modify the source workbook or its import record/i);
+  assert.match(combined, /not the original source workbook or import record/i);
   assert.match(combined, /Remove from current structure/);
   assert.doesNotMatch(combined, /localStorage|sessionStorage|indexedDB|fetch\(/i);
 });
@@ -109,9 +109,9 @@ test("organizational placement uses existing Unit identities instead of Unit ren
     read("app/organization/structure-administration-panel.tsx"),
     read("app/organization/person-detail.tsx"),
   ]);
-  assert.match(panel, /Move this Position to an Organization Unit/);
+  assert.match(panel, /Organization Unit \(optional\)/);
   assert.match(panel, /name="organizationUnitStableKey"/);
-  assert.match(panel, /Choose an existing Unit by its stable identity/);
+  assert.match(panel, /Changing the Unit moves this position and its people\. Neither Unit is renamed/);
   assert.match(panel, /Rename this Organization Unit/);
   assert.match(panel, /It does not move a Person or Position/);
   assert.match(panel, /Another active Organization Unit already uses this name/);

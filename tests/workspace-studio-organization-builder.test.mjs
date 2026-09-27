@@ -88,7 +88,8 @@ test("public and browse surfaces never expose canonical mutation controls", asyn
     assert.match(source, /Maintain in Workspace Studio/);
   }
   assert.match(studioDetail, /StructureAdministrationPanel/);
-  assert.match(studioDetail, /Imported source information remains unchanged/);
+  const panel = await read("app/organization/structure-administration-panel.tsx");
+  assert.match(panel, /Edits update the current documented structure, not the original source workbook or import record/);
 });
 
 test("creation uses database-generated stable keys and atomic append-only history", async () => {
@@ -156,7 +157,8 @@ test("possible duplicates require explicit review while legitimate duplicates re
   ]);
   assert.match(form, /A matching active \{label\} already exists/);
   assert.match(form, /name="acknowledgePossibleDuplicate"/);
-  assert.match(form, /Duplicate names and titles can be legitimate/);
+  assert.match(form, /If this is a different \{label\}, you can keep both/);
+  assert.match(form, /I checked: this is a separate \{label\}/);
   assert.match(administration, /acknowledgePossibleDuplicate/);
   assert.match(administration, /lower\(trim\(duplicate\.name\)\)/);
   assert.match(administration, /lower\(trim\(duplicate\.title\)\)/);
@@ -191,8 +193,9 @@ test("initial Position Assignment preserves the Person, Position, and Role bound
   assert.match(administration, /update positions[\s\S]+date_trunc\('milliseconds', updated_at\)/);
   assert.match(administration, /insert into position_assignments/);
   assert.match(administration, /from changed, assignment/);
-  assert.match(panel, /This records structural occupancy only/);
-  assert.match(panel, /does not grant an Operational Role, Role Coverage, Process ownership, or application access/);
+  assert.match(panel, /This records who fills the position/);
+  assert.match(panel, /does not assign responsibilities or give access to Lotura/);
+  assert.match(panel, /Operational Roles, Role Coverage, and Process ownership are separate and do not change here/);
 });
 
 test("manually created Positions do not inherit source-import vacancy certainty", async () => {
