@@ -17,7 +17,7 @@ function elements(node) {
 }
 const find = (node, predicate) => elements(node).find(predicate);
 const unit = { id: "unit-a", name: "Fictional Services" };
-const position = { id: "position-a", revision: "revision-before-edit", title: "Coordinator", status: "active", unit, assignments: [], occupancy: { label: "Not established", tone: "neutral" }, primaryManager: null };
+const position = { id: "position-a", revision: "revision-before-edit", title: "Coordinator", status: "active", unit, assignments: [], mandates: [], occupancy: { label: "Not established", tone: "neutral" }, primaryManager: null };
 
 function harness() {
   let hooks, cursor;
@@ -58,6 +58,7 @@ function harness() {
       if (id === "next/link") return { default: "link" };
       if (id === "../ui/primitives") return { Badge: "badge", Button: "button", Card: "card" };
       if (id === "./unit-roster-editor") return { UnitRosterEditor: "editor" };
+      if (id === "./unit-responsibilities-panel") return { UnitResponsibilitiesPanel: "responsibilities" };
       if (id === "./unit-add-menu") return { UnitAddMenu: "add-menu" };
       throw new Error(`Unexpected dependency: ${id}`);
     },
@@ -70,8 +71,9 @@ function harness() {
   }
   const roster = data => render(loaded.exports.UnitRoster, { unit, data: data ?? { positions: [position] } });
   const panel = tree => find(tree, node => typeof node.type === "function" && node.type.name === "RosterEditPanel");
-  function open() {
-    find(roster(), node => node.props?.["aria-label"] === "Edit Coordinator").props.onClick({ currentTarget: { focus() { focusCalls++; } } });
+  function open(mode = "title") {
+    const label = mode === "responsibilities" ? "Responsibilities for Coordinator" : "Edit Coordinator";
+    find(roster(), node => node.props?.["aria-label"] === label).props.onClick({ currentTarget: { focus() { focusCalls++; } } });
     return panel(roster());
   }
   return {
@@ -107,10 +109,10 @@ test("dirty edits are kept when cancelling discard, and closing saves nothing", 
   assert.equal(h.refreshes, 0);
 });
 
-test("pending save blocks closing, Escape, section switches, and full-detail navigation", () => {
+for (const mode of ["title", "responsibilities"]) test(`${mode}: pending save blocks closing, Escape, section switches, and full-detail navigation`, () => {
   const h = harness();
-  const panel = h.open();
-  find(h.renderPanel(panel), node => node.type === "editor").props.onPendingChange(true);
+  const panel = h.open(mode);
+  find(h.renderPanel(panel), node => node.type === (mode === "title" ? "editor" : "responsibilities")).props.onPendingChange(true);
   const tree = h.renderPanel(panel);
   const close = find(tree, node => node.props?.["aria-label"] === "Close editor");
   assert.equal(close.props.disabled, true);
@@ -124,16 +126,60 @@ test("pending save blocks closing, Escape, section switches, and full-detail nav
   for (const node of elements(tree).filter(node => node.props?.["aria-pressed"] !== undefined)) assert.equal(node.props.disabled, true);
 });
 
-test("successful save closes the panel, announces success and refreshes in place once", () => {
+for (const mode of ["title", "responsibilities"]) test(`${mode}: successful save closes the panel, announces success and refreshes in place once`, () => {
   const h = harness();
-  const panel = h.open();
-  find(h.renderPanel(panel), node => node.type === "editor").props.onSaved("Job title saved.");
+  const panel = h.open(mode);
+  const message = mode === "title" ? "Job title saved." : "Responsibility linked.";
+  find(h.renderPanel(panel), node => node.type === (mode === "title" ? "editor" : "responsibilities")).props.onSaved(message);
   const tree = h.roster();
   assert.equal(h.panel(tree), undefined);
   assert.equal(h.refreshes, 1);
-  assert.equal(find(tree, node => node.props?.role === "status").props.children, "Job title saved.");
+  assert.equal(find(tree, node => node.props?.role === "status").props.children, message);
   h.effects.at(-1)();
   assert.equal(h.focusCalls, 1, "return keyboard focus to the triggering row after the refresh");
+});
+
+test("responsibilities open directly with the Position snapshot and no navigation or save", () => {
+  const h = harness();
+  const panel = h.open("responsibilities");
+  assert.equal(panel.props.initialMode, "responsibilities");
+  const child = find(h.renderPanel(panel), node => node.type === "responsibilities");
+  assert.equal(child.props.position, position);
+  assert.equal(child.props.data.positions[0], position);
+  assert.equal(find(h.renderPanel(panel), node => node.type === "editor"), undefined);
+  assert.equal(h.refreshes, 0);
+});
+
+test("switching to responsibilities honors unsaved title edits", () => {
+  const h = harness();
+  const panel = h.open();
+  find(h.renderPanel(panel), node => node.type === "editor").props.onDirty();
+  const switchMode = () => find(h.renderPanel(panel), node => node.type === "button" && node.props.children === "Responsibilities").props.onClick();
+  switchMode();
+  assert.ok(find(h.renderPanel(panel), node => node.type === "editor"));
+  assert.equal(h.confirmations, 1);
+  h.allowDiscard();
+  switchMode();
+  assert.ok(find(h.renderPanel(panel), node => node.type === "responsibilities"));
+  assert.equal(h.refreshes, 0);
+});
+
+test("responsibility counts and manager cells match their column headings", () => {
+  const h = harness();
+  const tree = h.roster({ positions: [{ ...position, mandates: [{ id: "mandate-a" }], primaryManager: { position: { id: "manager-a", title: "Services Director", unit } } }] });
+  const headings = elements(tree).filter(node => node.type === "th" && node.props.scope === "col");
+  assert.equal(headings[3].props.children, "Responsibilities");
+  const row = find(tree, node => node.type === "tr" && node.key === position.id);
+  const cells = row.props.children;
+  assert.equal(find(cells[2], node => node.type === "link").props.children, "Services Director");
+  assert.equal(find(cells[3], node => node.type === "button").props.children, "1 linked");
+});
+
+test("inactive Positions expose recorded responsibilities without an Edit shortcut", () => {
+  const h = harness();
+  const tree = h.roster({ positions: [{ ...position, status: "inactive" }] });
+  assert.equal(find(tree, node => node.props?.["aria-label"] === "Edit Coordinator"), undefined);
+  assert.equal(find(tree, node => node.props?.["aria-label"] === "Responsibilities for Coordinator").props.children, "View responsibilities");
 });
 
 test("Escape uses the same dirty guard and the native dialog supplies modal focus handling", () => {

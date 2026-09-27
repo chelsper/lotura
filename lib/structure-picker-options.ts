@@ -1,4 +1,4 @@
-import type { OrganizationPerson, OrganizationPosition } from "./organization-structure-data.mjs";
+import type { OrganizationPerson, OrganizationPosition, OrganizationStructureData } from "./organization-structure-data.mjs";
 
 type Option = { value: string; label: string };
 
@@ -25,4 +25,8 @@ export function positionPickerOptions(positions: OrganizationPosition[]): Option
     value: position.id,
     label: `${position.title} — ${position.unit?.name ?? "No Unit recorded"} — ${position.assignments.length ? position.assignments.map(({ person }) => person.name).join(", ") : "No current person recorded"}`,
   })));
+}
+
+export function rolePickerOptions(roles: OrganizationStructureData["operationalRoles"]): Option[] {
+  return distinguish(roles.map((role) => ({ value: role.id, label: role.name })));
 }

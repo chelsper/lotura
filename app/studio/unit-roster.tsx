@@ -9,21 +9,26 @@ import type { OrganizationPosition, OrganizationStructureData, OrganizationUnit 
 import { Badge, Button, Card } from "../ui/primitives";
 import { UnitRosterEditor, type UnitRosterEditMode } from "./unit-roster-editor";
 import { UnitAddMenu } from "./unit-add-menu";
+import { UnitResponsibilitiesPanel } from "./unit-responsibilities-panel";
 
-const editorModes: Array<{ id: UnitRosterEditMode; label: string }> = [
+type RosterPanelMode = UnitRosterEditMode | "responsibilities";
+
+const editorModes: Array<{ id: RosterPanelMode; label: string }> = [
   { id: "title", label: "Job title" },
   { id: "person", label: "Person" },
   { id: "manager", label: "Reports to" },
+  { id: "responsibilities", label: "Responsibilities" },
 ];
 
-function RosterEditPanel({ data, position, onClose, onSaved }: {
+function RosterEditPanel({ data, position, initialMode, onClose, onSaved }: {
   data: OrganizationStructureData;
   position: OrganizationPosition;
+  initialMode: RosterPanelMode;
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [mode, setMode] = useState<UnitRosterEditMode>("title");
+  const [mode, setMode] = useState<RosterPanelMode>(initialMode);
   const [dirty, setDirty] = useState(false);
   const [pending, setPending] = useState(false);
 
@@ -84,7 +89,13 @@ function RosterEditPanel({ data, position, onClose, onSaved }: {
         ))}
       </div>
       <p className="mt-5 text-xs text-[var(--text-tertiary)]">* Required. Each saved change keeps its history.</p>
-      <UnitRosterEditor
+      {mode === "responsibilities" ? <UnitResponsibilitiesPanel
+        data={data}
+        onDirty={() => setDirty(true)}
+        onPendingChange={setPending}
+        onSaved={onSaved}
+        position={position}
+      /> : <UnitRosterEditor
         data={data}
         key={mode}
         mode={mode}
@@ -92,7 +103,7 @@ function RosterEditPanel({ data, position, onClose, onSaved }: {
         onPendingChange={setPending}
         onSaved={onSaved}
         position={position}
-      />
+      />}
       <div className="mt-6 border-t border-[var(--border)] pt-4">
         <Link
           aria-disabled={pending}
@@ -108,7 +119,7 @@ function RosterEditPanel({ data, position, onClose, onSaved }: {
 export function UnitRoster({ data, unit }: { data: OrganizationStructureData; unit: OrganizationUnit }) {
   const router = useRouter();
   // Keep the opened snapshot's revision with its inputs if another route refresh arrives.
-  const [selection, setSelection] = useState<{ data: OrganizationStructureData; position: OrganizationPosition } | null>(null);
+  const [selection, setSelection] = useState<{ data: OrganizationStructureData; position: OrganizationPosition; mode: RosterPanelMode } | null>(null);
   const [notice, setNotice] = useState("");
   const [refreshing, startRefresh] = useTransition();
   const editTrigger = useRef<HTMLButtonElement | null>(null);
@@ -149,6 +160,7 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
                   <th className="px-4 py-3 font-medium" scope="col">Job title</th>
                   <th className="px-4 py-3 font-medium" scope="col">People</th>
                   <th className="px-4 py-3 font-medium" scope="col">Reports to<span className="mt-0.5 block font-normal text-[var(--text-tertiary)]">Primary manager</span></th>
+                  <th className="px-4 py-3 font-medium" scope="col">Responsibilities</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border)]">
@@ -161,7 +173,7 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
                         {position.status !== "active" ? <Badge>{position.status}</Badge> : null}
                       </div>
                       {position.status === "active" ? (
-                        <Button aria-label={`Edit ${position.title}`} className="mt-3" disabled={refreshing} onClick={(event) => { editTrigger.current = event.currentTarget; setNotice(""); setSelection({ data, position }); }} size="sm" type="button">Edit</Button>
+                        <Button aria-label={`Edit ${position.title}`} className="mt-3" disabled={refreshing} onClick={(event) => { editTrigger.current = event.currentTarget; setNotice(""); setSelection({ data, position, mode: "title" }); }} size="sm" type="button">Edit</Button>
                       ) : null}
                     </th>
                     <td className="px-4 py-4 align-top">
@@ -184,6 +196,9 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
                         </>
                       ) : <span className="text-[var(--text-secondary)]">Not yet recorded</span>}
                     </td>
+                    <td className="px-4 py-4 align-top">
+                      <Button aria-label={`Responsibilities for ${position.title}`} disabled={refreshing} onClick={(event) => { editTrigger.current = event.currentTarget; setNotice(""); setSelection({ data, position, mode: "responsibilities" }); }} size="sm" type="button">{position.mandates.length ? `${position.mandates.length} linked` : position.status === "active" ? "Add responsibility" : "View responsibilities"}</Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -191,7 +206,7 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
           </div>
         ) : <p className="p-5 text-sm text-[var(--text-secondary)]">No job titles have been recorded directly in this Unit yet.</p>}
       </Card>
-      {selection ? <RosterEditPanel data={selection.data} onClose={() => setSelection(null)} onSaved={saved} position={selection.position} /> : null}
+      {selection ? <RosterEditPanel data={selection.data} initialMode={selection.mode} onClose={() => setSelection(null)} onSaved={saved} position={selection.position} /> : null}
     </section>
   );
 }

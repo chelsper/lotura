@@ -43,6 +43,7 @@ const { UnitAddMenu } = await load("app/studio/unit-add-menu.tsx");
 const { UnitRoster } = await load("app/studio/unit-roster.tsx", {
   "./unit-add-menu": { UnitAddMenu },
   "./unit-roster-editor": { UnitRosterEditor: () => { throw new Error("The editor must remain closed until a person chooses Edit"); } },
+  "./unit-responsibilities-panel": { UnitResponsibilitiesPanel: () => { throw new Error("Responsibilities must remain closed until explicitly opened"); } },
 });
 const { StudioStructureDetail } = await load("app/studio/studio-structure-detail.tsx", {
   "./organization-navigation": { OrganizationNavigation },

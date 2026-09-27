@@ -9,7 +9,7 @@ const loaded = { exports: {} };
 vm.runInNewContext(ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText, { module: loaded, exports: loaded.exports });
-const { personPickerOptions, positionPickerOptions } = loaded.exports;
+const { personPickerOptions, positionPickerOptions, rolePickerOptions } = loaded.exports;
 const unit = { id: "services", name: "Fictional Services" };
 const library = { id: "library", name: "Fictional Library" };
 const person = (id, name, positions = []) => ({ id, name, assignments: positions.map(position => ({ position })) });
@@ -92,4 +92,20 @@ test("empty inputs stay empty and formatting does not mutate source identity or 
   personPickerOptions(people);
   positionPickerOptions(positions);
   assert.equal(JSON.stringify({ people, positions }), before);
+});
+
+test("responsibility choices distinguish namesakes and retain exact Role action IDs, not UUIDs", () => {
+  const roles = [
+    { id: "role:17", stableKey: "stable-key-one", name: "Document review" },
+    { id: "role:28", stableKey: "stable-key-two", name: "Document review" },
+    { id: "role:39", stableKey: "stable-key-three", name: "Queue coordination" },
+  ];
+  const before = JSON.stringify(roles);
+  const choices = rolePickerOptions(roles);
+  assert.deepEqual(plain(choices.map(choice => choice.value)), ["role:17", "role:28", "role:39"]);
+  assert.notEqual(choices[0].label, choices[1].label);
+  assert.match(choices[0].label, /Document review.*Record/);
+  assert.equal(choices[2].label, "Queue coordination");
+  assert.equal(JSON.stringify(roles), before);
+  assert.deepEqual(plain(rolePickerOptions([])), []);
 });
