@@ -13,10 +13,12 @@ const icons = { ChevronIcon: () => null, InfoIcon: () => null, SearchIcon: () =>
 const Link = ({ children, ...props }) => React.createElement("a", props, children);
 const actions = new Proxy({}, { get: (_target, name) => function action() { throw new Error(`Rendering must not call ${name}`); } });
 let primitives;
+let pickerOptions;
+let searchableSelect;
 async function load(path, states = []) {
   const source = await read(path);
   const expose = path.endsWith("structure-administration-panel.tsx")
-    ? "\nexport { EditForm, EstablishRoleMandateForm, EstablishRoleCoverageForm };" : "";
+    ? "\nexport { EditForm, EstablishRoleMandateForm, EstablishRoleCoverageForm, EstablishAssignmentForm, ReplaceAssignmentForm, CorrectReportingForm, EstablishReportingForm, ReplaceReportingForm };" : "";
   const { outputText } = ts.transpileModule(source + expose, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
   });
@@ -30,7 +32,9 @@ async function load(path, states = []) {
     };
     if (id === "next/link") return { default: Link };
     if (id === "./icons") return icons;
-    if (id.endsWith("ui/primitives")) return primitives;
+    if (id.endsWith("/primitives")) return primitives;
+    if (id.endsWith("/searchable-select")) return searchableSelect;
+    if (id.endsWith("/structure-picker-options")) return pickerOptions;
     if (id.endsWith("/actions")) return actions;
     if (id.endsWith("/action-state")) return { initialStructureActionState: { status: "idle", message: "" } };
     throw new Error(`Unexpected dependency: ${id}`);
@@ -38,6 +42,8 @@ async function load(path, states = []) {
   return compiled.exports;
 }
 primitives = await load("app/ui/primitives.tsx");
+pickerOptions = await load("lib/structure-picker-options.ts");
+searchableSelect = await load("app/ui/searchable-select.tsx");
 const data = buildOrganizationStructureData(
   JSON.parse(await read("db/seeds/organization-structure.json")),
   JSON.parse(await read("db/seeds/process-explorer.json")),
@@ -46,9 +52,15 @@ const data = buildOrganizationStructureData(
 const render = (Component, props) => renderToStaticMarkup(React.createElement(Component, props));
 const labels = html => [...html.matchAll(/<label\b[^>]*>[\s\S]*?<\/label>/g)].map(match => match[0]);
 function labelFor(html, name) {
-  const label = labels(html).find(value => value.includes(`name="${name}"`));
-  assert.ok(label, `Expected a label for ${name}`);
-  return label;
+  const control = [...html.matchAll(/<(?:input|select|textarea)\b[^>]*>/g)].map(match => match[0]).find(value => value.includes(`name="${name}"`));
+  assert.ok(control, `Expected a control for ${name}`);
+  return labelForControl(html, control);
+}
+function labelForControl(html, control) {
+  const controlId = control.match(/\bid="([^"]+)"/)?.[1];
+  const label = labels(html).find(value => value.includes(control) || (controlId && value.includes(`for="${controlId}"`)));
+  assert.ok(label, `Expected a label for ${control}`);
+  return `${label}${control}`;
 }
 function required(html, name) {
   const label = labelFor(html, name);
@@ -73,11 +85,48 @@ test("all required organization-maintenance controls are labeled, including remo
     for (const entity of collection.filter(item => item.status === "active")) {
       const html = render(StructureAdministrationPanel, { changes: [], data, entity, entityType });
       const requiredControls = [...html.matchAll(/<(?:input|select|textarea)\b[^>]*required=""[^>]*>/g)];
-      const markedLabels = labels(html).filter(label => /<(?:input|select|textarea)\b[^>]*required=""/.test(label));
-      assert.equal(markedLabels.length, requiredControls.length, "Every required control must have a visible label");
-      for (const label of markedLabels) assert.match(label, /class="sr-only"> \(required\)/, label);
+      for (const [control] of requiredControls) assert.match(labelForControl(html, control), /class="sr-only"> \(required\)/, control);
       assert.match(html, /\* Required\. Everything else is optional\./);
     }
+  }
+});
+
+test("assignment and manager maintenance use searchable exact-identity choices without changing filters or correction defaults", async () => {
+  const forms = await load("app/organization/structure-administration-panel.tsx");
+  const unit = { id: "unit-a", name: "Fictional Services" };
+  const candidate = (id, title, status = "active") => ({ id, title, status, unit, assignments: [] });
+  const manager = candidate("manager-a", "Services Director");
+  const otherManager = candidate("manager-b", "Services Director");
+  const position = { ...candidate("position-a", "Coordinator"), revision: "position-revision" };
+  const person = (id, name, status = "active") => ({ id, name, status, assignments: [] });
+  const testData = { ...data,
+    positions: [position, manager, otherManager, candidate("inactive-position", "Inactive manager", "inactive")],
+    people: [person("person-a", "Alex Example"), person("person-b", "Morgan Example"), person("person-inactive", "Inactive person", "inactive")],
+  };
+  const assignment = { id: "assignment-a", revision: "assignment-revision", person: testData.people[0] };
+  const relationship = { id: "reporting-a", revision: "reporting-revision", position: manager, type: "primary" };
+  for (const [name, fieldName] of [
+    ["EstablishAssignmentForm", "personStableKey"],
+    ["ReplaceAssignmentForm", "replacementPersonStableKey"],
+    ["EstablishReportingForm", "managerPositionStableKey"],
+    ["CorrectReportingForm", "managerPositionStableKey"],
+    ["ReplaceReportingForm", "managerPositionStableKey"],
+  ]) {
+    const html = render(forms[name], { data: testData, position, assignment, relationship });
+    const select = html.match(new RegExp(`<select[^>]*name="${fieldName}"[\\s\\S]*?<\\/select>`))?.[0];
+    assert.ok(select, name);
+    assert.match(html, /type="search"/);
+    required(html, fieldName);
+    assert.doesNotMatch(select, /inactive-position|person-inactive/);
+    if (fieldName === "managerPositionStableKey") {
+      assert.doesNotMatch(select, /value="position-a"/);
+      assert.match(select, /Fictional Services/);
+      if (name === "CorrectReportingForm") assert.match(select, /value="manager-a" selected=""/);
+      if (name === "ReplaceReportingForm") assert.doesNotMatch(select, /value="manager-a"/);
+    }
+    if (name === "ReplaceAssignmentForm") assert.doesNotMatch(select, /value="person-a"/);
+    assert.match(html, /name="expectedRevision"/);
+    required(html, "reason");
   }
 });
 

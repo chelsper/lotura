@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
 
 import type { OrganizationPerson, OrganizationPosition, OrganizationStructureData, OrganizationUnit } from "@/lib/organization-structure-data.mjs";
+import { positionPickerOptions } from "@/lib/structure-picker-options";
 import { establishPositionAssignmentAction } from "../../organization/actions";
 import { initialStructureActionState } from "../../organization/action-state";
 import { ChangeMetadataFields } from "../../organization/structure-administration-panel";
 import { Alert, Button, RequiredMark, Select } from "../../ui/primitives";
+import { SearchableSelect } from "../../ui/searchable-select";
 
 function AssignmentForm({ person, position, onPendingChange, onSaved }: { person: OrganizationPerson; position: OrganizationPosition; onPendingChange: (pending: boolean) => void; onSaved: () => void }) {
   const [saveUnconfirmed, setSaveUnconfirmed] = useState(false);
@@ -78,16 +80,10 @@ export function UnitPersonPlacement({ data, person, unit }: { data: Organization
     <section aria-label="Choose a job title">
       <p className="mb-4 text-sm text-[var(--text-secondary)]">{assignedHere ? `${person.name} already has an assignment in this Unit. You can add another only if needed.` : `${person.name} has no assignment in this Unit yet. Choose a job title to add them to its roster, or leave this for later.`}</p>
       {saved ? <Alert tone="success">Job title assigned. You can return to the Unit.</Alert> : positions.length ? <>
-        <label className="block">
-          <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">Job title in {unit.name} (optional)</span>
-          <Select disabled={pending} onChange={(event) => {
+        <SearchableSelect label={`Job title in ${unit.name} (optional)`} disabled={pending} onChange={(event) => {
             if (position && !window.confirm("Choose another job title? Unsaved assignment details will be cleared.")) return;
             setSelectedId(event.target.value);
-          }} value={selectedId}>
-            <option value="">Choose when you’re ready</option>
-            {positions.map((item) => <option key={item.id} value={item.id}>{item.title}{item.assignments.length ? ` — ${item.assignments.map((assignment) => assignment.person.name).join(", ")}` : " — no current person recorded"}</option>)}
-          </Select>
-        </label>
+          }} options={positionPickerOptions(positions)} placeholder="Choose when you’re ready" value={selectedId} />
         {position ? <AssignmentForm key={position.id} onPendingChange={setPending} onSaved={() => { setSaved(true); router.refresh(); }} person={person} position={position} /> : null}
       </> : <p className="text-sm text-[var(--text-secondary)]">There are no other active job titles available in this Unit. You can <Link className="font-medium text-[var(--workspace-accent)]" href={`/studio/organization/positions/new?unit=${encodeURIComponent(unit.id)}`}>add a job title</Link> first and assign this saved person from the roster.</p>}
       <div className="mt-5 flex flex-wrap gap-4 text-sm font-medium text-[var(--workspace-accent)]">

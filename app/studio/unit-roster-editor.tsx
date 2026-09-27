@@ -3,10 +3,10 @@
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
 
 import type {
-  OrganizationPerson,
   OrganizationPosition,
   OrganizationStructureData,
 } from "@/lib/organization-structure-data.mjs";
+import { personPickerOptions, positionPickerOptions } from "@/lib/structure-picker-options";
 import {
   correctPositionReportingRelationshipAction,
   establishPositionAssignmentAction,
@@ -21,6 +21,7 @@ import {
 } from "../organization/action-state";
 import { ChangeMetadataFields } from "../organization/structure-administration-panel";
 import { Alert, Button, Input, RequiredMark, Select } from "../ui/primitives";
+import { SearchableSelect } from "../ui/searchable-select";
 
 export type UnitRosterEditMode = "title" | "person" | "manager";
 
@@ -42,16 +43,6 @@ function Field({ label, optional, children }: { label: string; optional?: boolea
       {children}
     </label>
   );
-}
-
-function managerLabel(position: OrganizationPosition) {
-  const people = position.assignments.map((assignment) => assignment.person.name);
-  return `${position.title} — ${position.unit?.name ?? "No Unit recorded"}${people.length ? ` — ${people.join(", ")}` : ""}`;
-}
-
-function personLabel(person: OrganizationPerson) {
-  const titles = person.assignments.map((assignment) => assignment.position.title);
-  return `${person.name}${titles.length ? ` — ${titles.join(", ")}` : ""}`;
 }
 
 export function UnitRosterEditor({
@@ -167,12 +158,16 @@ export function UnitRosterEditor({
                 <input name="expectedRevision" type="hidden" value={assignment?.revision ?? ""} />
               </>
             ) : <input name="expectedRevision" type="hidden" value={position.revision} />}
-            <Field label={hasAssignments ? "New person" : "Person"}>
-              <Select defaultValue="" key={assignmentId} name={hasAssignments ? "replacementPersonStableKey" : "personStableKey"} required>
-                <option value="">Choose an existing person</option>
-                {availablePeople.map((person) => <option key={person.id} value={person.id}>{personLabel(person)}</option>)}
-              </Select>
-            </Field>
+            <SearchableSelect
+              defaultValue=""
+              key={assignmentId}
+              label={hasAssignments ? "New person" : "Person"}
+              name={hasAssignments ? "replacementPersonStableKey" : "personStableKey"}
+              options={personPickerOptions(availablePeople)}
+              placeholder="Choose an existing person"
+              searchPlaceholder="Search name, job title, or Unit"
+              required
+            />
             {!hasAssignments ? (
               <Field label="How are they filling this position?">
                 <Select defaultValue="incumbent" name="assignmentType" required>
@@ -203,12 +198,16 @@ export function UnitRosterEditor({
                 {managerChange === "correction" ? <input name="relationshipType" type="hidden" value={manager.type} /> : null}
               </>
             ) : <input name="expectedRevision" type="hidden" value={position.revision} />}
-            <Field label="Reports to">
-              <Select defaultValue={manager && managerChange === "correction" ? manager.position.id : ""} key={managerChange} name="managerPositionStableKey" required>
-                <option value="">Choose a manager’s job title</option>
-                {managerPositions.map((candidate) => <option key={candidate.id} value={candidate.id}>{managerLabel(candidate)}</option>)}
-              </Select>
-            </Field>
+            <SearchableSelect
+              defaultValue={manager && managerChange === "correction" ? manager.position.id : ""}
+              key={managerChange}
+              label="Reports to"
+              name="managerPositionStableKey"
+              options={positionPickerOptions(managerPositions)}
+              placeholder="Choose a manager’s job title"
+              searchPlaceholder="Search job title, person, or Unit"
+              required
+            />
             <p className="text-xs leading-5 text-[var(--text-secondary)]">Choose the manager’s position. Names help identify it; this doesn’t assign responsibilities.</p>
             <Field label="Reporting note" optional>
               <Input defaultValue={manager && managerChange === "correction" ? manager.reason ?? "" : ""} key={managerChange} maxLength={2000} name="relationshipReason" />

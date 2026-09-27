@@ -13,6 +13,13 @@ const source = await readFile(new URL("../app/studio/unit-roster-editor.tsx", im
 const code = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
 }).outputText;
+const pickerOptionsModule = { exports: {} };
+vm.runInNewContext(ts.transpileModule(await readFile(new URL("../lib/structure-picker-options.ts", import.meta.url), "utf8"), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText, { module: pickerOptionsModule, exports: pickerOptionsModule.exports });
+const searchableSelectCode = ts.transpileModule(await readFile(new URL("../app/ui/searchable-select.tsx", import.meta.url), "utf8"), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
+}).outputText;
 
 const unit = { id: "unit-a", name: "Fictional Services" };
 const assignment = (id, personId, name) => ({ id, revision: `revision-${id}`, type: "incumbent", typeLabel: "Regular occupant", person: { id: personId, name } });
@@ -55,6 +62,14 @@ function harness(mode, overrides = {}) {
     Select: (props) => React.createElement("select", props),
     RequiredMark: () => React.createElement("span", null, " *"),
   };
+  const searchableSelectModule = { exports: {} };
+  vm.runInNewContext(searchableSelectCode, {
+    module: searchableSelectModule, exports: searchableSelectModule.exports,
+    require(id) {
+      if (id === "./primitives") return primitives;
+      return require(id);
+    },
+  });
   const testModule = { exports: {} };
   vm.runInNewContext(code, {
     module: testModule, exports: testModule.exports,
@@ -74,6 +89,8 @@ function harness(mode, overrides = {}) {
       if (id.endsWith("/action-state")) return { initialStructureActionState: { status: "idle", message: "" } };
       if (id.endsWith("/structure-administration-panel")) return { ChangeMetadataFields: ({ fixedKind }) => React.createElement("input", { name: "changeKind", type: "hidden", value: fixedKind ?? "correction" }) };
       if (id.endsWith("/primitives")) return primitives;
+      if (id.endsWith("/searchable-select")) return searchableSelectModule.exports;
+      if (id.endsWith("/structure-picker-options")) return pickerOptionsModule.exports;
       return require(id);
     },
   });
@@ -113,7 +130,10 @@ test("multiple occupants require an explicit assignment; replacements exclude al
   assert.equal(field(tree, "assignmentRecordKey").props.value, second.id);
   assert.equal(field(tree, "expectedRevision").props.value, second.revision);
   const choices = field(tree, "replacementPersonStableKey");
-  assert.deepEqual(nodes(choices, (node) => node.type === "option").map((node) => node.props.value), ["", "person-b"]);
+  assert.deepEqual(Array.from(choices.props.options, (option) => option.value), ["person-b"]);
+  assert.equal(choices.props.required, true);
+  assert.equal(choices.props.placeholder, "Choose an existing person");
+  assert.match(editor.html(), /aria-label="Search New person"/);
   await editor.submit({ assignmentRecordKey: second.id, expectedRevision: second.revision });
   assert.equal(editor.calls[0].name, "replacePositionAssignmentAction");
 });
@@ -146,14 +166,33 @@ test("manager corrections and organizational changes use different actions while
   nodes(replace.render(), (node) => node.props?.value === "correction" && node.props?.onChange)[0].props.onChange({ target: { value: "organizational_change" } });
   const replacementTree = replace.render();
   assert.equal(field(replacementTree, "relationshipType"), undefined);
-  const options = nodes(field(replacementTree, "managerPositionStableKey"), (node) => node.type === "option").map((node) => node.props.value);
-  assert.deepEqual(options, ["", crossUnitManager.id]);
+  const options = Array.from(field(replacementTree, "managerPositionStableKey").props.options, (option) => option.value);
+  assert.deepEqual(options, [crossUnitManager.id]);
   await replace.submit();
   assert.equal(replace.calls[0].name, "replacePositionReportingRelationshipAction");
 
   const establish = harness("manager");
   await establish.submit();
   assert.equal(establish.calls[0].name, "establishPositionReportingRelationshipAction");
+});
+
+test("searchable manager and Person fields retain explicit choices and do not replace the action or audit identity", () => {
+  const relationship = { id: "reporting-a", revision: "reporting-revision", type: "primary", position: manager };
+  const editor = harness("manager", { position: { ...position, primaryManager: relationship } });
+  const tree = editor.render();
+  const picker = field(tree, "managerPositionStableKey");
+  assert.equal(picker.props.defaultValue, manager.id);
+  assert.equal(picker.key, "correction");
+  assert.equal(picker.props.required, true);
+  assert.equal(picker.props.searchPlaceholder, "Search job title, person, or Unit");
+  assert.deepEqual(Array.from(picker.props.options, (option) => option.value), [manager.id, crossUnitManager.id]);
+  const html = editor.html();
+  assert.match(html, /aria-label="Search Reports to"/);
+  assert.match(html, /value="position-manager" selected=""/);
+  assert.match(html, /Services Director — Fictional Services/);
+  assert.equal(editor.calls.length, 0);
+  assert.equal(field(tree, "reportingRecordKey").props.value, relationship.id);
+  assert.equal(field(tree, "expectedRevision").props.value, relationship.revision);
 });
 
 test("pending submissions disable the whole form, resist double clicks, and notify success once", async () => {

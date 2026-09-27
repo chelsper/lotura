@@ -13,6 +13,7 @@ import type {
   StructureChangeSummary,
   StructureEntityType,
 } from "@/lib/organization-structure-administration";
+import { personPickerOptions, positionPickerOptions } from "@/lib/structure-picker-options";
 
 import {
   correctPositionReportingRelationshipAction,
@@ -36,6 +37,7 @@ import {
   type StructureActionState,
 } from "./action-state";
 import { Alert, Button, Card, Input, RequiredMark, Select } from "../ui/primitives";
+import { SearchableSelect } from "../ui/searchable-select";
 
 type EditableEntity = OrganizationUnit | OrganizationPosition | OrganizationPerson;
 
@@ -615,19 +617,17 @@ function ReplaceAssignmentForm({
         positionStableKey={position.id}
         recordKey={assignment.id}
       />
-      <label className="block sm:col-span-2">
-        <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Replacement Person<RequiredMark />
-        </span>
-        <Select name="replacementPersonStableKey" required>
-          <option value="">Select a Person</option>
-          {replacementPeople.map((person) => (
-            <option key={person.id} value={person.id}>
-              {person.name}
-            </option>
-          ))}
-        </Select>
-      </label>
+      <div className="sm:col-span-2">
+        <SearchableSelect
+          disabled={pending}
+          label="Replacement Person"
+          name="replacementPersonStableKey"
+          options={personPickerOptions(replacementPeople)}
+          placeholder="Select a Person"
+          searchPlaceholder="Search name, job title, or Unit"
+          required
+        />
+      </div>
       <ChangeMetadataFields fixedKind="organizational_change" />
       <ActionResult state={state} />
       <div className="sm:col-span-2">
@@ -654,19 +654,17 @@ function EstablishAssignmentForm({
   return (
     <form action={action} className="mt-3 grid gap-3 sm:grid-cols-2">
       <PositionRelationshipIdentity position={position} />
-      <label className="block sm:col-span-2">
-        <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Person<RequiredMark />
-        </span>
-        <Select name="personStableKey" required>
-          <option value="">Select a Person</option>
-          {availablePeople.map((person) => (
-            <option key={person.id} value={person.id}>
-              {person.name}
-            </option>
-          ))}
-        </Select>
-      </label>
+      <div className="sm:col-span-2">
+        <SearchableSelect
+          disabled={pending}
+          label="Person"
+          name="personStableKey"
+          options={personPickerOptions(availablePeople)}
+          placeholder="Select a Person"
+          searchPlaceholder="Search name, job title, or Unit"
+          required
+        />
+      </div>
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
           Assignment type<RequiredMark />
@@ -780,27 +778,18 @@ function CorrectReportingForm({
         positionStableKey={position.id}
         recordKey={relationship.id}
       />
-      <label className="block">
-        <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Manager Position<RequiredMark />
-        </span>
-        <Select
-          defaultValue={relationship.position.id}
-          name="managerPositionStableKey"
-          required
-        >
-          {data.positions
-            .filter(
-              (candidate) =>
-                candidate.status === "active" && candidate.id !== position.id,
-            )
-            .map((candidate) => (
-              <option key={candidate.id} value={candidate.id}>
-                {positionOptionLabel(candidate)}
-              </option>
-            ))}
-        </Select>
-      </label>
+      <SearchableSelect
+        defaultValue={relationship.position.id}
+        disabled={pending}
+        label="Manager Position"
+        name="managerPositionStableKey"
+        options={positionPickerOptions(data.positions.filter(
+          (candidate) => candidate.status === "active" && candidate.id !== position.id,
+        ))}
+        placeholder="Select a manager Position"
+        searchPlaceholder="Search job title, person, or Unit"
+        required
+      />
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
           Relationship type<RequiredMark />
@@ -854,22 +843,20 @@ function EstablishReportingForm({
   return (
     <form action={action} className="mt-3 grid gap-3 sm:grid-cols-2">
       <PositionRelationshipIdentity position={position} />
-      <label className="block sm:col-span-2">
-        <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Primary manager Position<RequiredMark />
-        </span>
-        <Select name="managerPositionStableKey" required>
-          <option value="">Select a manager Position</option>
-          {managerPositions.map((candidate) => (
-            <option key={candidate.id} value={candidate.id}>
-              {positionOptionLabel(candidate)}
-            </option>
-          ))}
-        </Select>
+      <div className="sm:col-span-2">
+        <SearchableSelect
+          disabled={pending}
+          label="Primary manager Position"
+          name="managerPositionStableKey"
+          options={positionPickerOptions(managerPositions)}
+          placeholder="Select a manager Position"
+          searchPlaceholder="Search job title, person, or Unit"
+          required
+        />
         <span className="mt-1.5 block text-xs leading-5 text-[var(--text-tertiary)]">
           The relationship belongs to the two Positions. Current occupants are shown only to help identify the correct structural seats.
         </span>
-      </label>
+      </div>
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
           Reporting context (optional)
@@ -914,19 +901,17 @@ function ReplaceReportingForm({
         positionStableKey={position.id}
         recordKey={relationship.id}
       />
-      <label className="block sm:col-span-2">
-        <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
-          Replacement manager Position<RequiredMark />
-        </span>
-        <Select name="managerPositionStableKey" required>
-          <option value="">Select a different manager Position</option>
-          {managerPositions.map((candidate) => (
-            <option key={candidate.id} value={candidate.id}>
-              {positionOptionLabel(candidate)}
-            </option>
-          ))}
-        </Select>
-      </label>
+      <div className="sm:col-span-2">
+        <SearchableSelect
+          disabled={pending}
+          label="Replacement manager Position"
+          name="managerPositionStableKey"
+          options={positionPickerOptions(managerPositions)}
+          placeholder="Select a different manager Position"
+          searchPlaceholder="Search job title, person, or Unit"
+          required
+        />
+      </div>
       <label className="block sm:col-span-2">
         <span className="mb-1.5 block text-xs font-medium text-[var(--text-secondary)]">
           Reporting context (optional)

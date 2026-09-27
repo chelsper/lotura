@@ -39,13 +39,18 @@ async function load(path, overrides = {}) {
       if (id === "react") return React;
       if (id === "react/jsx-runtime") return jsxRuntime;
       if (id === "next/link") return { default: primitive("a") };
-      if (id === "../../ui/primitives") return { Button: primitive("button"), Select: primitive("select"), RequiredMark: () => React.createElement("span", null, " (required)") };
+      if (id === "../../ui/primitives" || id === "./primitives") return { Button: primitive("button"), Input: primitive("input"), RequiredMark: () => React.createElement("span", null, " (required)") };
+      if (id === "@/lib/structure-picker-options") return pickerOptions;
+      if (id === "../../ui/searchable-select") return searchable;
       if (id === "./structure-create-form") return { StructureCreateForm: createForm };
       throw new Error(`Unexpected dependency: ${id}`);
     },
   });
   return loaded.exports;
 }
+
+const pickerOptions = await load("lib/structure-picker-options.ts");
+const searchable = await load("app/ui/searchable-select.tsx");
 
 async function harness(input = data) {
   const hooks = [];
@@ -62,6 +67,7 @@ async function harness(input = data) {
 
 const choice = (tree, label) => find(tree, node => node.props?.type === "button" && textContent(node) === label);
 const selector = tree => find(tree, node => node.props?.name === "person");
+const optionsOf = tree => Array.from(selector(tree).props.options, ({ value, label }) => React.createElement("option", { value }, label));
 const continuation = tree => find(tree, node => node.props?.type === "submit");
 const creationPanel = tree => find(tree, node => node.type === "div" && node.props?.children?.type === createForm);
 const markup = tree => renderToStaticMarkup(tree);
@@ -85,7 +91,7 @@ test("Unit chooser prefers existing People and submits exact identities through 
 
 test("Person options are active stable identities with documented context, not name-based merges", async () => {
   const tree = (await harness()).render();
-  const options = elements(selector(tree)).filter(node => node.type === "option" && node.props.value);
+  const options = optionsOf(tree);
   assert.deepEqual(options.map(option => option.props.value), [person.id, namesake.id, unassigned.id]);
   assert.match(textContent(options[0]), /Fictional Alex.*Coordinator.*Fictional Services/);
   assert.match(textContent(options[1]), /Fictional Alex.*Librarian.*Fictional Library/);
@@ -100,7 +106,7 @@ test("otherwise indistinguishable same-name People remain separate choices with 
   const first = { ...person, id: "fictional-person-11111111" };
   const second = { ...person, id: "fictional-person-22222222" };
   const tree = (await harness({ ...data, people: [first, second] })).render();
-  const options = elements(selector(tree)).filter(node => node.type === "option" && node.props.value);
+  const options = optionsOf(tree);
   assert.deepEqual(options.map(option => option.props.value), [first.id, second.id]);
   assert.match(textContent(options[0]), /Record 11111111/);
   assert.match(textContent(options[1]), /Record 22222222/);
@@ -122,6 +128,19 @@ test("selecting an existing Person only enables continuation; invalid or inactiv
     assert.equal(continuation(tree).props.disabled, true);
     assert.equal(elements(tree).some(node => node.props?.href?.startsWith("/studio/organization/people/")), false);
   }
+});
+
+test("no-match creation is an explicit mode switch, not a save or automatic identity match", async () => {
+  const h = await harness();
+  const picker = selector(h.render());
+  assert.equal(picker.type, searchable.SearchableSelect);
+  assert.equal(picker.props.label, "Person");
+  assert.equal(picker.props.emptyContent.props.type, "button");
+  assert.equal(textContent(picker.props.emptyContent), "Create new person");
+  picker.props.emptyContent.props.onClick();
+  assert.equal(creationPanel(h.render()).props.hidden, false);
+  assert.equal(selector(h.render()).props.value, "");
+  assert.equal(continuation(h.render()).props.disabled, true);
 });
 
 test("switching choices leaves the creation form mounted and retains existing-person selection", async () => {

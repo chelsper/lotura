@@ -36,13 +36,18 @@ async function load(path, stubs = {}, actionState = { status: "idle", message: "
     if (id === "react") return { ...React, useActionState: action => [actionState, action, false] };
     if (id === "next/link") return { default: ({ children, prefetch, ...props }) => { void prefetch; return React.createElement("a", props, children); } };
     if (id === "next/navigation") return { useRouter: () => ({ refresh: neverCall }) };
-    if (id.endsWith("ui/primitives")) return primitives;
+    if (id.endsWith("ui/primitives") || id === "./primitives") return primitives;
+    if (id === "@/lib/structure-picker-options") return pickerOptions;
+    if (id.endsWith("ui/searchable-select")) return searchable;
     if (id.endsWith("/actions")) return actions;
     if (id.endsWith("/action-state")) return { initialStructureActionState: { status: "idle", message: "" } };
     return require(id);
   } });
   return loaded.exports;
 }
+
+const pickerOptions = await load("lib/structure-picker-options.ts");
+const searchable = await load("app/ui/searchable-select.tsx");
 
 async function pageHarness(kind) {
   const seen = {};
