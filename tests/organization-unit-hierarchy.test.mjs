@@ -112,7 +112,8 @@ test("Unit details expose hierarchy paths, direct children, and contextual child
   assert.match(newPage, /searchParams: Promise<\{ parent\?: string \| string\[\] \}>/);
   assert.match(newPage, /unit\.id === requestedParent && unit\.status === "active"/);
   assert.match(form, /initialUnitStableKey/);
-  assert.match(form, /Parent Organization Unit/);
+  assert.match(form, /Parent Unit \(optional\)/);
+  assert.match(form, /name="parentOrganizationUnitStableKey"/);
   assert.doesNotMatch(combined, /parent Unit.*reports to|reports within/i);
 });
 

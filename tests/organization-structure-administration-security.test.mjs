@@ -97,10 +97,12 @@ test("assignment and reporting maintenance preserve history rather than hard-del
     assert.match(administration, new RegExp(`export async function ${capability}`));
   }
   assert.match(actions, /endPositionAssignmentAction/);
-  assert.match(panel, /Replace Assignment/);
-  assert.match(panel, /End reporting relationship/);
-  assert.match(panel, /Establish primary manager/);
-  assert.match(panel, /Replace primary manager/);
+  assert.match(panel, /Replace person/);
+  assert.match(panel, /End reporting line/);
+  assert.match(panel, /Save manager/);
+  assert.match(panel, /Change manager/);
+  assert.match(panel, /Both stay in the history/);
+  assert.match(panel, /Its history is kept; no replacement manager is selected/);
   assert.match(panel, /Review before and after/);
   assert.doesNotMatch(administration, /delete\s+from/i);
 });
