@@ -24,13 +24,14 @@ function RosterEditPanel({ data, position, initialMode, onClose, onSaved }: {
   data: OrganizationStructureData;
   position: OrganizationPosition;
   initialMode: RosterPanelMode;
-  onClose: () => void;
+  onClose: (refresh?: boolean) => void;
   onSaved: (message: string) => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [mode, setMode] = useState<RosterPanelMode>(initialMode);
   const [dirty, setDirty] = useState(false);
   const [pending, setPending] = useState(false);
+  const [saveUnconfirmed, setSaveUnconfirmed] = useState(false);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -59,7 +60,7 @@ function RosterEditPanel({ data, position, initialMode, onClose, onSaved }: {
       className="fixed inset-y-0 right-0 left-auto m-0 max-h-dvh h-dvh w-full max-w-xl overflow-y-auto border-l border-[var(--border)] bg-[var(--surface)] p-5 text-[var(--text)] shadow-xl backdrop:bg-black/30 sm:p-7"
       onCancel={(event) => {
         event.preventDefault();
-        if (canLeave()) onClose();
+        if (canLeave()) onClose(saveUnconfirmed);
       }}
       ref={dialogRef}
     >
@@ -68,17 +69,17 @@ function RosterEditPanel({ data, position, initialMode, onClose, onSaved }: {
           <p className="text-xs text-[var(--text-secondary)]">{position.unit?.name}</p>
           <h2 className="mt-2 text-xl font-semibold" id="unit-roster-edit-title">Edit {position.title}</h2>
         </div>
-        <Button aria-label="Close editor" disabled={pending} onClick={() => { if (canLeave()) onClose(); }} size="sm" type="button">Close</Button>
+        <Button aria-label="Close editor" disabled={pending} onClick={() => { if (canLeave()) onClose(saveUnconfirmed); }} size="sm" type="button">Close</Button>
       </div>
       <p className="mt-3 text-sm text-[var(--text-secondary)]" id="unit-roster-edit-description">Update one thing at a time. You’ll stay in this Unit.</p>
       <div aria-label="What to edit" className="mt-5 flex flex-wrap gap-2" role="group">
         {editorModes.map((item) => (
           <Button
             aria-pressed={mode === item.id}
-            disabled={pending}
+            disabled={pending || saveUnconfirmed}
             key={item.id}
             onClick={() => {
-              if (mode !== item.id && canLeave()) {
+              if (!saveUnconfirmed && mode !== item.id && canLeave()) {
                 setDirty(false);
                 setMode(item.id);
               }
@@ -91,8 +92,9 @@ function RosterEditPanel({ data, position, initialMode, onClose, onSaved }: {
       <p className="mt-5 text-xs text-[var(--text-tertiary)]">* Required. Each saved change keeps its history.</p>
       {mode === "responsibilities" ? <UnitResponsibilitiesPanel
         data={data}
-        onDirty={() => setDirty(true)}
+        onDirty={(dirty = true) => setDirty(dirty)}
         onPendingChange={setPending}
+        onSaveUnconfirmed={() => setSaveUnconfirmed(true)}
         onSaved={onSaved}
         position={position}
       /> : <UnitRosterEditor
@@ -150,7 +152,7 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
           <UnitAddMenu unit={unit} />
         </div>
       </div>
-      <p aria-live="polite" className="mt-2 text-sm text-[var(--workspace-accent)]" role="status">{refreshing ? "Saved. Updating the roster…" : notice}</p>
+      <p aria-live="polite" className="mt-2 text-sm text-[var(--workspace-accent)]" role="status">{refreshing ? "Updating the roster…" : notice}</p>
       <Card className="mt-3 overflow-hidden">
         {positions.length ? (
           <div aria-label="Unit roster" className="overflow-x-auto" role="region" tabIndex={0}>
@@ -206,7 +208,10 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
           </div>
         ) : <p className="p-5 text-sm text-[var(--text-secondary)]">No job titles have been recorded directly in this Unit yet.</p>}
       </Card>
-      {selection ? <RosterEditPanel data={selection.data} initialMode={selection.mode} onClose={() => setSelection(null)} onSaved={saved} position={selection.position} /> : null}
+      {selection ? <RosterEditPanel data={selection.data} initialMode={selection.mode} onClose={(refresh) => {
+        setSelection(null);
+        if (refresh) startRefresh(() => router.refresh());
+      }} onSaved={saved} position={selection.position} /> : null}
     </section>
   );
 }

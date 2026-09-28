@@ -49,6 +49,7 @@ function nodes(element, predicate) {
 const field = (tree, name) => nodes(tree, (node) => node.props?.name === name)[0];
 const form = (tree) => nodes(tree, (node) => node.type === "form")[0];
 const plain = (value) => JSON.parse(JSON.stringify(value));
+const CoverageFormStub = () => null;
 
 function harness(overrides = {}) {
   const states = [];
@@ -104,12 +105,14 @@ function harness(overrides = {}) {
       if (id.endsWith("/primitives")) return primitives;
       if (id.endsWith("/searchable-select")) return selectModule.exports;
       if (id.endsWith("/structure-picker-options")) return pickerOptions.exports;
+      if (id === "./unit-responsibility-coverage-form") return { UnitResponsibilityCoverageForm: CoverageFormStub };
       return require(id);
     },
   });
   const props = {
     position, data, onSaved: (message) => events.push(["saved", message]),
-    onPendingChange: (value) => events.push(["pending", value]), onDirty: () => events.push(["dirty"]), ...overrides,
+    onSaveUnconfirmed: () => events.push(["unconfirmed"]),
+    onPendingChange: (value) => events.push(["pending", value]), onDirty: (value = true) => events.push(value ? ["dirty"] : ["clean"]), ...overrides,
   };
   const render = () => { cursor = 0; return loaded.exports.UnitResponsibilitiesPanel(props); };
   function change(name, value) {
@@ -162,6 +165,69 @@ test("empty mandates and missing coverage stay explicitly unrecorded", () => {
   const noCoverage = harness({ position: { ...position, mandates: [{ ...mandate, coverage: [] }] } });
   assert.match(noCoverage.html(), /Who carries this out: not yet recorded/);
   assert.equal(none.calls.length + noCoverage.calls.length, 0);
+});
+
+const coverageEditor = (panel) => nodes(panel.render(), (node) => node.type === CoverageFormStub)[0];
+const openCoverage = (panel) => nodes(panel.render(), (node) => node.props?.["aria-label"] === `Who does this work? ${linkedRole.name}`)[0].props.onClick();
+
+test("coverage opens the exact current mandate with no inferred person or write", () => {
+  const panel = harness();
+  openCoverage(panel);
+  const editor = coverageEditor(panel);
+  assert.equal(editor.props.mandate, mandate);
+  assert.equal(editor.props.position, position);
+  assert.equal(editor.props.data, data);
+  assert.equal(form(panel.render()), undefined, "never show two editable forms at once");
+  assert.equal(panel.calls.length, 0);
+  assert.equal(editor.props.personStableKey, undefined);
+});
+
+test("coverage unconfirmed saves propagate to the roster and freeze inner navigation", () => {
+  const panel = harness();
+  openCoverage(panel);
+  coverageEditor(panel).props.onSaveUnconfirmed();
+  coverageEditor(panel).props.onPendingChange(false);
+  coverageEditor(panel).props.onCancel();
+  assert.ok(coverageEditor(panel));
+  assert.equal(panel.events.filter(([name]) => name === "unconfirmed").length, 1);
+  assert.equal(panel.calls.length, 0);
+});
+
+test("switching from a link draft to coverage asks before discarding and clears the outer dirty flag", () => {
+  const panel = harness();
+  choose(panel);
+  panel.confirm(false);
+  openCoverage(panel);
+  assert.equal(coverageEditor(panel), undefined);
+  assert.equal(field(panel.render(), "roleKey").props.value, availableRole.id);
+  panel.confirm(true);
+  openCoverage(panel);
+  assert.ok(coverageEditor(panel));
+  assert.deepEqual(panel.events.at(-1), ["clean"]);
+  coverageEditor(panel).props.onCancel();
+  assert.equal(field(panel.render(), "roleKey").props.value, "");
+  assert.equal(field(panel.render(), "mandateType").props.value, "");
+  assert.equal(panel.calls.length, 0);
+});
+
+test("coverage dirty and pending state protect Back, and success returns through the existing save path", () => {
+  const panel = harness();
+  openCoverage(panel);
+  coverageEditor(panel).props.onDirty();
+  panel.confirm(false);
+  coverageEditor(panel).props.onCancel();
+  assert.ok(coverageEditor(panel));
+  assert.deepEqual(panel.events.at(-1), ["dirty"]);
+  panel.confirm(true);
+  coverageEditor(panel).props.onPendingChange(true);
+  coverageEditor(panel).props.onCancel();
+  assert.ok(coverageEditor(panel));
+  coverageEditor(panel).props.onPendingChange(false);
+  coverageEditor(panel).props.onSaved("Person added.");
+  assert.deepEqual(panel.events.at(-1), ["saved", "Person added."]);
+  coverageEditor(panel).props.onCancel();
+  assert.equal(coverageEditor(panel), undefined);
+  assert.deepEqual(panel.events.at(-1), ["clean"]);
 });
 
 test("picker offers active unlinked responsibilities with explicit blank selection and unique namesake labels", () => {
@@ -362,6 +428,7 @@ test("unconfirmed saves preserve entries, hide backend details, and refuse autom
   await panel.submit();
   assert.equal(panel.calls.length, 1);
   assert.deepEqual(panel.events.at(-1), ["pending", false]);
+  assert.equal(panel.events.filter(([name]) => name === "unconfirmed").length, 1);
   assert.ok(!panel.events.some(([name]) => name === "saved"));
 });
 

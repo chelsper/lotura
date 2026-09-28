@@ -164,6 +164,40 @@ test("switching to responsibilities honors unsaved title edits", () => {
   assert.equal(h.refreshes, 0);
 });
 
+test("discarding a responsibility subform clears the outer dirty guard", () => {
+  const h = harness();
+  const panel = h.open("responsibilities");
+  find(h.renderPanel(panel), node => node.type === "responsibilities").props.onDirty(true);
+  find(h.renderPanel(panel), node => node.type === "responsibilities").props.onDirty(false);
+  find(h.renderPanel(panel), node => node.props?.["aria-label"] === "Close editor").props.onClick();
+  assert.equal(h.panel(h.roster()), undefined);
+  assert.equal(h.confirmations, 0);
+  assert.equal(h.refreshes, 0);
+});
+
+test("an unconfirmed responsibility save blocks section switching but allows close and refresh", () => {
+  const h = harness();
+  const panel = h.open("responsibilities");
+  const child = find(h.renderPanel(panel), node => node.type === "responsibilities");
+  child.props.onDirty(true);
+  child.props.onSaveUnconfirmed();
+  child.props.onPendingChange(false);
+  h.allowDiscard();
+  const tree = h.renderPanel(panel);
+  for (const tab of elements(tree).filter(node => node.props?.["aria-pressed"] !== undefined)) {
+    assert.equal(tab.props.disabled, true);
+    tab.props.onClick();
+  }
+  assert.ok(find(h.renderPanel(panel), node => node.type === "responsibilities"));
+  assert.equal(h.confirmations, 0, "mode handlers also guard against bypassing disabled buttons");
+  const close = find(tree, node => node.props?.["aria-label"] === "Close editor");
+  assert.equal(close.props.disabled, false);
+  close.props.onClick();
+  assert.equal(h.panel(h.roster()), undefined);
+  assert.equal(h.refreshes, 1, "closing fetches a fresh roster before another attempt");
+  assert.equal(find(h.roster(), node => node.props?.role === "status").props.children, "", "an uncertain save must not announce success");
+});
+
 test("responsibility counts and manager cells match their column headings", () => {
   const h = harness();
   const tree = h.roster({ positions: [{ ...position, mandates: [{ id: "mandate-a" }], primaryManager: { position: { id: "manager-a", title: "Services Director", unit } } }] });

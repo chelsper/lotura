@@ -9,19 +9,23 @@ import { initialStructureActionState, type StructureActionState } from "../organ
 import { ChangeMetadataFields } from "../organization/structure-administration-panel";
 import { Alert, Badge, Button, Input, RequiredMark, Select } from "../ui/primitives";
 import { SearchableSelect } from "../ui/searchable-select";
+import { UnitResponsibilityCoverageForm } from "./unit-responsibility-coverage-form";
 
-export function UnitResponsibilitiesPanel({ data, position, onSaved, onPendingChange, onDirty }: {
+export function UnitResponsibilitiesPanel({ data, position, onSaved, onPendingChange, onSaveUnconfirmed, onDirty }: {
   data: OrganizationStructureData;
   position: OrganizationPosition;
   onSaved: (message: string) => void;
   onPendingChange: (pending: boolean) => void;
-  onDirty: () => void;
+  onSaveUnconfirmed: () => void;
+  onDirty: (dirty?: boolean) => void;
 }) {
   const [roleKey, setRoleKey] = useState("");
   const [mandateType, setMandateType] = useState("");
   const [state, setState] = useState<StructureActionState>(initialStructureActionState);
   const [pending, setPending] = useState(false);
   const [saveUnconfirmed, setSaveUnconfirmed] = useState(false);
+  const [coverageMandateId, setCoverageMandateId] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
   const submitting = useRef(false);
   const selectionHasEdits = useRef(false);
   const currentRoleIds = new Set(position.mandates.map((mandate) => mandate.role.id));
@@ -34,6 +38,24 @@ export function UnitResponsibilitiesPanel({ data, position, onSaved, onPendingCh
   const unavailable = position.status !== "active" || !position.revision;
   const disabled = pending || saveUnconfirmed || state.status === "success" || unavailable;
   const validChoice = Boolean(selectedRole) && (mandateType === "shared" || (mandateType === "primary" && !hasPrimary));
+  const coverageMandate = position.mandates.find((mandate) => mandate.id === coverageMandateId);
+
+  function markDirty() {
+    setDirty(true);
+    onDirty(true);
+  }
+
+  function changeEditor(mandateId: string | null) {
+    if (pending || submitting.current || saveUnconfirmed || state.status === "success") return;
+    if (dirty && !window.confirm("Discard your unsaved changes?")) return;
+    setCoverageMandateId(mandateId);
+    setDirty(false);
+    onDirty(false);
+    setRoleKey("");
+    setMandateType("");
+    setState(initialStructureActionState);
+    selectionHasEdits.current = false;
+  }
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,6 +74,7 @@ export function UnitResponsibilitiesPanel({ data, position, onSaved, onPendingCh
       setState(result);
     } catch {
       setSaveUnconfirmed(true);
+      onSaveUnconfirmed();
       setState({ status: "error", message: "We couldn't confirm the save. Your entries are still here. Close this panel and refresh the Unit before trying again." });
     } finally {
       submitting.current = false;
@@ -60,6 +83,18 @@ export function UnitResponsibilitiesPanel({ data, position, onSaved, onPendingCh
     }
     if (result?.status === "success") onSaved("Responsibility linked. The change is saved in history.");
   }
+
+  if (coverageMandate) return <UnitResponsibilityCoverageForm
+    data={data}
+    key={coverageMandate.id}
+    mandate={coverageMandate}
+    onCancel={() => changeEditor(null)}
+    onDirty={markDirty}
+    onPendingChange={(next) => { setPending(next); onPendingChange(next); }}
+    onSaveUnconfirmed={() => { setSaveUnconfirmed(true); onSaveUnconfirmed(); }}
+    onSaved={onSaved}
+    position={position}
+  />;
 
   return (
     <div className="mt-4 space-y-6">
@@ -75,6 +110,7 @@ export function UnitResponsibilitiesPanel({ data, position, onSaved, onPendingCh
                 {role?.description ? <p className="mt-2 text-sm text-[var(--text-secondary)]">{role.description}</p> : null}
                 {mandate.scope ? <p className="mt-2 text-sm text-[var(--text-secondary)]">Scope: {mandate.scope}</p> : null}
                 <p className="mt-2 text-xs text-[var(--text-secondary)]">{mandate.coverage.length ? `Recorded coverage: ${mandate.coverage.map((coverage) => `${coverage.person.name} (${coverage.typeLabel})`).join("; ")}` : "Who carries this out: not yet recorded."}</p>
+                {position.status === "active" && mandate.role.status === "active" && mandate.revision ? <Button aria-label={`Who does this work? ${mandate.role.name}`} className="mt-3" disabled={disabled} onClick={() => changeEditor(mandate.id)} size="sm" type="button">Who does this work?</Button> : null}
               </li>
             );
           })}
@@ -86,7 +122,7 @@ export function UnitResponsibilitiesPanel({ data, position, onSaved, onPendingCh
         <p className="mt-2 text-sm text-[var(--text-secondary)]">This links work to the position. It does not automatically assign that work to its people or change Process ownership.</p>
         {availableRoles.length && !unavailable ? <form className="mt-4" onChange={(event) => {
           if (["mandateType", "scope"].includes(event.target.name)) selectionHasEdits.current = true;
-          onDirty();
+          markDirty();
         }} onSubmit={save}>
           <fieldset className="grid gap-4" disabled={disabled}>
             <input name="positionStableKey" type="hidden" value={position.id} />
