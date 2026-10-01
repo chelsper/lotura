@@ -108,6 +108,7 @@ function RosterEditPanel({ data, position, initialMode, initialCoverageMandateId
         mode={mode}
         onDirty={() => setDirty(true)}
         onPendingChange={setPending}
+        onSaveUnconfirmed={() => setSaveUnconfirmed(true)}
         onSaved={onSaved}
         position={position}
       />}
@@ -130,11 +131,12 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
   const [notice, setNotice] = useState("");
   const [refreshing, startRefresh] = useTransition();
   const editTrigger = useRef<HTMLButtonElement | null>(null);
+  const editFallbackId = useRef("unit-at-a-glance");
   const positions = data.positions.filter((position) => position.unit?.id === unit.id);
 
   useEffect(() => {
     if (!selection && !refreshing && editTrigger.current) {
-      if (editTrigger.current.isConnected === false) document.getElementById("unit-at-a-glance")?.focus();
+      if (editTrigger.current.isConnected === false) (document.getElementById(editFallbackId.current) ?? document.getElementById("unit-at-a-glance"))?.focus();
       else editTrigger.current.focus();
       editTrigger.current = null;
     }
@@ -146,11 +148,21 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
     startRefresh(() => router.refresh());
   }
 
+  function openMissingDetail(position: OrganizationPosition, mode: "person" | "manager", trigger: HTMLButtonElement) {
+    if (refreshing || selection || !positions.includes(position) || position.status !== "active" || !position.revision) return;
+    if (mode === "person" ? position.assignments.length > 0 : Boolean(position.primaryManager)) return;
+    editTrigger.current = trigger;
+    editFallbackId.current = `unit-roster-edit-${position.id}`;
+    setNotice("");
+    setSelection({ data, position, mode });
+  }
+
   return (
     <>
     <UnitAtAGlance disabled={refreshing} onChooseCoverage={(position, mandate, trigger) => {
       if (refreshing || !positions.includes(position) || !position.mandates.includes(mandate)) return;
       editTrigger.current = trigger;
+      editFallbackId.current = "unit-at-a-glance";
       setNotice("");
       setSelection({ data, position, mode: "responsibilities", initialCoverageMandateId: mandate.id });
     }} positions={positions} />
@@ -158,7 +170,7 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold text-[var(--text)]" id="unit-people-job-titles">People and job titles</h2>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">In this Unit only. Start with job titles; people and managers can wait. Choose Edit when you’re ready.</p>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">In this Unit only. Start with job titles; people and managers can wait. Add missing details here, or choose Edit to change what’s recorded.</p>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-[var(--text-tertiary)]">{positions.length} {positions.length === 1 ? "Position" : "Positions"}</span>
@@ -188,7 +200,7 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
                         {position.status !== "active" ? <Badge>{position.status}</Badge> : null}
                       </div>
                       {position.status === "active" ? (
-                        <Button aria-label={`Edit ${position.title}`} className="mt-3" disabled={refreshing} onClick={(event) => { editTrigger.current = event.currentTarget; setNotice(""); setSelection({ data, position, mode: "title" }); }} size="sm" type="button">Edit</Button>
+                        <Button aria-label={`Edit ${position.title}`} className="mt-3" disabled={refreshing} id={`unit-roster-edit-${position.id}`} onClick={(event) => { editTrigger.current = event.currentTarget; setNotice(""); setSelection({ data, position, mode: "title" }); }} size="sm" type="button">Edit</Button>
                       ) : null}
                     </th>
                     <td className="px-4 py-4 align-top">
@@ -201,7 +213,10 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
                             </li>
                           ))}
                         </ul>
-                      ) : <span className="text-[var(--text-secondary)]">Not yet recorded</span>}
+                      ) : <div className="flex flex-col items-start gap-2">
+                        <span className="text-[var(--text-secondary)]">{position.occupancy.id === "vacant" ? "Vacant" : "Not yet recorded"}</span>
+                        {position.status === "active" && position.revision ? <Button aria-label={`Add person to ${position.title}`} disabled={refreshing} onClick={(event) => openMissingDetail(position, "person", event.currentTarget)} size="sm" type="button">Add person</Button> : null}
+                      </div>}
                     </td>
                     <td className="px-4 py-4 align-top">
                       {position.primaryManager ? (
@@ -209,7 +224,10 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
                           <Link className="font-medium text-[var(--workspace-accent)] hover:underline" href={`/studio/organization/positions/${encodeURIComponent(position.primaryManager.position.id)}`}>{position.primaryManager.position.title}</Link>
                           {position.primaryManager.position.unit ? <span className="mt-0.5 block text-xs text-[var(--text-secondary)]">{position.primaryManager.position.unit.name}</span> : null}
                         </>
-                      ) : <span className="text-[var(--text-secondary)]">Not yet recorded</span>}
+                      ) : <div className="flex flex-col items-start gap-2">
+                        <span className="text-[var(--text-secondary)]">Not yet recorded</span>
+                        {position.status === "active" && position.revision ? <Button aria-label={`Set manager for ${position.title}`} disabled={refreshing} onClick={(event) => openMissingDetail(position, "manager", event.currentTarget)} size="sm" type="button">Set manager</Button> : null}
+                      </div>}
                     </td>
                     <td className="px-4 py-4 align-top">
                       <Button aria-label={`Responsibilities for ${position.title}`} disabled={refreshing} onClick={(event) => { editTrigger.current = event.currentTarget; setNotice(""); setSelection({ data, position, mode: "responsibilities" }); }} size="sm" type="button">{position.mandates.length ? `${position.mandates.length} linked` : position.status === "active" ? "Add responsibility" : "View responsibilities"}</Button>

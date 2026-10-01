@@ -167,7 +167,9 @@ test("roster preserves documented vacancy and not-established distinctions witho
   const html = renderDetail("organization_unit", unit, [vacant, unknown]);
   assert.match(html, />Vacant<\/div>/);
   assert.match(html, />Person not yet recorded<\/div>/);
-  assert.equal([...html.matchAll(/Not yet recorded/g)].length, 4);
+  assert.equal([...html.matchAll(/Not yet recorded/g)].length, 3);
+  assert.equal([...html.matchAll(/>Add person<\/button>/g)].length, 2);
+  assert.equal([...html.matchAll(/>Set manager<\/button>/g)].length, 2);
   assert.match(html, /people and managers can wait/);
   assert.equal(JSON.stringify([vacant, unknown]), before, "friendly labels must not change vacancy evidence or assignments");
   const rosterTable = html.slice(html.indexOf("<table"), html.indexOf("</table>"));

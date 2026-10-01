@@ -31,6 +31,7 @@ type UnitRosterEditorProps = {
   mode: UnitRosterEditMode;
   onSaved: (message: string) => void;
   onPendingChange: (pending: boolean) => void;
+  onSaveUnconfirmed: () => void;
   onDirty: () => void;
 };
 
@@ -51,6 +52,7 @@ export function UnitRosterEditor({
   mode,
   onSaved,
   onPendingChange,
+  onSaveUnconfirmed,
   onDirty,
 }: UnitRosterEditorProps) {
   const [assignmentId, setAssignmentId] = useState(
@@ -110,6 +112,7 @@ export function UnitRosterEditor({
       setState(result);
     } catch {
       setSaveUnconfirmed(true);
+      onSaveUnconfirmed();
       setState({
         status: "error",
         message: "We couldn't confirm the save. Your entries are still here. Close this panel and refresh the Unit before trying again.",

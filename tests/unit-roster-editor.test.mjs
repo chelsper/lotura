@@ -94,7 +94,7 @@ function harness(mode, overrides = {}) {
       return require(id);
     },
   });
-  const props = { mode, position, data, onSaved: (message) => events.push(["saved", message]), onPendingChange: (value) => events.push(["pending", value]), onDirty: () => events.push(["dirty"]), ...overrides };
+  const props = { mode, position, data, onSaved: (message) => events.push(["saved", message]), onPendingChange: (value) => events.push(["pending", value]), onSaveUnconfirmed: () => events.push(["unconfirmed"]), onDirty: () => events.push(["dirty"]), ...overrides };
   function render() { cursor = 0; return testModule.exports.UnitRosterEditor(props); }
   return {
     render, events, calls, confirmations,
@@ -144,6 +144,8 @@ test("an unoccupied Position links an existing Person using the existing assignm
   assert.equal(field(tree, "positionStableKey").props.value, position.id);
   assert.equal(field(tree, "expectedRevision").props.value, position.revision);
   assert.ok(field(tree, "personStableKey"));
+  assert.equal(field(tree, "personStableKey").props.defaultValue, "");
+  assert.equal(editor.calls.length, 0, "opening must not create a Person or assignment");
   assert.equal(field(tree, "assignmentType").props.defaultValue, "incumbent");
   assert.equal(field(tree, "assignmentRecordKey"), undefined);
   await editor.submit();
@@ -172,6 +174,8 @@ test("manager corrections and organizational changes use different actions while
   assert.equal(replace.calls[0].name, "replacePositionReportingRelationshipAction");
 
   const establish = harness("manager");
+  assert.equal(field(establish.render(), "managerPositionStableKey").props.defaultValue, "");
+  assert.equal(establish.calls.length, 0, "opening must not infer a manager");
   await establish.submit();
   assert.equal(establish.calls[0].name, "establishPositionReportingRelationshipAction");
 });
@@ -218,6 +222,7 @@ test("validation errors keep editing available; unconfirmed saves reveal no thro
   assert.match(editor.html(), /This record changed/);
   assert.equal(nodes(editor.render(), (node) => node.type === "fieldset")[0].props.disabled, false);
   assert.ok(!editor.events.some(([name]) => name === "saved"));
+  assert.ok(!editor.events.some(([name]) => name === "unconfirmed"));
   editor.implement(async () => { throw new Error("private backend detail"); });
   await editor.submit();
   assert.match(editor.html(), /couldn&#x27;t confirm the save/);
@@ -225,7 +230,20 @@ test("validation errors keep editing available; unconfirmed saves reveal no thro
   assert.equal(nodes(editor.render(), (node) => node.type === "fieldset")[0].props.disabled, true);
   await editor.submit();
   assert.equal(editor.calls.length, 2);
+  assert.equal(editor.events.filter(([name]) => name === "unconfirmed").length, 1);
   assert.deepEqual(editor.events.at(-1), ["pending", false]);
+});
+
+for (const mode of ["person", "manager"]) test(`${mode}: unconfirmed saves notify the panel once and block repeat submissions`, async () => {
+  const editor = harness(mode, { position: { ...position, assignments: [] } });
+  editor.implement(async () => { throw new Error("private backend detail"); });
+  await editor.submit();
+  assert.equal(editor.events.filter(([name]) => name === "unconfirmed").length, 1);
+  assert.equal(nodes(editor.render(), (node) => node.type === "fieldset")[0].props.disabled, true);
+  await editor.submit();
+  assert.equal(editor.calls.length, 1);
+  assert.ok(!editor.events.some(([name]) => name === "saved"));
+  assert.doesNotMatch(editor.html(), /private backend detail/);
 });
 
 test("switching manager intent asks before discarding an edited choice and can be cancelled", () => {

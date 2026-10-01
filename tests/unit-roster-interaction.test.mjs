@@ -29,6 +29,7 @@ function harness() {
   let refreshes = 0;
   let focusCalls = 0;
   let summaryFocusCalls = 0;
+  const focusedIds = [];
   let refreshing = false;
   const fakeReact = {
     ...React,
@@ -48,7 +49,7 @@ function harness() {
   const loaded = { exports: {} };
   vm.runInNewContext(code, {
     module: loaded, exports: loaded.exports,
-    document: { getElementById: id => id === "unit-at-a-glance" ? { focus() { summaryFocusCalls++; } } : null },
+    document: { getElementById: id => id === "unit-at-a-glance" ? { focus() { summaryFocusCalls++; } } : id === `unit-roster-edit-${position.id}` ? { focus() { focusedIds.push(id); } } : null },
     window: {
       confirm: () => { confirmations++; return discard; },
       addEventListener: (name, handler) => listeners.set(name, handler),
@@ -75,13 +76,13 @@ function harness() {
   }
   const roster = data => render(loaded.exports.UnitRoster, { unit, data: data ?? { positions: [position] } });
   const panel = tree => find(tree, node => typeof node.type === "function" && node.type.name === "RosterEditPanel");
-  function open(mode = "title") {
-    const label = mode === "responsibilities" ? "Responsibilities for Coordinator" : "Edit Coordinator";
-    find(roster(), node => node.props?.["aria-label"] === label).props.onClick({ currentTarget: { focus() { focusCalls++; } } });
-    return panel(roster());
+  function open(mode = "title", data, trigger = { focus() { focusCalls++; } }) {
+    const label = { title: "Edit Coordinator", person: "Add person to Coordinator", manager: "Set manager for Coordinator", responsibilities: "Responsibilities for Coordinator" }[mode];
+    find(roster(data), node => node.props?.["aria-label"] === label).props.onClick({ currentTarget: trigger });
+    return panel(roster(data));
   }
   return {
-    roster, panel, open, effects, listeners,
+    roster, panel, open, effects, listeners, focusedIds,
     renderPanel: node => render(node.type, node.props),
     allowDiscard: () => { discard = true; },
     setRefreshing: value => { refreshing = value; },
@@ -100,6 +101,106 @@ test("opening an editor is local and retains the original identity/revision snap
   const freshData = { positions: [{ ...position, title: "A different saved title", revision: "new-revision" }] };
   assert.equal(h.panel(h.roster(freshData)).props.position.revision, "revision-before-edit");
   assert.equal(h.panel(h.roster(freshData)).props.data.positions[0], position);
+});
+
+for (const [mode, label, visibleText, column] of [
+  ["person", "Add person to Coordinator", "Add person", 1],
+  ["manager", "Set manager for Coordinator", "Set manager", 2],
+]) test(`${mode}: an empty roster cell opens the exact existing editor and retains its original data snapshot`, () => {
+  const h = harness();
+  const data = { positions: [position], people: [{ id: "person-existing", name: "Fictional Person" }] };
+  const before = JSON.stringify(data);
+  const row = find(h.roster(data), node => node.type === "tr" && node.key === position.id);
+  const shortcut = find(row.props.children[column], node => node.props?.["aria-label"] === label);
+  assert.equal(shortcut.props.children, visibleText);
+  assert.equal(shortcut.props.type, "button");
+  const panel = h.open(mode, data);
+  assert.equal(panel.props.initialMode, mode);
+  assert.strictEqual(panel.props.position, position);
+  assert.strictEqual(panel.props.data, data);
+  const editor = find(h.renderPanel(panel), node => node.type === "editor");
+  assert.equal(editor.props.mode, mode);
+  assert.strictEqual(editor.props.position, position);
+  assert.strictEqual(editor.props.data, data);
+  assert.equal(find(h.renderPanel(panel), node => node.type === "responsibilities"), undefined);
+  const fresh = { positions: [{ ...position, title: "Fresh title", revision: "fresh-revision" }], people: [] };
+  assert.strictEqual(h.panel(h.roster(fresh)).props.data, data);
+  assert.strictEqual(h.panel(h.roster(fresh)).props.position, position);
+  assert.equal(h.refreshes, 0, "opening does not save or request a route refresh");
+  assert.equal(JSON.stringify(data), before);
+});
+
+test("empty-cell shortcuts are independent and never offered for populated, inactive, or revisionless targets", () => {
+  const assigned = { ...position, assignments: [{ id: "assignment-a", person: { id: "person-a", name: "Alex Example" }, typeLabel: "Regular occupant" }] };
+  const managed = { ...position, primaryManager: { position: { id: "manager-a", title: "Services Director", unit } } };
+  for (const [target, personAllowed, managerAllowed] of [
+    [position, true, true], [assigned, false, true], [managed, true, false],
+    [{ ...assigned, primaryManager: managed.primaryManager }, false, false],
+    [{ ...position, status: "inactive" }, false, false], [{ ...position, revision: "" }, false, false],
+  ]) {
+    const h = harness();
+    const tree = h.roster({ positions: [target] });
+    assert.equal(Boolean(find(tree, node => node.props?.["aria-label"] === "Add person to Coordinator")), personAllowed);
+    assert.equal(Boolean(find(tree, node => node.props?.["aria-label"] === "Set manager for Coordinator")), managerAllowed);
+    assert.equal(h.panel(tree), undefined);
+    assert.equal(h.refreshes, 0);
+  }
+});
+
+for (const label of ["Add person to Coordinator", "Set manager for Coordinator"]) test(`${label}: refreshing disables the shortcut and its handler refuses direct invocation`, () => {
+  const h = harness();
+  h.setRefreshing(true);
+  const shortcut = find(h.roster(), node => node.props?.["aria-label"] === label);
+  assert.equal(shortcut.props.disabled, true);
+  shortcut.props.onClick({ currentTarget: { focus() {} } });
+  assert.equal(h.panel(h.roster()), undefined);
+  assert.equal(h.refreshes, 0);
+});
+
+for (const mode of ["person", "manager"]) test(`${mode}: a direct entry keeps dirty changes when closing or switching is cancelled`, () => {
+  const h = harness();
+  const panel = h.open(mode);
+  find(h.renderPanel(panel), node => node.type === "editor").props.onDirty();
+  find(h.renderPanel(panel), node => node.props?.["aria-label"] === "Close editor").props.onClick();
+  assert.ok(h.panel(h.roster()));
+  assert.equal(h.confirmations, 1);
+  find(h.renderPanel(panel), node => node.type === "button" && node.props.children === "Job title").props.onClick();
+  assert.equal(find(h.renderPanel(panel), node => node.type === "editor").props.mode, mode);
+  assert.equal(h.confirmations, 2);
+  h.allowDiscard();
+  find(h.renderPanel(panel), node => node.props?.["aria-label"] === "Close editor").props.onClick();
+  assert.equal(h.panel(h.roster()), undefined);
+  assert.equal(h.refreshes, 0, "discarding never saves");
+});
+
+for (const mode of ["person", "manager"]) test(`${mode}: filling an empty cell restores focus to the same row's Edit action`, () => {
+  const h = harness();
+  const trigger = { isConnected: false, focus() { assert.fail("The removed empty-cell action must not receive focus"); } };
+  const panel = h.open(mode, undefined, trigger);
+  find(h.renderPanel(panel), node => node.type === "editor").props.onSaved("Saved with history.");
+  const filled = {
+    ...position,
+    assignments: [{ id: "assignment-new", person: { id: "person-new", name: "Alex Example" }, typeLabel: "Regular occupant" }],
+    primaryManager: { position: { id: "manager-a", title: "Services Director", unit } },
+  };
+  h.roster({ positions: [filled] });
+  h.effects.at(-1)();
+  assert.deepEqual(h.focusedIds, [`unit-roster-edit-${position.id}`]);
+  assert.equal(h.summaryFocusCalls, 0);
+  assert.equal(h.refreshes, 1);
+});
+
+test("background empty-cell handlers cannot replace an already-open editor snapshot", () => {
+  const h = harness();
+  const panel = h.open("person");
+  find(h.renderPanel(panel), node => node.type === "editor").props.onDirty();
+  find(h.roster(), node => node.props?.["aria-label"] === "Set manager for Coordinator").props.onClick({ currentTarget: { focus() {} } });
+  const stillOpen = h.panel(h.roster());
+  assert.equal(stillOpen.props.initialMode, "person");
+  assert.strictEqual(stillOpen.props.position, panel.props.position);
+  assert.strictEqual(stillOpen.props.data, panel.props.data);
+  assert.equal(h.refreshes, 0);
+  assert.equal(h.confirmations, 0);
 });
 
 test("Unit summary receives only direct-Unit positions and opens the exact responsibility snapshot", () => {
@@ -175,10 +276,10 @@ test("dirty edits are kept when cancelling discard, and closing saves nothing", 
   assert.equal(h.refreshes, 0);
 });
 
-for (const mode of ["title", "responsibilities"]) test(`${mode}: pending save blocks closing, Escape, section switches, and full-detail navigation`, () => {
+for (const mode of ["title", "person", "manager", "responsibilities"]) test(`${mode}: pending save blocks closing, Escape, section switches, and full-detail navigation`, () => {
   const h = harness();
   const panel = h.open(mode);
-  find(h.renderPanel(panel), node => node.type === (mode === "title" ? "editor" : "responsibilities")).props.onPendingChange(true);
+  find(h.renderPanel(panel), node => node.type === (mode === "responsibilities" ? "responsibilities" : "editor")).props.onPendingChange(true);
   const tree = h.renderPanel(panel);
   const close = find(tree, node => node.props?.["aria-label"] === "Close editor");
   assert.equal(close.props.disabled, true);
@@ -192,11 +293,11 @@ for (const mode of ["title", "responsibilities"]) test(`${mode}: pending save bl
   for (const node of elements(tree).filter(node => node.props?.["aria-pressed"] !== undefined)) assert.equal(node.props.disabled, true);
 });
 
-for (const mode of ["title", "responsibilities"]) test(`${mode}: successful save closes the panel, announces success and refreshes in place once`, () => {
+for (const mode of ["title", "person", "manager", "responsibilities"]) test(`${mode}: successful save closes the panel, announces success and refreshes in place once`, () => {
   const h = harness();
   const panel = h.open(mode);
-  const message = mode === "title" ? "Job title saved." : "Responsibility linked.";
-  find(h.renderPanel(panel), node => node.type === (mode === "title" ? "editor" : "responsibilities")).props.onSaved(message);
+  const message = { title: "Job title saved.", person: "Person assigned.", manager: "Reporting line saved.", responsibilities: "Responsibility linked." }[mode];
+  find(h.renderPanel(panel), node => node.type === (mode === "responsibilities" ? "responsibilities" : "editor")).props.onSaved(message);
   const tree = h.roster();
   assert.equal(h.panel(tree), undefined);
   assert.equal(h.refreshes, 1);
@@ -241,10 +342,11 @@ test("discarding a responsibility subform clears the outer dirty guard", () => {
   assert.equal(h.refreshes, 0);
 });
 
-test("an unconfirmed responsibility save blocks section switching but allows close and refresh", () => {
+for (const mode of ["title", "person", "manager", "responsibilities"]) test(`${mode}: an unconfirmed save blocks section switching but allows close and refresh`, () => {
   const h = harness();
-  const panel = h.open("responsibilities");
-  const child = find(h.renderPanel(panel), node => node.type === "responsibilities");
+  const panel = h.open(mode);
+  const childType = mode === "responsibilities" ? "responsibilities" : "editor";
+  const child = find(h.renderPanel(panel), node => node.type === childType);
   child.props.onDirty(true);
   child.props.onSaveUnconfirmed();
   child.props.onPendingChange(false);
@@ -254,7 +356,8 @@ test("an unconfirmed responsibility save blocks section switching but allows clo
     assert.equal(tab.props.disabled, true);
     tab.props.onClick();
   }
-  assert.ok(find(h.renderPanel(panel), node => node.type === "responsibilities"));
+  assert.ok(find(h.renderPanel(panel), node => node.type === childType));
+  if (mode !== "responsibilities") assert.equal(find(h.renderPanel(panel), node => node.type === "editor").props.mode, mode);
   assert.equal(h.confirmations, 0, "mode handlers also guard against bypassing disabled buttons");
   const close = find(tree, node => node.props?.["aria-label"] === "Close editor");
   assert.equal(close.props.disabled, false);
