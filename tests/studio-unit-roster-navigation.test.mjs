@@ -47,6 +47,7 @@ const { UnitRoster } = await load("app/studio/unit-roster.tsx", {
   "./unit-at-a-glance": { UnitAtAGlance },
   "./unit-roster-editor": { UnitRosterEditor: () => { throw new Error("The editor must remain closed until a person chooses Edit"); } },
   "./unit-responsibilities-panel": { UnitResponsibilitiesPanel: () => { throw new Error("Responsibilities must remain closed until explicitly opened"); } },
+  "./unit-position-create-panel": { UnitPositionCreatePanel: () => { throw new Error("Job creation must remain closed until explicitly opened"); } },
 });
 const { StudioStructureDetail } = await load("app/studio/studio-structure-detail.tsx", {
   "./organization-navigation": { OrganizationNavigation },
@@ -83,6 +84,39 @@ test("Add to this Unit uses existing scoped creation routes and stays hidden on 
   assertHref(html, "/studio/organization/units/new?parent=unit%2Fa");
   assert.doesNotMatch(html, /<form|<input|responsibilities\/roles\/new/);
   assert.equal(renderToStaticMarkup(React.createElement(UnitAddMenu, { unit: { ...unit, status: "inactive" } })), "");
+});
+
+test("Add to this Unit opens the local job-title panel only on an explicit choice when a callback is supplied", async () => {
+  const details = { open: true };
+  const calls = [];
+  const { UnitAddMenu: Menu } = await load("app/studio/unit-add-menu.tsx", {
+    react: { ...React, useRef: () => ({ current: details }) },
+  });
+  const scopedUnit = { ...unit, id: "unit/a" };
+  const props = { unit: scopedUnit, onAddPosition: trigger => calls.push(trigger) };
+  const tree = Menu(props);
+  const html = renderToStaticMarkup(tree);
+  assert.deepEqual(calls, [], "opening or rendering the menu cannot begin a save or selection");
+  assert.match(html, /<button[^>]*type="button"/);
+  assert.match(html, /Add here without leaving the roster/);
+  assert.doesNotMatch(html, /href="\/studio\/organization\/positions\/new/);
+  assertHref(html, "/studio/organization/people/new?unit=unit%2Fa");
+  assertHref(html, "/studio/organization/units/new?parent=unit%2Fa");
+  function nodes(node) {
+    if (!node || typeof node !== "object") return [];
+    if (Array.isArray(node)) return node.flatMap(nodes);
+    return [node, ...nodes(node.props?.children)];
+  }
+  const button = nodes(tree).find(node => node.type === "button");
+  const trigger = { id: "fictional-add-job-trigger" };
+  button.props.onClick({ currentTarget: trigger });
+  assert.equal(calls.length, 1);
+  assert.strictEqual(calls[0], trigger, "pass the actual button so the roster can restore focus");
+  assert.equal(details.open, false);
+  const locked = nodes(Menu({ ...props, disabled: true })).find(node => node.type === "button");
+  assert.equal(locked.props.disabled, true);
+  assert.equal(Menu({ ...props, unit: { ...scopedUnit, status: "inactive" } }), null);
+  assert.equal(calls.length, 1);
 });
 
 test("global navigation uses job-title and responsibility labels without changing entity routes", () => {

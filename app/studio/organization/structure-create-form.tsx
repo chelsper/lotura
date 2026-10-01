@@ -24,7 +24,7 @@ function normalized(value: string) {
   return value.trim().toLocaleLowerCase();
 }
 
-function CreationMetadataFields({
+export function CreationMetadataFields({
   reason,
   setReason,
 }: {

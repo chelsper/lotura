@@ -16,10 +16,10 @@ function elements(node) {
   return [node, ...elements(node.props?.children)];
 }
 const find = (node, predicate) => elements(node).find(predicate);
-const unit = { id: "unit-a", name: "Fictional Services" };
+const unit = { id: "unit-a", name: "Fictional Services", status: "active" };
 const position = { id: "position-a", revision: "revision-before-edit", title: "Coordinator", status: "active", unit, assignments: [], mandates: [], occupancy: { label: "Not established", tone: "neutral" }, primaryManager: null };
 
-function harness() {
+function harness(currentUnit = unit) {
   let hooks, cursor;
   const stores = new Map();
   const effects = [];
@@ -63,6 +63,7 @@ function harness() {
       if (id === "../ui/primitives") return { Badge: "badge", Button: "button", Card: "card" };
       if (id === "./unit-roster-editor") return { UnitRosterEditor: "editor" };
       if (id === "./unit-responsibilities-panel") return { UnitResponsibilitiesPanel: "responsibilities" };
+      if (id === "./unit-position-create-panel") return { UnitPositionCreatePanel: "create-position" };
       if (id === "./unit-add-menu") return { UnitAddMenu: "add-menu" };
       if (id === "./unit-at-a-glance") return { UnitAtAGlance: "unit-summary" };
       throw new Error(`Unexpected dependency: ${id}`);
@@ -74,7 +75,7 @@ function harness() {
     cursor = 0;
     return component(props);
   }
-  const roster = data => render(loaded.exports.UnitRoster, { unit, data: data ?? { positions: [position] } });
+  const roster = data => render(loaded.exports.UnitRoster, { unit: currentUnit, data: data ?? { positions: [position] } });
   const panel = tree => find(tree, node => typeof node.type === "function" && node.type.name === "RosterEditPanel");
   function open(mode = "title", data, trigger = { focus() { focusCalls++; } }) {
     const label = { title: "Edit Coordinator", person: "Add person to Coordinator", manager: "Set manager for Coordinator", responsibilities: "Responsibilities for Coordinator" }[mode];
@@ -92,6 +93,69 @@ function harness() {
     get summaryFocusCalls() { return summaryFocusCalls; },
   };
 }
+
+test("the Unit menu opens local job creation with current data; saving refreshes and announces without closing it", () => {
+  const h = harness();
+  const data = { positions: [position], units: [unit] };
+  const before = JSON.stringify(data);
+  const trigger = { closest: () => null, focus() {} };
+  const menu = find(h.roster(data), node => node.type === "add-menu");
+  assert.equal(find(h.roster(data), node => node.type === "create-position"), undefined);
+  menu.props.onAddPosition(trigger);
+  const create = find(h.roster(data), node => node.type === "create-position");
+  assert.strictEqual(create.props.unit, unit);
+  assert.strictEqual(create.props.data, data);
+  assert.equal(h.refreshes, 0, "opening creation has no mutation or refresh");
+  assert.equal(h.panel(h.roster(data)), undefined);
+  assert.equal(JSON.stringify(data), before);
+  create.props.onSaved("Job title added to this Unit.");
+  const savedTree = h.roster(data);
+  assert.ok(find(savedTree, node => node.type === "create-position"));
+  assert.equal(find(savedTree, node => node.props?.role === "status").props.children, "Job title added to this Unit.");
+  assert.equal(h.refreshes, 1);
+  const fresh = { ...data, positions: [...data.positions, { ...position, id: "position-new" }] };
+  assert.strictEqual(find(h.roster(fresh), node => node.type === "create-position").props.data, fresh, "subsequent creation must use the refreshed duplicate list");
+});
+
+test("closing job creation restores focus to the visible Add menu summary and refreshes only when requested", () => {
+  for (const refresh of [false, true]) {
+    const h = harness();
+    let menuFocus = 0;
+    const summary = { isConnected: true, focus() { menuFocus++; } };
+    const trigger = { closest: () => ({ querySelector: () => summary }), focus() { assert.fail("The hidden menu item must not receive focus"); } };
+    find(h.roster(), node => node.type === "add-menu").props.onAddPosition(trigger);
+    find(h.roster(), node => node.type === "create-position").props.onClose(refresh);
+    const closed = h.roster();
+    assert.equal(find(closed, node => node.type === "create-position"), undefined);
+    h.effects.at(-1)();
+    assert.equal(menuFocus, 1);
+    assert.equal(h.refreshes, Number(refresh));
+  }
+});
+
+test("job creation respects refresh, inactive Unit and open-editor guards, and cannot be replaced by background edits", () => {
+  const trigger = { closest: () => null, focus() {} };
+  for (const mode of ["refreshing", "inactive", "editing"]) {
+    const h = harness(mode === "inactive" ? { ...unit, status: "inactive" } : unit);
+    if (mode === "refreshing") h.setRefreshing(true);
+    if (mode === "editing") h.open();
+    find(h.roster(), node => node.type === "add-menu").props.onAddPosition(trigger);
+    assert.equal(find(h.roster(), node => node.type === "create-position"), undefined, mode);
+    assert.equal(h.refreshes, 0);
+  }
+  const h = harness();
+  const mandate = { id: "mandate-a" }, target = { ...position, mandates: [mandate] };
+  const data = { positions: [target] };
+  find(h.roster(data), node => node.type === "add-menu").props.onAddPosition(trigger);
+  for (const label of ["Edit Coordinator", "Add person to Coordinator", "Set manager for Coordinator", "Responsibilities for Coordinator"]) {
+    find(h.roster(data), node => node.props?.["aria-label"] === label).props.onClick({ currentTarget: trigger });
+  }
+  find(h.roster(data), node => node.type === "unit-summary").props.onChooseCoverage(target, mandate, trigger);
+  find(h.roster(data), node => node.type === "add-menu").props.onAddPosition(trigger);
+  assert.ok(find(h.roster(data), node => node.type === "create-position"));
+  assert.equal(h.panel(h.roster(data)), undefined);
+  assert.equal(h.refreshes, 0);
+});
 
 test("opening an editor is local and retains the original identity/revision snapshot through refreshes", () => {
   const h = harness();

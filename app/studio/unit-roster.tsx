@@ -11,6 +11,7 @@ import { UnitRosterEditor, type UnitRosterEditMode } from "./unit-roster-editor"
 import { UnitAddMenu } from "./unit-add-menu";
 import { UnitResponsibilitiesPanel } from "./unit-responsibilities-panel";
 import { UnitAtAGlance } from "./unit-at-a-glance";
+import { UnitPositionCreatePanel } from "./unit-position-create-panel";
 
 type RosterPanelMode = UnitRosterEditMode | "responsibilities";
 
@@ -129,18 +130,19 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
   // Keep the opened snapshot's revision with its inputs if another route refresh arrives.
   const [selection, setSelection] = useState<{ data: OrganizationStructureData; position: OrganizationPosition; mode: RosterPanelMode; initialCoverageMandateId?: string } | null>(null);
   const [notice, setNotice] = useState("");
+  const [creating, setCreating] = useState(false);
   const [refreshing, startRefresh] = useTransition();
-  const editTrigger = useRef<HTMLButtonElement | null>(null);
+  const editTrigger = useRef<HTMLElement | null>(null);
   const editFallbackId = useRef("unit-at-a-glance");
   const positions = data.positions.filter((position) => position.unit?.id === unit.id);
 
   useEffect(() => {
-    if (!selection && !refreshing && editTrigger.current) {
+    if (!selection && !creating && !refreshing && editTrigger.current) {
       if (editTrigger.current.isConnected === false) (document.getElementById(editFallbackId.current) ?? document.getElementById("unit-at-a-glance"))?.focus();
       else editTrigger.current.focus();
       editTrigger.current = null;
     }
-  }, [selection, refreshing]);
+  }, [selection, creating, refreshing]);
 
   function saved(message: string) {
     setSelection(null);
@@ -149,7 +151,7 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
   }
 
   function openMissingDetail(position: OrganizationPosition, mode: "person" | "manager", trigger: HTMLButtonElement) {
-    if (refreshing || selection || !positions.includes(position) || position.status !== "active" || !position.revision) return;
+    if (refreshing || creating || selection || !positions.includes(position) || position.status !== "active" || !position.revision) return;
     if (mode === "person" ? position.assignments.length > 0 : Boolean(position.primaryManager)) return;
     editTrigger.current = trigger;
     editFallbackId.current = `unit-roster-edit-${position.id}`;
@@ -160,7 +162,7 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
   return (
     <>
     <UnitAtAGlance disabled={refreshing} onChooseCoverage={(position, mandate, trigger) => {
-      if (refreshing || !positions.includes(position) || !position.mandates.includes(mandate)) return;
+      if (refreshing || creating || selection || !positions.includes(position) || !position.mandates.includes(mandate)) return;
       editTrigger.current = trigger;
       editFallbackId.current = "unit-at-a-glance";
       setNotice("");
@@ -174,7 +176,13 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-[var(--text-tertiary)]">{positions.length} {positions.length === 1 ? "Position" : "Positions"}</span>
-          <UnitAddMenu unit={unit} />
+          <UnitAddMenu disabled={refreshing} onAddPosition={(trigger) => {
+            if (refreshing || creating || selection || unit.status !== "active") return;
+            editTrigger.current = trigger.closest("details")?.querySelector("summary") ?? trigger;
+            editFallbackId.current = "unit-at-a-glance";
+            setNotice("");
+            setCreating(true);
+          }} unit={unit} />
         </div>
       </div>
       <p aria-live="polite" className="mt-2 text-sm text-[var(--workspace-accent)]" role="status">{refreshing ? "Updating the roster…" : notice}</p>
@@ -200,7 +208,7 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
                         {position.status !== "active" ? <Badge>{position.status}</Badge> : null}
                       </div>
                       {position.status === "active" ? (
-                        <Button aria-label={`Edit ${position.title}`} className="mt-3" disabled={refreshing} id={`unit-roster-edit-${position.id}`} onClick={(event) => { editTrigger.current = event.currentTarget; setNotice(""); setSelection({ data, position, mode: "title" }); }} size="sm" type="button">Edit</Button>
+                        <Button aria-label={`Edit ${position.title}`} className="mt-3" disabled={refreshing} id={`unit-roster-edit-${position.id}`} onClick={(event) => { if (refreshing || creating || selection) return; editTrigger.current = event.currentTarget; setNotice(""); setSelection({ data, position, mode: "title" }); }} size="sm" type="button">Edit</Button>
                       ) : null}
                     </th>
                     <td className="px-4 py-4 align-top">
@@ -230,7 +238,7 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
                       </div>}
                     </td>
                     <td className="px-4 py-4 align-top">
-                      <Button aria-label={`Responsibilities for ${position.title}`} disabled={refreshing} onClick={(event) => { editTrigger.current = event.currentTarget; setNotice(""); setSelection({ data, position, mode: "responsibilities" }); }} size="sm" type="button">{position.mandates.length ? `${position.mandates.length} linked` : position.status === "active" ? "Add responsibility" : "View responsibilities"}</Button>
+                      <Button aria-label={`Responsibilities for ${position.title}`} disabled={refreshing} onClick={(event) => { if (refreshing || creating || selection) return; editTrigger.current = event.currentTarget; setNotice(""); setSelection({ data, position, mode: "responsibilities" }); }} size="sm" type="button">{position.mandates.length ? `${position.mandates.length} linked` : position.status === "active" ? "Add responsibility" : "View responsibilities"}</Button>
                     </td>
                   </tr>
                 ))}
@@ -243,6 +251,10 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
         setSelection(null);
         if (refresh) startRefresh(() => router.refresh());
       }} onSaved={saved} position={selection.position} /> : null}
+      {creating ? <UnitPositionCreatePanel data={data} onClose={(refresh) => {
+        setCreating(false);
+        if (refresh) startRefresh(() => router.refresh());
+      }} onSaved={(message) => { setNotice(message); startRefresh(() => router.refresh()); }} refreshing={refreshing} unit={unit} /> : null}
     </section>
     </>
   );
