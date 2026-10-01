@@ -60,7 +60,7 @@ export default async function OrganizationBuilderPage({
         <Link className={actionClass} href="/studio/organization/people/new">Add Person</Link>
       </div>
       <Alert className="mt-5" tone="info">
-        Build structure deliberately. Person, Position, and Operational Role are different records; reporting hierarchy never assigns Process ownership.
+        Start with the people and job titles you know. You can add responsibilities and other connections later.
       </Alert>
 
       <OrganizationBrowser basePath="/studio/organization" data={data} selectedView={view} unitId={unit?.id} />

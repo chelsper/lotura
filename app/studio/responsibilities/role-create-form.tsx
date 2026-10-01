@@ -25,12 +25,12 @@ export function RoleCreateForm({ data }: { data: OrganizationStructureData }) {
     <form action={action} className="mt-6 grid gap-5 lg:grid-cols-2">
       <p className="text-xs text-[var(--text-secondary)] lg:col-span-2">* Required; other fields are optional.</p>
       <Card className="p-4 sm:p-5">
-        <h2 className="text-base font-semibold text-[var(--text)]">Operational Role</h2>
+        <h2 className="text-base font-semibold text-[var(--text)]">Responsibility</h2>
         <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-          Name the durable responsibility—not the current Person or Position title.
+          Name the work, such as “Gift receipt preparation,” not a person or job title. The responsibility stays the same when people change.
         </p>
         <label className="mt-4 block">
-          <FieldLabel>Role name<RequiredMark /></FieldLabel>
+          <FieldLabel>Responsibility name<RequiredMark /></FieldLabel>
           <Input maxLength={255} name="newRoleName" required />
         </label>
         <label className="mt-3 block">
@@ -44,29 +44,29 @@ export function RoleCreateForm({ data }: { data: OrganizationStructureData }) {
       </Card>
 
       <Card className="p-4 sm:p-5">
-        <h2 className="text-base font-semibold text-[var(--text)]">First Position mandate</h2>
+        <h2 className="text-base font-semibold text-[var(--text)]">First job title responsible</h2>
         <p className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">
-          Allocate the new Role deliberately. The Position’s title, occupant, and reporting line remain context only. Human coverage remains a separate decision.
+          Choose the job title that holds this responsibility. This does not rename the job, change its reporting line, or automatically assign the work to its people. Record who does the work separately after saving.
         </p>
         <label className="mt-4 block">
-          <FieldLabel>Position<RequiredMark /></FieldLabel>
+          <FieldLabel>Job title<RequiredMark /></FieldLabel>
           <Select
             name="positionStableKey"
             onChange={(event) => setPositionStableKey(event.target.value)}
             required
             value={positionStableKey}
           >
-            <option value="">Select a Position</option>
+            <option value="">Choose a job title</option>
             {positions.map((position) => (
               <option key={position.id} value={position.id}>
-                {position.title} — {position.unit?.name ?? "No Organization Unit"}
+                {position.title} — {position.unit?.name ?? "No Unit recorded"}
               </option>
             ))}
           </Select>
         </label>
         <input name="expectedRevision" type="hidden" value={selected?.revision ?? ""} />
         <label className="mt-3 block">
-          <FieldLabel>Mandate type<RequiredMark /></FieldLabel>
+          <FieldLabel>This job title’s part<RequiredMark /></FieldLabel>
           <Select
             name="mandateType"
             onChange={(event) => setMandateType(event.target.value as typeof mandateType)}
@@ -78,7 +78,7 @@ export function RoleCreateForm({ data }: { data: OrganizationStructureData }) {
           </Select>
         </label>
         <label className="mt-3 block">
-          <FieldLabel>{mandateType === "shared" ? <>Shared scope<RequiredMark /></> : "Narrower scope (optional)"}</FieldLabel>
+          <FieldLabel>{mandateType === "shared" ? <>Which part does this job title handle?<RequiredMark /></> : "Scope (optional)"}</FieldLabel>
           <Input maxLength={2000} name="scope" required={mandateType === "shared"} />
         </label>
       </Card>
@@ -87,7 +87,7 @@ export function RoleCreateForm({ data }: { data: OrganizationStructureData }) {
         <input name="changeKind" type="hidden" value="organizational_change" />
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <FieldLabel>How this change is understood</FieldLabel>
+            <FieldLabel>Type of change</FieldLabel>
             <p className="rounded-[10px] border border-[var(--border)] bg-[var(--surface-subtle)] px-3 py-2 text-sm text-[var(--text-secondary)]">
               Organizational change
             </p>
@@ -97,12 +97,12 @@ export function RoleCreateForm({ data }: { data: OrganizationStructureData }) {
             <Input defaultValue={new Date().toISOString().slice(0, 10)} name="effectiveDate" required type="date" />
           </label>
           <label className="sm:col-span-2">
-            <FieldLabel>Reason<RequiredMark /></FieldLabel>
+            <FieldLabel>Reason for change<RequiredMark /></FieldLabel>
             <textarea
               className="min-h-24 w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text)] outline-none transition focus:border-[var(--workspace-accent)] focus:ring-2 focus:ring-[var(--workspace-focus-ring)]"
               maxLength={2000}
               name="reason"
-              placeholder="Explain why this Role and mandate should become part of the current responsibility model."
+              placeholder="Why are you adding this responsibility and linking it to this job title?"
               required
             />
           </label>
@@ -113,7 +113,7 @@ export function RoleCreateForm({ data }: { data: OrganizationStructureData }) {
           </Alert>
         ) : null}
         <Button className="mt-4" disabled={pending || !selected} type="submit" variant="primary">
-          {pending ? "Creating Role and mandate…" : "Create Role and first mandate"}
+          {pending ? "Creating responsibility and link…" : "Create responsibility and job title link"}
         </Button>
       </Card>
     </form>

@@ -98,11 +98,11 @@ test("Responsibility UX keeps Role, Position, Person, mandate, and coverage dist
   ]);
   assert.match(list, /Responsibilities describe work people are accountable for/);
   assert.match(list, /separate from job titles/);
-  assert.match(list, /explicit first Position mandate/);
-  assert.match(list, /does not change Position occupancy, reporting hierarchy, Process ownership, or human coverage/);
-  assert.match(create, /Name the durable responsibility—not the current Person or Position title/);
-  assert.match(create, /Human coverage remains a separate decision/);
-  assert.match(detail, /Position occupancy does not create coverage/);
+  assert.match(create, /First job title responsible/);
+  assert.match(create, /Name the work, such as .*not a person or job title/);
+  assert.match(create, /does not rename the job, change its reporting line, or automatically assign the work to its people/);
+  assert.match(create, /Record who does the work separately after saving/);
+  assert.match(detail, /holding a job title does not automatically assign the work to that person/);
   assert.match(detail, /Context only/);
 });
 

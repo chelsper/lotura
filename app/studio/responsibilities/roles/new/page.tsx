@@ -18,12 +18,12 @@ export default async function NewOperationalRolePage() {
       <nav aria-label="Breadcrumb" className="mb-5 flex flex-wrap items-center gap-2 text-xs text-[var(--text-tertiary)]">
         <Link href="/studio">Workspace Studio</Link><span>/</span>
         <Link href="/studio/responsibilities">Responsibilities</Link><span>/</span>
-        <span className="text-[var(--text-secondary)]">New Operational Role</span>
+        <span className="text-[var(--text-secondary)]">New responsibility</span>
       </nav>
       <WorkspacePageHeader
-        description="Create one durable responsibility together with its first explicit Position mandate. Human coverage remains a separate decision after creation."
-        eyebrow={<><RoleIcon className="size-3.5" />Responsibility Builder</>}
-        title="Add Operational Role"
+        description="Name the work and link it to the first job title responsible. You can record who does the work separately after saving."
+        eyebrow={<><RoleIcon className="size-3.5" />Responsibilities</>}
+        title="Add responsibility"
       />
       <RoleCreateForm data={data} />
     </WorkspaceShell>

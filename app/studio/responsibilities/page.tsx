@@ -6,7 +6,6 @@ import { buildResponsibilityRoles } from "@/lib/responsibility-builder";
 import { loadWorkspaceStudioExperience } from "@/lib/organization-structure-experience";
 
 import { RoleIcon } from "../../ui/icons";
-import { Alert } from "../../ui/primitives";
 import { WorkspacePageHeader, WorkspaceShell } from "../../workspace-shell";
 import { OrganizationNavigation } from "../organization-navigation";
 import { ResponsibilityBrowser } from "./responsibility-browser";
@@ -57,8 +56,8 @@ export default async function ResponsibilityBuilderPage({
         stats={[
           { label: "Responsibilities", value: roles.length },
           ...(!unit ? [
-            { label: "Without mandate", value: data.gaps.rolesWithoutMandates },
-            { label: "Mandates without coverage", value: data.gaps.mandatesWithoutCoverage },
+            { label: "Without a job title linked", value: data.gaps.rolesWithoutMandates },
+            { label: "Job title links without a person", value: data.gaps.mandatesWithoutCoverage },
           ] : []),
         ]}
         title={unit ? `${unit.name} · Responsibilities` : "Responsibilities"}
@@ -70,13 +69,10 @@ export default async function ResponsibilityBuilderPage({
           <Link className="font-medium text-[var(--workspace-accent)] underline" href={`/studio/organization?view=positions${unit ? `&unit=${encodeURIComponent(unit.id)}` : ""}`}>View job titles{unit ? " in this Unit" : ""} →</Link>
         </p>
         <Link className={actionClass} href="/studio/responsibilities/roles/new">
-          Add Operational Role
+          Add responsibility
         </Link>
       </div>
-      <Alert className="mt-5" tone="info">
-        A new Operational Role begins with an explicit first Position mandate. Creating a Role does not change Position occupancy, reporting hierarchy, Process ownership, or human coverage.
-      </Alert>
-      {unit ? <p className="mt-4 text-xs text-[var(--text-secondary)]">Shown through recorded Position mandates in this Unit. A responsibility may also be shared with other Units.</p> : null}
+      {unit ? <p className="mt-4 text-xs text-[var(--text-secondary)]">Linked to job titles in this Unit. A responsibility may also be shared with other Units.</p> : null}
       <ResponsibilityBrowser roles={summaries} unitId={unit?.id} />
     </WorkspaceShell>
   );

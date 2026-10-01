@@ -72,6 +72,16 @@ Use plain language before implementation or database terminology. Capitalize nam
 | Live database | The configured Organization’s current read-only Neon snapshot. | Data source: Live database | production data when environment and approval state are unknown |
 | Explore only | A trust statement that the current surface cannot change data. | Explore only — nothing you do here changes data. | read-only workspace when “workspace” could mean the Organization |
 
+## Everyday setup language
+
+- Use **Job titles**, **People**, and **Responsibilities** as the primary Studio labels. Explain the underlying Position and Operational Role concepts on demand, not in every button or warning.
+- A **job title** is the label on a Position, not its identity. Two Positions can share a title, and a Position remains when its occupant changes.
+- **Responsibility** is the everyday label for an Operational Role: an ongoing area of work. It is not a second inventory alongside Roles. Prefer work-based names such as “Request coordination,” not a person's name or a repeated job title.
+- Use **Link responsibility** for an explicit Position mandate and **Who does this work?** for explicit Person coverage. Neither relationship is inferred from the other, occupancy, or reporting lines. Counts of relationship records must not be labelled as unique people.
+- Explain the distinction in one sentence: **A job title tells you where someone sits; a responsibility tells you what they look after; a process tells you how the work happens.**
+- A **Process family** groups related Processes. A **Policy** governs work; it is not a parent Process. Do not offer unsupported Policy creation or infer hierarchy from this explanation.
+- Distinguish **AI working interpretation**, **suggested name matches**, and **human-confirmed review context**. Name matching alone is not an AI classification. Confirmation does not assign work, approve a Process, or change organizational relationships.
+
 ## Evidence and trust rules
 
 - Keep **direct impact**, **potential indirect impact**, and **review recommended** separate in both wording and visual treatment.

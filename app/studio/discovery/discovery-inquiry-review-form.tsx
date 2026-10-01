@@ -60,6 +60,16 @@ export function DiscoveryInquiryReviewForm({
         value={supersedesReviewId || ""}
       />
 
+      <details className="rounded-[10px] border border-[var(--border)] p-4 text-sm">
+        <summary className="cursor-pointer font-medium text-[var(--workspace-accent)]">Process, family, or policy?</summary>
+        <ul className="mt-3 space-y-2 text-[var(--text-secondary)]">
+          <li><strong>Process:</strong> how work happens, from a start to an outcome.</li>
+          <li><strong>Process family:</strong> a group of related processes.</li>
+          <li><strong>Policy:</strong> rules that govern the work, not a parent process.</li>
+        </ul>
+        <p className="mt-3 text-xs text-[var(--text-secondary)]">Choose what the evidence supports. You can leave questions open; an AI interpretation is not approval.</p>
+      </details>
+
       <div className="space-y-3">
         {DISCOVERY_INQUIRY_REVIEW_OUTCOME_KINDS.map((kind) => {
           const details = DISCOVERY_INQUIRY_REVIEW_OUTCOME_DETAILS[kind];

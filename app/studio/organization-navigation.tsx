@@ -15,6 +15,36 @@ const destinations: Array<{
   { id: "roles", label: "Responsibilities", href: "/studio/responsibilities" },
 ];
 
+export function OrganizationConceptGuide() {
+  return (
+    <details className="mt-3 rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm">
+      <summary className="cursor-pointer font-medium text-[var(--workspace-accent)]">
+        Job titles, responsibilities, processes — what’s the difference?
+      </summary>
+      <p className="mt-3 text-[var(--text-secondary)]">
+        A job title tells you where someone sits. A responsibility tells you what they look after. A process tells you how the work happens.
+      </p>
+      <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+        {[
+          ["Person", "The human doing the work. A person is not a login or a job title."],
+          ["Job title (Position)", "A seat in the organization, such as Service Coordinator. It remains when the person changes; two seats can share a title."],
+          ["Responsibility (Operational Role)", "An ongoing area of work, such as Request coordination. It can be shared across job titles; it is not another employee title."],
+          ["Process", "Repeatable work with a start and an outcome, such as Handle a service request."],
+        ].map(([term, meaning]) => (
+          <div key={term}>
+            <dt className="font-semibold text-[var(--text)]">{term}</dt>
+            <dd className="mt-1 text-xs leading-5 text-[var(--text-secondary)]">{meaning}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="mt-4 border-t border-[var(--border)] pt-3 text-xs leading-5 text-[var(--text-secondary)]">
+        <p>A <strong>Unit</strong> groups the organization. A <strong>Process family</strong> groups related processes. A <strong>Step</strong> is part of a process. A <strong>System</strong> supports the work.</p>
+        <p className="mt-2">A <strong>Policy</strong> sets rules for the work; it is not a parent process. A job title or manager does not automatically assign responsibility or process ownership.</p>
+      </div>
+    </details>
+  );
+}
+
 export function OrganizationNavigation({
   activeView,
   preserveScroll = false,
@@ -58,6 +88,7 @@ export function OrganizationNavigation({
         </Link>
       ))}
       </div>
+      <OrganizationConceptGuide />
     </nav>
   );
 }

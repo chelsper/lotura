@@ -267,7 +267,7 @@ test("LAD-069 implementation preserves inquiry evidence and canonical boundaries
   assert.match(reviewPage, /do not establish a[\s\S]*relationship/);
   assert.match(table, /References to confirm/);
   assert.match(table, /Keep unresolved/);
-  assert.match(table, /silently replace a person with a Role/);
+  assert.match(table, /A person’s name alone does not establish which responsibility they were carrying out/);
 });
 
 test("all migration 0032 identifiers fit PostgreSQL's 63-byte limit", async () => {

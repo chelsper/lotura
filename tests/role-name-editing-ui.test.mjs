@@ -52,7 +52,7 @@ test("Role editor is directly reachable and visible without opening a disclosure
   const { ResponsibilityRoleWorkspace } = await load("app/studio/responsibilities/responsibility-role-workspace.tsx");
   const html = renderToStaticMarkup(React.createElement(ResponsibilityRoleWorkspace, { data: { positions: [], people: [] }, role }));
   const editor = html.slice(html.indexOf('id="edit-role"'), html.indexOf("</section>"));
-  assert.match(editor, /Edit Role name/);
+  assert.match(editor, /Edit responsibility/);
   assert.match(editor, /<form/);
   assert.doesNotMatch(editor, /<details/);
   assert.match(editor, /name="name"[^>]*value="Print Queue Coordinator"/);
@@ -61,7 +61,7 @@ test("Role editor is directly reachable and visible without opening a disclosure
   assert.match(editor, /name="reason"[^>]*required=""/);
   assert.match(editor, /Its connections stay in place/);
   assert.match(editor, /previous name stays in history/);
-  assert.match(editor, /Save Role changes/);
+  assert.match(editor, /Save responsibility changes/);
 });
 
 test("pending Role edits show feedback and inactive Roles have no edit form", async () => {
@@ -69,7 +69,7 @@ test("pending Role edits show feedback and inactive Roles have no edit form", as
   const html = renderToStaticMarkup(React.createElement(pending.ResponsibilityRoleWorkspace, { data: { positions: [], people: [] }, role }));
   assert.match(html, /<button[^>]*disabled=""[^>]*>Saving…/);
   const inactive = renderToStaticMarkup(React.createElement(pending.ResponsibilityRoleWorkspace, { data: { positions: [], people: [] }, role: { ...role, status: "inactive" } }));
-  assert.doesNotMatch(inactive, /<form|Save Role changes/);
+  assert.doesNotMatch(inactive, /<form|Save responsibility changes/);
 });
 
 test("Role list makes editing explicit and uses immutable identity, not the Role name or legacy ID", async () => {
@@ -77,11 +77,11 @@ test("Role list makes editing explicit and uses immutable identity, not the Role
   const render = status => renderToStaticMarkup(React.createElement(ResponsibilityBrowser, { roles: [{ ...role, status, coverageCount: 0, mandateCount: 0, processCount: 0, systemCount: 0 }] }));
   const html = render("active");
   assert.match(html, new RegExp(`href="/studio/responsibilities/roles/${stableKey}#edit-role"`));
-  assert.match(html, /Edit Role name and details/);
+  assert.match(html, /Edit responsibility/);
   assert.doesNotMatch(html, /href="[^"]*(?:role:17|Print Queue Coordinator)/);
   const inactive = render("inactive");
-  assert.match(inactive, /View Role history/);
-  assert.doesNotMatch(inactive, /#edit-role|Edit Role name and details/);
+  assert.match(inactive, /View responsibility history/);
+  assert.doesNotMatch(inactive, /#edit-role|Edit responsibility/);
 });
 
 test("renaming continues through existing authenticated, tenant-scoped, atomic history path", async () => {

@@ -66,6 +66,47 @@ function SummaryList({
   );
 }
 
+function PeopleAndWorkMentioned({
+  process,
+  aiAssisted,
+}: {
+  process: DiscoveryAnalystTurnRecord["snapshot"]["process"];
+  aiAssisted: boolean;
+}) {
+  const groups = [
+    { title: "People and participants", items: process.participants },
+    { title: "Possible owner responsibility", items: process.ownerRole ? [process.ownerRole] : [] },
+    { title: "Steps mentioned", items: process.steps },
+    { title: "Systems mentioned", items: process.systems },
+    { title: "Handoffs mentioned", items: process.handoffs },
+  ].filter((group) => group.items.length > 0);
+  if (groups.length === 0) return null;
+
+  return (
+    <details className="mt-5 rounded-[10px] border border-[var(--border)] p-4">
+      <summary className="cursor-pointer text-sm font-semibold text-[var(--text)]">
+        People and work mentioned
+      </summary>
+      <div className="mt-3">
+        <Badge tone="neutral">{aiAssisted ? "Working interpretation" : "Saved interview context"}</Badge>
+        <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
+          These are mentions from this interview, not confirmed relationships or assignments.
+        </p>
+      </div>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        {groups.map((group) => (
+          <div key={group.title}>
+            <h3 className="text-sm font-semibold text-[var(--text)]">{group.title}</h3>
+            <ul className="mt-2 list-disc space-y-2 pl-5 text-sm leading-6 text-[var(--text-secondary)]">
+              {group.items.map((item, index) => <li key={`${group.title}-${index}`}>{item}</li>)}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
+
 function HiddenContext({
   inquiryId,
   revision,
@@ -429,7 +470,7 @@ export function DiscoveryAnalystInterview({
         <Card className="p-5 sm:p-7" id="interview-understanding">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <Badge tone="accent">Working understanding · Not canonical</Badge>
+              <Badge tone="accent">Working understanding · For review</Badge>
               <h2 className="mt-3 text-2xl font-semibold tracking-[-0.035em] text-[var(--text)]">
                 {turn && turn.providerKey !== "openai"
                   ? "Your saved interview notes"
@@ -461,6 +502,10 @@ export function DiscoveryAnalystInterview({
                   title="Who else may need to participate"
                 />
               </div>
+              <PeopleAndWorkMentioned
+                aiAssisted={turn.providerKey === "openai"}
+                process={turn.snapshot.process}
+              />
             </>
           ) : (
             <div className="mt-5">
@@ -523,39 +568,43 @@ export function DiscoveryAnalystInterview({
               tone="warning"
             />
           </div>
-          {turn ? (
-            <details className="mt-5 rounded-[10px] border border-[var(--border)] p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-[var(--text)]">
-                Correct Lotura&apos;s interpretation
-              </summary>
-              <form action={correctionAction} className="mt-4 space-y-4">
-                <HiddenContext inquiryId={inquiryId} revision={revision} sessionId={sessionId} />
-                <label className="block">
-                  <FieldLabel>How certain are you?</FieldLabel>
-                  <Select defaultValue="known" name="epistemicState">
-                    {states.map(([value, label]) => (
-                      <option key={value} value={value}>{label}</option>
-                    ))}
-                  </Select>
-                </label>
-                <label className="block">
-                  <FieldLabel>What did Lotura misunderstand or miss?</FieldLabel>
-                  <textarea
-                    className="min-h-28 w-full resize-y rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-6 text-[var(--text)] outline-none focus:border-[var(--workspace-accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
-                    maxLength={10000}
-                    name="responseText"
-                    placeholder={`Correct the working interpretation in your own words. This becomes human evidence, not ${inquiryMode ? "a Process selection or organizational change" : "a canonical Process change"}.`}
-                    required
-                  />
-                </label>
-                {correctionState.status === "error" ? <Alert tone="error">{correctionState.message}</Alert> : null}
-                <Button disabled={analystPending} size="sm" type="submit">
-                  {correctionPending ? "Preserving correction…" : "Preserve correction"}
-                </Button>
-              </form>
-            </details>
-          ) : null}
         </Card>
+      ) : null}
+
+      {/* Keep one correction form mounted so review tabs do not discard an unsent correction. */}
+      {turn ? (
+        <div hidden={reviewPanel !== "understanding" && reviewPanel !== "validation"} key={`${sessionId}:${turn.suggestion.id}`}>
+          <details className="rounded-[10px] border border-[var(--border)] bg-[var(--surface)] p-4">
+            <summary className="cursor-pointer text-sm font-semibold text-[var(--text)]">
+              Correct Lotura&apos;s interpretation
+            </summary>
+            <form action={correctionAction} className="mt-4 space-y-4">
+              <HiddenContext inquiryId={inquiryId} revision={revision} sessionId={sessionId} />
+              <label className="block">
+                <FieldLabel>How certain are you?</FieldLabel>
+                <Select defaultValue="known" name="epistemicState">
+                  {states.map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </Select>
+              </label>
+              <label className="block">
+                <FieldLabel>What did Lotura misunderstand or miss?</FieldLabel>
+                <textarea
+                  className="min-h-28 w-full resize-y rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm leading-6 text-[var(--text)] outline-none focus:border-[var(--workspace-accent)] focus:ring-3 focus:ring-[var(--focus-soft)]"
+                  maxLength={10000}
+                  name="responseText"
+                  placeholder="Tell Lotura what to change in its understanding. Your correction is saved as evidence; it does not change the documented work."
+                  required
+                />
+              </label>
+              {correctionState.status === "error" ? <Alert tone="error">{correctionState.message}</Alert> : null}
+              <Button disabled={analystPending} size="sm" type="submit">
+                {correctionPending ? "Saving correction…" : "Save correction"}
+              </Button>
+            </form>
+          </details>
+        </div>
       ) : null}
 
       {reviewPanel === "evidence" ? (

@@ -55,6 +55,26 @@ test("Studio navigation links directly to four distinct views and identifies the
   }
 });
 
+test("the optional terminology guide is closed and preserves separate organizational concepts", async () => {
+  const { OrganizationConceptGuide, OrganizationNavigation } = await load("app/studio/organization-navigation.tsx");
+  const html = renderToStaticMarkup(React.createElement(OrganizationConceptGuide));
+  assert.match(html, /<details\b/);
+  assert.doesNotMatch(html, /<details[^>]*\bopen=|<form|<button|<input|<select/);
+  for (const label of ["Person", "Job title (Position)", "Responsibility (Operational Role)", "Process family", "Policy", "Step", "System"]) {
+    assert.ok(html.includes(label), `Expected separate concept: ${label}`);
+  }
+  assert.match(html, /not a login or a job title/);
+  assert.match(html, /two seats can share a title/);
+  assert.match(html, /not another employee title/);
+  assert.match(html, /not a parent process/);
+  assert.match(html, /does not automatically assign responsibility or process ownership/);
+  const navigation = renderToStaticMarkup(React.createElement(OrganizationNavigation, { activeView: "roles" }));
+  assert.equal([...navigation.matchAll(/<summary\b/g)].length, 1);
+  assert.equal([...navigation.matchAll(/<a\b/g)].length, 4);
+  const scoped = renderToStaticMarkup(React.createElement(OrganizationNavigation, { activeView: "roles", unit: { id: "unit-a", name: "Fictional Services" } }));
+  assert.match(scoped, /href="\/studio\/responsibilities\?unit=unit-a"/);
+});
+
 test("Studio validates requested views on the server and still checks authorized access", async () => {
   const experience = { enabled: true, data: { people: [], positions: [], units: [] } };
   const { default: page } = await load("app/studio/organization/page.tsx", {
@@ -123,9 +143,9 @@ test("responsibility cards retain Unit context without presenting shared Process
   }];
   const scoped = renderToStaticMarkup(React.createElement(ResponsibilityBrowser, { roles, unitId: "unit-id" }));
   assert.match(scoped, /href="\/studio\/responsibilities\/roles\/role-id\?unit=unit-id#edit-role"/);
-  assert.match(scoped, /2 Position mandates · 1 current coverage in this Unit/);
-  assert.doesNotMatch(scoped, /3 Processes|4 Systems/);
+  assert.match(scoped, /2 job title links · 1 person-to-work link in this Unit/);
+  assert.doesNotMatch(scoped, /3 processes|4 systems/);
   const global = renderToStaticMarkup(React.createElement(ResponsibilityBrowser, { roles }));
-  assert.match(global, /3 Processes · 4 Systems/);
+  assert.match(global, /3 processes · 4 systems/);
   assert.match(global, /href="\/studio\/responsibilities\/roles\/role-id#edit-role"/);
 });

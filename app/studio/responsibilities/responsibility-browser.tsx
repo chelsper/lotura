@@ -77,17 +77,17 @@ export function ResponsibilityBrowser({
                       {role.status}
                     </Badge>
                     {role.mandateCount === 0 && role.status === "active" ? (
-                      <Badge tone="warning">No current mandate</Badge>
+                      <Badge tone="warning">No job title linked</Badge>
                     ) : null}
                   </div>
                   <p className="mt-1 max-w-3xl text-xs leading-5 text-[var(--text-secondary)]">
                     {role.description ?? "No responsibility description recorded."}
                   </p>
                   <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">
-                    {role.mandateCount} {role.mandateCount === 1 ? "Position mandate" : "Position mandates"} · {role.coverageCount} current {role.coverageCount === 1 ? "coverage" : "coverages"}{unitId ? " in this Unit" : ` · ${role.processCount} ${role.processCount === 1 ? "Process" : "Processes"} · ${role.systemCount} ${role.systemCount === 1 ? "System" : "Systems"}`}
+                    {role.mandateCount} {role.mandateCount === 1 ? "job title link" : "job title links"} · {role.coverageCount} {role.coverageCount === 1 ? "person-to-work link" : "person-to-work links"}{unitId ? " in this Unit" : ` · ${role.processCount} ${role.processCount === 1 ? "process" : "processes"} · ${role.systemCount} ${role.systemCount === 1 ? "system" : "systems"}`}
                   </p>
                   <p className="mt-3 text-xs font-medium text-[var(--workspace-accent)]">
-                    {role.status === "active" ? "Edit Role name and details →" : "View Role history →"}
+                    {role.status === "active" ? "Edit responsibility →" : "View responsibility history →"}
                   </p>
                 </div>
                 <ArrowIcon className="mt-1 size-4 shrink-0 text-[var(--text-tertiary)] transition-transform group-hover:translate-x-1 group-hover:text-[var(--workspace-accent)]" />
