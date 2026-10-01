@@ -12,6 +12,7 @@ import { UnitAddMenu } from "./unit-add-menu";
 import { UnitResponsibilitiesPanel } from "./unit-responsibilities-panel";
 import { UnitAtAGlance } from "./unit-at-a-glance";
 import { UnitPositionCreatePanel } from "./unit-position-create-panel";
+import { UnitPersonCreatePanel } from "./unit-person-create-panel";
 
 type RosterPanelMode = UnitRosterEditMode | "responsibilities";
 
@@ -130,7 +131,7 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
   // Keep the opened snapshot's revision with its inputs if another route refresh arrives.
   const [selection, setSelection] = useState<{ data: OrganizationStructureData; position: OrganizationPosition; mode: RosterPanelMode; initialCoverageMandateId?: string } | null>(null);
   const [notice, setNotice] = useState("");
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState<"position" | "person" | null>(null);
   const [refreshing, startRefresh] = useTransition();
   const editTrigger = useRef<HTMLElement | null>(null);
   const editFallbackId = useRef("unit-at-a-glance");
@@ -159,6 +160,14 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
     setSelection({ data, position, mode });
   }
 
+  function openCreate(mode: "position" | "person", trigger: HTMLButtonElement) {
+    if (refreshing || creating || selection || unit.status !== "active") return;
+    editTrigger.current = trigger.closest("details")?.querySelector("summary") ?? trigger;
+    editFallbackId.current = "unit-at-a-glance";
+    setNotice("");
+    setCreating(mode);
+  }
+
   return (
     <>
     <UnitAtAGlance disabled={refreshing} onChooseCoverage={(position, mandate, trigger) => {
@@ -172,17 +181,11 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold text-[var(--text)]" id="unit-people-job-titles">People and job titles</h2>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">In this Unit only. Start with job titles; people and managers can wait. Add missing details here, or choose Edit to change what’s recorded.</p>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">In this Unit only. Add a person or job title here; fill in the rest when you’re ready.</p>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-[var(--text-tertiary)]">{positions.length} {positions.length === 1 ? "Position" : "Positions"}</span>
-          <UnitAddMenu disabled={refreshing} onAddPosition={(trigger) => {
-            if (refreshing || creating || selection || unit.status !== "active") return;
-            editTrigger.current = trigger.closest("details")?.querySelector("summary") ?? trigger;
-            editFallbackId.current = "unit-at-a-glance";
-            setNotice("");
-            setCreating(true);
-          }} unit={unit} />
+          <UnitAddMenu disabled={refreshing || Boolean(creating) || Boolean(selection)} onAddPerson={(trigger) => openCreate("person", trigger)} onAddPosition={(trigger) => openCreate("position", trigger)} unit={unit} />
         </div>
       </div>
       <p aria-live="polite" className="mt-2 text-sm text-[var(--workspace-accent)]" role="status">{refreshing ? "Updating the roster…" : notice}</p>
@@ -251,8 +254,12 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
         setSelection(null);
         if (refresh) startRefresh(() => router.refresh());
       }} onSaved={saved} position={selection.position} /> : null}
-      {creating ? <UnitPositionCreatePanel data={data} onClose={(refresh) => {
-        setCreating(false);
+      {creating === "position" ? <UnitPositionCreatePanel data={data} onClose={(refresh) => {
+        setCreating(null);
+        if (refresh) startRefresh(() => router.refresh());
+      }} onSaved={(message) => { setNotice(message); startRefresh(() => router.refresh()); }} refreshing={refreshing} unit={unit} /> : null}
+      {creating === "person" ? <UnitPersonCreatePanel data={data} onClose={(refresh) => {
+        setCreating(null);
         if (refresh) startRefresh(() => router.refresh());
       }} onSaved={(message) => { setNotice(message); startRefresh(() => router.refresh()); }} refreshing={refreshing} unit={unit} /> : null}
     </section>

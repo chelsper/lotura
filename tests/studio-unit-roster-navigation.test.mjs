@@ -48,6 +48,7 @@ const { UnitRoster } = await load("app/studio/unit-roster.tsx", {
   "./unit-roster-editor": { UnitRosterEditor: () => { throw new Error("The editor must remain closed until a person chooses Edit"); } },
   "./unit-responsibilities-panel": { UnitResponsibilitiesPanel: () => { throw new Error("Responsibilities must remain closed until explicitly opened"); } },
   "./unit-position-create-panel": { UnitPositionCreatePanel: () => { throw new Error("Job creation must remain closed until explicitly opened"); } },
+  "./unit-person-create-panel": { UnitPersonCreatePanel: () => { throw new Error("Person creation must remain closed until explicitly opened"); } },
 });
 const { StudioStructureDetail } = await load("app/studio/studio-structure-detail.tsx", {
   "./organization-navigation": { OrganizationNavigation },
@@ -126,6 +127,22 @@ test("global navigation uses job-title and responsibility labels without changin
   assertHref(html, "/studio/organization?view=positions");
   assertHref(html, "/studio/responsibilities");
   assert.doesNotMatch(html, /unit=|All units/);
+});
+
+test("Person menu choice opens in place when supplied, closes its menu, and honors disabled state", async () => {
+  const details = { open: true }, calls = [];
+  const { UnitAddMenu: Menu } = await load("app/studio/unit-add-menu.tsx", { react: { ...React, useRef: () => ({ current: details }) } });
+  const props = { unit, onAddPerson: trigger => calls.push(trigger) };
+  function nodes(node) { return !node || typeof node !== "object" ? [] : Array.isArray(node) ? node.flatMap(nodes) : [node, ...nodes(node.props?.children)]; }
+  const tree = Menu(props), html = renderToStaticMarkup(tree);
+  assert.doesNotMatch(html, /href="\/studio\/organization\/people\/new/);
+  assertHref(html, "/studio/organization/positions/new?unit=unit-a");
+  const choice = nodes(tree).find(node => node.type === "button"), trigger = {};
+  choice.props.onClick({ currentTarget: trigger });
+  assert.equal(calls[0], trigger); assert.equal(details.open, false);
+  const disabled = nodes(Menu({ ...props, disabled: true })).find(node => node.type === "button");
+  assert.equal(disabled.props.disabled, true);
+  disabled.props.onClick({ currentTarget: trigger }); assert.equal(calls.length, 1);
 });
 
 test("Unit navigation keeps exact scope in each destination and supplies an unscoped escape", () => {
@@ -207,7 +224,7 @@ test("roster preserves documented vacancy and not-established distinctions witho
   assert.equal([...html.matchAll(/Not yet recorded/g)].length, 3);
   assert.equal([...html.matchAll(/>Add person<\/button>/g)].length, 2);
   assert.equal([...html.matchAll(/>Set manager<\/button>/g)].length, 2);
-  assert.match(html, /people and managers can wait/);
+  assert.match(html, /fill in the rest when you’re ready/);
   assert.equal(JSON.stringify([vacant, unknown]), before, "friendly labels must not change vacancy evidence or assignments");
   const rosterTable = html.slice(html.indexOf("<table"), html.indexOf("</table>"));
   assert.doesNotMatch(rosterTable, /Fictional Alex|\/studio\/organization\/people\//);

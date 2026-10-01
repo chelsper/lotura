@@ -273,7 +273,7 @@ test("optional assignment keeps exact Person, Position and revision; occupied ti
   const { AssignmentForm } = await load("app/studio/organization/unit-person-placement.tsx", {
     "../../organization/structure-administration-panel": { ChangeMetadataFields: Box },
   }, previous, "\nexport { AssignmentForm };\n");
-  const position = { id: "local-position", title: "Coordinator", revision: "fictional-revision", assignments: [] };
+  const position = { id: "local-position", title: "Coordinator", status: "active", revision: "fictional-revision", assignments: [] };
   const html = render(AssignmentForm, { person, position, onPendingChange: neverCall });
   for (const [name, value] of [["personStableKey", person.id], ["positionStableKey", position.id], ["expectedRevision", position.revision]]) {
     assert.match(html, new RegExp(`<input(?=[^>]*name="${name}")(?=[^>]*value="${value}")[^>]*>`));
@@ -293,7 +293,7 @@ test("optional assignment success prevents repeats and failure explains that the
       react: { ...React, useState: initial => [initial && typeof initial === "object" && "status" in initial ? state : initial, neverCall] },
       "../../organization/structure-administration-panel": { ChangeMetadataFields: Box },
     }, state, "\nexport { AssignmentForm };\n");
-    const html = render(AssignmentForm, { person, position: { id: "local-position", revision: "fictional-revision", assignments: [] }, onPendingChange: neverCall });
+    const html = render(AssignmentForm, { person, position: { id: "local-position", status: "active", revision: "fictional-revision", assignments: [] }, onPendingChange: neverCall });
     assert.match(html, /aria-live="polite"/);
     if (state.status === "success") {
       assert.match(html, /<fieldset[^>]*disabled=""/);
@@ -317,7 +317,7 @@ test("optional assignment invokes only the existing assignment action and expose
       "../../organization/structure-administration-panel": { ChangeMetadataFields: Box },
       "../../organization/actions": { establishPositionAssignmentAction: async (_prior, payload) => { mutations.push(payload); await gate; if (throws) throw new Error("Transport failed"); return { status: "success", message: "Saved" }; } },
     }, previous, "\nexport { AssignmentForm };\n", { FormData: class { constructor(input) { return input; } } });
-    const element = AssignmentForm({ person, position: { id: "local-position", revision: "revision", assignments: [] }, onPendingChange: value => events.push(["pending", value]), onSaved: () => events.push(["saved", true]) });
+    const element = AssignmentForm({ person, position: { id: "local-position", status: "active", revision: "revision", assignments: [] }, onPendingChange: value => events.push(["pending", value]), onSaved: () => events.push(["saved", true]), onSaveUnconfirmed: () => events.push(["parentUnconfirmed", true]), onDirty: neverCall });
     assert.equal(mutations.length, 0);
     const payload = form({ personStableKey: person.id, positionStableKey: "local-position", expectedRevision: "revision", assignmentType: "backup" });
     const event = { preventDefault() {}, currentTarget: payload };
@@ -333,6 +333,7 @@ test("optional assignment invokes only the existing assignment action and expose
       assert.equal(state.status, "error");
       assert.match(state.message, /Refresh this page before trying again/);
       assert.deepEqual(events[2], ["unconfirmed", true]);
+      assert.ok(events.some(([name]) => name === "parentUnconfirmed"));
       assert.equal(events.some(([name]) => name === "saved"), false);
     } else {
       assert.equal(state.status, "success");

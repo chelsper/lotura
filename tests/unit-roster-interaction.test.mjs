@@ -64,6 +64,7 @@ function harness(currentUnit = unit) {
       if (id === "./unit-roster-editor") return { UnitRosterEditor: "editor" };
       if (id === "./unit-responsibilities-panel") return { UnitResponsibilitiesPanel: "responsibilities" };
       if (id === "./unit-position-create-panel") return { UnitPositionCreatePanel: "create-position" };
+      if (id === "./unit-person-create-panel") return { UnitPersonCreatePanel: "create-person" };
       if (id === "./unit-add-menu") return { UnitAddMenu: "add-menu" };
       if (id === "./unit-at-a-glance") return { UnitAtAGlance: "unit-summary" };
       throw new Error(`Unexpected dependency: ${id}`);
@@ -93,6 +94,48 @@ function harness(currentUnit = unit) {
     get summaryFocusCalls() { return summaryFocusCalls; },
   };
 }
+
+test("the Unit menu opens person creation locally, preserves it on refresh and prevents overlapping editors", () => {
+  const h = harness(), trigger = { closest: () => null, focus() {} };
+  const data = { people: [], positions: [position], units: [unit] };
+  find(h.roster(data), node => node.type === "add-menu").props.onAddPerson(trigger);
+  const create = find(h.roster(data), node => node.type === "create-person");
+  assert.equal(create.props.data, data);
+  assert.equal(create.props.unit, unit);
+  assert.equal(h.refreshes, 0);
+  const menu = find(h.roster(data), node => node.type === "add-menu");
+  assert.equal(menu.props.disabled, true);
+  menu.props.onAddPosition(trigger);
+  assert.equal(find(h.roster(data), node => node.type === "create-position"), undefined);
+  h.open("person", data);
+  assert.equal(h.panel(h.roster(data)), undefined);
+  create.props.onSaved("Person saved in People.");
+  assert.equal(h.refreshes, 1);
+  assert.ok(find(h.roster(data), node => node.type === "create-person"));
+  const fresh = { ...data, people: [{ id: "person-a" }] };
+  assert.equal(find(h.roster(fresh), node => node.type === "create-person").props.data, fresh);
+  create.props.onClose(true);
+  assert.equal(find(h.roster(fresh), node => node.type === "create-person"), undefined);
+  assert.equal(h.refreshes, 2);
+});
+
+test("person creation is blocked for inactive Units and while refreshing", () => {
+  for (const inactive of [false, true]) {
+    const h = harness(inactive ? { ...unit, status: "inactive" } : unit);
+    h.setRefreshing(!inactive);
+    find(h.roster(), node => node.type === "add-menu").props.onAddPerson({ closest: () => null });
+    assert.equal(find(h.roster(), node => node.type === "create-person"), undefined);
+  }
+});
+
+test("closing person panel restores focus to the visible Add menu", () => {
+  const h = harness(); let focused = 0;
+  const summary = { isConnected: true, focus() { focused++; } };
+  find(h.roster(), node => node.type === "add-menu").props.onAddPerson({ closest: () => ({ querySelector: () => summary }) });
+  find(h.roster(), node => node.type === "create-person").props.onClose(false);
+  h.roster(); h.effects.at(-1)();
+  assert.equal(focused, 1); assert.equal(h.refreshes, 0);
+});
 
 test("the Unit menu opens local job creation with current data; saving refreshes and announces without closing it", () => {
   const h = harness();
