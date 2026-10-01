@@ -3,6 +3,7 @@ import "server-only";
 import { neon } from "@neondatabase/serverless";
 
 import { requireWorkspaceAccess } from "./authentication";
+import { isPositionWorkDiscovery, POSITION_WORK_PROMPT_POLICY_VERSION } from "./position-work-discovery-model.mjs";
 import { fingerprintAssistanceValue } from "./discovery-assistance-model.mjs";
 import { resolveNonConfidentialPilotConfiguration } from "./discovery-assistance-non-confidential-pilot.mjs";
 import {
@@ -357,7 +358,7 @@ async function preserveTurn(
       result.nextQuestion.promptKey,
       provider.providerKey,
       provider.modelIdentifier,
-      DISCOVERY_INQUIRY_ANALYST_PROMPT_POLICY_VERSION,
+      isPositionWorkDiscovery(analystContext) ? POSITION_WORK_PROMPT_POLICY_VERSION : DISCOVERY_INQUIRY_ANALYST_PROMPT_POLICY_VERSION,
       fingerprintAssistanceValue({ analystContext, focus }),
       focus,
       JSON.stringify(result),

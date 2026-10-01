@@ -229,7 +229,7 @@ export default async function DiscoveryInquiryPage({
                       </p>
                       {route.routeNote ? (
                         <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
-                          {route.routeNote}
+                          {route.routeNote.startsWith("position-work:v1:") ? "Started from a job title. The description is saved as interview notes, not an assignment." : route.routeNote}
                         </p>
                       ) : null}
                       <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">

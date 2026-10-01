@@ -20,7 +20,7 @@ export default async function StudioPositionPage({
   if (!position) notFound();
   return (
     <WorkspaceShell activeView="studio" asOf={asOf} configuration={configuration} source={source}>
-      <StudioStructureDetail changes={changes} data={data} entity={position} entityType="position" />
+      <StudioStructureDetail changes={changes} data={data} entity={position} entityType="position" workDiscoveryEnabled={experience.discovery.enabled} />
     </WorkspaceShell>
   );
 }

@@ -197,6 +197,7 @@ export function DiscoveryAnalystInterview({
   sessionId,
   sessionKind = "process",
   turn,
+  workDiscovery = false,
 }: {
   inquiryId?: string;
   observations: DiscoveryObservationRecord[];
@@ -206,6 +207,7 @@ export function DiscoveryAnalystInterview({
   sessionId: string;
   sessionKind?: "inquiry" | "process";
   turn: DiscoveryAnalystTurnRecord | null;
+  workDiscovery?: boolean;
 }) {
   const inquiryMode = sessionKind === "inquiry";
   const [answerState, answerAction, answerPending] = useActionState(
@@ -494,7 +496,7 @@ export function DiscoveryAnalystInterview({
                 <SummaryList
                   empty="Lotura has not marked anything clear yet."
                   items={turn.snapshot.clear}
-                  title="What seems clear"
+                  title={workDiscovery && turn.providerKey === "openai" ? "Possible responsibility areas · For review" : "What seems clear"}
                 />
                 <SummaryList
                   empty="No additional participant has been identified yet."

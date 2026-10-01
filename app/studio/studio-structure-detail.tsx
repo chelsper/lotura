@@ -66,11 +66,13 @@ export function StudioStructureDetail({
   data,
   entity,
   entityType,
+  workDiscoveryEnabled = false,
 }: {
   changes: StructureChangeSummary[];
   data: OrganizationStructureData;
   entity: StudioEntity;
   entityType: StructureEntityType;
+  workDiscoveryEnabled?: boolean;
 }) {
   const presentation = entityPresentation(entity, entityType);
   const hierarchyPath =
@@ -146,6 +148,18 @@ export function StudioStructureDetail({
 
       {entityType === "position" ? (
         <PositionConnections position={entity as OrganizationPosition} />
+      ) : null}
+
+      {entityType === "position" && entity.status === "active" && workDiscoveryEnabled ? (
+        <Card className="mt-6 flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center">
+          <div>
+            <h2 className="text-base font-semibold text-[var(--text)]">What does this job involve?</h2>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">Describe the work first. Sort out responsibilities and processes with Lotura.</p>
+          </div>
+          <Link className="shrink-0 rounded-lg bg-[var(--workspace-accent)] px-4 py-3 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]" href={`/studio/organization/positions/${encodeURIComponent(entity.id)}/describe-work`}>
+            Help me describe this work →
+          </Link>
+        </Card>
       ) : null}
 
       {entityType === "person" && (entity as OrganizationPerson).assignments.length > 0 ? (

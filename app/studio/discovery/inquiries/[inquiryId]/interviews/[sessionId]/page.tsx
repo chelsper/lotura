@@ -8,6 +8,7 @@ import {
 } from "@/lib/discovery-inquiry-questions.mjs";
 import { buildInquiryKnownContext } from "@/lib/discovery-known-context.mjs";
 import { loadWorkspaceExperience } from "@/lib/workspace-experience";
+import { isPositionWorkDiscovery } from "@/lib/position-work-discovery-model.mjs";
 
 import { Alert, Badge, Button, Card } from "../../../../../../ui/primitives";
 import {
@@ -61,6 +62,7 @@ export default async function DiscoveryInquiryInterviewPage({
     sessionId,
   );
   if (!session) notFound();
+  const workDiscovery = isPositionWorkDiscovery({ sessionKind: "inquiry", scopeStatement: session.scopeStatement });
   const latestReview = session.status === "closed"
     ? await loadDiscoveryInquiryReview(
         experience.discovery.organizationId,
@@ -133,8 +135,8 @@ export default async function DiscoveryInquiryInterviewPage({
       source={experience.source}
     >
       <WorkspacePageHeader
-        description={session.scopeStatement}
-        eyebrow={<>Question-first discovery · Saved answers</>}
+        description={workDiscovery ? "Your starting description is saved. Continue with Lotura, correct its understanding, or pause whenever you like." : session.scopeStatement}
+        eyebrow={workDiscovery ? "Work discovery · Saved interview notes" : <>Question-first discovery · Saved answers</>}
         stats={session.analystEnabled
           ? [
               { label: "Answers saved", value: session.observations.length },
@@ -251,6 +253,7 @@ export default async function DiscoveryInquiryInterviewPage({
           sessionId={session.id}
           sessionKind="inquiry"
           turn={analystTurn}
+          workDiscovery={workDiscovery}
         />
       ) : question && session.status === "in_progress" && knownContext ? (
         <section className="mt-6 space-y-5">
