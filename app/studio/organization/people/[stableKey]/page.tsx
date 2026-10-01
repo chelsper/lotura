@@ -19,7 +19,7 @@ export default async function StudioPersonPage({
   const person = data.people.find((item) => item.id === stableKey);
   if (!person) notFound();
   return (
-    <WorkspaceShell activeView="studio" asOf={asOf} configuration={configuration} source={source}>
+    <WorkspaceShell activeView="organization" asOf={asOf} configuration={configuration} source={source}>
       <StudioStructureDetail changes={changes} data={data} entity={person} entityType="person" />
     </WorkspaceShell>
   );

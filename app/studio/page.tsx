@@ -4,8 +4,8 @@ import { connection } from "next/server";
 
 import { loadKnowledgeGapsExperience } from "@/lib/organization-structure-experience";
 
-import { ArrowIcon, LayersIcon, OrganizationIcon, RoleIcon, SystemIcon } from "../ui/icons";
-import { Badge, Card } from "../ui/primitives";
+import { ArrowIcon, LayersIcon, OrganizationIcon, SystemIcon } from "../ui/icons";
+import { Card } from "../ui/primitives";
 import { WorkspacePageHeader, WorkspaceShell } from "../workspace-shell";
 
 export default async function WorkspaceStudioPage() {
@@ -23,7 +23,7 @@ export default async function WorkspaceStudioPage() {
       source={source}
     >
       <WorkspacePageHeader
-        description="Build and govern the connected representation of how this organization is structured, how responsibility is allocated, how work operates, and which technology supports it."
+        description="Build on what the organization knows. Document work, explore questions, and review proposed changes."
         eyebrow={
           <>
             <LayersIcon className="size-3.5" />
@@ -32,39 +32,41 @@ export default async function WorkspaceStudioPage() {
         }
         stats={[
           { label: "People", value: data.people.length },
-          { label: "Positions", value: data.positions.length },
+          { label: "Job titles", value: data.positions.length },
           { label: "Units", value: data.units.length },
-          { label: "Roles", value: data.operationalRoles.length },
+          { label: "Responsibilities", value: data.operationalRoles.length },
         ]}
         title="Workspace Studio"
       />
 
       <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-5">
-          <Link
-            className="group block rounded-[14px] border border-[var(--workspace-accent-border)] bg-[var(--workspace-accent-subtle)] p-5 transition-colors hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)] sm:p-6"
-            href="/studio/organization"
-          >
+          <Card className="border-[var(--workspace-accent-border)] p-5 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <Badge tone="accent">Available now</Badge>
-                <p className="mt-4 flex items-center gap-2 text-xs font-medium text-[var(--workspace-accent)]">
-                  <OrganizationIcon className="size-4" /> Organization Builder
+                <p className="flex items-center gap-2 text-xs font-medium text-[var(--workspace-accent)]">
+                  <OrganizationIcon className="size-4" /> Organization
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-[-0.035em] text-[var(--text)]">
-                  Build the organization’s structural foundation
+                  People, job titles, and their work
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
-                  Add and maintain Organization Units, Positions, People, Position Assignments, reporting relationships, and the existing bridge to Operational Roles.
+                  Start with a team or a person. Keep job titles, reporting lines, and responsibilities connected.
                 </p>
               </div>
-              <ArrowIcon className="mt-1 size-5 shrink-0 text-[var(--workspace-accent)] transition-transform group-hover:translate-x-1" />
             </div>
-          </Link>
+            <nav aria-label="Organization shortcuts" className="mt-5 grid gap-2 sm:grid-cols-2">
+              {[
+                ["Units", "/studio/organization?view=units"],
+                ["People", "/studio/organization?view=people"],
+                ["Job titles", "/studio/organization?view=positions"],
+                ["Responsibilities", "/studio/responsibilities"],
+              ].map(([label, href]) => <Link className="flex items-center justify-between rounded-lg border border-[var(--border)] px-4 py-3 text-sm font-medium text-[var(--workspace-accent)] hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]" href={href} key={href}>{label}<ArrowIcon className="size-4" /></Link>)}
+            </nav>
+          </Card>
 
           <div className="grid gap-4 md:grid-cols-2">
             {[
-              { icon: RoleIcon, title: "Responsibilities", description: "Create and maintain Operational Roles, Position mandates, and explicit human coverage.", href: "/studio/responsibilities" },
               { icon: LayersIcon, title: "Processes", description: "Find, start, and maintain Draft Processes through the existing authoring boundary.", href: "/studio/processes" },
               { icon: LayersIcon, title: "Process Families", description: "Group related Processes explicitly without creating inheritance, dependency, or approval.", href: "/studio/process-families" },
               { icon: SystemIcon, title: "Technology", description: "Maintain Systems and review the Processes that explicitly document their use.", href: "/studio/technology" },

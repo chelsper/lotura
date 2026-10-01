@@ -6,7 +6,6 @@ import { loadWorkspaceStudioExperience } from "@/lib/organization-structure-expe
 
 import { OrganizationBrowser } from "../../organization/organization-browser";
 import { OrganizationIcon } from "../../ui/icons";
-import { Alert } from "../../ui/primitives";
 import { WorkspacePageHeader, WorkspaceShell } from "../../workspace-shell";
 import { OrganizationNavigation } from "../organization-navigation";
 
@@ -31,13 +30,13 @@ export default async function OrganizationBuilderPage({
 
   return (
     <WorkspaceShell
-      activeView="studio"
+      activeView="organization"
       asOf={asOf}
       configuration={configuration}
       source={source}
     >
       <WorkspacePageHeader
-        description={unit ? "People and job titles recorded directly in this Unit. Child Units have their own lists." : "Find people, job titles, and Organization Units. Open a record to see its connections or make an update."}
+        description={unit ? "People and job titles in this Unit. Child Units have their own lists." : "Find a Unit, person, or job title. Open it to see connections or make an update."}
         eyebrow={
           <>
             <OrganizationIcon className="size-3.5" />
@@ -49,21 +48,22 @@ export default async function OrganizationBuilderPage({
           { label: "Job titles", value: positions.length },
           ...(!unit ? [{ label: "Units", value: data.units.length }] : []),
         ]}
-        title={unit?.name ?? "Organization Builder"}
+        title={unit?.name ?? "Organization"}
       />
 
       <OrganizationNavigation activeView={view} preserveScroll unit={unit} />
 
-      <div className="mt-5 flex flex-wrap gap-2">
-        <Link className={actionClass} href="/studio/organization/units/new">Add Organization Unit</Link>
-        <Link className={actionClass} href="/studio/organization/positions/new">Add Position</Link>
-        <Link className={actionClass} href="/studio/organization/people/new">Add Person</Link>
-      </div>
-      <Alert className="mt-5" tone="info">
-        Start with the people and job titles you know. You can add responsibilities and other connections later.
-      </Alert>
+      {!unit || unit.status === "active" ? <div className="mt-5 flex flex-wrap gap-2">
+        <Link className={actionClass} href={`/studio/organization/units/new${unit ? `?parent=${encodeURIComponent(unit.id)}` : ""}`}>{unit ? "Add child Unit" : "Add Unit"}</Link>
+        <Link className={actionClass} href={`/studio/organization/people/new${unit ? `?unit=${encodeURIComponent(unit.id)}` : ""}`}>Add person</Link>
+        <Link className={actionClass} href={`/studio/organization/positions/new${unit ? `?unit=${encodeURIComponent(unit.id)}` : ""}`}>Add job title</Link>
+      </div> : null}
 
       <OrganizationBrowser basePath="/studio/organization" data={data} selectedView={view} unitId={unit?.id} />
+      <details className="mt-5 rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm">
+        <summary className="cursor-pointer font-medium text-[var(--text-secondary)]">About this view</summary>
+        <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">Start with the people and job titles you know. Add responsibilities and other connections when you are ready. Recording a job title or reporting line does not assign responsibility or Process ownership.</p>
+      </details>
     </WorkspaceShell>
   );
 }

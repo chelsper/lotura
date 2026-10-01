@@ -19,7 +19,7 @@ export default async function NewOrganizationUnitPage({
   const parent = data.units.find((unit) => unit.id === requestedParent && unit.status === "active");
   if (requestedParent !== undefined && !parent) notFound();
   return (
-    <WorkspaceShell activeView="studio" asOf={asOf} configuration={configuration} source={source}>
+    <WorkspaceShell activeView="organization" asOf={asOf} configuration={configuration} source={source}>
       <StudioCreatePage
         data={data}
         entityType="organization_unit"

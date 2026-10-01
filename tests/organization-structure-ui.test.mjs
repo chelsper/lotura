@@ -70,7 +70,7 @@ test("the UI preserves the four structural distinctions and approved trust langu
     "Reporting relationships describe structure; they do not assign Process ownership",
     "A Person in the organizational model is not necessarily a Lotura User",
     "Source evidence does not by itself establish organizational truth",
-    "Position is structural. Operational Role is responsibility. Person is current human coverage.",
+    "Job titles, responsibilities, and people stay connected, but each is a separate record.",
   ]) {
     assert.match(combined, new RegExp(copy.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }

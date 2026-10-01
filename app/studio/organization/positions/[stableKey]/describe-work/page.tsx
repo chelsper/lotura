@@ -16,7 +16,7 @@ export default async function PositionWorkDiscoveryPage({ params }: {
   const position = experience.data.positions.find((item) => item.id === stableKey && item.status === "active");
   if (!position) notFound();
   return (
-    <WorkspaceShell activeView="studio" asOf={experience.asOf} configuration={experience.configuration} source={experience.source}>
+    <WorkspaceShell activeView="organization" asOf={experience.asOf} configuration={experience.configuration} source={experience.source}>
       <div className="mx-auto max-w-3xl">
         <Link className="text-sm text-[var(--workspace-accent)] hover:underline" href={`/studio/organization/positions/${encodeURIComponent(position.id)}`}>
           ← Back to {position.title}

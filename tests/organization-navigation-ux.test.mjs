@@ -101,37 +101,42 @@ test("shared browser respects the Studio view without removing public browse con
   const studioHtml = renderToStaticMarkup(React.createElement(OrganizationBrowser, { basePath: "/studio/organization", data, selectedView: "people" }));
   assert.match(studioHtml, /Fictional Person/);
   assert.match(studioHtml, /href="\/studio\/organization\/people\/person-id"/);
-  assert.doesNotMatch(studioHtml, /role="tablist"/);
+  assert.doesNotMatch(studioHtml, /aria-label="Organization browser views"/);
   const browseHtml = renderToStaticMarkup(React.createElement(OrganizationBrowser, { data }));
-  assert.match(browseHtml, /role="tablist"/);
+  assert.match(browseHtml, /<nav aria-label="Organization browser views"/);
+  assert.match(browseHtml, /href="\/organization\?view=people"/);
   assert.doesNotMatch(browseHtml, /\/studio\//);
   const source = await read("app/organization/organization-browser.tsx");
-  assert.match(source, /const view = selectedView \?\? localView/);
+  assert.match(source, /const view = selectedView \?\? "units"/);
+  assert.doesNotMatch(source, /localView|setView/);
   assert.match(source, /const \[query, setQuery\] = useState\(""\)/);
   assert.doesNotMatch(source, /useEffect|setQuery\(""\)/);
 });
 
 test("Position connections use existing Unit, Person, Role, and manager identities only", async () => {
   const { OrganizationNavigation } = await load("app/studio/organization-navigation.tsx");
+  const { StructureEditingDisclosure } = await load("app/studio/structure-editing-disclosure.tsx");
   const { StudioStructureDetail } = await load("app/studio/studio-structure-detail.tsx", {
     "@/lib/organization-unit-hierarchy.mjs": { organizationUnitPath: () => [] },
     "../organization/structure-administration-panel": { StructureAdministrationPanel: Box },
     "../organization/unit-hierarchy-context": { UnitHierarchyContext: Box },
     "./organization-navigation": { OrganizationNavigation },
     "./unit-roster": { UnitRoster: Box },
+    "./structure-editing-disclosure": { StructureEditingDisclosure },
   });
   const position = {
     id: "position-id", title: "Coordinator", status: "active", occupancy: { label: "Occupied" },
     unit: { id: "unit-id", name: "Services" },
-    assignments: [{ typeLabel: "Permanent", person: { id: "person-id", name: "Fictional Person" } }],
-    mandates: [{ role: { stableKey: "role-id", name: "Request triage" } }, { role: { stableKey: null, name: "Unidentified role" } }],
+    assignments: [{ id: "assignment-a", typeLabel: "Permanent", person: { id: "person-id", name: "Fictional Person" } }],
+    mandates: [{ id: "mandate-a", processes: [], role: { stableKey: "role-id", name: "Request triage" } }, { id: "mandate-b", processes: [], role: { stableKey: null, name: "Unidentified role" } }],
     primaryManager: { position: { id: "manager-id", title: "Manager" } },
   };
   const html = renderToStaticMarkup(React.createElement(StudioStructureDetail, { changes: [], data: { units: [] }, entity: position, entityType: "position" }));
   for (const href of ["/studio/organization/units/unit-id", "/studio/organization/people/person-id", "/studio/responsibilities/roles/role-id?unit=unit-id", "/studio/organization/positions/manager-id"]) {
     assert.ok(html.includes(`href="${href}"`));
   }
-  assert.doesNotMatch(html, /roles\/null|roles\/undefined|Unidentified role/);
+  assert.doesNotMatch(html, /roles\/null|roles\/undefined/);
+  assert.match(html, /Unidentified role/);
 });
 
 test("responsibility cards retain Unit context without presenting shared Process counts as Unit membership", async () => {

@@ -20,7 +20,7 @@ export default async function NewPersonPage({
   const person = data.people.find((item) => item.id === query.person && item.status === "active");
   if ((query.unit !== undefined && !unit) || (query.person !== undefined && (!unit || !person))) notFound();
   return (
-    <WorkspaceShell activeView="studio" asOf={asOf} configuration={configuration} source={source}>
+    <WorkspaceShell activeView="organization" asOf={asOf} configuration={configuration} source={source}>
       <StudioCreatePage data={data} entityType="person" initialUnitStableKey={unit?.id} savedPerson={person} />
     </WorkspaceShell>
   );

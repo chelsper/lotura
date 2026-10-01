@@ -35,7 +35,7 @@ export default async function OperationalRolePage({
   }
 
   return (
-    <WorkspaceShell activeView="studio" asOf={asOf} configuration={configuration} source={source}>
+    <WorkspaceShell activeView="organization" asOf={asOf} configuration={configuration} source={source}>
       <div className="mx-auto max-w-6xl">
         <OrganizationNavigation activeView="roles" unit={unit} />
         <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-tertiary)]">

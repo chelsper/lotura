@@ -38,11 +38,13 @@ export function PositionDetail({
   data,
   position,
   processAcquisitionEnabled,
+  workDiscoveryEnabled = false,
 }: {
   administrationEnabled: boolean;
   data: OrganizationStructureData;
   position: OrganizationPosition;
   processAcquisitionEnabled: boolean;
+  workDiscoveryEnabled?: boolean;
 }) {
   return (
     <div className="mx-auto max-w-6xl">
@@ -81,9 +83,9 @@ export function PositionDetail({
         </p>
         <div className="mt-5 grid gap-px overflow-hidden rounded-[12px] border border-[var(--border)] bg-[var(--border)] sm:grid-cols-3">
           {[
-            ["Position", "Durable structural seat"],
-            ["Operational Role", "Durable responsibility"],
-            ["Person", "Current human coverage"],
+            ["Job title", "Where someone sits"],
+            ["Responsibility", "What they look after"],
+            ["Person", "Who holds the job"],
           ].map(([label, description]) => (
             <div className="bg-[var(--surface-subtle)] p-3.5" key={label}>
               <p className="text-xs font-semibold text-[var(--text)]">{label}</p>
@@ -92,10 +94,15 @@ export function PositionDetail({
           ))}
         </div>
         <p className="mt-3 text-xs leading-5 text-[var(--text-secondary)]">
-          Position is structural. Operational Role is responsibility. Person is current human coverage.
+          Job titles, responsibilities, and people stay connected, but each is a separate record.
         </p>
         {administrationEnabled ? (
           <div className="mt-4 flex flex-wrap items-center gap-4">
+            {workDiscoveryEnabled && position.status === "active" ? (
+              <Link className="inline-flex rounded-lg bg-[var(--workspace-accent)] px-4 py-3 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]" href={`/studio/organization/positions/${encodeURIComponent(position.id)}/describe-work`}>
+                Help me describe this work →
+              </Link>
+            ) : null}
             <Link
               className="inline-flex rounded-lg border border-[var(--workspace-accent-border)] bg-[var(--workspace-accent-subtle)] px-3 py-2 text-sm font-medium text-[var(--workspace-accent)] hover:underline"
               href={`/studio/organization/positions/${encodeURIComponent(position.id)}#edit-position`}
@@ -106,7 +113,7 @@ export function PositionDetail({
               className="inline-flex text-xs font-medium text-[var(--workspace-accent)] hover:underline"
               href={`/studio/organization/positions/${encodeURIComponent(position.id)}`}
             >
-              Maintain in Workspace Studio →
+              Open job workspace →
             </Link>
           </div>
         ) : null}
@@ -116,8 +123,8 @@ export function PositionDetail({
         <Card className="p-4 sm:p-5">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="text-xs font-medium text-[var(--text-tertiary)]">Position assignments</p>
-              <h2 className="mt-1 text-lg font-semibold text-[var(--text)]">Current occupants and coverage</h2>
+              <p className="text-xs font-medium text-[var(--text-tertiary)]">People</p>
+              <h2 className="mt-1 text-lg font-semibold text-[var(--text)]">Who holds this job?</h2>
             </div>
             <span className="text-xs tabular-nums text-[var(--text-tertiary)]">{position.assignments.length}</span>
           </div>
@@ -158,7 +165,7 @@ export function PositionDetail({
           <RoleIcon className="size-3.5" /> Operating-model responsibility
         </p>
         <h2 className="mt-1 text-2xl font-semibold tracking-[-0.035em] text-[var(--text)]" id="responsibility">
-          Operational Roles held by this Position
+          Responsibilities linked to this job
         </h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
           Role mandates connect the structural Position to durable operational

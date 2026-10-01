@@ -45,7 +45,7 @@ function deepFreeze(value) {
 }
 deepFreeze(fixture);
 
-async function render(props = {}, { query = "", view = "units" } = {}) {
+async function render(props = {}, { query = "" } = {}) {
   const source = await readFile(new URL("../app/organization/organization-browser.tsx", import.meta.url), "utf8");
   const code = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
@@ -54,8 +54,8 @@ async function render(props = {}, { query = "", view = "units" } = {}) {
   const loaded = { exports: {} };
   let stateIndex = 0;
   vm.runInNewContext(code, { module: loaded, exports: loaded.exports, require(id) {
-    if (id === "react") return { ...React, useState(initial) { const value = stateIndex === 0 ? view : stateIndex === 1 ? query : initial; stateIndex += 1; return [value, () => {}]; } };
-    if (id === "next/link") return { default: ({ children, ...props }) => React.createElement("a", props, children) };
+    if (id === "react") return { ...React, useState(initial) { const value = stateIndex === 0 ? query : initial; stateIndex += 1; return [value, () => {}]; } };
+    if (id === "next/link") return { default: ({ children, scroll, ...props }) => { void scroll; return React.createElement("a", props, children); } };
     if (id === "@/lib/organization-unit-hierarchy.mjs") return hierarchy;
     if (id.endsWith("ui/icons")) return { ArrowIcon: () => null, OrganizationIcon: () => null, RoleIcon: () => null };
     if (id.endsWith("ui/primitives")) return {
@@ -128,7 +128,8 @@ test("unscoped public browsing retains all relationships, sidebar, search, and s
   const roleSearch = await render({ selectedView: "people" }, { query: "Local operational responsibility" });
   assert.match(roleSearch, /Fictional Role-only Person/);
   const tabs = await render();
-  assert.match(tabs, /role="tablist"/);
-  assert.match(tabs, />Positions</);
-  assert.doesNotMatch(tabs, /Job titles|\/studio\//);
+  assert.match(tabs, /<nav aria-label="Organization browser views"/);
+  assert.match(tabs, /href="\/organization\?view=positions"/);
+  assert.match(tabs, />Job titles</);
+  assert.doesNotMatch(tabs, /\/studio\//);
 });

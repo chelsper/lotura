@@ -56,7 +56,7 @@ function UnitRow({
           {unit.isProvisional ? <Badge tone="warning">Provisional</Badge> : null}
         </div>
         <p className="mt-1 text-xs text-[var(--text-secondary)]">
-          {unit.positions.length} {unit.positions.length === 1 ? "Position" : "Positions"}
+          {unit.positions.length} {unit.positions.length === 1 ? "job title" : "job titles"}
           {` · ${unit.children.length} direct ${unit.children.length === 1 ? "child Unit" : "child Units"}`}
         </p>
         {hierarchyPath ? (
@@ -113,7 +113,7 @@ function UnitTreeNode({
               {node.unit.isProvisional ? <Badge tone="warning">Provisional</Badge> : null}
             </span>
             <span className="mt-1 block text-xs text-[var(--text-secondary)]">
-              {node.unit.positions.length} {node.unit.positions.length === 1 ? "Position" : "Positions"}
+              {node.unit.positions.length} {node.unit.positions.length === 1 ? "job title" : "job titles"}
               {` · ${node.children.length} direct ${node.children.length === 1 ? "child" : "children"}`}
               {node.descendantCount > node.children.length
                 ? ` · ${node.descendantCount} total descendants`
@@ -194,8 +194,7 @@ export function OrganizationBrowser({
   selectedView?: BrowserView;
   unitId?: string;
 }) {
-  const [localView, setView] = useState<BrowserView>("units");
-  const view = selectedView ?? localView;
+  const view = selectedView ?? "units";
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLocaleLowerCase();
 
@@ -235,10 +234,11 @@ export function OrganizationBrowser({
   );
 
   const tabs: Array<{ id: BrowserView; label: string; count: number }> = [
-    { id: "units", label: "Organization Units", count: results.units.length },
-    { id: "positions", label: basePath === "/studio/organization" ? "Job titles" : "Positions", count: results.positions.length },
+    { id: "units", label: "Units", count: results.units.length },
     { id: "people", label: "People", count: results.people.length },
+    { id: "positions", label: "Job titles", count: results.positions.length },
   ];
+  const unit = unitId ? data.units.find((item) => item.id === unitId) : undefined;
   const leadership = data.positions.filter(
     (position) => !position.primaryManager && position.directReports.length > 0,
   );
@@ -248,44 +248,47 @@ export function OrganizationBrowser({
       <Card className="overflow-hidden">
         <div className="border-b border-[var(--border)] p-4 sm:p-5">
           <SearchField
-            label={unitId ? "Search job titles and people in this Unit" : "Search Organization Units, Positions, and People"}
+            label={unitId ? "Search job titles and people in this Unit" : "Search Units, people, and job titles"}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder={unitId ? "Search job titles or people in this Unit" : "Search Units, Positions, people, or Roles"}
+            placeholder={unitId ? "Search job titles or people in this Unit" : "Search names, job titles, or responsibilities"}
             value={query}
           />
           {unitId ? <p className="mt-2 text-xs text-[var(--text-tertiary)]">Recorded in this Unit only; child Units are not included.</p> : null}
-          {!selectedView ? (
-            <div
-              aria-label="Organization browser views"
-              className="mt-4 flex gap-1 overflow-x-auto"
-              role="tablist"
-            >
-              {tabs.map((tab) => (
-                <button
-                  aria-selected={view === tab.id}
-                  className={cn(
-                    "flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]",
-                    view === tab.id
-                      ? "bg-[var(--workspace-accent-subtle)] text-[var(--workspace-accent)]"
-                      : "text-[var(--text-secondary)] hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]",
-                  )}
-                  key={tab.id}
-                  onClick={() => setView(tab.id)}
-                  role="tab"
-                  type="button"
-                >
-                  {tab.label}
-                  <span className="tabular-nums text-[var(--text-tertiary)]">
-                    {tab.count}
-                  </span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <p className="mt-3 text-xs text-[var(--text-secondary)]" aria-live="polite">
-              {tabs.find((tab) => tab.id === view)?.label} · {results[view].length} {results[view].length === 1 ? "match" : "matches"}
-            </p>
-          )}
+          {basePath === "/organization" ? (
+            <>
+              {unit ? <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <Link className="font-medium text-[var(--workspace-accent)] hover:underline" href={entityHref(basePath, "units", unit.id)}>In {unit.name}</Link>
+                <Link className="font-medium text-[var(--workspace-accent)] hover:underline" href={`${basePath}?view=units`}>All units →</Link>
+              </div> : null}
+              <nav
+                aria-label="Organization browser views"
+                className="mt-4 flex gap-1 overflow-x-auto"
+              >
+                {tabs.map((tab) => (
+                  <Link
+                    aria-current={view === tab.id ? "page" : undefined}
+                    className={cn(
+                      "flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]",
+                      view === tab.id
+                        ? "bg-[var(--workspace-accent-subtle)] text-[var(--workspace-accent)]"
+                        : "text-[var(--text-secondary)] hover:bg-[var(--surface-subtle)] hover:text-[var(--text)]",
+                    )}
+                    key={tab.id}
+                    href={unitId && tab.id === "units" ? entityHref(basePath, "units", unitId) : `${basePath}?view=${tab.id}${unitId ? `&unit=${encodeURIComponent(unitId)}` : ""}`}
+                    scroll={false}
+                  >
+                    {tab.label}
+                    {!(unitId && tab.id === "units") ? <span className="tabular-nums text-[var(--text-tertiary)]">
+                      {tab.count}
+                    </span> : null}
+                  </Link>
+                ))}
+              </nav>
+            </>
+          ) : null}
+          <p className="mt-3 text-xs text-[var(--text-secondary)]" aria-live="polite">
+            {tabs.find((tab) => tab.id === view)?.label} · {results[view].length} {results[view].length === 1 ? "match" : "matches"}
+          </p>
         </div>
 
         <div aria-live="polite">
@@ -323,7 +326,7 @@ export function OrganizationBrowser({
                     : view === "people"
                       ? "People appear here when they have a recorded Position assignment in this Unit."
                       : "Job titles appear here when a Position is assigned to this Unit."
-                  : "Try a broader name, title, Unit, or Operational Role."}
+                  : "Try another name, job title, Unit, or responsibility."}
               </EmptyState>
             </div>
           ) : null}

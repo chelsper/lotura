@@ -9,9 +9,9 @@ const destinations: Array<{
   label: string;
   href: string;
 }> = [
-  { id: "units", label: "Organization Units", href: "/studio/organization?view=units" },
-  { id: "positions", label: "Job titles", href: "/studio/organization?view=positions" },
+  { id: "units", label: "Units", href: "/studio/organization?view=units" },
   { id: "people", label: "People", href: "/studio/organization?view=people" },
+  { id: "positions", label: "Job titles", href: "/studio/organization?view=positions" },
   { id: "roles", label: "Responsibilities", href: "/studio/responsibilities" },
 ];
 

@@ -42,12 +42,14 @@ const common = {
 };
 const { PersonDetail } = await compile("app/organization/person-detail.tsx", common);
 const { PositionDetail } = await compile("app/organization/position-detail.tsx", common);
+const { StructureEditingDisclosure } = await compile("app/studio/structure-editing-disclosure.tsx", { react: React });
 const { StudioStructureDetail } = await compile("app/studio/studio-structure-detail.tsx", {
   ...common,
   "@/lib/organization-unit-hierarchy.mjs": { organizationUnitPath },
   "../organization/structure-administration-panel": { StructureAdministrationPanel: () => null },
   "../organization/unit-hierarchy-context": { UnitHierarchyContext: () => null },
   "./organization-navigation": { OrganizationNavigation: () => null },
+  "./structure-editing-disclosure": { StructureEditingDisclosure },
   "./unit-roster": { UnitRoster: () => null },
 });
 const fixture = buildOrganizationStructureData(
@@ -96,10 +98,25 @@ test("Position header links to its own stable editor even for a shared Position"
   assertNoNestedAnchors(html);
 });
 
+test("the work-discovery shortcut is visible from an authorized job context, never the public view", () => {
+  const position = fixture.positions.find(item => item.status === "active");
+  const props = { data: fixture, position, processAcquisitionEnabled: false };
+  const destination = `/studio/organization/positions/${encodeURIComponent(position.id)}/describe-work`;
+  const html = render(PositionDetail, { ...props, administrationEnabled: true, workDiscoveryEnabled: true });
+  assert.ok(hrefs(html).includes(destination));
+  assert.match(html, /Help me describe this work/);
+  for (const overrides of [
+    { administrationEnabled: false, workDiscoveryEnabled: true },
+    { administrationEnabled: true, workDiscoveryEnabled: false },
+    { administrationEnabled: true },
+    { administrationEnabled: true, workDiscoveryEnabled: true, position: { ...position, status: "inactive" } },
+  ]) assert.ok(!hrefs(render(PositionDetail, { ...props, ...overrides })).includes(destination));
+});
+
 test("Studio Person routes each job-title edit to the corresponding Position", () => {
   const person = fixture.people.find((item) => item.name === "Taylor Brooks");
   const html = render(StudioStructureDetail, { changes: [], data: fixture, entity: person, entityType: "person" });
-  assert.match(html, /Choose a job title to edit/);
+  assert.match(html, /Open a job title to see the people, responsibilities, and work connected to it/);
   const help = html.match(/<details\b([^>]*)>\s*<summary[^>]*>About job titles<\/summary>([\s\S]*?)<\/details>/);
   assert.ok(help, "the Position distinction remains available in optional help");
   assert.doesNotMatch(help[1], /\bopen\b/);

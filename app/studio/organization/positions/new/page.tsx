@@ -19,7 +19,7 @@ export default async function NewPositionPage({
   const unit = data.units.find((item) => item.id === requestedUnit && item.status === "active");
   if (requestedUnit !== undefined && !unit) notFound();
   return (
-    <WorkspaceShell activeView="studio" asOf={asOf} configuration={configuration} source={source}>
+    <WorkspaceShell activeView="organization" asOf={asOf} configuration={configuration} source={source}>
       <StudioCreatePage data={data} entityType="position" initialUnitStableKey={unit?.id} />
     </WorkspaceShell>
   );

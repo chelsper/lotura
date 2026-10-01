@@ -39,6 +39,7 @@ async function load(path, stubs = {}) {
   return testModule.exports;
 }
 const { OrganizationNavigation } = await load("app/studio/organization-navigation.tsx");
+const { StructureEditingDisclosure } = await load("app/studio/structure-editing-disclosure.tsx");
 const { UnitAddMenu } = await load("app/studio/unit-add-menu.tsx");
 const { UnitAtAGlance } = await load("app/studio/unit-at-a-glance.tsx");
 const { UnitRoster } = await load("app/studio/unit-roster.tsx", {
@@ -49,6 +50,7 @@ const { UnitRoster } = await load("app/studio/unit-roster.tsx", {
 });
 const { StudioStructureDetail } = await load("app/studio/studio-structure-detail.tsx", {
   "./organization-navigation": { OrganizationNavigation },
+  "./structure-editing-disclosure": { StructureEditingDisclosure },
   "./unit-roster": { UnitRoster },
   "@/lib/organization-unit-hierarchy.mjs": { organizationUnitPath: () => [] },
   "../organization/structure-administration-panel": { StructureAdministrationPanel: () => null },
@@ -110,7 +112,8 @@ test("Unit roster shows exact-Unit Positions and linked people, without descenda
   assert.match(html, /Your Unit at a glance/);
   assert.ok(html.indexOf("Your Unit at a glance") < html.indexOf("People and job titles"));
   assert.match(html, /In this Unit only/);
-  assertHref(html, "/studio/organization/positions/position-1#edit-position");
+  assertHref(html, "/studio/organization/positions/position-1");
+  assert.doesNotMatch(html, /#edit-position/);
   assertHref(html, "/studio/organization/people/person-1");
   assert.match(html, /Fictional Alex/);
   assert.match(html, /Incumbent/);
@@ -138,7 +141,7 @@ test("only active exact-Unit Positions offer in-place editing; inactive rows rem
   const childPosition = position({ id: "child-position", title: "Child Specialist", unit: child });
   const html = renderDetail("organization_unit", unit, [active, inactive, childPosition]);
   assert.match(html, /Former Services Lead/);
-  assertHref(html, "/studio/organization/positions/inactive-position#edit-position");
+  assertHref(html, "/studio/organization/positions/inactive-position");
   assert.match(html, /aria-label="Edit Services Coordinator"/);
   assert.doesNotMatch(html, /aria-label="Edit Former Services Lead"|aria-label="Edit Child Specialist"/);
   assert.equal([...html.matchAll(/aria-label="Edit /g)].length, 1);
@@ -151,8 +154,8 @@ test("matching job titles and shared occupancy retain separate recorded identiti
   const second = position({ id: "position-2", assignments: [] });
   const before = JSON.stringify([shared, second]);
   const html = renderDetail("organization_unit", unit, [shared, second]);
-  assertHref(html, "/studio/organization/positions/position-1#edit-position");
-  assertHref(html, "/studio/organization/positions/position-2#edit-position");
+  assertHref(html, "/studio/organization/positions/position-1");
+  assertHref(html, "/studio/organization/positions/position-2");
   assertHref(html, "/studio/organization/people/person-1");
   assertHref(html, "/studio/organization/people/person-2");
   assert.equal([...html.matchAll(/aria-label="Edit Services Coordinator"/g)].length, 2);
@@ -212,12 +215,59 @@ test("Person scope follows one documented distinct Unit, never guessing among se
 });
 
 test("Position responsibility links preserve its recorded Unit, but do not invent one", () => {
-  const withRole = position({ mandates: [{ role: { stableKey: "role-1", name: "Request coordination" } }] });
+  const withRole = position({ mandates: [{ id: "mandate-1", role: { stableKey: "role-1", name: "Request coordination" }, processes: [] }] });
   const html = renderDetail("position", withRole);
   assertHref(html, "/studio/responsibilities/roles/role-1?unit=unit-a");
   assertHref(html, "/studio/organization?view=positions&unit=unit-a");
-  assert.match(html, /Responsibility: Request coordination/);
+  assert.match(html, /Linked responsibilities/);
+  assert.match(html, /Request coordination/);
   const unplaced = renderDetail("position", { ...withRole, unit: null });
   assertHref(unplaced, "/studio/responsibilities/roles/role-1");
   assert.doesNotMatch(unplaced, /unit=/);
+});
+
+test("job overview uses only recorded people, primary reporting, responsibilities, and deduplicated Process links", () => {
+  const process = { id: "process/a", name: "Fictional printing requests", status: "draft" };
+  const role = { stableKey: "role-1", name: "Request coordination" };
+  const current = position({
+    assignments: [assigned, { id: "assignment-2", typeLabel: "Temporary cover", person: { id: "person-2", name: "Fictional Casey" } }],
+    primaryManager: { position: { id: "manager-position", title: "Services Director" } },
+    mandates: [
+      { id: "mandate-1", typeLabel: "Primary", scope: "Printing requests", role, processes: [process] },
+      { id: "mandate-2", role: { stableKey: null, name: "Recorded but unlinked responsibility" }, processes: [process] },
+    ],
+    processes: [{ id: "do-not-infer", name: "Not linked through these mandates" }],
+  });
+  const before = JSON.stringify(current);
+  const html = renderDetail("position", current);
+  for (const value of ["This job at a glance", "People in this job", "Fictional Alex", "Fictional Casey", "Temporary cover", "Primary manager", "Services Director", "Printing requests", "Recorded but unlinked responsibility"]) assert.ok(html.includes(value), value);
+  for (const href of ["/studio/organization/people/person-1", "/studio/organization/people/person-2", "/studio/organization/units/unit-a", "/studio/organization/positions/manager-position", "/studio/responsibilities/roles/role-1?unit=unit-a", "/explorer/process%2Fa"]) assertHref(html, href);
+  assert.equal([...html.matchAll(/href="\/explorer\/process%2Fa"/g)].length, 1);
+  assert.match(html, /Explore 1 connected Process/);
+  assert.match(html, /A connection does not by itself mean ownership/);
+  assert.doesNotMatch(html, /roles\/null|roles\/undefined|do-not-infer|Not linked through these mandates/);
+  assert.equal(JSON.stringify(current), before);
+});
+
+test("empty job overview preserves unknown staffing versus recorded vacancy", () => {
+  for (const [id, expected] of [["not_established", "Person not yet recorded"], ["vacant", "Vacant"]]) {
+    const html = renderDetail("position", position({ assignments: [], unit: null, occupancy: { id, label: expected } }));
+    assert.match(html, new RegExp(expected));
+    assert.match(html, /Connected Processes: not yet recorded/);
+    assert.doesNotMatch(html, /\/explorer\/|\/studio\/responsibilities\/roles\/|\/studio\/organization\/people\//);
+  }
+});
+
+test("work-discovery CTA precedes the job overview and collapsed editing, with existing gates", () => {
+  const render = (overrides) => renderToStaticMarkup(React.createElement(StudioStructureDetail, {
+    entityType: "position", entity: position(), changes: [], data: { units: [] }, workDiscoveryEnabled: true, ...overrides,
+  }));
+  const html = render();
+  assert.ok(html.indexOf("Help me describe this work") < html.indexOf("This job at a glance"));
+  assert.ok(html.indexOf("This job at a glance") < html.indexOf("Edit job details and view history"));
+  assert.match(html, /<summary[^>]*>Edit job details and view history<\/summary>/);
+  assert.doesNotMatch(html, /<details[^>]*\bopen=/);
+  for (const overrides of [{ workDiscoveryEnabled: false }, { entity: position({ status: "inactive" }) }]) {
+    assert.doesNotMatch(render(overrides), /Help me describe this work/);
+  }
 });

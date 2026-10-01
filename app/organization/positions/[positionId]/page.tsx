@@ -18,6 +18,7 @@ export default async function OrganizationPositionPage({
     asOf,
     configuration,
     data,
+    discovery,
     processAcquisition,
     source,
   } = await loadOrganizationStructureExperience();
@@ -37,6 +38,7 @@ export default async function OrganizationPositionPage({
         data={data}
         position={position}
         processAcquisitionEnabled={processAcquisition.enabled}
+        workDiscoveryEnabled={administration.enabled && discovery?.enabled === true}
       />
     </WorkspaceShell>
   );

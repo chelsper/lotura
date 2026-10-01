@@ -14,7 +14,7 @@ export default async function NewOperationalRolePage() {
   if (!experience.enabled) notFound();
   const { asOf, configuration, data, source } = experience;
   return (
-    <WorkspaceShell activeView="studio" asOf={asOf} configuration={configuration} source={source}>
+    <WorkspaceShell activeView="organization" asOf={asOf} configuration={configuration} source={source}>
       <nav aria-label="Breadcrumb" className="mb-5 flex flex-wrap items-center gap-2 text-xs text-[var(--text-tertiary)]">
         <Link href="/studio">Workspace Studio</Link><span>/</span>
         <Link href="/studio/responsibilities">Responsibilities</Link><span>/</span>

@@ -85,7 +85,7 @@ test("public and browse surfaces never expose canonical mutation controls", asyn
   assert.match(shell, /studioEnabled/);
   for (const source of [unit, position, person]) {
     assert.doesNotMatch(source, /StructureAdministrationPanel/);
-    assert.match(source, /Maintain in Workspace Studio/);
+    assert.match(source, /Maintain in Workspace Studio|Open job workspace/);
   }
   assert.match(studioDetail, /StructureAdministrationPanel/);
   const panel = await read("app/organization/structure-administration-panel.tsx");

@@ -49,7 +49,7 @@ export default async function ResponsibilityBuilderPage({
   });
 
   return (
-    <WorkspaceShell activeView="studio" asOf={asOf} configuration={configuration} source={source}>
+    <WorkspaceShell activeView="organization" asOf={asOf} configuration={configuration} source={source}>
       <WorkspacePageHeader
         description="Responsibilities describe work people are accountable for. They are separate from job titles and the people holding them."
         eyebrow={<><RoleIcon className="size-3.5" />Workspace Studio</>}

@@ -113,7 +113,7 @@ function WorkspaceNavigation({
                 ? "bg-[var(--workspace-accent-subtle)] text-[var(--workspace-accent)]"
                 : "text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text)]",
             )}
-            href={item.href}
+            href={item.id === "organization" && studioEnabled ? "/studio/organization" : item.href}
             key={item.id}
           >
             <Icon className="size-4" />
@@ -324,7 +324,7 @@ export async function WorkspaceShell({
             </div>
           ) : null}
           <p className="mt-3 text-[11px] font-medium leading-4 text-[var(--text-tertiary)]">
-            {activeView === "studio"
+            {activeView === "studio" || (activeView === "organization" && studioEnabled)
               ? "Workspace Administrator — saved changes keep their history."
               : studioEnabled
                 ? "Browse view — make changes in Workspace Studio."

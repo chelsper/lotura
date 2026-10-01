@@ -19,7 +19,7 @@ export default async function StudioOrganizationUnitPage({
   const unit = data.units.find((item) => item.id === stableKey);
   if (!unit) notFound();
   return (
-    <WorkspaceShell activeView="studio" asOf={asOf} configuration={configuration} source={source}>
+    <WorkspaceShell activeView="organization" asOf={asOf} configuration={configuration} source={source}>
       <StudioStructureDetail changes={changes} data={data} entity={unit} entityType="organization_unit" />
     </WorkspaceShell>
   );

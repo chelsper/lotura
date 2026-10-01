@@ -194,7 +194,7 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
                 {positions.map((position) => (
                   <tr key={position.id}>
                     <th className="px-4 py-4 align-top font-normal" scope="row">
-                      <Link className="font-medium text-[var(--workspace-accent)] hover:underline" href={`/studio/organization/positions/${encodeURIComponent(position.id)}#edit-position`}>{position.title} <span aria-hidden="true">→</span></Link>
+                      <Link className="font-medium text-[var(--workspace-accent)] hover:underline" href={`/studio/organization/positions/${encodeURIComponent(position.id)}`}>{position.title} <span aria-hidden="true">→</span></Link>
                       <div className="mt-2 flex flex-wrap gap-2">
                         <Badge tone={position.occupancy.tone}>{position.occupancy.id === "not_established" ? "Person not yet recorded" : position.occupancy.label}</Badge>
                         {position.status !== "active" ? <Badge>{position.status}</Badge> : null}

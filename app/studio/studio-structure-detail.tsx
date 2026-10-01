@@ -17,6 +17,7 @@ import { UnitHierarchyContext } from "../organization/unit-hierarchy-context";
 import { ArrowIcon } from "../ui/icons";
 import { Badge, Card } from "../ui/primitives";
 import { OrganizationNavigation } from "./organization-navigation";
+import { StructureEditingDisclosure } from "./structure-editing-disclosure";
 import { UnitRoster } from "./unit-roster";
 
 type StudioEntity = OrganizationUnit | OrganizationPosition | OrganizationPerson;
@@ -86,10 +87,6 @@ export function StudioStructureDetail({
         unit={documentedUnit(entity, entityType)}
       />
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-tertiary)]">
-        <Link className="hover:text-[var(--workspace-accent)]" href="/studio">
-          Workspace Studio
-        </Link>
-        <span aria-hidden="true">/</span>
         <Link className="hover:text-[var(--workspace-accent)]" href="/studio/organization">
           Organization
         </Link>
@@ -137,17 +134,13 @@ export function StudioStructureDetail({
             className="inline-flex items-center gap-2 text-xs font-medium text-[var(--workspace-accent)] hover:underline"
             href={presentation.browseHref}
           >
-            View organizational context <ArrowIcon className="size-3.5" />
+            Explore connections <ArrowIcon className="size-3.5" />
           </Link>
         </div>
       </header>
 
       {entityType === "organization_unit" ? (
         <UnitRoster data={data} unit={entity as OrganizationUnit} />
-      ) : null}
-
-      {entityType === "position" ? (
-        <PositionConnections position={entity as OrganizationPosition} />
       ) : null}
 
       {entityType === "position" && entity.status === "active" && workDiscoveryEnabled ? (
@@ -162,11 +155,15 @@ export function StudioStructureDetail({
         </Card>
       ) : null}
 
+      {entityType === "position" ? (
+        <PositionOverview position={entity as OrganizationPosition} />
+      ) : null}
+
       {entityType === "person" && (entity as OrganizationPerson).assignments.length > 0 ? (
         <Card className="mt-6 p-4 sm:p-5">
           <h2 className="text-sm font-semibold text-[var(--text)]">Job titles</h2>
           <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
-            Choose a job title to edit. The person’s name and assignment stay unchanged.
+            Open a job title to see the people, responsibilities, and work connected to it.
           </p>
           <details className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">
             <summary className="cursor-pointer font-medium text-[var(--workspace-accent)]">About job titles</summary>
@@ -201,31 +198,63 @@ export function StudioStructureDetail({
         </div>
       ) : null}
 
-      <StructureAdministrationPanel
-        changes={changes}
-        data={data}
-        entity={entity}
-        entityType={entityType}
-      />
+      <StructureEditingDisclosure
+        key={`${entityType}:${entity.id}`}
+        editAnchor={entityType === "position" ? "edit-position" : undefined}
+        label={entityType === "position" ? "Edit job details and view history" : entityType === "person" ? "Edit person details and view history" : "Edit Unit details and view history"}
+      >
+        <StructureAdministrationPanel
+          changes={changes}
+          data={data}
+          entity={entity}
+          entityType={entityType}
+        />
+      </StructureEditingDisclosure>
     </div>
   );
 }
 
-function PositionConnections({ position }: { position: OrganizationPosition }) {
-  const links = [
-    ...(position.unit ? [{ label: `Unit: ${position.unit.name}`, href: `/studio/organization/units/${encodeURIComponent(position.unit.id)}` }] : []),
-    ...position.assignments.map((assignment) => ({ label: `${assignment.typeLabel}: ${assignment.person.name}`, href: `/studio/organization/people/${encodeURIComponent(assignment.person.id)}` })),
-    ...position.mandates.filter((mandate) => mandate.role.stableKey).map((mandate) => ({ label: `Responsibility: ${mandate.role.name}`, href: `/studio/responsibilities/roles/${encodeURIComponent(mandate.role.stableKey!)}${position.unit ? `?unit=${encodeURIComponent(position.unit.id)}` : ""}` })),
-    ...(position.primaryManager ? [{ label: `Reports to: ${position.primaryManager.position.title}`, href: `/studio/organization/positions/${encodeURIComponent(position.primaryManager.position.id)}` }] : []),
-  ];
-  if (links.length === 0) return null;
-  return (
-    <nav aria-label="Connected organizational records" className="mt-5 flex flex-wrap gap-2">
-      {links.map((link) => (
-        <Link className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs text-[var(--workspace-accent)] hover:bg-[var(--surface-subtle)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]" href={link.href} key={`${link.href}:${link.label}`}>
-          {link.label} <span aria-hidden="true">→</span>
-        </Link>
-      ))}
-    </nav>
-  );
+function PositionOverview({ position }: { position: OrganizationPosition }) {
+  const processes = [...new Map(position.mandates.flatMap((mandate) => mandate.processes.map((process) => [process.id, process] as const))).values()]
+    .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+  const linkClass = "font-medium text-[var(--workspace-accent)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--workspace-focus-ring)]";
+  return <Card className="mt-6 p-4 sm:p-5">
+    <section aria-labelledby="job-overview">
+      <h2 className="text-xl font-semibold text-[var(--text)]" id="job-overview">This job at a glance</h2>
+      <dl className="mt-4 grid gap-5 text-sm sm:grid-cols-2">
+        <div>
+          <dt className="font-medium text-[var(--text-secondary)]">People in this job</dt>
+          <dd className="mt-2">
+            {position.assignments.length ? <ul className="space-y-2">{position.assignments.map((assignment) => <li key={assignment.id}>
+              <Link className={linkClass} href={`/studio/organization/people/${encodeURIComponent(assignment.person.id)}`}>{assignment.person.name} →</Link>
+              <span className="mt-0.5 block text-xs text-[var(--text-tertiary)]">{assignment.typeLabel}</span>
+            </li>)}</ul> : <span className="text-[var(--text-secondary)]">{position.occupancy.id === "vacant" ? "Vacant" : "Person not yet recorded"}</span>}
+          </dd>
+        </div>
+        <div>
+          <dt className="font-medium text-[var(--text-secondary)]">Organization Unit</dt>
+          <dd className="mt-2">{position.unit ? <Link className={linkClass} href={`/studio/organization/units/${encodeURIComponent(position.unit.id)}`}>{position.unit.name} →</Link> : <span className="text-[var(--text-secondary)]">Not yet recorded</span>}</dd>
+        </div>
+        <div>
+          <dt className="font-medium text-[var(--text-secondary)]">Reports to <span className="text-xs font-normal">· Primary manager</span></dt>
+          <dd className="mt-2">{position.primaryManager ? <Link className={linkClass} href={`/studio/organization/positions/${encodeURIComponent(position.primaryManager.position.id)}`}>{position.primaryManager.position.title} →</Link> : <span className="text-[var(--text-secondary)]">Not yet recorded</span>}</dd>
+        </div>
+        <div>
+          <dt className="font-medium text-[var(--text-secondary)]">Linked responsibilities</dt>
+          <dd className="mt-2">{position.mandates.length ? <ul className="space-y-2">{position.mandates.map((mandate) => <li key={mandate.id}>
+            {mandate.role.stableKey ? <Link className={linkClass} href={`/studio/responsibilities/roles/${encodeURIComponent(mandate.role.stableKey)}${position.unit ? `?unit=${encodeURIComponent(position.unit.id)}` : ""}`}>{mandate.role.name} →</Link> : <span>{mandate.role.name}</span>}
+            {mandate.typeLabel || mandate.scope ? <span className="mt-0.5 block text-xs text-[var(--text-tertiary)]">{[mandate.typeLabel, mandate.scope].filter(Boolean).join(" · ")}</span> : null}
+          </li>)}</ul> : <span className="text-[var(--text-secondary)]">Not yet recorded</span>}</dd>
+        </div>
+      </dl>
+      {processes.length ? <details className="mt-5 border-t border-[var(--border)] pt-4 text-sm">
+        <summary className="cursor-pointer font-medium text-[var(--workspace-accent)]">Explore {processes.length} connected {processes.length === 1 ? "Process" : "Processes"}</summary>
+        <p className="mt-2 text-xs text-[var(--text-secondary)]">Connected through recorded responsibilities. A connection does not by itself mean ownership.</p>
+        <ul className="mt-3 space-y-2">{processes.map((process) => <li className="flex flex-wrap items-center gap-2" key={process.id}>
+          <Link className={linkClass} href={`/explorer/${encodeURIComponent(process.id)}`}>{process.name} →</Link>
+          {process.status === "draft" ? <Badge>Draft</Badge> : process.status === "archived" ? <Badge>Archived</Badge> : null}
+        </li>)}</ul>
+      </details> : <p className="mt-5 border-t border-[var(--border)] pt-4 text-xs text-[var(--text-tertiary)]">Connected Processes: not yet recorded.</p>}
+    </section>
+  </Card>;
 }
