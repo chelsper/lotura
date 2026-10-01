@@ -11,9 +11,10 @@ import { Alert, Badge, Button, Input, RequiredMark, Select } from "../ui/primiti
 import { SearchableSelect } from "../ui/searchable-select";
 import { UnitResponsibilityCoverageForm } from "./unit-responsibility-coverage-form";
 
-export function UnitResponsibilitiesPanel({ data, position, onSaved, onPendingChange, onSaveUnconfirmed, onDirty }: {
+export function UnitResponsibilitiesPanel({ data, position, initialCoverageMandateId, onSaved, onPendingChange, onSaveUnconfirmed, onDirty }: {
   data: OrganizationStructureData;
   position: OrganizationPosition;
+  initialCoverageMandateId?: string;
   onSaved: (message: string) => void;
   onPendingChange: (pending: boolean) => void;
   onSaveUnconfirmed: () => void;
@@ -24,7 +25,10 @@ export function UnitResponsibilitiesPanel({ data, position, onSaved, onPendingCh
   const [state, setState] = useState<StructureActionState>(initialStructureActionState);
   const [pending, setPending] = useState(false);
   const [saveUnconfirmed, setSaveUnconfirmed] = useState(false);
-  const [coverageMandateId, setCoverageMandateId] = useState<string | null>(null);
+  const [coverageMandateId, setCoverageMandateId] = useState<string | null>(() =>
+    position.status === "active" && position.revision && position.mandates.some((mandate) =>
+      mandate.id === initialCoverageMandateId && mandate.role.status === "active" && mandate.revision)
+      ? initialCoverageMandateId! : null);
   const [dirty, setDirty] = useState(false);
   const submitting = useRef(false);
   const selectionHasEdits = useRef(false);

@@ -28,6 +28,8 @@ function harness() {
   let confirmations = 0;
   let refreshes = 0;
   let focusCalls = 0;
+  let summaryFocusCalls = 0;
+  let refreshing = false;
   const fakeReact = {
     ...React,
     useState(initial) {
@@ -41,11 +43,12 @@ function harness() {
       return hooks[index] ??= { current: initial };
     },
     useEffect(effect) { effects.push(effect); },
-    useTransition: () => [false, callback => callback()],
+    useTransition: () => [refreshing, callback => callback()],
   };
   const loaded = { exports: {} };
   vm.runInNewContext(code, {
     module: loaded, exports: loaded.exports,
+    document: { getElementById: id => id === "unit-at-a-glance" ? { focus() { summaryFocusCalls++; } } : null },
     window: {
       confirm: () => { confirmations++; return discard; },
       addEventListener: (name, handler) => listeners.set(name, handler),
@@ -60,6 +63,7 @@ function harness() {
       if (id === "./unit-roster-editor") return { UnitRosterEditor: "editor" };
       if (id === "./unit-responsibilities-panel") return { UnitResponsibilitiesPanel: "responsibilities" };
       if (id === "./unit-add-menu") return { UnitAddMenu: "add-menu" };
+      if (id === "./unit-at-a-glance") return { UnitAtAGlance: "unit-summary" };
       throw new Error(`Unexpected dependency: ${id}`);
     },
   });
@@ -80,9 +84,11 @@ function harness() {
     roster, panel, open, effects, listeners,
     renderPanel: node => render(node.type, node.props),
     allowDiscard: () => { discard = true; },
+    setRefreshing: value => { refreshing = value; },
     get confirmations() { return confirmations; },
     get refreshes() { return refreshes; },
     get focusCalls() { return focusCalls; },
+    get summaryFocusCalls() { return summaryFocusCalls; },
   };
 }
 
@@ -94,6 +100,66 @@ test("opening an editor is local and retains the original identity/revision snap
   const freshData = { positions: [{ ...position, title: "A different saved title", revision: "new-revision" }] };
   assert.equal(h.panel(h.roster(freshData)).props.position.revision, "revision-before-edit");
   assert.equal(h.panel(h.roster(freshData)).props.data.positions[0], position);
+});
+
+test("Unit summary receives only direct-Unit positions and opens the exact responsibility snapshot", () => {
+  const h = harness();
+  const mandate = { id: "mandate-b", revision: "mandate-revision" };
+  const own = { ...position, mandates: [mandate] };
+  const child = { ...position, id: "child-position", unit: { id: "child-unit", parent: unit } };
+  const unplaced = { ...position, id: "unplaced", unit: null };
+  const data = { positions: [own, child, unplaced] };
+  const summary = find(h.roster(data), node => node.type === "unit-summary");
+  assert.deepEqual(summary.props.positions, [own]);
+  assert.equal(summary.props.disabled, false);
+  const trigger = { focus() {} };
+  summary.props.onChooseCoverage(child, mandate, trigger);
+  summary.props.onChooseCoverage(own, { ...mandate }, trigger);
+  assert.equal(h.panel(h.roster(data)), undefined, "reject targets outside the rendered snapshot");
+  summary.props.onChooseCoverage(own, mandate, trigger);
+  const panel = h.panel(h.roster(data));
+  assert.equal(panel.props.data, data);
+  assert.equal(panel.props.position, own);
+  assert.equal(panel.props.initialMode, "responsibilities");
+  assert.equal(panel.props.initialCoverageMandateId, mandate.id);
+  const childForm = find(h.renderPanel(panel), node => node.type === "responsibilities");
+  assert.equal(childForm.props.initialCoverageMandateId, mandate.id);
+  assert.equal(h.refreshes, 0);
+  const fresh = { positions: [{ ...own, revision: "newer", mandates: [] }] };
+  assert.equal(h.panel(h.roster(fresh)).props.position, own, "route refresh must not rebase an open form");
+});
+
+test("summary actions stay disabled during refresh and saved gaps return focus to the summary", () => {
+  const h = harness();
+  const mandate = { id: "mandate-b" };
+  const own = { ...position, mandates: [mandate] };
+  const data = { positions: [own] };
+  const trigger = { isConnected: false, focus() { assert.fail("A removed gap button must not receive focus"); } };
+  h.setRefreshing(true);
+  const locked = find(h.roster(data), node => node.type === "unit-summary");
+  assert.equal(locked.props.disabled, true);
+  locked.props.onChooseCoverage(own, mandate, trigger);
+  assert.equal(h.panel(h.roster(data)), undefined);
+  h.setRefreshing(false);
+  find(h.roster(data), node => node.type === "unit-summary").props.onChooseCoverage(own, mandate, trigger);
+  const panel = h.panel(h.roster(data));
+  find(h.renderPanel(panel), node => node.type === "responsibilities").props.onSaved("Person recorded.");
+  h.roster({ positions: [] });
+  h.effects.at(-1)();
+  assert.equal(h.summaryFocusCalls, 1);
+  assert.equal(h.refreshes, 1);
+});
+
+test("switching away from a direct coverage entry clears that entry point when returning", () => {
+  const h = harness();
+  const mandate = { id: "mandate-b" };
+  const own = { ...position, mandates: [mandate] };
+  const data = { positions: [own] };
+  find(h.roster(data), node => node.type === "unit-summary").props.onChooseCoverage(own, mandate, { focus() {} });
+  const panel = h.panel(h.roster(data));
+  find(h.renderPanel(panel), node => node.type === "button" && node.props.children === "Job title").props.onClick();
+  find(h.renderPanel(panel), node => node.type === "button" && node.props.children === "Responsibilities").props.onClick();
+  assert.equal(find(h.renderPanel(panel), node => node.type === "responsibilities").props.initialCoverageMandateId, undefined);
 });
 
 test("dirty edits are kept when cancelling discard, and closing saves nothing", () => {

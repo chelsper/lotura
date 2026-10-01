@@ -182,6 +182,31 @@ test("coverage opens the exact current mandate with no inferred person or write"
   assert.equal(editor.props.personStableKey, undefined);
 });
 
+test("a summary entry opens only the exact eligible mandate with blank Person and no write", () => {
+  const panel = harness({ initialCoverageMandateId: mandate.id });
+  assert.equal(coverageEditor(panel).props.position, position);
+  assert.equal(coverageEditor(panel).props.mandate, mandate);
+  assert.equal(coverageEditor(panel).props.personStableKey, undefined);
+  assert.equal(panel.calls.length, 0);
+  coverageEditor(panel).props.onCancel();
+  assert.equal(coverageEditor(panel), undefined);
+  assert.ok(form(panel.render()));
+});
+
+test("invalid or unavailable summary targets fall back to the responsibility list", () => {
+  for (const patch of [
+    { initialCoverageMandateId: "another-position-mandate" },
+    { position: { ...position, status: "inactive" } },
+    { position: { ...position, revision: "" } },
+    { position: { ...position, mandates: [{ ...mandate, revision: "" }] } },
+    { position: { ...position, mandates: [{ ...mandate, role: { ...linkedRole, status: "inactive" } }] } },
+  ]) {
+    const panel = harness({ initialCoverageMandateId: mandate.id, ...patch });
+    assert.equal(coverageEditor(panel), undefined);
+    assert.equal(panel.calls.length, 0);
+  }
+});
+
 test("coverage unconfirmed saves propagate to the roster and freeze inner navigation", () => {
   const panel = harness();
   openCoverage(panel);

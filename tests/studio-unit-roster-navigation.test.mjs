@@ -40,8 +40,10 @@ async function load(path, stubs = {}) {
 }
 const { OrganizationNavigation } = await load("app/studio/organization-navigation.tsx");
 const { UnitAddMenu } = await load("app/studio/unit-add-menu.tsx");
+const { UnitAtAGlance } = await load("app/studio/unit-at-a-glance.tsx");
 const { UnitRoster } = await load("app/studio/unit-roster.tsx", {
   "./unit-add-menu": { UnitAddMenu },
+  "./unit-at-a-glance": { UnitAtAGlance },
   "./unit-roster-editor": { UnitRosterEditor: () => { throw new Error("The editor must remain closed until a person chooses Edit"); } },
   "./unit-responsibilities-panel": { UnitResponsibilitiesPanel: () => { throw new Error("Responsibilities must remain closed until explicitly opened"); } },
 });
@@ -100,11 +102,13 @@ test("Unit navigation keeps exact scope in each destination and supplies an unsc
 });
 
 test("Unit roster shows exact-Unit Positions and linked people, without descendant or process leakage", () => {
-  const own = position({ mandates: [{ role: { name: "Unrelated process-like responsibility" } }] });
+  const own = position({ mandates: [{ role: { id: "role-a", name: "Unrelated process-like responsibility", status: "active" }, coverage: [{ id: "coverage-a" }], processes: [] }] });
   const childPosition = position({ id: "child-position", title: "Child Specialist", unit: child, assignments: [{ ...assigned, person: { id: "child-person", name: "Child Person" } }] });
   const elsewhere = position({ id: "other-position", title: "Unplaced Specialist", unit: null });
   const html = renderDetail("organization_unit", { ...unit, positions: [childPosition] }, [own, childPosition, elsewhere]);
   assert.match(html, /People and job titles/);
+  assert.match(html, /Your Unit at a glance/);
+  assert.ok(html.indexOf("Your Unit at a glance") < html.indexOf("People and job titles"));
   assert.match(html, /In this Unit only/);
   assertHref(html, "/studio/organization/positions/position-1#edit-position");
   assertHref(html, "/studio/organization/people/person-1");

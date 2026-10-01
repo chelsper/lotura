@@ -10,6 +10,7 @@ import { Badge, Button, Card } from "../ui/primitives";
 import { UnitRosterEditor, type UnitRosterEditMode } from "./unit-roster-editor";
 import { UnitAddMenu } from "./unit-add-menu";
 import { UnitResponsibilitiesPanel } from "./unit-responsibilities-panel";
+import { UnitAtAGlance } from "./unit-at-a-glance";
 
 type RosterPanelMode = UnitRosterEditMode | "responsibilities";
 
@@ -20,10 +21,11 @@ const editorModes: Array<{ id: RosterPanelMode; label: string }> = [
   { id: "responsibilities", label: "Responsibilities" },
 ];
 
-function RosterEditPanel({ data, position, initialMode, onClose, onSaved }: {
+function RosterEditPanel({ data, position, initialMode, initialCoverageMandateId, onClose, onSaved }: {
   data: OrganizationStructureData;
   position: OrganizationPosition;
   initialMode: RosterPanelMode;
+  initialCoverageMandateId?: string;
   onClose: (refresh?: boolean) => void;
   onSaved: (message: string) => void;
 }) {
@@ -32,6 +34,7 @@ function RosterEditPanel({ data, position, initialMode, onClose, onSaved }: {
   const [dirty, setDirty] = useState(false);
   const [pending, setPending] = useState(false);
   const [saveUnconfirmed, setSaveUnconfirmed] = useState(false);
+  const [coverageMandateId, setCoverageMandateId] = useState(initialCoverageMandateId);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -81,6 +84,7 @@ function RosterEditPanel({ data, position, initialMode, onClose, onSaved }: {
             onClick={() => {
               if (!saveUnconfirmed && mode !== item.id && canLeave()) {
                 setDirty(false);
+                setCoverageMandateId(undefined);
                 setMode(item.id);
               }
             }}
@@ -92,6 +96,7 @@ function RosterEditPanel({ data, position, initialMode, onClose, onSaved }: {
       <p className="mt-5 text-xs text-[var(--text-tertiary)]">* Required. Each saved change keeps its history.</p>
       {mode === "responsibilities" ? <UnitResponsibilitiesPanel
         data={data}
+        initialCoverageMandateId={coverageMandateId}
         onDirty={(dirty = true) => setDirty(dirty)}
         onPendingChange={setPending}
         onSaveUnconfirmed={() => setSaveUnconfirmed(true)}
@@ -121,7 +126,7 @@ function RosterEditPanel({ data, position, initialMode, onClose, onSaved }: {
 export function UnitRoster({ data, unit }: { data: OrganizationStructureData; unit: OrganizationUnit }) {
   const router = useRouter();
   // Keep the opened snapshot's revision with its inputs if another route refresh arrives.
-  const [selection, setSelection] = useState<{ data: OrganizationStructureData; position: OrganizationPosition; mode: RosterPanelMode } | null>(null);
+  const [selection, setSelection] = useState<{ data: OrganizationStructureData; position: OrganizationPosition; mode: RosterPanelMode; initialCoverageMandateId?: string } | null>(null);
   const [notice, setNotice] = useState("");
   const [refreshing, startRefresh] = useTransition();
   const editTrigger = useRef<HTMLButtonElement | null>(null);
@@ -129,7 +134,8 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
 
   useEffect(() => {
     if (!selection && !refreshing && editTrigger.current) {
-      editTrigger.current.focus();
+      if (editTrigger.current.isConnected === false) document.getElementById("unit-at-a-glance")?.focus();
+      else editTrigger.current.focus();
       editTrigger.current = null;
     }
   }, [selection, refreshing]);
@@ -141,6 +147,13 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
   }
 
   return (
+    <>
+    <UnitAtAGlance disabled={refreshing} onChooseCoverage={(position, mandate, trigger) => {
+      if (refreshing || !positions.includes(position) || !position.mandates.includes(mandate)) return;
+      editTrigger.current = trigger;
+      setNotice("");
+      setSelection({ data, position, mode: "responsibilities", initialCoverageMandateId: mandate.id });
+    }} positions={positions} />
     <section aria-labelledby="unit-people-job-titles" className="mt-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -208,10 +221,11 @@ export function UnitRoster({ data, unit }: { data: OrganizationStructureData; un
           </div>
         ) : <p className="p-5 text-sm text-[var(--text-secondary)]">No job titles have been recorded directly in this Unit yet.</p>}
       </Card>
-      {selection ? <RosterEditPanel data={selection.data} initialMode={selection.mode} onClose={(refresh) => {
+      {selection ? <RosterEditPanel data={selection.data} initialCoverageMandateId={selection.initialCoverageMandateId} initialMode={selection.mode} onClose={(refresh) => {
         setSelection(null);
         if (refresh) startRefresh(() => router.refresh());
       }} onSaved={saved} position={selection.position} /> : null}
     </section>
+    </>
   );
 }
